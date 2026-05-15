@@ -1,10 +1,11 @@
 """
-Sebastian_Classifier.py — State Machine Classifier (2026-05-15 redesign)
+Sebastian_Classifier.py — State Machine Classifier (4-sheet lifecycle, 2026-05-16)
 
-อ่าน all_jobs (Source of Truth) → clear+rebuild 3 derived sheets:
-  active_bidding   → e-bidding ที่ deadline >= วันนี้
-  pending_award    → e-bidding ที่ deadline < วันนี้ + ยังไม่ประกาศผู้ชนะ
-  awarded_jobs     → e-bidding ที่มี winner data แล้ว
+อ่าน all_jobs (Source of Truth) → clear+rebuild 4 derived sheets ตาม lifecycle:
+  tor_review       → 'กำลังเตรียม' (รับฟังคำวิจารณ์, ยังไม่เปิดยื่น)
+  active_bidding   → 'กำลังประมูล' + deadline >= วันนี้ (ยื่นซองได้ตอนนี้)
+  pending_award    → 'กำลังประมูล' deadline ผ่าน, หรือ 'ประมูลแล้ว' ไม่มี winner cache
+  awarded_jobs     → มี winner cache แล้ว (ประกาศผู้ชนะ)
 
 วิธีรัน: python Sebastian_Classifier.py
 
@@ -112,8 +113,9 @@ ALL_JOBS_HEADERS = [
     "first_seen_at", "last_seen_at",
 ]
 
+TOR_REVIEW_HEADERS     = ALL_JOBS_HEADERS + ["stage_note"]
 ACTIVE_BIDDING_HEADERS = ALL_JOBS_HEADERS + ["days_remaining"]
-PENDING_AWARD_HEADERS  = ALL_JOBS_HEADERS + ["overdue_days"]
+PENDING_AWARD_HEADERS  = ALL_JOBS_HEADERS + ["wait_reason"]
 AWARDED_JOBS_HEADERS   = ALL_JOBS_HEADERS + ["winner_name", "winner_price", "discount_pct", "award_date"]
 
 
@@ -249,7 +251,7 @@ def main():
     log(f"  jobs: {len(all_values) - 1}")
     log(f"  today: {today.isoformat()}")
 
-    active, pending, awarded = [], [], []
+    tor_review, active, pending, awarded = [], [], [], []
     skipped_non_ebid = 0
     skipped_no_jid = 0
     skipped_not_bidding_status = 0
@@ -292,32 +294,49 @@ def main():
             continue
 
         proj_status = _normalize_project_status(g(r, "project_status"))
-        # Skip if not "กำลังประมูล" — these aren't actively biddable
-        # (cancelled/extended/ประมูลแล้ว without winner ฯลฯ stay in all_jobs only)
+        # 4-sheet lifecycle (สอดคล้องกับ eGP flow):
+        #   tor_review     → 'กำลังเตรียม' (รับฟังคำวิจารณ์, ยังไม่เปิดยื่น)
+        #   active_bidding → 'กำลังประมูล' + deadline >= today (ยื่นซองได้)
+        #   pending_award  → 'กำลังประมูล' + deadline ผ่าน (รอประกาศ) หรือ 'ประมูลแล้ว' ไม่มี winner cache
+        #   awarded_jobs   → มี winner cache (handled ก่อนหน้านี้แล้ว)
+        # อื่นๆ ('ยกเลิก', '', unknown) → skip → อยู่ใน all_jobs เฉยๆ
+
+        if proj_status == "กำลังเตรียม":
+            tor_review.append(base + ["รับฟังคำวิจารณ์"])
+            continue
+
+        if proj_status == "ประมูลแล้ว":
+            # ไม่มี winner ใน cache → รอ refresh ดึงผู้ชนะ
+            pending.append(base + ["รอประกาศผล"])
+            continue
+
         if proj_status != "กำลังประมูล":
             skipped_not_bidding_status += 1
             continue
 
+        # 'กำลังประมูล' → active vs pending ตาม deadline
         dl = parse_thai_date(g(r, "deadline"))
         if dl is None:
-            # eGP says "กำลังประมูล" but deadline missing → active (pessimistic, hope patch_deadlines fills it)
+            # deadline ว่าง → active (pessimistic, รอ patch_deadlines เติม)
             active.append(base + [""])
         elif dl >= today:
             active.append(base + [str((dl - today).days)])
         else:
-            pending.append(base + [str((today - dl).days)])
+            pending.append(base + [f"deadline ผ่าน {(today - dl).days} วัน"])
 
-    log(f"\nClassified:")
-    log(f"  active_bidding: {len(active)}")
-    log(f"  pending_award:  {len(pending)}")
-    log(f"  awarded_jobs:   {len(awarded)}")
+    log(f"\nClassified (lifecycle order):")
+    log(f"  🟢 tor_review     (รับฟังคำวิจารณ์):  {len(tor_review)}")
+    log(f"  🔵 active_bidding (ยื่นซองได้):       {len(active)}")
+    log(f"  🟡 pending_award  (รอรู้ผู้ชนะ):       {len(pending)}")
+    log(f"  ⚪ awarded_jobs   (ประกาศแล้ว):       {len(awarded)}")
     log(f"  skipped non-e-bidding:        {skipped_non_ebid}")
     log(f"  skipped off-province:         {skipped_off_province}")
     log(f"  skipped non-construction:     {skipped_non_construction}")
-    log(f"  skipped not 'กำลังประมูล':     {skipped_not_bidding_status}")
+    log(f"  skipped status ไม่ relevant:   {skipped_not_bidding_status}")
     log(f"  skipped no job_id:            {skipped_no_jid}")
 
     log(f"\nWriting derived sheets (clear+rewrite)...")
+    write_sheet("tor_review",     TOR_REVIEW_HEADERS,     tor_review)
     write_sheet("active_bidding", ACTIVE_BIDDING_HEADERS, active)
     write_sheet("pending_award",  PENDING_AWARD_HEADERS,  pending)
     write_sheet("awarded_jobs",   AWARDED_JOBS_HEADERS,   awarded)

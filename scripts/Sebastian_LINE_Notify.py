@@ -20,9 +20,10 @@ sys.path.insert(0, str(Path(__file__).parent))
 from sheets_client import open_sheet
 
 SPREADSHEET_ID  = "1gz7qLDIWphDhqxLf8Pxm08_cPmNb_IXTDvyxm6uThps"
-SHEET_ACTIVE    = "active_bidding"
-SHEET_AWARDED   = "awarded_jobs"
 SHEET_TOR       = "tor_review"
+SHEET_ACTIVE    = "active_bidding"
+SHEET_PENDING   = "pending_award"
+SHEET_AWARDED   = "awarded_jobs"
 LINE_API_URL    = "https://api.line.me/v2/bot/message/push"
 TOP_N           = 15
 
@@ -74,8 +75,13 @@ def get_awarded_count() -> int:
 
 
 def get_tor_review_jobs() -> list[dict]:
-    """tor_review reserved สำหรับ Phase 2 SaaS — return [] ในตอนนี้"""
-    return []
+    """อ่าน tor_review (รับฟังคำวิจารณ์ — Classifier filter ตาม flowSeqno≤3 แล้ว)"""
+    try:
+        ws = open_sheet(SPREADSHEET_ID, SHEET_TOR)
+        return ws.get_all_records()
+    except Exception as e:
+        print(f"[WARN] อ่าน tor_review ไม่ได้: {e}", flush=True)
+        return []
 
 
 # ================================================================
@@ -117,24 +123,19 @@ def _build_job_block(i: int, job: dict) -> str:
 
 
 def _build_tor_block(i: int, job: dict) -> str:
-    title     = str(job.get("title", "ไม่มีชื่อ"))
-    budget    = fmt_budget(job.get("budget", 0))
-    dept      = str(job.get("department", ""))
-    announce  = str(job.get("วันที่ประกาศ", ""))
-    tor_date  = str(job.get("สิ้นสุดรับฟังคำวิจารณ์", ""))
-    days_left = str(job.get("เหลือเวลา (วัน)", ""))
-    job_id    = str(job.get("job_id", ""))
+    title    = str(job.get("title", "ไม่มีชื่อ"))
+    budget   = fmt_budget(job.get("budget", 0))
+    dept     = str(job.get("department", ""))
+    announce = str(job.get("publish_date", ""))
+    note     = str(job.get("stage_note", "รับฟังคำวิจารณ์"))
+    job_id   = str(job.get("job_id", ""))
 
     lines = [f"", f"[{i}] {title}", f"    💰 {budget} บาท"]
     if dept:
         lines.append(f"    🏛️ {dept[:35]}")
     if announce:
         lines.append(f"    📢 ประกาศ: {announce}")
-    if tor_date:
-        tor_line = f"    📋 สิ้นสุดรับฟังฯ: {tor_date}"
-        if days_left:
-            tor_line += f"  ⏳ เหลือ {days_left} วัน"
-        lines.append(tor_line)
+    lines.append(f"    📋 สถานะ: {note}")
     if job_id:
         lines.append(f"    🔑 ID: {job_id}")
     return "\n".join(lines)

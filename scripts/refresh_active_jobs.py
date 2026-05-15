@@ -89,13 +89,16 @@ def fetch_winner_info(page, jid: str) -> dict:
     return {}
 
 
-def fetch_project_detail(page, jid: str) -> dict:
+def fetch_project_detail(page, jid: str, retry: bool = True) -> dict:
     """
     ดึงสถานะปัจจุบันจาก getProjectDetail
     flowSeqno guide:
       1-3 → 'กำลังเตรียม' (รับฟังคำวิจารณ์ / TOR)
       4   → 'กำลังประมูล' (เปิดให้ยื่นซองจริง)
       5+  → 'ประมูลแล้ว' (รอประกาศ / ประกาศแล้ว)
+
+    Note: ถ้า API rate-limited จะคืน data partial (flowSeqno=0, stepId='')
+    → ตรวจ valid_data ก่อน return — caller ต้องเช็ค .get("valid")
     """
     js = """async (url) => {
         try {
@@ -109,7 +112,17 @@ def fetch_project_detail(page, jid: str) -> dict:
         body = page.evaluate(js, url)
         if isinstance(body, dict):
             data = body.get("data", {}) or {}
-            seqno = data.get("flowSeqno", 0) or 0
+            seqno  = data.get("flowSeqno", 0) or 0
+            stepId = data.get("stepId", "")
+            flowId = data.get("flowId", "")
+
+            # Valid data = flowSeqno > 0 หรือ stepId มีค่า
+            valid = bool(seqno > 0 or stepId or flowId)
+            if not valid and retry:
+                # Rate limit — รอ + retry 1 ครั้ง
+                time.sleep(3)
+                return fetch_project_detail(page, jid, retry=False)
+
             if seqno <= 3:
                 status = "กำลังเตรียม"
             elif seqno == 4:
@@ -119,12 +132,13 @@ def fetch_project_detail(page, jid: str) -> dict:
             return {
                 "project_status": status,
                 "flow_seqno":     seqno,
-                "step_id":        data.get("stepId", ""),
-                "flow_id":        data.get("flowId", ""),
+                "step_id":        stepId,
+                "flow_id":        flowId,
+                "valid":          valid,
             }
     except Exception as e:
         log(f"  getProjectDetail err: {e}")
-    return {}
+    return {"valid": False}
 
 
 def calc_pct_discount(budget_str, price_str: str) -> str:
@@ -238,20 +252,25 @@ def main():
 
             # 2. ไม่มี winner → ใช้ flowSeqno จาก getProjectDetail
             detail = fetch_project_detail(page, jid)
-            if detail:
+            fields = {"last_seen_at": datetime.now().isoformat(timespec="seconds")}
+
+            if detail.get("valid"):
                 new_status = detail.get("project_status", "")
                 seqno      = detail.get("flow_seqno", 0)
                 log(f"  flowSeqno={seqno} stepId={detail.get('step_id')} → {new_status!r}")
-
-                fields = {"last_seen_at": datetime.now().isoformat(timespec="seconds")}
                 if new_status:
                     fields["project_status"] = new_status
-                update_payload.append({"row": row_num, "fields": fields})
                 status_updates += 1
             else:
-                log(f"  ⚠️  ไม่ได้ข้อมูล detail")
+                log(f"  ⚠️  empty data หลัง retry — keep current project_status")
 
-            time.sleep(0.5)
+            update_payload.append({"row": row_num, "fields": fields})
+
+            # Rate limit guard
+            time.sleep(1.5)
+            if i % 50 == 0:
+                log(f"  ⏸  cooldown 30s หลังจาก {i} jobs (rate limit guard)...")
+                time.sleep(30)
 
         page.close()
 

@@ -1241,6 +1241,60 @@ scrape → classify → refresh → download → analyze → cost → rank → n
 
 ---
 
+## งานที่ N+7: 4-Sheet Lifecycle Redesign (2026-05-16)
+
+### สถานะ: ✅ เสร็จแล้ว
+
+### Bug ที่ user รายงาน
+- jid=69059074818 อยู่ใน active_bidding แต่จริงๆ "ยังรับฟังคำวิจารณ์อยู่"
+- 167 jobs ที่ status='ประมูลแล้ว' ไม่มี winner ใน cache → หายไปไม่ขึ้นที่ไหน
+
+### Root cause
+3-sheet structure (active/pending/awarded) ไม่ครอบคลุม lifecycle จริงของ eGP:
+- "รับฟังคำวิจารณ์" (flowSeqno=3) ไม่ใช่ทั้ง active หรือ pending
+- "ประมูลแล้ว ไม่มี winner" ตกหล่นเพราะไม่ผ่าน status='กำลังประมูล' filter
+
+### Fix — 4-Sheet Lifecycle (สอดคล้อง eGP flow)
+```
+TOR Draft → [รับฟังคำวิจารณ์] → [เปิดยื่นซอง] → [รอรู้ผู้ชนะ] → [ประกาศแล้ว]
+              tor_review        active_bidding   pending_award    awarded_jobs
+```
+
+| Sheet | คือ | Logic | Action ของ user |
+|---|---|---|---|
+| 🟢 tor_review | รับฟังคำวิจารณ์ | flowSeqno≤3 (กำลังเตรียม) | เตรียมตัว, อ่าน TOR ล่วงหน้า |
+| 🔵 active_bidding | ยื่นซองได้ตอนนี้ | กำลังประมูล + deadline≥today | **ตัดสินใจประมูลตอนนี้** |
+| 🟡 pending_award | รอรู้ผู้ชนะ | deadline ผ่าน OR ประมูลแล้ว ไม่มี winner | รอ refresh / benchmark คู่แข่ง |
+| ⚪ awarded_jobs | รู้ผู้ชนะแล้ว | มี winner cache | reference, discount %, คู่แข่ง |
+
+### ไฟล์ที่เพิ่ม/แก้
+- `scripts/Sebastian_Classifier.py` — เพิ่ม TOR_REVIEW_HEADERS, แยก stage_note vs wait_reason, write 4 sheets
+- `scripts/Sebastian_LINE_Notify.py` — เปิด `get_tor_review_jobs()` (เดิม return []), แก้ `_build_tor_block()` ให้ใช้ schema ใหม่ (publish_date, stage_note)
+- `scripts/refresh_active_jobs.py` — เพิ่ม retry + cooldown + valid-data check (ป้องกัน rate limit ทำ status ผิด)
+
+### Insight ระหว่างทำ
+**Rate limit ของ eGP API:** refresh 167 jobs ติดกัน (sleep 0.5s) → 68/167 = 41% ได้ empty data → ทำให้ status mapping ผิด (default เป็น "กำลังเตรียม")
+- Fix: เพิ่ม `valid` flag ใน fetch_project_detail (ตรวจ flowSeqno>0 OR stepId), retry 1 ครั้ง delay 3s, ถ้ายัง empty → keep current status (ไม่ overwrite)
+- Fix #2: sleep 1.5s ระหว่าง requests + cooldown 30s ทุก 50 jobs
+
+### ผลรวม (after 2 รอบ refresh = 167 + 76 = 243 jobs)
+| Sheet | ก่อน | หลัง |
+|---|---:|---:|
+| tor_review | (ไม่มี) | **8** |
+| active_bidding | 2 | **5** |
+| pending_award | 23 | **25** |
+| awarded_jobs | 133 | **295** (+162 winners) |
+
+**ตัวอย่าง winner ที่กู้คืน:**
+- jid=68109450159: ห้างหุ้นส่วนจำกัด **ยศประทานรุ่งเรืองทรัพย์** @ 1,480,000 (-28.16%) ← บริษัทของ user!
+- + 161 winner อื่นๆ ที่เคยอยู่ใน "ประมูลแล้ว ไม่มี cache"
+
+### Followup
+- รัน refresh เป็น cron 06:00 ผ่าน Sebastian_Pipeline.py step 4/8 — winner ใหม่จะ catch อัตโนมัติ
+- พิจารณา Winner_Checker ตอนนี้ redundant กับ refresh_active_jobs
+
+---
+
 ## Setup (ครั้งแรก)
 
 ```bash

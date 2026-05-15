@@ -29,11 +29,12 @@ BOOTSTRAP_FILE = Path(__file__).parent.parent / "data" / "winner_cache_bootstrap
 
 TARGET_PROVINCES = ["นครพนม", "บึงกาฬ"]
 
-# Import DEPT_PROVINCE_MAP from Scraper — ตั้งเป็น single source of truth
+# Import DEPT_PROVINCE_MAP + FLOW_STATUS_MAP from Scraper — single source of truth
 try:
-    from Sebastian_Scraper import DEPT_PROVINCE_MAP
+    from Sebastian_Scraper import DEPT_PROVINCE_MAP, FLOW_STATUS_MAP
 except ImportError:
     DEPT_PROVINCE_MAP = {}
+    FLOW_STATUS_MAP = {}
 
 CONSTRUCTION_INCLUDE = [
     "ถนน", "สะพาน", "ท่อระบาย", "รางระบาย", "ลานคอนกรีต", "ทางเดินคอนกรีต",
@@ -87,6 +88,14 @@ def is_in_target_province(row: dict) -> bool:
             if map_key in kw and map_prov in TARGET_PROVINCES:
                 return True
 
+    # Case D: search_keyword ว่าง (data heal pending) — fallback ดู department + subdistrict
+    # ครอบคลุม row schema เลื่อน (737 rows) ที่ search_keyword หายไป แต่ dept มี "ตำบลX" ที่อยู่ใน MAP
+    dept_sub = str(row.get("department", "")) + " " + str(row.get("subdistrict", ""))
+    if dept_sub.strip():
+        for map_key, map_prov in DEPT_PROVINCE_MAP.items():
+            if map_key in dept_sub and map_prov in TARGET_PROVINCES:
+                return True
+
     return False
 
 
@@ -110,6 +119,38 @@ AWARDED_JOBS_HEADERS   = ALL_JOBS_HEADERS + ["winner_name", "winner_price", "dis
 
 def log(msg: str):
     print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
+
+
+def _normalize_project_status(raw: str) -> str:
+    """
+    Resilient mapping → "กำลังประมูล" / "ประมูลแล้ว" / "ยกเลิก" / "กำลังเตรียม" / ""
+
+    รองรับ 3 schema variants ที่หลุดมาจาก migration:
+      1. ค่า mapped ตรงๆ ("กำลังประมูล") — return ทันที
+      2. raw quantity_note ("province:X | flowName" หรือ "keyword:X | flowName") — extract flowName
+      3. stage code ตัวเลข ("0", "1", "4"-"8") — ไม่มี info พอจะ map → return ""
+    """
+    if not raw:
+        return ""
+    s = str(raw).strip()
+
+    # Variant 1: mapped value แล้ว
+    if s in {"กำลังประมูล", "ประมูลแล้ว", "ยกเลิก", "กำลังเตรียม", "รายงานขอซื้อขอจ้าง"}:
+        return s
+
+    # Variant 2: raw quantity_note หลุดมา — แยก " | " แล้ว map flow_name
+    if s.startswith("province:") or s.startswith("keyword:"):
+        parts = s.split("|", 1)
+        if len(parts) == 2:
+            flow_name = parts[1].strip()
+            return FLOW_STATUS_MAP.get(flow_name, "")
+
+    # Variant 3: ตัวเลข stage code — ไม่มีข้อมูลพอ
+    if s.isdigit():
+        return ""
+
+    # Unknown — return as-is (อาจเป็น flow_name ตรงๆ)
+    return FLOW_STATUS_MAP.get(s, s)
 
 
 def parse_thai_date(s: str):
@@ -250,7 +291,7 @@ def main():
             ])
             continue
 
-        proj_status = g(r, "project_status")
+        proj_status = _normalize_project_status(g(r, "project_status"))
         # Skip if not "กำลังประมูล" — these aren't actively biddable
         # (cancelled/extended/ประมูลแล้ว without winner ฯลฯ stay in all_jobs only)
         if proj_status != "กำลังประมูล":

@@ -11,9 +11,9 @@ Usage:
     python Sebastian_Pipeline.py --step notify    # ส่งสรุปไป LINE + Discord
 
 Pipeline flow:
-    scrape → classify → download → analyze → cost → rank → notify
+    scrape → classify → refresh → download → analyze → cost → rank → notify
 
-Steps ที่ต้องการ Chrome (port 9222): scrape, download
+Steps ที่ต้องการ Chrome (port 9222): scrape, download, refresh
     Start-Process "chrome.exe" -ArgumentList "--remote-debugging-port=9222","--no-first-run","--user-data-dir=C:\\Temp\\ChromeDebug"
 """
 
@@ -147,7 +147,7 @@ def main():
     parser = argparse.ArgumentParser(description="Sebastian Pipeline Runner")
     parser.add_argument(
         "--step",
-        choices=["scrape", "download", "classify", "analyze", "cost", "rank", "notify", "all"],
+        choices=["scrape", "download", "classify", "refresh", "analyze", "cost", "rank", "notify", "all"],
         default="all",
         help="step ที่จะรัน (default: all)",
     )
@@ -158,7 +158,7 @@ def main():
     _dc(notify_pipeline_start)
 
     if step in ("all", "scrape"):
-        log("Step 1/5: SCRAPE — ดึงงานจาก gprocurement.go.th → Sheet 1")
+        log("Step 1/8: SCRAPE — ดึงงานจาก gprocurement.go.th → all_jobs")
         ok = run_script("Sebastian_Scraper.py")
         if ok:
             _dc(notify_step_done, "scrape", "ดึงงานจาก gprocurement.go.th สำเร็จ")
@@ -167,7 +167,7 @@ def main():
             _dc(notify_step_warn, "scrape", "Scraper ไม่สำเร็จ — ดูรายละเอียดใน log")
 
     if step in ("all", "download"):
-        log("Step 2/6: DOWNLOAD — ดาวน์โหลด ปร.4, ปร.5, TOR")
+        log("Step 2/8: DOWNLOAD — ดาวน์โหลด ปร.4, ปร.5, TOR")
         ok = run_script("Sebastian_Doc_Downloader.py")
         if ok:
             _dc(notify_step_done, "download", "ดาวน์โหลดเอกสารสำเร็จ")
@@ -176,13 +176,23 @@ def main():
             _dc(notify_step_warn, "download", "Doc Downloader ไม่สำเร็จ")
 
     if step in ("all", "classify"):
-        log("Step 3/6: CLASSIFY — จำแนก raw_jobs → 6 sheets")
+        log("Step 3/8: CLASSIFY — จำแนก all_jobs → active/pending/awarded")
         ok = run_script("Sebastian_Classifier.py")
         if ok:
             _dc(notify_step_done, "classify", "จำแนกประเภทงานสำเร็จ")
 
+    if step in ("all", "refresh"):
+        log("Step 4/8: REFRESH — query eGP API สด → ตรวจ winner + status ของ active_bidding")
+        # refresh_active_jobs.py จะ trigger Classifier rebuild ภายในหลัง update
+        ok = run_script("refresh_active_jobs.py")
+        if ok:
+            _dc(notify_step_done, "refresh", "รีเฟรชสถานะ active_bidding สำเร็จ")
+        else:
+            print("[WARN] Refresh ไม่สำเร็จ (อาจไม่ได้เปิด Chrome)", flush=True)
+            _dc(notify_step_warn, "refresh", "รีเฟรช active_bidding ไม่สำเร็จ — Chrome อาจไม่ได้เปิด")
+
     if step in ("all", "analyze"):
-        log("Step 4/6: ANALYZE — PR45 Parser + TOR AI + JSON Merge → Sheet 2")
+        log("Step 5/8: ANALYZE — PR45 Parser + TOR AI + JSON Merge → Sheet 2")
         try:
             step_analyze()
             _dc(notify_step_done, "analyze", "วิเคราะห์เอกสาร PR45/TOR สำเร็จ")
@@ -191,19 +201,19 @@ def main():
             raise
 
     if step in ("all", "cost"):
-        log("Step 5/6: COST — เติม cost_data_By_Dexter → คำนวณต้นทุน")
+        log("Step 6/8: COST — เติม cost_data_By_Dexter → คำนวณต้นทุน")
         ok = run_script("Sebastian_Cost_Filler.py")
         if ok:
             _dc(notify_step_done, "cost", "คำนวณต้นทุนสำเร็จ")
 
     if step in ("all", "rank"):
-        log("Step 6/7: RANK — จัดอันดับ → Sheet 4")
+        log("Step 7/8: RANK — จัดอันดับ → Sheet 4")
         ok = run_script("Sebastian_Ranker.py")
         if ok:
             _dc(notify_step_done, "rank", "จัดอันดับงานสำเร็จ")
 
     if step in ("all", "notify"):
-        log("Step 7/7: NOTIFY — ส่งสรุปไป LINE + Discord")
+        log("Step 8/8: NOTIFY — ส่งสรุปไป LINE + Discord")
         # LINE
         try:
             from Sebastian_LINE_Notify import notify_ranked_jobs as line_notify

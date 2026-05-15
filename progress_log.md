@@ -1180,6 +1180,67 @@ jid=69059074818 (row 1476 ของ user) ตอนนี้อยู่ใน `
 
 ---
 
+## งานที่ N+6: Stale Data Refresh — query eGP API สดต่อ active job (2026-05-16)
+
+### สถานะ: ✅ เสร็จแล้ว
+
+### Bug ที่ user รายงาน
+- jid=69039325763 อยู่ใน active_bidding แต่จริงๆ ประกาศผู้ชนะแล้ว
+- jid=69059074818 อยู่ใน active_bidding แต่ "ยังรับฟังคำวิจารณ์อยู่" (ยังไม่เปิดให้ยื่นซองจริง)
+
+### Root cause
+1. **ข้อมูล all_jobs frozen** ตั้งแต่ migration (2026-05-15 23:43) → ไม่มี Scraper run ใหม่หลังจากนั้น
+2. **Winner Checker เช็คเฉพาะ status='ประมูลแล้ว'** — ไม่ catch งานที่มีผู้ชนะแล้วแต่ status เรายังเป็น 'กำลังประมูล'
+3. **flowName "หนังสือเชิญชวน/ประกาศเชิญชวน" → mapped เป็น "กำลังประมูล"** — แต่จริงๆ ระยะนี้ครอบคลุมทั้ง "รับฟังคำวิจารณ์" (ยังไม่เปิดยื่น) และ "เปิดยื่นซอง"
+
+### eGP API ที่ค้นพบใหม่
+- **`getProjectDetail?projectId=X`** → คืน `flowSeqno`, `stepId`, `flowId`, `announceType`
+  - flowSeqno guide: 1-3=กำลังเตรียม, 4=กำลังประมูล, 5+=ประมูลแล้ว
+  - stepId pattern: M03/U03=TOR draft, S01=Submission open, W03=Winner stage
+- **`getProcureResult?projectId=X`** → คืน `procureResultList[].procureResultDataResponse[]`
+  - **Winner = row ที่มี `priceAgree != null`** (ราคาตกลง)
+  - `data.announceDate` = วันประกาศผู้ชนะ
+  - resultFlag P/N = ผ่าน/ไม่ผ่าน, แต่ priceAgree เป็น signal ที่ชัดเจนกว่า
+
+### Fix — `scripts/refresh_active_jobs.py` (ใหม่)
+- Query 2 endpoints per active job:
+  1. `getProcureResult` → ถ้ามี winner (priceAgree != null) → cache + status='ประมูลแล้ว'
+  2. `getProjectDetail` → flowSeqno → derive project_status
+- Update all_jobs (project_status, last_seen_at, deadline ถ้ามี)
+- Trigger Classifier rebuild ภายในหลัง update
+
+### Pipeline integration
+เพิ่ม `refresh` เป็น step 4/8 ใน `Sebastian_Pipeline.py`:
+```
+scrape → classify → refresh → download → analyze → cost → rank → notify
+```
+- รัน 06:00 ทุกวันก่อน LINE notify → ข้อมูลใน LINE จะ fresh เสมอ
+- ต้องการ Chrome (port 9222) — ถ้าไม่ได้เปิด refresh จะ fail แต่ Pipeline จะ continue
+
+### ผล (Full refresh ทั้ง 9 active jobs)
+| Sheet | ก่อน | หลัง | Δ |
+|---|---:|---:|---:|
+| active_bidding | 9 | **2** | -7 |
+| pending_award | 23 | 23 | 0 |
+| awarded_jobs | 132 | **133** | +1 |
+
+**Insight: 7 จาก 9 active jobs จริงๆ ยังเป็น "กำลังเตรียม" (รับฟังคำวิจารณ์)** — ไม่ได้เปิดยื่นซองจริง
+- 69039325763: refresh พบ winner = ห้างหุ้นส่วนจำกัด ลัทธนนต์คอนสตรัคชั่น @ 9,976,000 (-0.22%) → ย้าย awarded ✓
+- 69059074818 + 6 อื่นๆ: flowSeqno=3 → "กำลังเตรียม" → ตัดออกจาก active ✓
+- เหลือ 2 active จริง (jid=69049234631 + 69049094319, flowSeqno=4 stepId=S01)
+
+### ไฟล์ที่เพิ่ม/แก้
+- `scripts/refresh_active_jobs.py` (ใหม่) — refresh active jobs จาก eGP API
+- `scripts/probe_project_api.py` (ใหม่) — probe eGP endpoints
+- `scripts/debug_2_jobs.py` (ใหม่) — diagnostic helper
+- `scripts/Sebastian_Pipeline.py` (แก้) — เพิ่ม refresh step 4/8
+
+### Followup
+- พิจารณาเพิ่ม `tor_review` sheet (Phase 2) สำหรับงาน flowSeqno=3 ที่กำลังรับฟังคำวิจารณ์ — เพื่อ pre-warning user ว่ามีงานกำลังจะเปิดยื่นซอง
+- ตรวจสอบว่า `Winner_Checker` ยัง relevant ไหม หรือ replace ด้วย `refresh_active_jobs` ทั้งหมด
+
+---
+
 ## Setup (ครั้งแรก)
 
 ```bash

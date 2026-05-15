@@ -198,18 +198,24 @@ def load_winner_cache() -> dict:
             ad_i = h_idx.get("award_date", -1)
 
             sheet_count = 0
+            skipped_bad = 0
             for r in rows[1:]:
                 jid = r[jid_i] if jid_i < len(r) else ""
                 winner = r[wn_i] if 0 <= wn_i < len(r) else ""
-                if jid and winner:
-                    cache[jid] = {
-                        "winner_name":  winner,
-                        "winner_price": r[wp_i] if 0 <= wp_i < len(r) else "",
-                        "discount_pct": r[dp_i] if 0 <= dp_i < len(r) else "",
-                        "award_date":   r[ad_i] if 0 <= ad_i < len(r) else "",
-                    }
-                    sheet_count += 1
-            log(f"  sheet: {sheet_count} winners (จาก awarded_jobs)")
+                if not (jid and winner):
+                    continue
+                # Skip bad winners (raw quantity_note ที่หลุดมา) — bootstrap file มีข้อมูลถูกต้องแล้ว
+                if winner.startswith(("province:", "keyword:")):
+                    skipped_bad += 1
+                    continue
+                cache[jid] = {
+                    "winner_name":  winner,
+                    "winner_price": r[wp_i] if 0 <= wp_i < len(r) else "",
+                    "discount_pct": r[dp_i] if 0 <= dp_i < len(r) else "",
+                    "award_date":   r[ad_i] if 0 <= ad_i < len(r) else "",
+                }
+                sheet_count += 1
+            log(f"  sheet: {sheet_count} winners (จาก awarded_jobs)" + (f", skipped {skipped_bad} bad" if skipped_bad else ""))
     except Exception as e:
         log(f"  sheet load error: {e}")
 

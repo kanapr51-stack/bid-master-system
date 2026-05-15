@@ -1,0 +1,667 @@
+﻿"""
+Sebastian Scraper — ดึงข้อมูลงานประมูลภาครัฐจาก gprocurement.go.th
+เป้าหมาย: งานก่อสร้าง/คอนกรีต → raw_jobs (archive) + e-bidding → raw_jobs_bidding
+
+วิธีใช้:
+    1. เปิด Chrome ด้วย:
+       Start-Process "chrome.exe" -ArgumentList "--remote-debugging-port=9222","--no-first-run","--user-data-dir=C:\\Temp\\ChromeDebug"
+    2. python Sebastian_Scraper.py
+
+API ที่ใช้จริง (2026-04):
+    https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement
+"""
+
+import sys
+import time
+import re
+import json
+import hashlib
+from pathlib import Path
+from datetime import datetime
+from urllib.parse import urlencode, quote
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
+
+sys.stdout.reconfigure(encoding="utf-8")
+
+# ---- CONFIG ----
+DEBUG_PORT      = 9222
+SPREADSHEET_ID  = "1gz7qLDIWphDhqxLf8Pxm08_cPmNb_IXTDvyxm6uThps"
+DOWNLOAD_DIR    = Path(__file__).parent.parent / "downloads"
+SEEN_IDS_FILE   = Path(__file__).parent.parent / "data" / "seen_ids.json"
+
+RATE_LIMIT_COOLDOWN = 60   # วินาทีที่รอหลังโดน rate limit ก่อน retry
+
+# Process5 — Angular SPA (new UI)
+SEARCH_URL_PROCESS5 = "https://process5.gprocurement.go.th/egp-agpc01-web/announcement"
+API_BASE            = "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project"
+BUDGET_YEAR         = "2569"   # พ.ศ. ปัจจุบัน
+
+# ---- จังหวัดเป้าหมาย (ใช้ค้นหา) ----
+SEARCH_TERMS = [
+    "นครพนม",
+    "บึงกาฬ",
+]
+
+# ---- Filter keywords (กรอง title หลังได้ผลลัพธ์) ----
+FILTER_KEYWORDS = [
+    "ถนนคอนกรีต",
+    "ก่อสร้างถนนคอนกรีต",
+    "คอนกรีตเสริมเหล็ก",
+    "ก่อสร้างถนน",
+    "ซ่อมแซมถนน",
+    "ปรับปรุงถนน",
+    "ก่อสร้างสะพาน",
+    "ก่อสร้างอาคาร",
+    "งานโยธา",
+    "ท่อระบายน้ำ คสล.",
+    "ก่อสร้างท่อ คสล.",
+    "คอนกรีตผสมเสร็จ",
+    "ลานคอนกรีต",
+    "ฝายคอนกรีต",
+    "ปรับปรุงถนนลูกรัง",
+    "ปรับปรุงถนนคอนกรีต",
+    "ปรับปรุงถนนคอนกรีตเป็นถนนลาดยางแอสฟัลท์ติก",
+]
+
+# ---- Department search terms (ค้นหาเพิ่มเติมตามชื่อหน่วยงาน — ดึงทุกงาน) ----
+DEPT_SEARCH_TERMS = [
+    "เทศบาลตำบลบ้านแพง",
+    "องค์การบริหารส่วนตำบลไผ่ล้อม",
+    "องค์การบริหารส่วนตำบลโพนทอง",
+    "องค์การบริหารส่วนตำบลนาเข",
+    "องค์การบริหารส่วนตำบลหนองแวง",
+    "องค์การบริหารส่วนตำบลนาหว้า",
+    "เทศบาลตำบลสามผง",
+    "เทศบาลตำบลหาดแพง",
+    "เทศบาลตำบลศรีสงคราม",
+    "องค์การบริหารส่วนตำบลหนองซน",
+    "องค์การบริหารส่วนตำบลดอนเตย",
+    "องค์การบริหารส่วนตำบลนาทม",
+    "เทศบาลตำบลบุ่งคล้า",
+    "องค์การบริหารส่วนตำบลโคกกว้าง",
+    "องค์การบริหารส่วนตำบลหนองเดิ่น",
+    "องค์การบริหารส่วนตำบลท่าดอกคำ",
+    "องค์การบริหารส่วนตำบลดงบัง",
+    "องค์การบริหารส่วนตำบลโพธิ์หมากแข้ง",
+    "เทศบาลตำบลบึงงาม",
+    "เทศบาลตำบลบึงโขงหลง",
+    "โยธาธิการและผังเมืองนครพนม",
+    "ชลประทานนครพนม",
+    "แขวงทางหลวงชนบทนครพนม",
+    "องค์การบริหารส่วนจังหวัดนครพนม",
+    "โยธาธิการและผังเมืองบึงกาฬ",
+    "ชลประทานบึงกาฬ",
+    "แขวงทางหลวงชนบทบึงกาฬ",
+    "องค์การบริหารส่วนจังหวัดบึงกาฬ",
+]
+
+
+def is_relevant_job(title: str, department: str = "") -> bool:
+    return any(k in title for k in FILTER_KEYWORDS)
+
+# Method ID → description
+METHOD_MAP = {
+    "15": "e-market",
+    "16": "e-bidding",
+    "19": "เฉพาะเจาะจง",
+    "18": "คัดเลือก",
+    "03": "ประกวดราคา",
+}
+
+
+# ================================================================
+# UTILITIES
+# ================================================================
+
+def ensure_dirs():
+    DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    SEEN_IDS_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+
+FLOW_STATUS_MAP = {
+    "หนังสือเชิญชวน/ประกาศเชิญชวน":                        "กำลังประมูล",
+    "จัดทำสัญญา/บริหารสัญญา":                              "ประมูลแล้ว",
+    "อนุมัติสั่งซื้อสั่งจ้างและประกาศผู้ชนะการเสนอราคา":   "ประมูลแล้ว",
+    "ยกเลิกโครงการ":                                        "ยกเลิก",
+    "จัดทำ TOR":                                             "กำลังเตรียม",
+}
+
+
+def load_seen_ids() -> set:
+    if SEEN_IDS_FILE.exists():
+        return set(json.loads(SEEN_IDS_FILE.read_text(encoding="utf-8")))
+    return set()
+
+
+def save_seen_ids(seen: set):
+    SEEN_IDS_FILE.write_text(
+        json.dumps(sorted(seen), ensure_ascii=False, indent=2),
+        encoding="utf-8"
+    )
+
+
+def log(msg: str):
+    ts = datetime.now().strftime("%H:%M:%S")
+    print(f"[{ts}] {msg}", flush=True)
+
+
+# ================================================================
+# SHEETS CLIENT
+# ================================================================
+
+def _get_ws(sheet_name: str):
+    sys.path.insert(0, str(Path(__file__).parent))
+    from sheets_client import open_sheet
+    return open_sheet(SPREADSHEET_ID, sheet_name)
+
+
+def _build_row(j: dict, include_winner_cols: bool = False) -> list:
+    row = [
+        j.get("job_id", ""),
+        j.get("title", ""),
+        j.get("department", ""),
+        j.get("province", ""),
+        j.get("district", ""),
+        j.get("subdistrict", ""),
+        j.get("procurement_type", ""),
+        j.get("budget", ""),
+        j.get("publish_date", ""),
+        j.get("deadline", ""),
+        j.get("tor_url", ""),
+        "new",
+        j.get("project_status", ""),
+        j.get("quantity_note", ""),
+    ]
+    if include_winner_cols:
+        row += ["", "", ""]  # ผู้ชนะประมูล, ราคาที่ชนะ (บาท), วันประกาศผู้ชนะ
+    return row
+
+
+def _append_to_sheet(jobs: list[dict], sheet_name: str, include_winner_cols: bool = False):
+    """เพิ่มงานลง sheet ที่ระบุ (ข้ามถ้ามีอยู่แล้ว)"""
+    ws = _get_ws(sheet_name)
+    seen = set(ws.col_values(1)[1:])
+    rows = [_build_row(j, include_winner_cols) for j in jobs if j["job_id"] not in seen]
+    if rows:
+        ws.append_rows(rows, value_input_option="USER_ENTERED")
+        log(f"เพิ่ม {len(rows)} งานใหม่ลง {sheet_name}")
+    return len(rows)
+
+
+def append_jobs_to_sheet(jobs: list[dict]):
+    if not jobs:
+        return
+
+    # เพิ่มทุกงานลง raw_jobs (archive)
+    added = _append_to_sheet(jobs, "raw_jobs")
+
+    # e-bidding กำลังประมูล → active_bidding (ชีทหลักคำนวณ)
+    active = [j for j in jobs if j.get("procurement_type") == "e-bidding"
+              and j.get("project_status") == "กำลังประมูล"]
+    if active:
+        _append_to_sheet(active, "active_bidding")
+
+    # e-bidding ประมูลแล้ว → awarded_jobs (มี 3 column ผู้ชนะเพิ่ม)
+    awarded = [j for j in jobs if j.get("procurement_type") == "e-bidding"
+               and j.get("project_status") == "ประมูลแล้ว"]
+    if awarded:
+        _append_to_sheet(awarded, "awarded_jobs", include_winner_cols=True)
+
+    if not added:
+        log("ไม่มีงานใหม่ (ทุกรายการมีอยู่แล้ว)")
+
+
+# ================================================================
+# BROWSER CONNECTION
+# ================================================================
+
+def connect_browser(p):
+    for attempt in range(15):
+        try:
+            browser = p.chromium.connect_over_cdp(f"http://127.0.0.1:{DEBUG_PORT}")
+            log("เชื่อมต่อ Chrome สำเร็จ")
+            return browser
+        except Exception:
+            log(f"  รอ Chrome... ({attempt+1}/15)")
+            time.sleep(2)
+    raise RuntimeError("เชื่อมต่อ Chrome ไม่ได้ — เปิด Chrome ด้วย --remote-debugging-port=9222")
+
+
+def new_stealth_page(browser):
+    context = browser.contexts[0]
+    context.add_init_script("""
+        Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+        delete navigator.__proto__.webdriver;
+        window.chrome = { runtime: {}, loadTimes: function(){}, csi: function(){}, app: {} };
+    """)
+    return context.new_page()
+
+
+# ================================================================
+# PROCESS5 SCRAPER — API-based (2026)
+# ================================================================
+
+def init_process5_page(page) -> bool:
+    """
+    โหลดหน้า process5 และรอ Cloudflare Turnstile ให้เสร็จ
+    คืนค่า True ถ้าพร้อมใช้งาน
+    """
+    log("กำลังโหลด process5.gprocurement.go.th ...")
+    try:
+        page.goto(SEARCH_URL_PROCESS5, wait_until="load", timeout=45000)
+    except Exception as e:
+        log(f"  goto error: {e}")
+        return False
+
+    # รอ page load เบื้องต้น
+    time.sleep(5)
+
+    # รอ input ให้ปรากฏก่อน
+    try:
+        page.wait_for_selector("input[name*='keyword']", timeout=20000)
+    except Exception:
+        log("  ไม่พบ search input")
+        return False
+
+    # รอปุ่ม ค้นหา ให้ enabled (Cloudflare Turnstile ต้องเสร็จก่อน)
+    log("  รอปุ่มค้นหา enabled (Cloudflare Turnstile)...")
+    deadline = time.time() + 35
+    btn_ready = False
+    while time.time() < deadline:
+        try:
+            btn = page.query_selector("button:has-text('ค้นหา')")
+            if btn and btn.is_enabled():
+                btn_ready = True
+                break
+        except Exception:
+            pass
+        time.sleep(0.8)
+    if btn_ready:
+        log("  ปุ่มค้นหา enabled แล้ว")
+    else:
+        log("  ปุ่มยัง disabled หลัง 35s — ดำเนินการต่อ")
+
+    log("  หน้า process5 พร้อมแล้ว")
+    return True
+
+
+def search_keyword_process5(page, keyword: str, max_pages: int = 30) -> list[dict]:
+    """
+    ค้นหา keyword บน process5 แล้วดึงทุกหน้าผ่าน API
+    คืนค่า list ของ job dicts
+    """
+    log(f"ค้นหา: '{keyword}'")
+    jobs = []
+
+    # หา search input
+    search_input = None
+    for sel in ["input[name*='keyword']", "input[placeholder*='ค้นหา']", "input[type='search']"]:
+        try:
+            el = page.query_selector(sel)
+            if el and el.is_visible():
+                search_input = el
+                break
+        except Exception:
+            pass
+
+    if not search_input:
+        log("  ไม่พบ search input")
+        return jobs, False
+
+    # Clear และ type keyword ด้วย keyboard simulation (สำหรับ Angular)
+    search_input.click()
+    page.keyboard.press("Control+a")
+    page.keyboard.press("Delete")
+    time.sleep(0.2)
+    page.keyboard.type(keyword, delay=60)
+    time.sleep(0.8)
+
+    # คลิกปุ่มค้นหาและดักรับ response + URL
+    captured_search_url = []
+    first_page_items = []
+
+    def on_request_capture(req):
+        url = req.url
+        if ("egp-atpj27-service" in url and
+                "announcement" in url and
+                "sumProject" not in url and
+                "cfturnstile" not in url):
+            captured_search_url.append(url)
+
+    page.on("request", on_request_capture)
+
+    try:
+        with page.expect_response(
+            lambda r: (
+                "egp-atpj27-service" in r.url and
+                "announcement" in r.url and
+                "sumProject" not in r.url and
+                "cfturnstile" not in r.url
+            ),
+            timeout=30000
+        ) as resp_info:
+            try:
+                page.locator("button:has-text('ค้นหา')").first.click(timeout=8000)
+            except Exception:
+                search_input.press("Enter")
+
+        first_resp = resp_info.value
+        first_body = first_resp.json()
+
+        if first_body.get("response", {}).get("responseCode") == "0":
+            items = first_body.get("data", {}).get("data", [])
+            first_page_items = items
+            for item in items:
+                job = parse_api_item(item, keyword)
+                if job:
+                    jobs.append(job)
+            log(f"  หน้า 1: {len(items)} รายการ")
+        else:
+            log(f"  API error: {first_body.get('response', {})}")
+
+    except Exception as e:
+        err_str = str(e)
+        page.remove_listener("request", on_request_capture)
+        if "Timeout" in err_str or "timeout" in err_str:
+            log(f"  Search timeout — reinit session แล้ว retry ทันที")
+            return jobs, "timeout"
+        log(f"  Search failed: {e}")
+        return jobs, False
+
+    page.remove_listener("request", on_request_capture)
+
+    if not captured_search_url or not first_page_items:
+        return jobs, False  # 0 results or no URL captured
+
+    # Paginate ผ่าน fetch() ใน browser context (รับ cookie / session อัตโนมัติ)
+    base_url = captured_search_url[0]
+
+    for page_num in range(2, max_pages + 1):
+        next_url = re.sub(r"([?&]page=)\d+", rf"\g<1>{page_num}", base_url)
+        if next_url == base_url:
+            # page param ไม่อยู่ใน URL → append
+            sep = "&" if "?" in base_url else "?"
+            next_url = base_url + f"{sep}page={page_num}"
+
+        # ใช้ fetch() ภายใน browser เพื่อรับ session/token อัตโนมัติ
+        js = f"""
+            async () => {{
+                try {{
+                    const r = await fetch({json.dumps(next_url)}, {{credentials: 'include'}});
+                    return await r.json();
+                }} catch(e) {{
+                    return {{error: e.toString()}};
+                }}
+            }}
+        """
+        try:
+            body = page.evaluate(js)
+            if body.get("error"):
+                err = body["error"]
+                if "Rate limit" in err or "rate limit" in err.lower() or "429" in err:
+                    # rate limit ทุก ~100 หน้า, 120s พอเสมอ
+                    log(f"  หน้า {page_num} rate limit — รอ 120s แล้ว retry...")
+                    time.sleep(120)
+                    body = page.evaluate(js)
+                    if body.get("error"):
+                        log(f"  หน้า {page_num} ยังโดน rate limit — หยุด pagination")
+                        break
+                else:
+                    log(f"  หน้า {page_num} error: {err}")
+                    break
+            items = body.get("data", {}).get("data", [])
+            if not items:
+                break
+            for item in items:
+                job = parse_api_item(item, keyword)
+                if job:
+                    jobs.append(job)
+            log(f"  หน้า {page_num}: {len(items)} รายการ (รวม {len(jobs)})")
+            time.sleep(1.5)
+        except Exception as e:
+            log(f"  หน้า {page_num} exception: {e}")
+            break
+
+    return jobs, False
+
+
+def parse_api_item(item: dict, keyword: str) -> dict | None:
+    """แปลง API item เป็น job dict"""
+    project_id = item.get("projectId", "")
+    title = item.get("projectName", "").strip()
+    department = item.get("deptSubName", item.get("announceSubDesc", "")).strip()
+
+    if not title or not project_id:
+        return None
+
+    # Format budget
+    budget_raw = item.get("projectMoney", 0)
+    try:
+        budget = f"{float(budget_raw):,.2f}"
+    except Exception:
+        budget = str(budget_raw)
+
+    # Format date (ISO → dd/mm/yyyy)
+    announce_date = item.get("announceDate", "")
+    publish_date = ""
+    if announce_date:
+        try:
+            dt = datetime.fromisoformat(announce_date.replace("Z", "+00:00"))
+            publish_date = dt.strftime("%d/%m/%Y")
+        except Exception:
+            publish_date = announce_date[:10]
+
+    # Procurement type
+    method_id = item.get("methodId", "")
+    procurement_type = METHOD_MAP.get(method_id, f"method_{method_id}")
+
+    # Extract location from title + department
+    combined = title + " " + department
+    province    = _extract_province(combined)
+    district    = _extract_district(combined)
+    subdistrict = _extract_subdistrict(combined, department)
+
+    # Project status from flowName
+    flow_name = item.get("flowName", "")
+    project_status = FLOW_STATUS_MAP.get(flow_name, flow_name or "ไม่ทราบ")
+
+    return {
+        "job_id": project_id,
+        "title": title[:300],
+        "department": department[:150],
+        "province": province,
+        "district": district,
+        "subdistrict": subdistrict,
+        "procurement_type": procurement_type,
+        "budget": budget,
+        "publish_date": publish_date,
+        "deadline": "",
+        "tor_url": "",
+        "project_status": project_status,
+        "quantity_note": f"province:{keyword} | {flow_name}",
+    }
+
+
+_ZW = str.maketrans("", "", "​‌‍﻿­")
+
+
+def _clean(text: str) -> str:
+    return text.translate(_ZW)
+
+
+def _extract_district(text: str) -> str:
+    text = _clean(text)
+    m = re.search(r'อำเภอ\s*(\S+)', text)
+    if m:
+        return m.group(1).rstrip('.,)')
+    m = re.search(r'\bอ\.\s*(\S+)', text)
+    if m:
+        return m.group(1).rstrip('.,)')
+    return ""
+
+
+def _extract_subdistrict(text: str, department: str = "") -> str:
+    # ค้นหาจาก department ก่อน (ชื่อตั้งต้นด้วย อบต./เทศบาลตำบล/องค์การบริหารส่วนตำบล)
+    for src in ([department, text] if department else [text]):
+        src = _clean(src)
+        for pat in [r'อบต\.\s*(\S+)', r'เทศบาลตำบล\s*(\S+)', r'ตำบล\s*(\S+)', r'\bต\.\s*(\S+)']:
+            m = re.search(pat, src)
+            if m:
+                val = m.group(1).rstrip('.,)')
+                if len(val) >= 2:
+                    return val
+    return ""
+
+
+def _extract_province(text: str) -> str:
+    provinces = [
+        "กรุงเทพ", "เชียงใหม่", "เชียงราย", "ลำปาง", "ลำพูน", "แม่ฮ่องสอน",
+        "พะเยา", "แพร่", "น่าน", "อุตรดิตถ์", "ตาก", "สุโขทัย", "กำแพงเพชร",
+        "พิษณุโลก", "เพชรบูรณ์", "พิจิตร", "นครสวรรค์", "อุทัยธานี",
+        "ชัยนาท", "สิงห์บุรี", "อ่างทอง", "พระนครศรีอยุธยา", "สระบุรี",
+        "ลพบุรี", "นครนายก", "ปทุมธานี", "นนทบุรี", "สมุทรปราการ",
+        "สมุทรสาคร", "สมุทรสงคราม", "นครปฐม", "ราชบุรี", "กาญจนบุรี",
+        "สุพรรณบุรี", "เพชรบุรี", "ประจวบคีรีขันธ์", "ชลบุรี", "ระยอง",
+        "จันทบุรี", "ตราด", "ฉะเชิงเทรา", "ปราจีนบุรี", "สระแก้ว",
+        "นครราชสีมา", "บุรีรัมย์", "สุรินทร์", "ศรีสะเกษ", "อุบลราชธานี",
+        "ยโสธร", "อำนาจเจริญ", "มุกดาหาร", "ร้อยเอ็ด", "กาฬสินธุ์",
+        "สกลนคร", "นครพนม", "ขอนแก่น", "มหาสารคาม", "อุดรธานี",
+        "หนองบัวลำภู", "หนองคาย", "บึงกาฬ", "เลย", "ชัยภูมิ",
+        "สุราษฎร์ธานี", "นครศรีธรรมราช", "กระบี่", "พังงา", "ภูเก็ต",
+        "ตรัง", "สตูล", "สงขลา", "พัทลุง", "ยะลา", "ปัตตานี", "นราธิวาส",
+        "ระนอง", "ชุมพร",
+    ]
+    for p in provinces:
+        if p in text:
+            return p
+    return ""
+
+
+# ================================================================
+# MAIN
+# ================================================================
+
+def main():
+    ensure_dirs()
+    seen_ids = load_seen_ids()
+
+    log("=" * 60)
+    log("Sebastian Scraper — เริ่มต้น (process5 API)")
+    log(f"ค้นหาจังหวัด: {SEARCH_TERMS}")
+    log(f"Filter keywords: {len(FILTER_KEYWORDS)} รายการ")
+    log(f"Dept search terms: {len(DEPT_SEARCH_TERMS)} หน่วยงาน (ไม่กรอง keyword)")
+    log("=" * 60)
+
+    all_new_jobs = []
+
+    with sync_playwright() as p:
+        browser = connect_browser(p)
+        page = new_stealth_page(browser)
+
+        # โหลด process5 และรอ Turnstile ครั้งเดียว
+        if not init_process5_page(page):
+            log("ไม่สามารถโหลด process5 ได้ — หยุด")
+            return
+
+        for i, term in enumerate(SEARCH_TERMS):
+            # รอระหว่างจังหวัดให้ rate limit หาย
+            if i > 0:
+                log(f"  รอ 180s ก่อนค้น '{term}' (ป้องกัน rate limit)...")
+                time.sleep(180)
+
+            jobs, needs_reinit = search_keyword_process5(page, term, max_pages=9999)
+
+            if needs_reinit:
+                if needs_reinit == "timeout":
+                    log(f"  Timeout — reinit session แล้ว retry '{term}' ทันที")
+                else:
+                    log(f"  Rate limit — รอ 120s แล้ว retry '{term}'...")
+                    time.sleep(120)
+                if init_process5_page(page):
+                    try:
+                        page.wait_for_selector("span.loading", state="hidden", timeout=15000)
+                    except Exception:
+                        pass
+                    time.sleep(1)
+                    jobs, _ = search_keyword_process5(page, term, max_pages=9999)
+                else:
+                    log("  Reinit ไม่สำเร็จ — ข้าม")
+                    jobs = []
+
+            # กรองด้วย filter keywords + department
+            filtered = [j for j in jobs if is_relevant_job(j["title"], j.get("department", ""))]
+
+            # กรอง seen
+            new_jobs = [j for j in filtered if j["job_id"] not in seen_ids]
+            seen_ids.update(j["job_id"] for j in new_jobs)
+            all_new_jobs.extend(new_jobs)
+
+            log(f"  '{term}': {len(jobs)} รายการ → ก่อสร้าง {len(filtered)}, ใหม่ {len(new_jobs)}")
+            time.sleep(1)
+
+        # ---- DEPT_SEARCH_TERMS: ค้นหาตามชื่อหน่วยงาน (กรอง FILTER_KEYWORDS เหมือนกัน) ----
+        if DEPT_SEARCH_TERMS:
+            log(f"\nเริ่มค้นหาตามชื่อหน่วยงาน {len(DEPT_SEARCH_TERMS)} รายการ...")
+            log("  รอ 60s (cooldown จากการค้นจังหวัด)...")
+            time.sleep(60)
+
+            for i, dept_term in enumerate(DEPT_SEARCH_TERMS):
+                if i > 0:
+                    log(f"  รอ 15s ก่อนค้น '{dept_term}'...")
+                    time.sleep(15)
+
+                jobs, needs_reinit = search_keyword_process5(page, dept_term, max_pages=9999)
+
+                if needs_reinit:
+                    if needs_reinit == "timeout":
+                        log(f"  Timeout — reinit แล้ว retry '{dept_term}' ทันที")
+                    else:
+                        log(f"  Rate limit — รอ 120s แล้ว retry '{dept_term}'...")
+                        time.sleep(120)
+                    if init_process5_page(page):
+                        try:
+                            page.wait_for_selector("span.loading", state="hidden", timeout=15000)
+                        except Exception:
+                            pass
+                        time.sleep(1)
+                        jobs, _ = search_keyword_process5(page, dept_term, max_pages=9999)
+                    else:
+                        log("  Reinit ไม่สำเร็จ — ข้าม")
+                        jobs = []
+
+                filtered = [j for j in jobs if is_relevant_job(j.get("title", ""))]
+                new_jobs = [j for j in filtered if j["job_id"] not in seen_ids]
+                seen_ids.update(j["job_id"] for j in new_jobs)
+                all_new_jobs.extend(new_jobs)
+
+                log(f"  '{dept_term}': {len(jobs)} รายการ → ใหม่ {len(new_jobs)}")
+                time.sleep(1)
+
+        log(f"\nรวมงานใหม่ทั้งหมด: {len(all_new_jobs)} รายการ")
+
+        # บันทึก seen IDs
+        save_seen_ids(seen_ids)
+
+        # บันทึก local JSON backup
+        if all_new_jobs:
+            backup_path = Path(__file__).parent.parent / "data" / f"jobs_{datetime.now().strftime('%Y%m%d_%H%M')}.json"
+            backup_path.write_text(
+                json.dumps(all_new_jobs, ensure_ascii=False, indent=2),
+                encoding="utf-8"
+            )
+            log(f"Backup: {backup_path}")
+
+            # บันทึกลง Google Sheets
+            log("กำลังบันทึกลง Google Sheets...")
+            try:
+                append_jobs_to_sheet(all_new_jobs)
+            except Exception as e:
+                log(f"Sheets error: {e} — ข้อมูลอยู่ใน backup JSON")
+
+        log("เสร็จสิ้น")
+        page.close()
+
+
+if __name__ == "__main__":
+    main()
+

@@ -1,0 +1,68 @@
+
+# ── GSD baseline (auto-generated) ──
+.gsd
+.gsd-id
+.mcp.json
+.bg-shell/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.code-workspace
+.env
+.env.*
+!.env.example
+node_modules/
+.next/
+dist/
+build/
+__pycache__/
+*.pyc
+.venv/
+venv/
+target/
+vendor/
+*.log
+coverage/
+.cache/
+tmp/
+
+# ── Secrets — ห้าม commit เด็ดขาด ──
+credentials/
+*.key
+*service_account*.json
+*client_secret*.json
+.env
+
+# ── Browser profiles (Playwright/Chrome) ──
+chrome_debug_profile/
+chrome_profile/
+
+# ── Obsidian vault config (ต่อ user เอง) ──
+.obsidian/
+
+# ── GSD migration / runtime state ──
+.gsd.migrating/
+
+# ── Runtime data + logs + downloads ──
+logs/
+downloads/
+data/archive/
+data/processed/
+data/probe/
+data/test_run*/
+data/raw/
+data/bids/
+data/company/
+data/jobs_*.json
+data/doc_download_*.json
+data/seen_ids.json
+
+# ── Backups (ใหญ่, ไม่ควรเข้า git) ──
+backups/
+
+# ── Misc ──
+Untitled.canvas

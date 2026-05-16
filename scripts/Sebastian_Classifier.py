@@ -326,6 +326,95 @@ def write_sheet(sheet_name: str, headers: list, rows: list):
     log(f"  {sheet_name}: {len(rows)} งาน")
 
 
+# ================================================================
+# Transition tracking — diff vs last classify run
+# ================================================================
+
+SNAPSHOT_FILE     = Path(__file__).parent.parent / "data" / "sheet_snapshot.json"
+TRANSITIONS_FILE  = Path(__file__).parent.parent / "data" / "transitions_latest.json"
+
+# Sheet ranking — for arrow direction (lower number = earlier in lifecycle)
+SHEET_RANK = {
+    "pre_tor":         1,
+    "tor_review":      2,
+    "active_bidding":  3,
+    "pending_award":   4,
+    "awarded_jobs":    5,
+    "cancelled_jobs":  0,  # cancelled = side track
+}
+
+
+def _load_snapshot() -> dict:
+    if not SNAPSHOT_FILE.exists():
+        return {}
+    try:
+        return json.loads(SNAPSHOT_FILE.read_text(encoding="utf-8")).get("state", {})
+    except Exception:
+        return {}
+
+
+def _save_snapshot(jid_to_sheet: dict):
+    SNAPSHOT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    SNAPSHOT_FILE.write_text(json.dumps({
+        "updated_at": datetime.now().isoformat(timespec="seconds"),
+        "state":      jid_to_sheet,
+    }, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _compute_transitions(prev: dict, curr: dict) -> dict:
+    """คืน {jid: {from, to, type, arrow}} — type ∈ new/moved/removed"""
+    transitions = {}
+    for jid, new_sheet in curr.items():
+        old_sheet = prev.get(jid)
+        if old_sheet is None:
+            transitions[jid] = {"from": None, "to": new_sheet, "type": "new", "arrow": "🆕"}
+        elif old_sheet != new_sheet:
+            old_rank = SHEET_RANK.get(old_sheet, 99)
+            new_rank = SHEET_RANK.get(new_sheet, 99)
+            if new_sheet == "cancelled_jobs":
+                arrow = "❌"  # ยกเลิก
+            elif new_sheet == "awarded_jobs":
+                arrow = "🏆"  # ชนะ
+            elif new_rank > old_rank:
+                arrow = "⬆️"  # เลื่อนขั้น
+            else:
+                arrow = "⬇️"  # ถอยขั้น
+            transitions[jid] = {"from": old_sheet, "to": new_sheet, "type": "moved", "arrow": arrow}
+    # Removed (jid disappear from all sheets)
+    for jid, old_sheet in prev.items():
+        if jid not in curr:
+            transitions[jid] = {"from": old_sheet, "to": None, "type": "removed", "arrow": "❓"}
+    return transitions
+
+
+def _apply_transition_marker(note: str, jid: str, transitions: dict) -> str:
+    """เพิ่ม marker ที่ note column ถ้า jid อยู่ใน transitions"""
+    if jid not in transitions:
+        return note
+    t = transitions[jid]
+    if t["type"] == "new":
+        marker = "🆕 ใหม่!"
+    elif t["type"] == "moved":
+        # From → To
+        from_th = {
+            "pre_tor": "วางแผน", "tor_review": "รับฟัง",
+            "active_bidding": "ยื่นซอง", "pending_award": "รอผล",
+            "awarded_jobs": "ประกาศแล้ว", "cancelled_jobs": "ยกเลิก",
+        }.get(t["from"], t["from"])
+        marker = f"{t['arrow']} จาก {from_th}"
+    else:
+        return note  # removed = ไม่ต้อง mark (ไม่อยู่ใน sheet)
+    return f"{marker} | {note}" if note else marker
+
+
+def _save_transitions(transitions: dict):
+    TRANSITIONS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    TRANSITIONS_FILE.write_text(json.dumps({
+        "computed_at": datetime.now().isoformat(timespec="seconds"),
+        "transitions": transitions,
+    }, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
 def main():
     log("=" * 60)
     log("Sebastian Classifier — state machine (all_jobs source)")
@@ -481,6 +570,60 @@ def main():
     log(f"  non-construction:     {skipped_non_construction}")
     log(f"  unclassified status:  {skipped_unclassified}")
     log(f"  no job_id:            {skipped_no_jid}")
+
+    # ── Compute transitions vs last classify run ──
+    new_state = {}
+    for sheet_name, rows_list in [
+        ("pre_tor", pre_tor), ("tor_review", tor_review),
+        ("active_bidding", active), ("pending_award", pending),
+        ("awarded_jobs", awarded), ("cancelled_jobs", cancelled),
+    ]:
+        for r in rows_list:
+            new_state[r[0]] = sheet_name  # r[0] = job_id
+
+    prev_state  = _load_snapshot()
+    transitions = _compute_transitions(prev_state, new_state)
+
+    # Log transitions
+    if transitions:
+        log(f"\n🔄 Transitions ({len(transitions)} jobs):")
+        by_type = {"new": [], "moved": [], "removed": []}
+        for jid, t in transitions.items():
+            by_type[t["type"]].append((jid, t))
+        if by_type["new"]:
+            log(f"  🆕 NEW ({len(by_type['new'])}):")
+            for jid, t in by_type["new"][:10]:
+                log(f"      {jid} → {t['to']}")
+        if by_type["moved"]:
+            log(f"  🔀 MOVED ({len(by_type['moved'])}):")
+            for jid, t in by_type["moved"][:10]:
+                log(f"      {jid} {t['arrow']} {t['from']} → {t['to']}")
+        if by_type["removed"]:
+            log(f"  ❓ REMOVED ({len(by_type['removed'])}):")
+            for jid, t in by_type["removed"][:10]:
+                log(f"      {jid} ← from {t['from']}")
+    else:
+        log(f"\n🔄 No transitions since last classify")
+
+    _save_transitions(transitions)
+    _save_snapshot(new_state)
+
+    # ── Apply transition markers to derived sheets (modify note column) ──
+    def mark_rows(rows_list, note_col_index):
+        """แก้ note column (-1 = last column) ของแต่ละ row ถ้า jid มี transition"""
+        for r in rows_list:
+            jid = r[0]
+            old_note = r[note_col_index] if abs(note_col_index) <= len(r) else ""
+            new_note = _apply_transition_marker(old_note, jid, transitions)
+            if new_note != old_note:
+                r[note_col_index] = new_note
+
+    mark_rows(pre_tor, -1)         # stage_note
+    mark_rows(tor_review, -1)      # stage_note
+    mark_rows(active, -1)          # days_remaining
+    mark_rows(pending, -1)         # wait_reason
+    # awarded_jobs ไม่ mark (มี winner_name อยู่ — note column ไม่เหมาะ)
+    mark_rows(cancelled, -1)       # cancel_note
 
     log(f"\nWriting derived sheets (clear+rewrite)...")
     write_sheet("pre_tor",         PRE_TOR_HEADERS,        pre_tor)

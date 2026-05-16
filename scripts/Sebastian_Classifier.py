@@ -405,14 +405,16 @@ def main():
                 pre_tor.append(base + [note])
                 continue
             if sheet == "active_bidding":
-                # คำนวณ days_remaining จาก deadline (ถ้ามี)
+                # ตรวจ deadline เพิ่ม: ถ้า deadline ผ่านแล้ว → ย้ายไป pending
+                # (eGP บางครั้งไม่ขยับ stepId จาก M03/S01 → W03 ทันทีหลังวันยื่นซอง)
                 dl = parse_thai_date(g(r, "deadline"))
                 if dl is None:
-                    active.append(base + [""])
+                    active.append(base + [""])  # ไม่รู้ deadline → คง active (pessimistic)
                 elif dl >= today:
                     active.append(base + [str((dl - today).days)])
                 else:
-                    active.append(base + [f"deadline ผ่าน {(today - dl).days} วัน"])
+                    # deadline ผ่านแต่ stepId ยังเป็น active → ย้ายไป pending
+                    pending.append(base + [f"deadline ผ่าน {(today - dl).days} วัน ({step_id})"])
                 continue
             if sheet == "pending_award":
                 pending.append(base + [note or "รอประกาศผู้ชนะ"])

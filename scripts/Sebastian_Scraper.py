@@ -158,13 +158,30 @@ def save_scraper_state(state: dict):
     )
 
 
-def update_keyword_state(state: dict, keyword: str, first_item: dict):
-    """Update state for keyword with top item's jid + publish_date"""
+def update_keyword_state(state: dict, keyword: str, first_item: dict, page1_hash: str = ""):
+    """Update state for keyword with top item + page 1 content hash"""
     state.setdefault("keyword_states", {})[keyword] = {
         "last_scraped_at": datetime.now().isoformat(timespec="seconds"),
         "latest_jid":      first_item.get("projectId", ""),
         "latest_publish":  first_item.get("announceDate", ""),
+        "page1_hash":      page1_hash,
     }
+
+
+def compute_page_hash(items: list) -> str:
+    """SHA1 hash of (jid + publish_date) tuples — sensitive to actual data change"""
+    sig = "|".join(
+        f"{(it.get('projectId') or '')}~{(it.get('announceDate') or '')}"
+        for it in items[:10]
+    )
+    return hashlib.sha1(sig.encode("utf-8")).hexdigest()[:12]
+
+
+def exponential_backoff(attempt: int, base: int = 30, max_wait: int = 600, jitter: int = 30) -> float:
+    """attempt 0 → ~30s, 1 → ~60s, 2 → ~120s, 3 → ~240s, capped at 600s"""
+    import random
+    wait = min(base * (2 ** attempt), max_wait)
+    return wait + random.uniform(0, jitter)
 
 
 def log(msg: str):
@@ -375,8 +392,11 @@ def search_keyword_process5(page, keyword: str, max_pages: int = 30, scraper_sta
     log(f"ค้นหา: '{keyword}'")
     jobs = []
     cached_jid = ""
+    cached_hash = ""
     if scraper_state:
-        cached_jid = scraper_state.get("keyword_states", {}).get(keyword, {}).get("latest_jid", "")
+        kw_state = scraper_state.get("keyword_states", {}).get(keyword, {})
+        cached_jid = kw_state.get("latest_jid", "")
+        cached_hash = kw_state.get("page1_hash", "")
 
     # หา search input
     search_input = None
@@ -458,9 +478,13 @@ def search_keyword_process5(page, keyword: str, max_pages: int = 30, scraper_sta
     if not captured_search_url or not first_page_items:
         return jobs, False  # 0 results or no URL captured
 
-    # ── INCREMENTAL: early-exit if top item already cached ──
+    # ── INCREMENTAL: dual check (content hash + top jid) ──
+    page1_hash = compute_page_hash(first_page_items)
+    if cached_hash and page1_hash == cached_hash:
+        log(f"  ⚡ incremental: page 1 hash ตรงกับ cache ({cached_hash}) → ไม่มีงานใหม่ (skip)")
+        return jobs, "no_new"
     if cached_jid and first_page_items[0].get("projectId") == cached_jid:
-        log(f"  ⚡ incremental: top jid={cached_jid} ตรงกับ cache → ไม่มีงานใหม่ (skip pagination)")
+        log(f"  ⚡ incremental: top jid={cached_jid} ตรง cache → ไม่มีงานใหม่ (skip)")
         return jobs, "no_new"
 
     # Parallel pagination — eGP rate limit ทดสอบแล้ว: threshold ~100 reqs / 120s window (IP-based)
@@ -1014,6 +1038,13 @@ def main():
     use_incremental = INCREMENTAL_DEFAULT and not args.no_incremental
     scraper_state = load_scraper_state() if use_incremental else None
 
+    # Structured metrics + Discord anomaly alerts
+    try:
+        from scraper_metrics import ScraperMetrics
+        metrics = ScraperMetrics()
+    except Exception:
+        metrics = None
+
     log("=" * 60)
     log("Sebastian Scraper — เริ่มต้น (process5 API)")
     log(f"Search terms: 2 จังหวัด + {len(DEPT_PROVINCE_MAP)} หน่วยงาน/ตำบล = {2 + len(DEPT_PROVINCE_MAP)} ตัวรวม")
@@ -1060,6 +1091,7 @@ def main():
                     log(f"  รอ 5s ก่อนค้น '{keyword}' ...")
                     time.sleep(5)
 
+            kw_start = time.time()
             try:
                 jobs, needs_reinit = search_keyword_process5(page, keyword, max_pages=9999, scraper_state=scraper_state)
 
@@ -1080,14 +1112,14 @@ def main():
                         log("  Reinit ไม่สำเร็จ — ข้าม")
                         jobs = []
 
-                # ── Update incremental state with top item ──
+                # ── Update incremental state with top item + content hash ──
                 if scraper_state is not None and jobs:
-                    # jobs[0] เป็น parsed dict — ต้องใช้ raw item แต่เราไม่มี
-                    # ใช้ jobs[0] ที่ parse แล้วแทน (key projectId = job_id, announceDate = publish_date)
-                    update_keyword_state(scraper_state, keyword, {
-                        "projectId":    jobs[0].get("job_id", ""),
-                        "announceDate": jobs[0].get("publish_date", ""),
-                    })
+                    raw_items = [
+                        {"projectId": j.get("job_id", ""), "announceDate": j.get("publish_date", "")}
+                        for j in jobs[:10]
+                    ]
+                    update_keyword_state(scraper_state, keyword, raw_items[0],
+                                         page1_hash=compute_page_hash(raw_items))
 
                 # กรอง FILTER_KEYWORDS ทุก term เหมือนกัน
                 filtered = [j for j in jobs if is_relevant_job(j["title"])]
@@ -1113,6 +1145,17 @@ def main():
                 skip_str = f", ข้ามผิดจังหวัด {province_skip}" if province_skip else ""
                 log(f"  '{keyword}': {len(jobs)} รายการ → กรองแล้ว {len(filtered)}{skip_str}, ใหม่ {len(new_jobs)}")
 
+                if metrics:
+                    metrics.record_keyword(
+                        keyword,
+                        duration_ms=int((time.time() - kw_start) * 1000),
+                        items=len(jobs),
+                        new_items=len(new_jobs),
+                        pages_fetched=max(1, len(jobs) // 10),
+                        incremental_skip=(needs_reinit == "no_new"),
+                        status="success",
+                    )
+
             except Exception as e:
                 log(f"  '{keyword}' ERROR: {e} — ข้ามไปตัวถัดไป")
                 try:
@@ -1129,6 +1172,13 @@ def main():
         if scraper_state is not None:
             save_scraper_state(scraper_state)
             log(f"  saved scraper_state ({len(scraper_state.get('keyword_states', {}))} keywords cached)")
+
+        # Finalize metrics + Discord anomaly alert
+        if metrics:
+            summary, anomalies = metrics.finalize(send_discord=True)
+            log(f"\nMetrics: {summary['total_duration_min']:.1f}min | {summary['total_items']} items | skipped {summary['incremental_skipped']}")
+            if anomalies:
+                log(f"⚠️ Anomalies: {anomalies}")
 
         # ดึง deadline สำหรับ e-bidding กำลังประมูล
         if all_new_jobs:

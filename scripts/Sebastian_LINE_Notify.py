@@ -8,6 +8,7 @@ Sebastian_LINE_Notify.py — ส่งสรุปงาน e-bidding ไป LIN
 """
 
 import os
+import re
 import sys
 import json
 import urllib.request
@@ -26,6 +27,12 @@ SHEET_PENDING   = "pending_award"
 SHEET_AWARDED   = "awarded_jobs"
 LINE_API_URL    = "https://api.line.me/v2/bot/message/push"
 TOP_N           = 15
+
+# Google Sheet tab GIDs (for deep-link)
+ACTIVE_GID = 827075644
+TOR_GID    = 1025189196
+
+TRANSITIONS_FILE = Path(__file__).parent.parent / "data" / "transitions_latest.json"
 
 
 # ================================================================
@@ -89,101 +96,266 @@ def get_tor_review_jobs() -> list[dict]:
 # ================================================================
 
 def fmt_budget(val) -> str:
+    """< 1M → '521,900 บาท', 1M-999M → '2.05 ล้าน', ≥ 1B → '1.5 พันล้าน'"""
     try:
-        n = float(val)
+        n = float(str(val).replace(",", "").strip())
+        if n >= 1_000_000_000:
+            return f"{n/1_000_000_000:.1f} พันล้าน"
         if n >= 1_000_000:
-            return f"{n/1_000_000:.2f}ล้าน"
-        return f"{n:,.0f}"
+            return f"{n/1_000_000:.2f} ล้าน"
+        return f"{n:,.0f} บาท"
     except (ValueError, TypeError):
         return str(val)
 
 
-def _build_job_block(i: int, job: dict) -> str:
-    title       = str(job.get("title", "ไม่มีชื่อ"))
-    budget      = fmt_budget(job.get("budget", 0))
-    dept        = str(job.get("department", ""))
-    announce    = str(job.get("publish_date", ""))
-    due         = str(job.get("deadline", ""))
-    days_left   = str(job.get("days_remaining", ""))
-    job_id      = str(job.get("job_id", ""))
+# ── Title / Department cleanup ────────────────────────────────
+_TITLE_PREFIX_RE = re.compile(r'^ประกวดราคา(จ้าง|ซื้อ)?(ก่อสร้าง)?(โครงการ)?(ก่อสร้าง)?(งาน)?\s*')
+_TITLE_SUFFIX_RE = re.compile(r'\s*(ด้วยวิธี|โดยวิธี).+?\(e[-‐]bidding\)\s*$', re.IGNORECASE)
+# "ตำบลX อำเภอY จังหวัดZ" — ตัดออกเพราะ department บอกอยู่แล้ว
+_LOCATION_RE  = re.compile(r'\s*(ตำบล\S+\s+)?(อำเภอ\S+\s+)?จังหวัด\S+\s*$')
+_LOCATION_RE2 = re.compile(r'\s*ตำบล\S+(\s+อำเภอ\S+)?\s*$')
+# "ขนาด..." / "ปริมาณงาน..." / "รวมยาว..." — ทุกอย่างหลังคำเหล่านี้ตัด
+_SPECS_RE     = re.compile(r'\s*(ขนาด|ปริมาณงาน|รวมยาว|รวมระยะ|พร้อมติดตั้ง|พร้อมงาน).*$')
+# "กว้าง N เมตร ยาว M เมตร หนา..." — มีตัวเลขตาม
+_DIM_RE       = re.compile(r'\s*(กว้าง|ยาว|หนา)\s+[0-9.,]+.*$')
+_THAI_NUMERALS   = str.maketrans('๐๑๒๓๔๕๖๗๘๙', '0123456789')
+_MOO_RE          = re.compile(r'หมู่ที่\s*(\d+)')
 
-    lines = [f"", f"[{i}] {title}", f"    💰 {budget} บาท"]
-    if dept:
-        lines.append(f"    🏛️ {dept[:35]}")
-    if announce:
-        lines.append(f"    📢 ประกาศ: {announce}")
-    if due:
-        deadline_line = f"    📆 ยื่นซอง: {due}"
-        if days_left:
-            deadline_line += f"  ⏳ เหลือ {days_left} วัน"
-        lines.append(deadline_line)
-    if job_id:
-        lines.append(f"    🔑 ID: {job_id}")
+def clean_title(title: str, max_len: int = 70) -> str:
+    t = str(title).strip()
+    t = _TITLE_PREFIX_RE.sub('', t)
+    t = _TITLE_SUFFIX_RE.sub('', t)
+    # ตัด specs ก่อน (อยู่ภายในก่อน location) — รอบเดียว
+    t = _SPECS_RE.sub('', t).strip()
+    t = _DIM_RE.sub('', t).strip()
+    # ตัด location ที่ท้าย — รอบ 2-3 (กรณี nested)
+    for _ in range(2):
+        t = _LOCATION_RE.sub('', t).strip()
+        t = _LOCATION_RE2.sub('', t).strip()
+    # Abbreviations
+    t = t.replace('คอนกรีตเสริมเหล็ก', 'คสล.')
+    t = t.replace('แอสฟัลท์ติกคอนกรีต', 'แอสฟัลต์')
+    t = t.replace('แอสฟัลต์คอนกรีต', 'แอสฟัลต์')
+    t = t.replace('คอนกรีดเสริมเหล็ก', 'คสล.')  # typo in original data
+    # Convert Thai numerals + หมู่ที่
+    t = t.translate(_THAI_NUMERALS)
+    t = _MOO_RE.sub(r'ม.\1', t)
+    t = t.strip()
+    if len(t) > max_len:
+        t = t[:max_len-3].rstrip() + '...'
+    return t
+
+
+_DEPT_REPLACEMENTS = [
+    ('องค์การบริหารส่วนตำบล', 'อบต.'),
+    ('องค์การบริหารส่วนจังหวัด', 'อบจ.'),
+    ('เทศบาลตำบล', 'ทต.'),
+    ('เทศบาลเมือง', 'ทม.'),
+    ('เทศบาลนคร', 'ทน.'),
+    ('การประปาส่วนภูมิภาคเขต', 'ประปาเขต'),
+    ('การประปาส่วนภูมิภาค', 'ประปา'),
+    ('แขวงทางหลวงชนบท', 'ทล.ชนบท'),
+    ('แขวงทางหลวง', 'ทล.'),
+    ('โยธาธิการและผังเมือง', 'โยธาฯ'),
+    ('สำนักก่อสร้างทาง กรมทางหลวงชนบท', 'สนง.ก่อสร้างทาง กทล.ชนบท'),
+    ('กรมทางหลวงชนบท', 'กทล.ชนบท'),
+    ('กรมทางหลวง', 'กรมทล.'),
+    ('กรมชลประทาน', 'กรมชลฯ'),
+]
+
+def clean_dept(dept: str, max_len: int = 35) -> str:
+    d = str(dept)
+    for old, new in _DEPT_REPLACEMENTS:
+        d = d.replace(old, new)
+    d = d.strip()
+    if len(d) > max_len:
+        d = d[:max_len-3] + '...'
+    return d
+
+
+# ── Transitions (from Classifier snapshot) ────────────────────
+def _load_transitions() -> dict:
+    if not TRANSITIONS_FILE.exists():
+        return {}
+    try:
+        return json.loads(TRANSITIONS_FILE.read_text(encoding="utf-8")).get("transitions", {})
+    except Exception:
+        return {}
+
+
+_FROM_TH = {
+    "pre_tor": "วางแผน", "tor_review": "รับฟัง",
+    "active_bidding": "ยื่นซอง", "pending_award": "รอผล",
+    "awarded_jobs": "ประกาศแล้ว", "cancelled_jobs": "ยกเลิก",
+}
+
+def _transition_marker(jid: str, transitions: dict) -> str:
+    """คืน '' หรือ ' 🆕' / ' ⬆️ จาก รับฟัง'"""
+    t = transitions.get(jid)
+    if not t:
+        return ""
+    if t["type"] == "new":
+        return " 🆕"
+    if t["type"] == "moved":
+        from_th = _FROM_TH.get(t["from"], t["from"])
+        return f" {t['arrow']} จาก {from_th}"
+    return ""
+
+
+# ── Card builders ─────────────────────────────────────────────
+
+def _build_job_block(job: dict, transitions: dict) -> str:
+    """Active bidding card — 5 lines"""
+    title = clean_title(job.get("title", "ไม่มีชื่อ"))
+    budget = fmt_budget(job.get("budget", 0))
+    dept = clean_dept(job.get("department", ""))
+    days = str(job.get("days_remaining", "")).strip()
+    jid = str(job.get("job_id", ""))
+
+    # Urgency emoji + label
+    try:
+        d = int(days)
+        urgency = f"🚨 เหลือ {d} วัน" if d <= 1 else f"⏳ เหลือ {d} วัน"
+    except ValueError:
+        if days:
+            urgency = f"⚠️ {days}"
+        else:
+            urgency = "⚠️ ไม่มี deadline"
+
+    marker = _transition_marker(jid, transitions)
+
+    lines = [
+        f"{urgency}{marker}",
+        f"└ {title}",
+        f"  💰 {budget}",
+        f"  🏛️ {dept}",
+        f"  🆔 {jid}",
+    ]
     return "\n".join(lines)
 
 
-def _build_tor_block(i: int, job: dict) -> str:
-    title    = str(job.get("title", "ไม่มีชื่อ"))
-    budget   = fmt_budget(job.get("budget", 0))
-    dept     = str(job.get("department", ""))
-    announce = str(job.get("publish_date", ""))
-    note     = str(job.get("stage_note", "รับฟังคำวิจารณ์"))
-    job_id   = str(job.get("job_id", ""))
+def _build_tor_block(job: dict, transitions: dict) -> str:
+    """TOR review card — 5 lines, header = publish date"""
+    title = clean_title(job.get("title", "ไม่มีชื่อ"))
+    budget = fmt_budget(job.get("budget", 0))
+    dept = clean_dept(job.get("department", ""))
+    publish = str(job.get("publish_date", "")).strip()
+    jid = str(job.get("job_id", ""))
 
-    lines = [f"", f"[{i}] {title}", f"    💰 {budget} บาท"]
-    if dept:
-        lines.append(f"    🏛️ {dept[:35]}")
-    if announce:
-        lines.append(f"    📢 ประกาศ: {announce}")
-    lines.append(f"    📋 สถานะ: {note}")
-    if job_id:
-        lines.append(f"    🔑 ID: {job_id}")
+    # Shorten DD/MM/YYYY → DD/MM
+    pub_label = publish
+    if "/" in publish:
+        parts = publish.split("/")
+        if len(parts) >= 2:
+            pub_label = f"{parts[0]}/{parts[1]}"
+
+    marker = _transition_marker(jid, transitions)
+
+    lines = [
+        f"📋 ประกาศ {pub_label}{marker}",
+        f"└ {title}",
+        f"  💰 {budget}",
+        f"  🏛️ {dept}",
+        f"  🆔 {jid}",
+    ]
     return "\n".join(lines)
+
+
+def _active_sort_key(job: dict):
+    """Sort active jobs by days_remaining ascending (urgent first)"""
+    d = str(job.get("days_remaining", "")).strip()
+    try:
+        return (0, int(d))
+    except ValueError:
+        return (1, 9999)  # non-numeric (deadline ผ่าน, ว่าง) → ท้าย
+
+
+def _tor_sort_key(job: dict):
+    """Sort tor jobs by publish_date ascending (เก่า first)"""
+    pub = str(job.get("publish_date", ""))
+    try:
+        parts = pub.split("/")
+        if len(parts) == 3:
+            d, m, y = int(parts[0]), int(parts[1]), int(parts[2])
+            if y > 2400:
+                y -= 543
+            return (y, m, d)
+    except Exception:
+        pass
+    return (9999, 99, 99)
+
+
+def _sheet_link(gid: int) -> str:
+    return f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/edit#gid={gid}"
 
 
 def format_messages(jobs: list[dict], awarded_count: int, tor_jobs: list[dict] = None) -> list[str]:
-    """สร้าง list ของ LINE messages — Part1: active_bidding, Part2: tor_review"""
-    MAX_LEN = 4900
-    today   = datetime.now().strftime("%d/%m/%Y %H:%M น.")
-    footer  = "\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n🤖 Sebastian · 06:00 น."
+    """
+    Style A — Card format + Google Sheet link
+    Part 1: active_bidding (sorted by days_remaining asc, urgent first)
+    Part 2: tor_review (sorted by publish_date asc, เก่า first)
+    """
+    MAX_LEN  = 4900
+    today    = datetime.now().strftime("%d/%m/%Y %H:%M น.")
     tor_jobs = tor_jobs or []
+    transitions = _load_transitions()
 
     if not jobs and not tor_jobs:
-        header = f"🏗️ Bid Master — รายงานประจำวัน\n📅 {today}\n\n📭 ไม่มีงาน e-bidding กำลังประมูลในพื้นที่ตอนนี้\n📦 งานที่ประกาศผู้ชนะแล้ว: {awarded_count} งาน"
-        return [header + footer]
+        msg = (
+            f"🏗️ Bid Master • {today}\n\n"
+            f"📭 ไม่มีงาน e-bidding กำลังประมูลหรือรับฟังตอนนี้\n"
+            f"🏆 ประกาศผู้ชนะแล้ว: {awarded_count} งาน\n\n"
+            f"🤖 Sebastian"
+        )
+        return [msg]
 
     messages = []
 
-    def _pack_blocks(header_text: str, block_list: list) -> None:
-        """แพ็ค blocks เข้า messages ไม่ตัดกลางงาน"""
-        part    = 1
-        current = header_text
-
-        for block in block_list:
-            candidate = current + block
-            if len(candidate + footer) > MAX_LEN and current != header_text:
+    def _pack(header: str, blocks: list, footer: str):
+        """แพ็ค blocks เข้า messages — ไม่ตัดกลาง block"""
+        current = header
+        part_n  = 1
+        for block in blocks:
+            candidate = current + "\n\n" + block
+            if len(candidate + footer) > MAX_LEN and current != header:
                 messages.append(current + footer)
-                part   += 1
-                current = header_text.split("\n\n━━━")[0] + f"\n━━━ ต่อ (part {part}) ━━━" + block
+                part_n += 1
+                header_short = header.split("━━━")[0].rstrip() + f"\n━━━ (ต่อ part {part_n}) ━━━"
+                current = header_short + "\n\n" + block
             else:
                 current = candidate
         messages.append(current + footer)
 
-    # ── ส่วนที่ 1: Active Bidding ──
+    # ── Part 1: Active Bidding ──
     if jobs:
-        h1 = (f"🏗️ Bid Master — รายงานประจำวัน\n📅 {today}\n\n"
-              f"🔔 e-bidding กำลังประมูล: {len(jobs)} งาน  📦 ประกาศผู้ชนะแล้ว: {awarded_count} งาน\n\n"
-              f"━━━ ส่วนที่ 1: กำลังเปิดรับซอง ━━━")
-        blocks = [_build_job_block(i, job) for i, job in enumerate(jobs, 1)]
-        _pack_blocks(h1, blocks)
+        sorted_active = sorted(jobs, key=_active_sort_key)
+        header1 = (
+            f"🏗️ Bid Master • {today}\n"
+            f"🔔 ยื่นซอง {len(jobs)} • 🟢 รับฟัง {len(tor_jobs)} • 🏆 ประกาศแล้ว {awarded_count}\n\n"
+            f"━━━ 🔵 ยื่นซองได้ตอนนี้ ━━━"
+        )
+        blocks1 = [_build_job_block(job, transitions) for job in sorted_active]
+        footer1 = (
+            f"\n\n━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"📊 ดูชีต Active เต็ม:\n{_sheet_link(ACTIVE_GID)}\n\n"
+            f"🤖 Sebastian"
+        )
+        _pack(header1, blocks1, footer1)
 
-    # ── ส่วนที่ 2: รับฟังคำวิจารณ์ ──
+    # ── Part 2: TOR Review ──
     if tor_jobs:
-        h2 = (f"🏗️ Bid Master — รายงานประจำวัน\n📅 {today}\n\n"
-              f"📋 กำลังรับฟังคำวิจารณ์: {len(tor_jobs)} งาน\n\n"
-              f"━━━ ส่วนที่ 2: รับฟังคำวิจารณ์ ━━━")
-        tor_blocks = [_build_tor_block(i, job) for i, job in enumerate(tor_jobs, 1)]
-        _pack_blocks(h2, tor_blocks)
+        sorted_tor = sorted(tor_jobs, key=_tor_sort_key)
+        header2 = (
+            f"🏗️ Bid Master • {today}\n\n"
+            f"━━━ 🟢 รับฟังคำวิจารณ์ ━━━"
+        )
+        blocks2 = [_build_tor_block(job, transitions) for job in sorted_tor]
+        footer2 = (
+            f"\n\n━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"📊 ดูชีต TOR เต็ม:\n{_sheet_link(TOR_GID)}\n\n"
+            f"🤖 Sebastian"
+        )
+        _pack(header2, blocks2, footer2)
 
     return messages
 

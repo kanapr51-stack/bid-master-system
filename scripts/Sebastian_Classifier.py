@@ -111,12 +111,16 @@ ALL_JOBS_HEADERS = [
     "procurement_type", "budget", "publish_date", "deadline",
     "project_status", "search_keyword", "tor_url",
     "first_seen_at", "last_seen_at",
+    # 2026-05-16: เพิ่มเพื่อรองรับ stepId-driven classifier
+    "step_id", "project_status_raw", "announce_type",
 ]
 
+PRE_TOR_HEADERS        = ALL_JOBS_HEADERS + ["stage_note"]
 TOR_REVIEW_HEADERS     = ALL_JOBS_HEADERS + ["stage_note"]
 ACTIVE_BIDDING_HEADERS = ALL_JOBS_HEADERS + ["days_remaining"]
 PENDING_AWARD_HEADERS  = ALL_JOBS_HEADERS + ["wait_reason"]
 AWARDED_JOBS_HEADERS   = ALL_JOBS_HEADERS + ["winner_name", "winner_price", "discount_pct", "award_date"]
+CANCELLED_JOBS_HEADERS = ALL_JOBS_HEADERS + ["cancel_note"]
 
 
 def log(msg: str):
@@ -153,6 +157,88 @@ def _normalize_project_status(raw: str) -> str:
 
     # Unknown — return as-is (อาจเป็น flow_name ตรงๆ)
     return FLOW_STATUS_MAP.get(s, s)
+
+
+# ================================================================
+# 6-Sheet Classifier (stepId-driven) — based on research 2026-05-16
+# See: docs/egp_stepid_catalog.md
+# ================================================================
+
+# Letter-prefix → sheet (defensive default for unknown stepIds)
+LETTER_TO_SHEET = {
+    "U": "tor_review",      # U03/U06 = ยังรับฟังคำวิจารณ์
+    "M": "active_bidding",  # M03 = ปิดรับฟัง ประกาศแล้ว ⭐ Q7-9 fix
+    "S": "active_bidding",  # S01 = เปิดยื่นซองอยู่
+    "Z": "active_bidding",  # Z01/Z03 = bidding variants
+    "W": "pending_award",   # W01/W03 = รอประกาศผู้ชนะ
+    "C": "pending_award",   # C01/C03 = contract stage (มี winner)
+    "I": "pending_award",   # I03 = implementation
+    "E": "pending_award",   # E03 = re-bid variants
+    "X": "pending_award",   # X01/X03 = rare winner variants
+    "Q": "pre_tor",         # Q01/Q03 = early prep (Quote stage)
+    "B": "cancelled_jobs",  # B01/B03 = cancelled (Block stage)
+}
+
+
+def classify_by_stepid(step_id: str, project_status_raw: str, announce_type: str, has_winner: bool):
+    """
+    คืน (sheet_name, note_text)
+    sheet_name: "tor_review" / "pre_tor" / "active_bidding" / "pending_award" /
+                "awarded_jobs" / "cancelled_jobs"
+                หรือ None ถ้า skip
+    note_text: extra annotation สำหรับ stage_note/cancel_note column
+    """
+    step = (step_id or "").upper().strip()
+
+    # 1) Cancellation signals (gold + secondary)
+    if project_status_raw == "R" or announce_type in ("D1", "W1"):
+        # หาจุดที่ยกเลิก
+        if step.startswith("B"):
+            note = f"ยกเลิกตั้งแต่ต้น ({step})"
+        elif step.startswith("M") or step.startswith("U"):
+            note = f"ยกเลิกระหว่างเตรียม TOR ({step})"
+        elif step.startswith("S") or step.startswith("Z"):
+            note = f"ยกเลิกระหว่างยื่นซอง ({step})"
+        elif step.startswith(("W", "C", "I", "E", "X")):
+            note = f"ยกเลิกหลังประมูล ({step})"
+        elif step.startswith("Q"):
+            note = f"ยกเลิกตั้งแต่ขั้นวางแผน ({step})"
+        else:
+            note = f"ยกเลิก ({step or 'ไม่ทราบ stage'})"
+        return ("cancelled_jobs", note)
+
+    # 2) มี winner cache → awarded
+    if has_winner:
+        return ("awarded_jobs", "")
+
+    # 3) ไม่มี stepId → fallback pending
+    if not step:
+        return ("pending_award", "ไม่ทราบสถานะ (stepId ว่าง)")
+
+    # 4) Letter-prefix routing
+    prefix = step[0]
+    sheet = LETTER_TO_SHEET.get(prefix)
+    if sheet is None:
+        # Unknown letter → log warning + fallback pending
+        log(f"  ⚠️  Unknown stepId prefix: {step!r} → pending_award (fallback)")
+        return ("pending_award", f"ไม่รู้จัก stepId {step}")
+
+    # Note generation
+    if sheet == "tor_review":
+        note = f"รับฟังคำวิจารณ์ ({step})"
+    elif sheet == "pre_tor":
+        note = f"ขั้นวางแผน Quote ({step})"
+    elif sheet == "active_bidding":
+        if prefix == "M":
+            note = ""  # active_bidding ใช้ days_remaining column ไม่มี note
+        else:
+            note = ""
+    elif sheet == "pending_award":
+        note = f"รอประกาศผู้ชนะ ({step})"
+    else:
+        note = ""
+
+    return (sheet, note)
 
 
 def parse_thai_date(s: str):
@@ -257,12 +343,14 @@ def main():
     log(f"  jobs: {len(all_values) - 1}")
     log(f"  today: {today.isoformat()}")
 
-    tor_review, active, pending, awarded = [], [], [], []
+    pre_tor, tor_review, active, pending, awarded, cancelled = [], [], [], [], [], []
     skipped_non_ebid = 0
     skipped_no_jid = 0
-    skipped_not_bidding_status = 0
     skipped_off_province = 0
     skipped_non_construction = 0
+    skipped_unclassified = 0
+    used_stepid_path = 0
+    used_legacy_path = 0
 
     for r in all_values[1:]:
         jid = g(r, "job_id")
@@ -288,64 +376,107 @@ def main():
         while len(base) < len(ALL_JOBS_HEADERS):
             base.append("")
 
-        # Has winner from cache → awarded (regardless of project_status)
-        if jid in winner_cache:
+        has_winner = jid in winner_cache
+        step_id     = g(r, "step_id")
+        ps_raw      = g(r, "project_status_raw")
+        announce    = g(r, "announce_type")
+
+        # ── Path A: stepId available → use new stepId-driven classification ──
+        if step_id:
+            used_stepid_path += 1
+            sheet, note = classify_by_stepid(step_id, ps_raw, announce, has_winner)
+
+            if sheet == "cancelled_jobs":
+                cancelled.append(base + [note])
+                continue
+            if sheet == "awarded_jobs":
+                wd = winner_cache.get(jid, {})
+                awarded.append(base + [
+                    wd.get("winner_name", ""),
+                    wd.get("winner_price", ""),
+                    wd.get("discount_pct", ""),
+                    wd.get("award_date", ""),
+                ])
+                continue
+            if sheet == "tor_review":
+                tor_review.append(base + [note])
+                continue
+            if sheet == "pre_tor":
+                pre_tor.append(base + [note])
+                continue
+            if sheet == "active_bidding":
+                # คำนวณ days_remaining จาก deadline (ถ้ามี)
+                dl = parse_thai_date(g(r, "deadline"))
+                if dl is None:
+                    active.append(base + [""])
+                elif dl >= today:
+                    active.append(base + [str((dl - today).days)])
+                else:
+                    active.append(base + [f"deadline ผ่าน {(today - dl).days} วัน"])
+                continue
+            if sheet == "pending_award":
+                pending.append(base + [note or "รอประกาศผู้ชนะ"])
+                continue
+            # sheet is None → skip
+            skipped_unclassified += 1
+            continue
+
+        # ── Path B: ไม่มี stepId → fallback to legacy text-based logic ──
+        used_legacy_path += 1
+        if has_winner:
             wd = winner_cache[jid]
             awarded.append(base + [
-                wd.get("winner_name", ""),
-                wd.get("winner_price", ""),
-                wd.get("discount_pct", ""),
-                wd.get("award_date", ""),
+                wd.get("winner_name", ""), wd.get("winner_price", ""),
+                wd.get("discount_pct", ""), wd.get("award_date", ""),
             ])
             continue
 
         proj_status = _normalize_project_status(g(r, "project_status"))
-        # 4-sheet lifecycle (สอดคล้องกับ eGP flow):
-        #   tor_review     → 'กำลังเตรียม' (รับฟังคำวิจารณ์, ยังไม่เปิดยื่น)
-        #   active_bidding → 'กำลังประมูล' + deadline >= today (ยื่นซองได้)
-        #   pending_award  → 'กำลังประมูล' + deadline ผ่าน (รอประกาศ) หรือ 'ประมูลแล้ว' ไม่มี winner cache
-        #   awarded_jobs   → มี winner cache (handled ก่อนหน้านี้แล้ว)
-        # อื่นๆ ('ยกเลิก', '', unknown) → skip → อยู่ใน all_jobs เฉยๆ
-
+        if proj_status == "ยกเลิก":
+            cancelled.append(base + ["ยกเลิก (legacy)"])
+            continue
         if proj_status == "กำลังเตรียม":
-            tor_review.append(base + ["รับฟังคำวิจารณ์"])
+            tor_review.append(base + ["รับฟังคำวิจารณ์ (legacy)"])
             continue
-
         if proj_status == "ประมูลแล้ว":
-            # ไม่มี winner ใน cache → รอ refresh ดึงผู้ชนะ
-            pending.append(base + ["รอประกาศผล"])
+            pending.append(base + ["รอประกาศผล (legacy)"])
             continue
-
         if proj_status != "กำลังประมูล":
-            skipped_not_bidding_status += 1
+            skipped_unclassified += 1
             continue
 
-        # 'กำลังประมูล' → active vs pending ตาม deadline
         dl = parse_thai_date(g(r, "deadline"))
         if dl is None:
-            # deadline ว่าง → active (pessimistic, รอ patch_deadlines เติม)
             active.append(base + [""])
         elif dl >= today:
             active.append(base + [str((dl - today).days)])
         else:
             pending.append(base + [f"deadline ผ่าน {(today - dl).days} วัน"])
 
-    log(f"\nClassified (lifecycle order):")
-    log(f"  🟢 tor_review     (รับฟังคำวิจารณ์):  {len(tor_review)}")
-    log(f"  🔵 active_bidding (ยื่นซองได้):       {len(active)}")
-    log(f"  🟡 pending_award  (รอรู้ผู้ชนะ):       {len(pending)}")
-    log(f"  ⚪ awarded_jobs   (ประกาศแล้ว):       {len(awarded)}")
-    log(f"  skipped non-e-bidding:        {skipped_non_ebid}")
-    log(f"  skipped off-province:         {skipped_off_province}")
-    log(f"  skipped non-construction:     {skipped_non_construction}")
-    log(f"  skipped status ไม่ relevant:   {skipped_not_bidding_status}")
-    log(f"  skipped no job_id:            {skipped_no_jid}")
+    log(f"\nClassified (6-sheet lifecycle):")
+    log(f"  🟣 pre_tor        (ขั้นวางแผน Q):       {len(pre_tor)}")
+    log(f"  🟢 tor_review     (รับฟังคำวิจารณ์):    {len(tor_review)}")
+    log(f"  🔵 active_bidding (ยื่นซองได้):         {len(active)}")
+    log(f"  🟡 pending_award  (รอรู้ผู้ชนะ):         {len(pending)}")
+    log(f"  ⚪ awarded_jobs   (ประกาศแล้ว):         {len(awarded)}")
+    log(f"  ❌ cancelled_jobs (ยกเลิก):              {len(cancelled)}")
+    log(f"\nPath usage:")
+    log(f"  stepId-driven (Path A): {used_stepid_path}")
+    log(f"  legacy text  (Path B):  {used_legacy_path}")
+    log(f"\nSkipped:")
+    log(f"  non-e-bidding:        {skipped_non_ebid}")
+    log(f"  off-province:         {skipped_off_province}")
+    log(f"  non-construction:     {skipped_non_construction}")
+    log(f"  unclassified status:  {skipped_unclassified}")
+    log(f"  no job_id:            {skipped_no_jid}")
 
     log(f"\nWriting derived sheets (clear+rewrite)...")
-    write_sheet("tor_review",     TOR_REVIEW_HEADERS,     tor_review)
-    write_sheet("active_bidding", ACTIVE_BIDDING_HEADERS, active)
-    write_sheet("pending_award",  PENDING_AWARD_HEADERS,  pending)
-    write_sheet("awarded_jobs",   AWARDED_JOBS_HEADERS,   awarded)
+    write_sheet("pre_tor",         PRE_TOR_HEADERS,        pre_tor)
+    write_sheet("tor_review",      TOR_REVIEW_HEADERS,     tor_review)
+    write_sheet("active_bidding",  ACTIVE_BIDDING_HEADERS, active)
+    write_sheet("pending_award",   PENDING_AWARD_HEADERS,  pending)
+    write_sheet("awarded_jobs",    AWARDED_JOBS_HEADERS,   awarded)
+    write_sheet("cancelled_jobs",  CANCELLED_JOBS_HEADERS, cancelled)
 
     log("\nเสร็จสิ้น")
 

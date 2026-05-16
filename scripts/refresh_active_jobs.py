@@ -130,11 +130,13 @@ def fetch_project_detail(page, jid: str, retry: bool = True) -> dict:
             else:
                 status = "ประมูลแล้ว"
             return {
-                "project_status": status,
-                "flow_seqno":     seqno,
-                "step_id":        stepId,
-                "flow_id":        flowId,
-                "valid":          valid,
+                "project_status":       status,
+                "flow_seqno":           seqno,
+                "step_id":              stepId,
+                "flow_id":              flowId,
+                "project_status_raw":   data.get("projectStatus", ""),  # A or R
+                "announce_type":        data.get("announceType", ""),   # B0/D0/W0/D1/W1/BOQ/...
+                "valid":                valid,
             }
     except Exception as e:
         log(f"  getProjectDetail err: {e}")
@@ -167,6 +169,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--jids", help="comma-separated job_ids")
     ap.add_argument("--all",  action="store_true", help="refresh ทุก row ใน active_bidding")
+    ap.add_argument("--expand", action="store_true", help="refresh active + tor_review + pending_award (default for cron)")
     args = ap.parse_args()
 
     log("=" * 60)
@@ -177,6 +180,20 @@ def main():
     if args.jids:
         target_jids = [j.strip() for j in args.jids.split(",") if j.strip()]
         log(f"  targeted refresh: {len(target_jids)} jobs")
+    elif args.expand:
+        target_jids = []
+        for sn in ("active_bidding", "tor_review", "pending_award"):
+            try:
+                ws = open_sheet(SPREADSHEET_ID, sn)
+                rows = ws.get_all_values()
+                jids = [r[0] for r in rows[1:] if r and r[0]]
+                target_jids.extend(jids)
+                log(f"  {sn}: +{len(jids)} jobs")
+            except Exception as e:
+                log(f"  {sn}: error {e}")
+        # dedup
+        target_jids = list(dict.fromkeys(target_jids))
+        log(f"  expand mode: {len(target_jids)} unique jobs")
     else:
         ws_act = open_sheet(SPREADSHEET_ID, "active_bidding")
         rows = ws_act.get_all_values()
@@ -229,40 +246,51 @@ def main():
             row_num, budget = row_map[jid]
             log(f"\n[{i}/{len(target_jids)}] {jid} (row {row_num})")
 
-            # 1. ตรวจ winner ก่อน
-            winfo = fetch_winner_info(page, jid)
-            if winfo and winfo.get("winner"):
-                price = winfo.get("winning_price", "")
-                pct = calc_pct_discount(budget, price)
-                cache[jid] = {
-                    "winner_name":  winfo["winner"],
-                    "winner_price": str(price),
-                    "discount_pct": pct,
-                    "award_date":   winfo.get("announce_date", ""),
-                }
-                new_winners += 1
-                log(f"  ✅ WINNER: {winfo['winner']} | {price} | -{pct}%")
-                # ถ้ามี winner → status='ประมูลแล้ว' เลย
-                update_payload.append({
-                    "row": row_num,
-                    "fields": {"project_status": "ประมูลแล้ว", "last_seen_at": datetime.now().isoformat(timespec="seconds")},
-                })
-                time.sleep(0.5)
-                continue
-
-            # 2. ไม่มี winner → ใช้ flowSeqno จาก getProjectDetail
+            # ── ดึง getProjectDetail ก่อน (ได้ stepId/projectStatus/announceType) ──
             detail = fetch_project_detail(page, jid)
-            fields = {"last_seen_at": datetime.now().isoformat(timespec="seconds")}
+            now_iso = datetime.now().isoformat(timespec="seconds")
+            fields = {"last_seen_at": now_iso}
 
             if detail.get("valid"):
+                stepId  = detail.get("step_id", "")
+                ps_raw  = detail.get("project_status_raw", "")  # added below
+                a_type  = detail.get("announce_type", "")       # added below
+                seqno   = detail.get("flow_seqno", 0)
+                # เก็บ 3 fields ใหม่
+                fields["step_id"] = stepId
+                fields["project_status_raw"] = ps_raw
+                fields["announce_type"] = a_type
+                # Derive project_status text
                 new_status = detail.get("project_status", "")
-                seqno      = detail.get("flow_seqno", 0)
-                log(f"  flowSeqno={seqno} stepId={detail.get('step_id')} → {new_status!r}")
                 if new_status:
                     fields["project_status"] = new_status
+                # Cancellation detection
+                is_cancelled = (ps_raw == "R") or (a_type in ("D1", "W1"))
+                if is_cancelled:
+                    fields["project_status"] = "ยกเลิก"
+                    log(f"  🚫 CANCELLED detected: ps_raw={ps_raw} announce={a_type} stepId={stepId}")
+                else:
+                    log(f"  flowSeqno={seqno} stepId={stepId} ps={ps_raw} announce={a_type} → {new_status!r}")
                 status_updates += 1
             else:
                 log(f"  ⚠️  empty data หลัง retry — keep current project_status")
+
+            # ── ตรวจ winner (ถ้ามี — override status เป็น 'ประมูลแล้ว') ──
+            # ทำหลัง project detail เพื่อให้ stepId/projectStatus_raw/announceType ติดมาด้วย
+            if not detail.get("valid") or detail.get("project_status_raw") != "R":
+                winfo = fetch_winner_info(page, jid)
+                if winfo and winfo.get("winner"):
+                    price = winfo.get("winning_price", "")
+                    pct = calc_pct_discount(budget, price)
+                    cache[jid] = {
+                        "winner_name":  winfo["winner"],
+                        "winner_price": str(price),
+                        "discount_pct": pct,
+                        "award_date":   winfo.get("announce_date", ""),
+                    }
+                    new_winners += 1
+                    log(f"  ✅ WINNER: {winfo['winner']} | {price} | -{pct}%")
+                    fields["project_status"] = "ประมูลแล้ว"
 
             update_payload.append({"row": row_num, "fields": fields})
 

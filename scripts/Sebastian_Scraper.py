@@ -161,7 +161,10 @@ def _extract_search_keyword(quantity_note: str) -> str:
 
 
 def _build_all_jobs_row(j: dict, first_seen: str, last_seen: str) -> list:
-    """all_jobs schema (15 cols) — Source of Truth"""
+    """all_jobs schema (18 cols) — Source of Truth
+    3 fields ท้าย (step_id, project_status_raw, announce_type) เว้นว่าง —
+    refresh_active_jobs.py จะเติมจาก getProjectDetail
+    """
     note = j.get("quantity_note", "")
     return [
         j.get("job_id", ""),
@@ -179,6 +182,9 @@ def _build_all_jobs_row(j: dict, first_seen: str, last_seen: str) -> list:
         j.get("tor_url", ""),
         first_seen,
         last_seen,
+        j.get("step_id", ""),
+        j.get("project_status_raw", ""),
+        j.get("announce_type", ""),
     ]
 
 
@@ -222,7 +228,7 @@ def append_jobs_to_sheet(jobs: list[dict]):
             row_num, first_seen = existing[jid]
             row = _build_all_jobs_row(j, first_seen, now)
             update_data.append({
-                "range": f"all_jobs!A{row_num}:O{row_num}",
+                "range": f"all_jobs!A{row_num}:R{row_num}",
                 "values": [row],
             })
         else:

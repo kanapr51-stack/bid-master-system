@@ -56,6 +56,17 @@ if "%CHROME_OK%"=="1" (
     %PYTHON% scripts\refresh_active_jobs.py --expand >> %LOGFILE% 2>&1
 )
 
+REM --- Step 4: PATCH_DEADLINES (Chrome required) ---
+REM ดึง deadline จาก PDF ของ active jobs ที่ deadline ว่าง — มี retry 2 ครั้ง
+if "%CHROME_OK%"=="1" (
+    echo [%TIME%] Step 4: PATCH_DEADLINES (active jobs missing deadline) >> %LOGFILE%
+    %PYTHON% scripts\patch_deadlines.py >> %LOGFILE% 2>&1
+)
+
+REM --- Step 5: CLASSIFY (final — apply new deadlines) ---
+echo [%TIME%] Step 5: CLASSIFY final (apply patched deadlines) >> %LOGFILE%
+%PYTHON% scripts\Sebastian_Pipeline.py --step classify >> %LOGFILE% 2>&1
+
 REM --- Cleanup: Kill Chrome ---
 echo [%TIME%] ปิด Chrome Debug... >> %LOGFILE%
 powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"Name='chrome.exe'\" | Where-Object { $_.CommandLine -like '*ChromeDebug*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }" > nul 2>&1

@@ -329,14 +329,25 @@ def main():
     dl_col_idx = headers.index("deadline") + 1
     last_seen_col_idx = headers.index("last_seen_at") + 1 if "last_seen_at" in headers else None
 
-    jobs_missing_deadline = [
-        r for r in rows
-        if str(r.get("project_status", "")).strip() == "กำลังประมูล"
-        and not str(r.get("deadline", "")).strip()
-        and str(r.get("job_id", "")).strip()
-    ]
+    # Filter: rows ที่ stepId active (M03/S01/Z*) + deadline ว่าง
+    # Fallback: ถ้า step_id ว่าง → ใช้ project_status text เดิม
+    ACTIVE_PREFIXES = ("M", "S", "Z")
+    def needs_patch(r):
+        jid = str(r.get("job_id", "")).strip()
+        if not jid:
+            return False
+        if str(r.get("deadline", "")).strip():
+            return False  # already has deadline
+        step = str(r.get("step_id", "")).strip().upper()
+        ps_raw = str(r.get("project_status_raw", "")).strip()
+        if step:
+            # stepId-based: active prefix + projectStatus != R
+            return step[:1] in ACTIVE_PREFIXES and ps_raw != "R"
+        # Legacy fallback
+        return str(r.get("project_status", "")).strip() == "กำลังประมูล"
 
-    log(f"  งานต้อง patch (กำลังประมูล + deadline ว่าง): {len(jobs_missing_deadline)}")
+    jobs_missing_deadline = [r for r in rows if needs_patch(r)]
+    log(f"  งานต้อง patch (stepId active M*/S*/Z* + deadline ว่าง): {len(jobs_missing_deadline)}")
 
     if not jobs_missing_deadline:
         log("ทุกงานมี deadline แล้ว — เสร็จสิ้น")
@@ -374,17 +385,31 @@ def main():
                     time.sleep(1)
                 log("session พร้อม")
 
+                MAX_RETRY = 2
                 for i, row in enumerate(jobs_missing_deadline):
                     pid   = str(row.get("job_id", "")).strip()
                     title = str(row.get("title", ""))[:40]
                     log(f"\n[{i+1}/{len(jobs_missing_deadline)}] {pid} — {title}...")
 
-                    dl = fetch_deadline(page, pid, pid)
+                    dl = ""
+                    for attempt in range(MAX_RETRY + 1):
+                        if attempt > 0:
+                            wait = 15 * attempt
+                            log(f"  retry {attempt}/{MAX_RETRY} after {wait}s...")
+                            time.sleep(wait)
+                        try:
+                            dl = fetch_deadline(page, pid, pid)
+                        except Exception as e:
+                            log(f"  attempt {attempt+1} exception: {type(e).__name__}: {str(e)[:80]}")
+                            dl = ""
+                        if dl:
+                            break
+
                     if dl:
                         results[pid] = dl
-                        log(f"  ✅ วันยื่นซอง: {dl}")
+                        log(f"  ✅ วันยื่นซอง: {dl}" + (f" (retry {attempt})" if attempt else ""))
                     else:
-                        log(f"  ❌ ไม่พบ deadline")
+                        log(f"  ❌ ไม่พบ deadline หลัง retry {MAX_RETRY} ครั้ง")
 
                     if i < len(jobs_missing_deadline) - 1:
                         time.sleep(5)

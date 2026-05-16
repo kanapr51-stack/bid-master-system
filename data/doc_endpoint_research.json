@@ -1,0 +1,1302 @@
+{
+  "69049094319": {
+    "label": "S01 - active bidding",
+    "endpoint_results": {
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getProjectFiles": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:10.493+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/getProjectFiles'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAttachments": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:11.107+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAttachments'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/listAttachment": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:11.726+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/listAttachment'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAnnounceFiles": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:12.345+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAnnounceFiles'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/listAnnouncement": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:12.963+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/listAnnouncement'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/file/getProjectFile": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:13.583+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/file/getProjectFile'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/file/list": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:14.195+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/file/list'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/document/list": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:14.814+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/document/list'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/file/getProject": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:15.425+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/file/getProject'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getDocumentByProjectId": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:16.030+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/getDocumentByProjectId'}"
+      },
+      "/egp-amaq01-service/pb/announcement/getFiles": {
+        "status": 404,
+        "has_body": false,
+        "preview": ""
+      },
+      "/egp-amaq01-service/pb/announcement/getProjectDocuments": {
+        "status": 404,
+        "has_body": false,
+        "preview": ""
+      },
+      "/egp-amfb01-service/pb/announcement/getFiles": {
+        "status": 404,
+        "has_body": false,
+        "preview": ""
+      },
+      "/egp-asf01-service/pb/announcement/getFiles": {
+        "status": 404,
+        "has_body": false,
+        "preview": ""
+      },
+      "/egp-ada01-service/pb/announcement/getFiles": {
+        "status": 404,
+        "has_body": false,
+        "preview": ""
+      },
+      "/egp-atpj27-service/pb/project/getFile": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:19.350+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/project/getFile'}"
+      },
+      "/egp-atpj27-service/pb/project/getDocument": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:19.958+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/project/getDocument'}"
+      },
+      "/egp-atpj27-service/pb/project/getAnnouncement": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:20.561+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/project/getAnnouncement'}"
+      },
+      "/egp-atpj27-service/pb/project/files": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:21.162+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/project/files'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/PROJECT_ID/files": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:21.774+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/69049094319/files'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/PROJECT_ID/documents": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:22.378+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/69049094319/documents'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/tor/getList": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:22.991+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/tor/getList'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/tor/getFile": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:23.607+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/tor/getFile'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/boq/getFile": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:24.225+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/boq/getFile'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getBoq": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:24.842+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/getBoq'}"
+      }
+    },
+    "spy_results": {
+      "captured_requests": [
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/announcement/detail/69049094319",
+          "resource_type": "document"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/styles.124878ba6c377991.css",
+          "resource_type": "stylesheet"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/polyfills.5bbd2c2c57ac9eca.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/scripts.c8f2401c9e4496c4.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/main.7269aafa86d12e5a.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/CSChatThaiUI.2e18cea3f540614b.woff2",
+          "resource_type": "font"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/KanitRegular.e15eb4fa95ce92c1.woff2",
+          "resource_type": "font"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/material-icon.59322316b3fd6063.woff2",
+          "resource_type": "font"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/bg.5f1aac6a1818f691.jpg",
+          "resource_type": "image"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/537.2497dc59d8e16be1.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/692.8df0b1adef90c6b6.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/998.22734751ac118688.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/472.3bb6c2341219198b.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/91.62a62d0cca887da7.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/921.536253842d960794.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/824.6de209d186bca27e.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/732.3bb9ba06b34d9884.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/506.b345190b83005837.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/411.ef931e8fec707c87.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/90.b8355fa5534e09cb.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/453.843493ff0b45477e.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/981.a3eaf441d9e0a059.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/744.7d7ff6ece738a49c.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-aann09-web/remoteEntry.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-aann09-web/594.e5359f451f8e5894.js",
+          "resource_type": "script"
+        }
+      ],
+      "download_links": []
+    }
+  },
+  "69039325763": {
+    "label": "W03 - winner announced",
+    "endpoint_results": {
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getProjectFiles": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:31.157+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/getProjectFiles'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAttachments": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:31.768+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAttachments'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/listAttachment": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:32.394+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/listAttachment'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAnnounceFiles": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:33.009+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAnnounceFiles'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/listAnnouncement": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:33.614+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/listAnnouncement'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/file/getProjectFile": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:34.229+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/file/getProjectFile'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/file/list": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:34.849+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/file/list'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/document/list": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:35.472+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/document/list'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/file/getProject": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:36.101+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/file/getProject'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getDocumentByProjectId": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:36.728+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/getDocumentByProjectId'}"
+      },
+      "/egp-amaq01-service/pb/announcement/getFiles": {
+        "status": 404,
+        "has_body": false,
+        "preview": ""
+      },
+      "/egp-amaq01-service/pb/announcement/getProjectDocuments": {
+        "status": 404,
+        "has_body": false,
+        "preview": ""
+      },
+      "/egp-amfb01-service/pb/announcement/getFiles": {
+        "status": 404,
+        "has_body": false,
+        "preview": ""
+      },
+      "/egp-asf01-service/pb/announcement/getFiles": {
+        "status": 404,
+        "has_body": false,
+        "preview": ""
+      },
+      "/egp-ada01-service/pb/announcement/getFiles": {
+        "status": 404,
+        "has_body": false,
+        "preview": ""
+      },
+      "/egp-atpj27-service/pb/project/getFile": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:40.019+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/project/getFile'}"
+      },
+      "/egp-atpj27-service/pb/project/getDocument": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:40.643+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/project/getDocument'}"
+      },
+      "/egp-atpj27-service/pb/project/getAnnouncement": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:41.250+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/project/getAnnouncement'}"
+      },
+      "/egp-atpj27-service/pb/project/files": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:41.852+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/project/files'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/PROJECT_ID/files": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:42.464+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/69039325763/files'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/PROJECT_ID/documents": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:43.079+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/69039325763/documents'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/tor/getList": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:43.683+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/tor/getList'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/tor/getFile": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:44.285+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/tor/getFile'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/boq/getFile": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:44.894+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/boq/getFile'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getBoq": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:45.505+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/getBoq'}"
+      }
+    },
+    "spy_results": {
+      "captured_requests": [
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/announcement/detail/69039325763",
+          "resource_type": "document"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/styles.124878ba6c377991.css",
+          "resource_type": "stylesheet"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/polyfills.5bbd2c2c57ac9eca.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/scripts.c8f2401c9e4496c4.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/main.7269aafa86d12e5a.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/CSChatThaiUI.2e18cea3f540614b.woff2",
+          "resource_type": "font"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/KanitRegular.e15eb4fa95ce92c1.woff2",
+          "resource_type": "font"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/material-icon.59322316b3fd6063.woff2",
+          "resource_type": "font"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/bg.5f1aac6a1818f691.jpg",
+          "resource_type": "image"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/537.2497dc59d8e16be1.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/692.8df0b1adef90c6b6.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/998.22734751ac118688.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/472.3bb6c2341219198b.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/91.62a62d0cca887da7.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/921.536253842d960794.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/824.6de209d186bca27e.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/732.3bb9ba06b34d9884.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/506.b345190b83005837.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/411.ef931e8fec707c87.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/90.b8355fa5534e09cb.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/453.843493ff0b45477e.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/981.a3eaf441d9e0a059.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/744.7d7ff6ece738a49c.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-aann09-web/remoteEntry.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-aann09-web/594.e5359f451f8e5894.js",
+          "resource_type": "script"
+        }
+      ],
+      "download_links": []
+    }
+  },
+  "68109395450": {
+    "label": "C01 - contract",
+    "endpoint_results": {
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getProjectFiles": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:51.854+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/getProjectFiles'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAttachments": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:52.471+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAttachments'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/listAttachment": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:53.082+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/listAttachment'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAnnounceFiles": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:53.687+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAnnounceFiles'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/listAnnouncement": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:54.297+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/listAnnouncement'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/file/getProjectFile": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:54.901+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/file/getProjectFile'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/file/list": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:55.513+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/file/list'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/document/list": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:56.139+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/document/list'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/file/getProject": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:56.766+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/file/getProject'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getDocumentByProjectId": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:50:57.382+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/getDocumentByProjectId'}"
+      },
+      "/egp-amaq01-service/pb/announcement/getFiles": {
+        "status": 404,
+        "has_body": false,
+        "preview": ""
+      },
+      "/egp-amaq01-service/pb/announcement/getProjectDocuments": {
+        "status": 404,
+        "has_body": false,
+        "preview": ""
+      },
+      "/egp-amfb01-service/pb/announcement/getFiles": {
+        "status": 404,
+        "has_body": false,
+        "preview": ""
+      },
+      "/egp-asf01-service/pb/announcement/getFiles": {
+        "status": 404,
+        "has_body": false,
+        "preview": ""
+      },
+      "/egp-ada01-service/pb/announcement/getFiles": {
+        "status": 404,
+        "has_body": false,
+        "preview": ""
+      },
+      "/egp-atpj27-service/pb/project/getFile": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:00.649+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/project/getFile'}"
+      },
+      "/egp-atpj27-service/pb/project/getDocument": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:01.257+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/project/getDocument'}"
+      },
+      "/egp-atpj27-service/pb/project/getAnnouncement": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:01.860+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/project/getAnnouncement'}"
+      },
+      "/egp-atpj27-service/pb/project/files": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:02.466+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/project/files'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/PROJECT_ID/files": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:03.084+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/68109395450/files'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/PROJECT_ID/documents": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:03.691+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/68109395450/documents'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/tor/getList": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:04.302+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/tor/getList'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/tor/getFile": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:04.904+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/tor/getFile'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/boq/getFile": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:05.522+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/boq/getFile'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getBoq": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:06.139+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/getBoq'}"
+      }
+    },
+    "spy_results": {
+      "captured_requests": [
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/announcement/detail/68109395450",
+          "resource_type": "document"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/styles.124878ba6c377991.css",
+          "resource_type": "stylesheet"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/polyfills.5bbd2c2c57ac9eca.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/scripts.c8f2401c9e4496c4.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/main.7269aafa86d12e5a.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/CSChatThaiUI.2e18cea3f540614b.woff2",
+          "resource_type": "font"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/KanitRegular.e15eb4fa95ce92c1.woff2",
+          "resource_type": "font"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/material-icon.59322316b3fd6063.woff2",
+          "resource_type": "font"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/bg.5f1aac6a1818f691.jpg",
+          "resource_type": "image"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/537.2497dc59d8e16be1.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/692.8df0b1adef90c6b6.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/998.22734751ac118688.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/472.3bb6c2341219198b.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/91.62a62d0cca887da7.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/921.536253842d960794.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/824.6de209d186bca27e.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/732.3bb9ba06b34d9884.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/506.b345190b83005837.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/411.ef931e8fec707c87.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/90.b8355fa5534e09cb.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/453.843493ff0b45477e.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/981.a3eaf441d9e0a059.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/744.7d7ff6ece738a49c.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-aann09-web/remoteEntry.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-aann09-web/594.e5359f451f8e5894.js",
+          "resource_type": "script"
+        }
+      ],
+      "download_links": []
+    }
+  },
+  "69059074818": {
+    "label": "U03 - consultation",
+    "endpoint_results": {
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getProjectFiles": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:12.454+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/getProjectFiles'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAttachments": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:13.073+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAttachments'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/listAttachment": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:13.689+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/listAttachment'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAnnounceFiles": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:14.293+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAnnounceFiles'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/listAnnouncement": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:14.898+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/listAnnouncement'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/file/getProjectFile": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:15.502+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/file/getProjectFile'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/file/list": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:16.135+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/file/list'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/document/list": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:16.755+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/document/list'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/file/getProject": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:17.361+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/file/getProject'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getDocumentByProjectId": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:17.975+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/getDocumentByProjectId'}"
+      },
+      "/egp-amaq01-service/pb/announcement/getFiles": {
+        "status": 404,
+        "has_body": false,
+        "preview": ""
+      },
+      "/egp-amaq01-service/pb/announcement/getProjectDocuments": {
+        "status": 404,
+        "has_body": false,
+        "preview": ""
+      },
+      "/egp-amfb01-service/pb/announcement/getFiles": {
+        "status": 404,
+        "has_body": false,
+        "preview": ""
+      },
+      "/egp-asf01-service/pb/announcement/getFiles": {
+        "status": 404,
+        "has_body": false,
+        "preview": ""
+      },
+      "/egp-ada01-service/pb/announcement/getFiles": {
+        "status": 404,
+        "has_body": false,
+        "preview": ""
+      },
+      "/egp-atpj27-service/pb/project/getFile": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:21.244+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/project/getFile'}"
+      },
+      "/egp-atpj27-service/pb/project/getDocument": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:21.849+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/project/getDocument'}"
+      },
+      "/egp-atpj27-service/pb/project/getAnnouncement": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:22.462+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/project/getAnnouncement'}"
+      },
+      "/egp-atpj27-service/pb/project/files": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:23.073+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/project/files'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/PROJECT_ID/files": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:23.681+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/69059074818/files'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/PROJECT_ID/documents": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:24.314+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/69059074818/documents'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/tor/getList": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:24.954+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/tor/getList'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/tor/getFile": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:25.563+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/tor/getFile'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/boq/getFile": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:26.177+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/boq/getFile'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getBoq": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:26.794+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/getBoq'}"
+      }
+    },
+    "spy_results": {
+      "captured_requests": [
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/announcement/detail/69059074818",
+          "resource_type": "document"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/styles.124878ba6c377991.css",
+          "resource_type": "stylesheet"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/polyfills.5bbd2c2c57ac9eca.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/scripts.c8f2401c9e4496c4.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/main.7269aafa86d12e5a.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/CSChatThaiUI.2e18cea3f540614b.woff2",
+          "resource_type": "font"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/KanitRegular.e15eb4fa95ce92c1.woff2",
+          "resource_type": "font"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/material-icon.59322316b3fd6063.woff2",
+          "resource_type": "font"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/bg.5f1aac6a1818f691.jpg",
+          "resource_type": "image"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/537.2497dc59d8e16be1.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/692.8df0b1adef90c6b6.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/998.22734751ac118688.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/472.3bb6c2341219198b.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/91.62a62d0cca887da7.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/921.536253842d960794.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/824.6de209d186bca27e.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/732.3bb9ba06b34d9884.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/506.b345190b83005837.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/411.ef931e8fec707c87.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/90.b8355fa5534e09cb.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/453.843493ff0b45477e.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/981.a3eaf441d9e0a059.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/744.7d7ff6ece738a49c.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-aann09-web/remoteEntry.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-aann09-web/594.e5359f451f8e5894.js",
+          "resource_type": "script"
+        }
+      ],
+      "download_links": []
+    }
+  },
+  "69049365887": {
+    "label": "M03 - post-consultation",
+    "endpoint_results": {
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getProjectFiles": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:33.152+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/getProjectFiles'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAttachments": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:33.781+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAttachments'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/listAttachment": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:34.389+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/listAttachment'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAnnounceFiles": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:35.016+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAnnounceFiles'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/listAnnouncement": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:35.626+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/listAnnouncement'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/file/getProjectFile": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:36.254+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/file/getProjectFile'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/file/list": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:36.861+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/file/list'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/document/list": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:37.477+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/document/list'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/file/getProject": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:38.076+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/file/getProject'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getDocumentByProjectId": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:38.685+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/getDocumentByProjectId'}"
+      },
+      "/egp-amaq01-service/pb/announcement/getFiles": {
+        "status": 404,
+        "has_body": false,
+        "preview": ""
+      },
+      "/egp-amaq01-service/pb/announcement/getProjectDocuments": {
+        "status": 404,
+        "has_body": false,
+        "preview": ""
+      },
+      "/egp-amfb01-service/pb/announcement/getFiles": {
+        "status": 404,
+        "has_body": false,
+        "preview": ""
+      },
+      "/egp-asf01-service/pb/announcement/getFiles": {
+        "status": 404,
+        "has_body": false,
+        "preview": ""
+      },
+      "/egp-ada01-service/pb/announcement/getFiles": {
+        "status": 404,
+        "has_body": false,
+        "preview": ""
+      },
+      "/egp-atpj27-service/pb/project/getFile": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:41.994+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/project/getFile'}"
+      },
+      "/egp-atpj27-service/pb/project/getDocument": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:42.607+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/project/getDocument'}"
+      },
+      "/egp-atpj27-service/pb/project/getAnnouncement": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:43.211+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/project/getAnnouncement'}"
+      },
+      "/egp-atpj27-service/pb/project/files": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:43.811+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/project/files'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/PROJECT_ID/files": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:44.417+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/69049365887/files'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/PROJECT_ID/documents": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:45.020+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/69049365887/documents'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/tor/getList": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:45.624+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/tor/getList'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/tor/getFile": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:46.248+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/tor/getFile'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/boq/getFile": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:46.864+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/boq/getFile'}"
+      },
+      "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getBoq": {
+        "status": 404,
+        "has_body": true,
+        "preview": "{'timestamp': '2026-05-16T11:51:47.479+00:00', 'status': 404, 'error': 'Not Found', 'message': '', 'path': '/egp-atpj27-service/pb/a-egp-allt-project/announcement/getBoq'}"
+      }
+    },
+    "spy_results": {
+      "captured_requests": [
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/announcement/detail/69049365887",
+          "resource_type": "document"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/styles.124878ba6c377991.css",
+          "resource_type": "stylesheet"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/polyfills.5bbd2c2c57ac9eca.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/scripts.c8f2401c9e4496c4.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/main.7269aafa86d12e5a.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/CSChatThaiUI.2e18cea3f540614b.woff2",
+          "resource_type": "font"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/KanitRegular.e15eb4fa95ce92c1.woff2",
+          "resource_type": "font"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/material-icon.59322316b3fd6063.woff2",
+          "resource_type": "font"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/bg.5f1aac6a1818f691.jpg",
+          "resource_type": "image"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/537.2497dc59d8e16be1.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/692.8df0b1adef90c6b6.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/998.22734751ac118688.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/472.3bb6c2341219198b.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/91.62a62d0cca887da7.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/921.536253842d960794.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/824.6de209d186bca27e.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/732.3bb9ba06b34d9884.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/506.b345190b83005837.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/411.ef931e8fec707c87.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/90.b8355fa5534e09cb.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/453.843493ff0b45477e.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/981.a3eaf441d9e0a059.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-agpc01-web/744.7d7ff6ece738a49c.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-aann09-web/remoteEntry.js",
+          "resource_type": "script"
+        },
+        {
+          "method": "GET",
+          "url": "https://process5.gprocurement.go.th/egp-aann09-web/594.e5359f451f8e5894.js",
+          "resource_type": "script"
+        }
+      ],
+      "download_links": []
+    }
+  }
+}

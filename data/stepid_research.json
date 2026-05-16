@@ -1,0 +1,1972 @@
+{
+  "generated_at": "2026-05-16T18:14:05.272330",
+  "samples": {
+    "69049223058": {
+      "sample_group": "active_now",
+      "note": "active but past deadline",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "Z03",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "D0",
+        "typeId": "02",
+        "goodsId": "3001",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69049366395": {
+      "sample_group": "กำลังประมูล",
+      "note": "",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69049020320": {
+      "sample_group": "กำลังประมูล",
+      "note": "",
+      "detail": {
+        "flowSeqno": 5,
+        "stepId": "W03",
+        "flowId": "7",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69059123092": {
+      "sample_group": "กำลังประมูล",
+      "note": "",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "M03",
+        "flowId": "1",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3001",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "68119422244": {
+      "sample_group": "กำลังประมูล",
+      "note": "",
+      "detail": {
+        "flowSeqno": 5,
+        "stepId": "W01",
+        "flowId": "7",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3001",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69049256067": {
+      "sample_group": "กำลังประมูล",
+      "note": "",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "D0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69049351246": {
+      "sample_group": "กำลังประมูล",
+      "note": "",
+      "detail": {
+        "flowSeqno": 5,
+        "stepId": "W03",
+        "flowId": "7",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1017",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69049220822": {
+      "sample_group": "กำลังประมูล",
+      "note": "",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69049333064": {
+      "sample_group": "กำลังประมูล",
+      "note": "",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "D0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69039598258": {
+      "sample_group": "กำลังประมูล",
+      "note": "",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "01",
+        "goodsId": "1017",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69029066538": {
+      "sample_group": "กำลังประมูล",
+      "note": "",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "Z01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3008",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69049276732": {
+      "sample_group": "กำลังประมูล",
+      "note": "",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "I03",
+        "flowId": "9",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1013",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69049216940": {
+      "sample_group": "กำลังประมูล",
+      "note": "",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "I03",
+        "flowId": "9",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1006",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69049262363": {
+      "sample_group": "กำลังประมูล",
+      "note": "",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "D0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69049219653": {
+      "sample_group": "active_now",
+      "note": "active but past deadline",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "Z03",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "D0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "68129084025": {
+      "sample_group": "ประมูลแล้ว",
+      "note": "",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69039572232": {
+      "sample_group": "ประมูลแล้ว",
+      "note": "",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69049413474": {
+      "sample_group": "ประมูลแล้ว",
+      "note": "",
+      "detail": {
+        "flowSeqno": 7,
+        "stepId": "I03",
+        "flowId": "9",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69029151537": {
+      "sample_group": "ประมูลแล้ว",
+      "note": "",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4012",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69039255751": {
+      "sample_group": "ประมูลแล้ว",
+      "note": "",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69039118718": {
+      "sample_group": "ประมูลแล้ว",
+      "note": "",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4009",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "68119541211": {
+      "sample_group": "ประมูลแล้ว",
+      "note": "",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "02",
+        "goodsId": "3008",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69039253166": {
+      "sample_group": "ประมูลแล้ว",
+      "note": "",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1006",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69019219989": {
+      "sample_group": "ประมูลแล้ว",
+      "note": "",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69017010786": {
+      "sample_group": "ประมูลแล้ว",
+      "note": "",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "C03",
+        "flowId": "7",
+        "projectStatus": "A",
+        "announceType": "BOQ",
+        "typeId": "01",
+        "goodsId": null,
+        "isSect7": true,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69049249530": {
+      "sample_group": "ประมูลแล้ว",
+      "note": "",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1018",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "68119554220": {
+      "sample_group": "ประมูลแล้ว",
+      "note": "",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1003",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69029061935": {
+      "sample_group": "ประมูลแล้ว",
+      "note": "",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1017",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69039592479": {
+      "sample_group": "ประมูลแล้ว",
+      "note": "",
+      "detail": {
+        "flowSeqno": 7,
+        "stepId": "I03",
+        "flowId": "9",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "68109063355": {
+      "sample_group": "ประมูลแล้ว",
+      "note": "",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "68119054957": {
+      "sample_group": "ยกเลิก",
+      "note": "",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "R",
+        "announceType": "D1",
+        "typeId": "02",
+        "goodsId": "3001",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69019440598": {
+      "sample_group": "ยกเลิก",
+      "note": "",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "M03",
+        "flowId": "1",
+        "projectStatus": "R",
+        "announceType": "D1",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "68109492295": {
+      "sample_group": "ยกเลิก",
+      "note": "",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1002",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69019453226": {
+      "sample_group": "ยกเลิก",
+      "note": "",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "M03",
+        "flowId": "1",
+        "projectStatus": "R",
+        "announceType": "D1",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "68119015406": {
+      "sample_group": "ยกเลิก",
+      "note": "",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1018",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "68119149367": {
+      "sample_group": "ยกเลิก",
+      "note": "",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1001",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "68129541425": {
+      "sample_group": "ยกเลิก",
+      "note": "",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1018",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69059026988": {
+      "sample_group": "ยกเลิก",
+      "note": "",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "03",
+        "goodsId": "4012",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69039295542": {
+      "sample_group": "ยกเลิก",
+      "note": "",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69029500564": {
+      "sample_group": "ยกเลิก",
+      "note": "",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1001",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69049011449": {
+      "sample_group": "q79_gap",
+      "note": "should-be-active (user)",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "M03",
+        "flowId": "1",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3011",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69039512493": {
+      "sample_group": "กำลังเตรียม",
+      "note": "",
+      "detail": {
+        "flowSeqno": 1,
+        "stepId": "Q03",
+        "flowId": "10",
+        "projectStatus": "A",
+        "announceType": "BOQ",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "68129041470": {
+      "sample_group": "กำลังเตรียม",
+      "note": "",
+      "detail": {
+        "flowSeqno": 1,
+        "stepId": "Q03",
+        "flowId": "10",
+        "projectStatus": "A",
+        "announceType": "W1",
+        "typeId": "02",
+        "goodsId": "3001",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69049050342": {
+      "sample_group": "กำลังเตรียม",
+      "note": "",
+      "detail": {
+        "flowSeqno": 1,
+        "stepId": "Q01",
+        "flowId": "10",
+        "projectStatus": "A",
+        "announceType": "BOQ",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69039511634": {
+      "sample_group": "กำลังเตรียม",
+      "note": "",
+      "detail": {
+        "flowSeqno": 1,
+        "stepId": "Q03",
+        "flowId": "10",
+        "projectStatus": "A",
+        "announceType": "BOQ",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69039014126": {
+      "sample_group": "กำลังเตรียม",
+      "note": "",
+      "detail": {
+        "flowSeqno": 1,
+        "stepId": "Q01",
+        "flowId": "10",
+        "projectStatus": "A",
+        "announceType": "W1",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69059134387": {
+      "sample_group": "กำลังเตรียม",
+      "note": "",
+      "detail": {
+        "flowSeqno": 7,
+        "stepId": "I03",
+        "flowId": "9",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69039512046": {
+      "sample_group": "กำลังเตรียม",
+      "note": "",
+      "detail": {
+        "flowSeqno": 1,
+        "stepId": "Q03",
+        "flowId": "10",
+        "projectStatus": "A",
+        "announceType": "BOQ",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69059075123": {
+      "sample_group": "q79_gap",
+      "note": "OK in tor (still consulting)",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "U03",
+        "flowId": "1",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3012",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69039176153": {
+      "sample_group": "กำลังเตรียม",
+      "note": "",
+      "detail": {
+        "flowSeqno": 1,
+        "stepId": "Q03",
+        "flowId": "10",
+        "projectStatus": "A",
+        "announceType": "W1",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69049365887": {
+      "sample_group": "q79_gap",
+      "note": "should-be-active (user)",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "M03",
+        "flowId": "1",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3008",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69049235336": {
+      "sample_group": "q79_gap",
+      "note": "should-be-active (user)",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "M03",
+        "flowId": "1",
+        "projectStatus": "A",
+        "announceType": "D0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69059074818": {
+      "sample_group": "q79_gap",
+      "note": "OK in tor (still consulting)",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "U03",
+        "flowId": "1",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69049234631": {
+      "sample_group": "active_now",
+      "note": "active but yer-shong yesterday",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "D0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    },
+    "69049094319": {
+      "sample_group": "active_now",
+      "note": "active but past deadline",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false,
+        "all_keys": [
+          "projectId",
+          "methodId",
+          "typeId",
+          "projectName",
+          "goodsId",
+          "flowId",
+          "stepId",
+          "projectStatus",
+          "realMethodId",
+          "deptSubName",
+          "publishTypeName",
+          "flowSeqno",
+          "announceType",
+          "isSect7"
+        ]
+      }
+    }
+  },
+  "doc_endpoint_probe": {
+    "69059074818": {
+      "label": "U03 - consulting",
+      "endpoints": {
+        "getProjectDocuments": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:13:46.311+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getProjectDocuments"
+          }
+        },
+        "getAnnouncementFiles": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:13:46.918+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAnnouncementFiles"
+          }
+        },
+        "getAttachment": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:13:47.528+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAttachment"
+          }
+        },
+        "listFile": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:13:48.154+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/listFile"
+          }
+        },
+        "getProjectFile": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:13:48.773+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getProjectFile"
+          }
+        },
+        "getAnnouncementFile": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:13:49.396+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAnnouncementFile"
+          }
+        },
+        "getDocumentList": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:13:50.011+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getDocumentList"
+          }
+        },
+        "getFiles": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:13:50.627+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getFiles"
+          }
+        },
+        "getAllAnnouncement": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:13:51.236+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAllAnnouncement"
+          }
+        },
+        "getAnnouncement": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:13:51.885+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAnnouncement"
+          }
+        }
+      }
+    },
+    "69049234631": {
+      "label": "S01 - active",
+      "endpoints": {
+        "getProjectDocuments": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:13:52.501+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getProjectDocuments"
+          }
+        },
+        "getAnnouncementFiles": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:13:53.120+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAnnouncementFiles"
+          }
+        },
+        "getAttachment": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:13:53.729+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAttachment"
+          }
+        },
+        "listFile": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:13:54.349+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/listFile"
+          }
+        },
+        "getProjectFile": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:13:54.970+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getProjectFile"
+          }
+        },
+        "getAnnouncementFile": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:13:55.573+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAnnouncementFile"
+          }
+        },
+        "getDocumentList": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:13:56.184+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getDocumentList"
+          }
+        },
+        "getFiles": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:13:56.805+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getFiles"
+          }
+        },
+        "getAllAnnouncement": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:13:57.424+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAllAnnouncement"
+          }
+        },
+        "getAnnouncement": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:13:58.044+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAnnouncement"
+          }
+        }
+      }
+    },
+    "69039325763": {
+      "label": "W03 - winner",
+      "endpoints": {
+        "getProjectDocuments": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:13:58.667+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getProjectDocuments"
+          }
+        },
+        "getAnnouncementFiles": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:13:59.286+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAnnouncementFiles"
+          }
+        },
+        "getAttachment": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:13:59.924+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAttachment"
+          }
+        },
+        "listFile": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:14:00.545+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/listFile"
+          }
+        },
+        "getProjectFile": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:14:01.154+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getProjectFile"
+          }
+        },
+        "getAnnouncementFile": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:14:01.757+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAnnouncementFile"
+          }
+        },
+        "getDocumentList": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:14:02.365+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getDocumentList"
+          }
+        },
+        "getFiles": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:14:02.970+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getFiles"
+          }
+        },
+        "getAllAnnouncement": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:14:03.577+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAllAnnouncement"
+          }
+        },
+        "getAnnouncement": {
+          "status": 404,
+          "body": {
+            "timestamp": "2026-05-16T11:14:04.193+00:00",
+            "status": 404,
+            "error": "Not Found",
+            "message": "",
+            "path": "/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAnnouncement"
+          }
+        }
+      }
+    }
+  }
+}

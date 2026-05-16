@@ -1,0 +1,858 @@
+{
+  "https://process5.gprocurement.go.th/egp-agpc01-web/announcement;projectId=69049094319": {
+    "requests": [
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/api/v1/cfturnstile/validate/0.mlkiNJ_I4Ed46NOxkTCB8xTFwOPVRxcukpKK7ZhGHlXF-DuHq427C_pHremtX5LQakofsOFSJIhczNuhUr3XvVYetqVUxQjaKm2bAOaca8E8owbMEeC94tUJ6julOdqTtf7g6hrZenBczIMenPxj0thhDT1h5VLL9Om2VZLNYDlBOmMrBoZPuY-1x1vugchHZ"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/announcement;projectId=69049094319"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/styles.124878ba6c377991.css"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/polyfills.5bbd2c2c57ac9eca.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/scripts.c8f2401c9e4496c4.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/main.7269aafa86d12e5a.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/CSChatThaiUI.2e18cea3f540614b.woff2"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/KanitRegular.e15eb4fa95ce92c1.woff2"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/material-icon.59322316b3fd6063.woff2"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/bg.5f1aac6a1818f691.jpg"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/537.2497dc59d8e16be1.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/692.8df0b1adef90c6b6.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/998.22734751ac118688.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/472.3bb6c2341219198b.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/91.62a62d0cca887da7.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/921.536253842d960794.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/824.6de209d186bca27e.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/732.3bb9ba06b34d9884.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/506.b345190b83005837.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/411.ef931e8fec707c87.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/90.b8355fa5534e09cb.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/453.843493ff0b45477e.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/981.a3eaf441d9e0a059.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/744.7d7ff6ece738a49c.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/assets/images/remark.svg"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/assets/images/logo.png"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/assets/images/logo-egp.svg"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/header-bg.5321acaee01efe70.svg"
+      },
+      {
+        "method": "POST",
+        "url": "https://process5.gprocurement.go.th/egp-amas22-service/pb/a-master/app-hidden"
+      },
+      {
+        "method": "POST",
+        "url": "https://process5.gprocurement.go.th/egp-amas22-service/pb/a-master/app-ver"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-rdb-service/rdbsysm011/listProvince"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-rdb-service/listProcureMethod"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/api/v1/cfturnstile/bypasscloudflare?systemName=PROD"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/api/v1/cfturnstile/validate/0.Sa6vJ7eVpXnOmgifWko7H6BaTYOovJ7vfa8zw5uAi4AcVp6mZKncv_6tK-sViEkvFZplTZAnFaQwqGTyHr5lltWc0JoGkEXzw7dfm3dkzZER7vuPKLVf-IY2P7MTDGLnjXG87NqZ2oaBXTQICcGKc0PlRNh1lSXI7wgnEhxagegU_ei4fs3pOLzuQoIGuiBFz"
+      }
+    ],
+    "unique_paths": [
+      "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/api/v1/cfturnstile/validate/0.Sa6vJ7eVpXnOmgifWko7H6BaTYOovJ7vfa8zw5uAi4AcVp6mZKncv_6tK-sViEkvFZplTZAnFaQwqGTyHr5lltWc0JoGkEXzw7dfm3dkzZER7vuPKLVf-IY2P7MTDGLnjXG87NqZ2oaBXTQICcGKc0PlRNh1lSXI7wgnEhxagegU_ei4fs3pOLzuQoIGuiBFz",
+      "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/api/v1/cfturnstile/bypasscloudflare",
+      "https://process5.gprocurement.go.th/egp-amas22-service/pb/a-master/app-hidden",
+      "https://process5.gprocurement.go.th/egp-rdb-service/listProcureMethod",
+      "https://process5.gprocurement.go.th/egp-rdb-service/rdbsysm011/listProvince",
+      "https://process5.gprocurement.go.th/egp-amas22-service/pb/a-master/app-ver",
+      "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/api/v1/cfturnstile/validate/0.mlkiNJ_I4Ed46NOxkTCB8xTFwOPVRxcukpKK7ZhGHlXF-DuHq427C_pHremtX5LQakofsOFSJIhczNuhUr3XvVYetqVUxQjaKm2bAOaca8E8owbMEeC94tUJ6julOdqTtf7g6hrZenBczIMenPxj0thhDT1h5VLL9Om2VZLNYDlBOmMrBoZPuY-1x1vugchHZ"
+    ]
+  },
+  "https://process5.gprocurement.go.th/egp-agpc01-web/detail/69049094319": {
+    "requests": [
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/detail/69049094319"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/styles.124878ba6c377991.css"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/polyfills.5bbd2c2c57ac9eca.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/scripts.c8f2401c9e4496c4.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/main.7269aafa86d12e5a.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/CSChatThaiUI.2e18cea3f540614b.woff2"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/KanitRegular.e15eb4fa95ce92c1.woff2"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/material-icon.59322316b3fd6063.woff2"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/bg.5f1aac6a1818f691.jpg"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/537.2497dc59d8e16be1.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/692.8df0b1adef90c6b6.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/998.22734751ac118688.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/472.3bb6c2341219198b.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/91.62a62d0cca887da7.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/921.536253842d960794.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/824.6de209d186bca27e.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/732.3bb9ba06b34d9884.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/506.b345190b83005837.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/411.ef931e8fec707c87.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/90.b8355fa5534e09cb.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/453.843493ff0b45477e.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/981.a3eaf441d9e0a059.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/744.7d7ff6ece738a49c.js"
+      }
+    ],
+    "unique_paths": []
+  },
+  "https://process5.gprocurement.go.th/egp-agpc01-web/announcement/69049094319": {
+    "requests": [
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/announcement/69049094319"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/styles.124878ba6c377991.css"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/polyfills.5bbd2c2c57ac9eca.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/scripts.c8f2401c9e4496c4.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/main.7269aafa86d12e5a.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/CSChatThaiUI.2e18cea3f540614b.woff2"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/KanitRegular.e15eb4fa95ce92c1.woff2"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/material-icon.59322316b3fd6063.woff2"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/bg.5f1aac6a1818f691.jpg"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/537.2497dc59d8e16be1.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/692.8df0b1adef90c6b6.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/998.22734751ac118688.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/472.3bb6c2341219198b.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/91.62a62d0cca887da7.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/921.536253842d960794.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/824.6de209d186bca27e.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/732.3bb9ba06b34d9884.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/506.b345190b83005837.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/411.ef931e8fec707c87.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/90.b8355fa5534e09cb.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/453.843493ff0b45477e.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/981.a3eaf441d9e0a059.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/744.7d7ff6ece738a49c.js"
+      }
+    ],
+    "unique_paths": []
+  },
+  "https://process5.gprocurement.go.th/egp-agpc01-web/project/69049094319": {
+    "requests": [
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/project/69049094319"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/styles.124878ba6c377991.css"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/polyfills.5bbd2c2c57ac9eca.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/scripts.c8f2401c9e4496c4.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/main.7269aafa86d12e5a.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/537.2497dc59d8e16be1.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/692.8df0b1adef90c6b6.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/998.22734751ac118688.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/472.3bb6c2341219198b.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/91.62a62d0cca887da7.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/921.536253842d960794.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/824.6de209d186bca27e.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/732.3bb9ba06b34d9884.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/506.b345190b83005837.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/411.ef931e8fec707c87.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/90.b8355fa5534e09cb.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/453.843493ff0b45477e.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/981.a3eaf441d9e0a059.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/744.7d7ff6ece738a49c.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/CSChatThaiUI.2e18cea3f540614b.woff2"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/KanitRegular.e15eb4fa95ce92c1.woff2"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/material-icon.59322316b3fd6063.woff2"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/bg.5f1aac6a1818f691.jpg"
+      }
+    ],
+    "unique_paths": []
+  },
+  "https://process5.gprocurement.go.th/egp-agpc01-web/announcement/view?projectId=69049094319": {
+    "requests": [
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/announcement/view?projectId=69049094319"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/styles.124878ba6c377991.css"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/polyfills.5bbd2c2c57ac9eca.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/scripts.c8f2401c9e4496c4.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/main.7269aafa86d12e5a.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/CSChatThaiUI.2e18cea3f540614b.woff2"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/KanitRegular.e15eb4fa95ce92c1.woff2"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/material-icon.59322316b3fd6063.woff2"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/bg.5f1aac6a1818f691.jpg"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/537.2497dc59d8e16be1.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/692.8df0b1adef90c6b6.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/998.22734751ac118688.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/472.3bb6c2341219198b.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/91.62a62d0cca887da7.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/921.536253842d960794.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/824.6de209d186bca27e.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/732.3bb9ba06b34d9884.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/506.b345190b83005837.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/411.ef931e8fec707c87.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/90.b8355fa5534e09cb.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/453.843493ff0b45477e.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/981.a3eaf441d9e0a059.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/744.7d7ff6ece738a49c.js"
+      }
+    ],
+    "unique_paths": []
+  },
+  "https://process5.gprocurement.go.th/egp-agpc01-web/announcement/detail?projectId=69049094319": {
+    "requests": [
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/announcement/detail?projectId=69049094319"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/styles.124878ba6c377991.css"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/polyfills.5bbd2c2c57ac9eca.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/scripts.c8f2401c9e4496c4.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/main.7269aafa86d12e5a.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/CSChatThaiUI.2e18cea3f540614b.woff2"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/KanitRegular.e15eb4fa95ce92c1.woff2"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/material-icon.59322316b3fd6063.woff2"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/bg.5f1aac6a1818f691.jpg"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/537.2497dc59d8e16be1.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/692.8df0b1adef90c6b6.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/998.22734751ac118688.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/472.3bb6c2341219198b.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/91.62a62d0cca887da7.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/921.536253842d960794.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/824.6de209d186bca27e.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/732.3bb9ba06b34d9884.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/506.b345190b83005837.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/411.ef931e8fec707c87.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/90.b8355fa5534e09cb.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/453.843493ff0b45477e.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/981.a3eaf441d9e0a059.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/744.7d7ff6ece738a49c.js"
+      }
+    ],
+    "unique_paths": []
+  },
+  "https://process5.gprocurement.go.th/egp-agpc01-web/#/announcement/detail/69049094319": {
+    "requests": [
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/styles.124878ba6c377991.css"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/polyfills.5bbd2c2c57ac9eca.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/scripts.c8f2401c9e4496c4.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/main.7269aafa86d12e5a.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/CSChatThaiUI.2e18cea3f540614b.woff2"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/KanitRegular.e15eb4fa95ce92c1.woff2"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/material-icon.59322316b3fd6063.woff2"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/bg.5f1aac6a1818f691.jpg"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/537.2497dc59d8e16be1.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/692.8df0b1adef90c6b6.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/998.22734751ac118688.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/472.3bb6c2341219198b.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/91.62a62d0cca887da7.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/921.536253842d960794.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/824.6de209d186bca27e.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/732.3bb9ba06b34d9884.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/506.b345190b83005837.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/411.ef931e8fec707c87.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/90.b8355fa5534e09cb.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/453.843493ff0b45477e.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/981.a3eaf441d9e0a059.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/744.7d7ff6ece738a49c.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://login-process5.gprocurement.go.th/auth/realms/egpms/protocol/openid-connect/auth?response_type=code&client_id=egp-login-keycloak-web&state=Rzc0QWRJOWx6VnU5M29XazNucWFRX3Fwei5yen51SXNkVlMzdDlIeDl5VDc3&redirect_uri=https%3A%2F%2Fprocess5.gprocurement.go.th%2Fegp-agpc01-web&scope=openid%20profi"
+      }
+    ],
+    "unique_paths": [
+      "https://login-process5.gprocurement.go.th/auth/realms/egpms/protocol/openid-connect/auth"
+    ]
+  },
+  "https://process5.gprocurement.go.th/egp-agpc01-web/#/detail/69049094319": {
+    "requests": [
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/styles.124878ba6c377991.css"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/polyfills.5bbd2c2c57ac9eca.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/scripts.c8f2401c9e4496c4.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/main.7269aafa86d12e5a.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/CSChatThaiUI.2e18cea3f540614b.woff2"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/KanitRegular.e15eb4fa95ce92c1.woff2"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/material-icon.59322316b3fd6063.woff2"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/bg.5f1aac6a1818f691.jpg"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/537.2497dc59d8e16be1.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/692.8df0b1adef90c6b6.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/998.22734751ac118688.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/472.3bb6c2341219198b.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/91.62a62d0cca887da7.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/921.536253842d960794.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/824.6de209d186bca27e.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/732.3bb9ba06b34d9884.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/506.b345190b83005837.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/411.ef931e8fec707c87.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/90.b8355fa5534e09cb.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/453.843493ff0b45477e.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/981.a3eaf441d9e0a059.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://process5.gprocurement.go.th/egp-agpc01-web/744.7d7ff6ece738a49c.js"
+      },
+      {
+        "method": "GET",
+        "url": "https://login-process5.gprocurement.go.th/auth/realms/egpms/protocol/openid-connect/auth?response_type=code&client_id=egp-login-keycloak-web&state=d1pZU1drcW9mZ2x6aWx4ZXh5eXZ5d1JhRmRMYm9ldTA4dnU2fnlUQ2dFRkdR&redirect_uri=https%3A%2F%2Fprocess5.gprocurement.go.th%2Fegp-agpc01-web&scope=openid%20profi"
+      }
+    ],
+    "unique_paths": [
+      "https://login-process5.gprocurement.go.th/auth/realms/egpms/protocol/openid-connect/auth"
+    ]
+  },
+  "__click_through__": {
+    "requests": [
+      "https://process5.gprocurement.go.th/egp-agpc01-web/CSChatThaiUI.2e18cea3f540614b.woff2",
+      "https://process5.gprocurement.go.th/egp-agpc01-web/KanitRegular.e15eb4fa95ce92c1.woff2",
+      "https://process5.gprocurement.go.th/egp-agpc01-web/material-icon.59322316b3fd6063.woff2",
+      "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement/getProjectDetail?projectId=69049094319",
+      "https://process5.gprocurement.go.th/egp-rdb-service/listProcureMethod"
+    ],
+    "paths": [
+      "https://process5.gprocurement.go.th/egp-rdb-service/listProcureMethod",
+      "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement/getProjectDetail",
+      "https://process5.gprocurement.go.th/egp-agpc01-web/material-icon.59322316b3fd6063.woff2",
+      "https://process5.gprocurement.go.th/egp-agpc01-web/KanitRegular.e15eb4fa95ce92c1.woff2",
+      "https://process5.gprocurement.go.th/egp-agpc01-web/CSChatThaiUI.2e18cea3f540614b.woff2"
+    ]
+  }
+}

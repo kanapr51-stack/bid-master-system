@@ -1,0 +1,3002 @@
+{
+  "generated_at": "2026-05-16T18:34:57.202096",
+  "n_probed": 214,
+  "samples": {
+    "69049223058": {
+      "status": "กำลังประมูล",
+      "publish_date": "30/04/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "Z03",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "D0",
+        "typeId": "02",
+        "goodsId": "3001",
+        "isSect7": false
+      }
+    },
+    "69049366395": {
+      "status": "กำลังประมูล",
+      "publish_date": "06/05/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69049020320": {
+      "status": "กำลังประมูล",
+      "publish_date": "21/04/2026",
+      "detail": {
+        "flowSeqno": 5,
+        "stepId": "W03",
+        "flowId": "7",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "69059123092": {
+      "status": "กำลังประมูล",
+      "publish_date": "11/05/2026",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "M03",
+        "flowId": "1",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3001",
+        "isSect7": false
+      }
+    },
+    "68119422244": {
+      "status": "กำลังประมูล",
+      "publish_date": "12/03/2026",
+      "detail": {
+        "flowSeqno": 5,
+        "stepId": "W01",
+        "flowId": "7",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3001",
+        "isSect7": false
+      }
+    },
+    "69049256067": {
+      "status": "กำลังประมูล",
+      "publish_date": "27/04/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "D0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69049351246": {
+      "status": "กำลังประมูล",
+      "publish_date": "24/04/2026",
+      "detail": {
+        "flowSeqno": 5,
+        "stepId": "W03",
+        "flowId": "7",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1017",
+        "isSect7": false
+      }
+    },
+    "69049220822": {
+      "status": "กำลังประมูล",
+      "publish_date": "06/05/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69049333064": {
+      "status": "กำลังประมูล",
+      "publish_date": "07/05/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "D0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69039598258": {
+      "status": "กำลังประมูล",
+      "publish_date": "06/05/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "01",
+        "goodsId": "1017",
+        "isSect7": false
+      }
+    },
+    "69029066538": {
+      "status": "กำลังประมูล",
+      "publish_date": "13/03/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "Z01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3008",
+        "isSect7": false
+      }
+    },
+    "69049276732": {
+      "status": "กำลังประมูล",
+      "publish_date": "23/04/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "I03",
+        "flowId": "9",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1013",
+        "isSect7": false
+      }
+    },
+    "69049216940": {
+      "status": "กำลังประมูล",
+      "publish_date": "20/04/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "I03",
+        "flowId": "9",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1006",
+        "isSect7": false
+      }
+    },
+    "69049262363": {
+      "status": "กำลังประมูล",
+      "publish_date": "01/05/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "D0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69049219653": {
+      "status": "กำลังประมูล",
+      "publish_date": "05/05/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "Z03",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "D0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "68089313232": {
+      "status": "กำลังประมูล",
+      "publish_date": "26/03/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "Z01",
+        "flowId": "16",
+        "projectStatus": "R",
+        "announceType": "D1",
+        "typeId": "02",
+        "goodsId": "3001",
+        "isSect7": false
+      }
+    },
+    "69039591451": {
+      "status": "กำลังประมูล",
+      "publish_date": "24/04/2026",
+      "detail": {
+        "flowSeqno": 5,
+        "stepId": "W03",
+        "flowId": "7",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "68119241822": {
+      "status": "กำลังประมูล",
+      "publish_date": "14/11/2025",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "E03",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "W1",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "69019189119": {
+      "status": "กำลังประมูล",
+      "publish_date": "23/02/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "D0",
+        "typeId": "02",
+        "goodsId": "3012",
+        "isSect7": false
+      }
+    },
+    "68109099303": {
+      "status": "กำลังประมูล",
+      "publish_date": "06/10/2025",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "W01",
+        "flowId": "7",
+        "projectStatus": "A",
+        "announceType": "W1",
+        "typeId": "04",
+        "goodsId": "5005",
+        "isSect7": false
+      }
+    },
+    "68109018032": {
+      "status": "กำลังประมูล",
+      "publish_date": "12/05/2026",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "E03",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "W1",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69049411070": {
+      "status": "กำลังประมูล",
+      "publish_date": "28/04/2026",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "M03",
+        "flowId": "1",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69049214773": {
+      "status": "กำลังประมูล",
+      "publish_date": "06/05/2026",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "U06",
+        "flowId": "1",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69039034920": {
+      "status": "กำลังประมูล",
+      "publish_date": "08/05/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "D0",
+        "typeId": "02",
+        "goodsId": "3001",
+        "isSect7": false
+      }
+    },
+    "69019187542": {
+      "status": "กำลังประมูล",
+      "publish_date": "23/02/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "D0",
+        "typeId": "02",
+        "goodsId": "3012",
+        "isSect7": false
+      }
+    },
+    "69049005971": {
+      "status": "กำลังประมูล",
+      "publish_date": "30/04/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "D0",
+        "typeId": "02",
+        "goodsId": "3003",
+        "isSect7": false
+      }
+    },
+    "69039471557": {
+      "status": "กำลังประมูล",
+      "publish_date": "16/04/2026",
+      "detail": {
+        "flowSeqno": 5,
+        "stepId": "W01",
+        "flowId": "7",
+        "projectStatus": "A",
+        "announceType": "D0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69049265563": {
+      "status": "กำลังประมูล",
+      "publish_date": "11/05/2026",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "U03",
+        "flowId": "1",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69039515362": {
+      "status": "กำลังประมูล",
+      "publish_date": "23/04/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "Z01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "68109335330": {
+      "status": "กำลังประมูล",
+      "publish_date": "28/04/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "B3",
+        "typeId": "01",
+        "goodsId": "1013",
+        "isSect7": false
+      }
+    },
+    "69039336196": {
+      "status": "กำลังประมูล",
+      "publish_date": "02/04/2026",
+      "detail": {
+        "flowSeqno": 5,
+        "stepId": "W03",
+        "flowId": "7",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69049167071": {
+      "status": "กำลังประมูล",
+      "publish_date": "05/05/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "D0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69049360621": {
+      "status": "กำลังประมูล",
+      "publish_date": "08/05/2026",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "M03",
+        "flowId": "1",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69049155240": {
+      "status": "กำลังประมูล",
+      "publish_date": "21/04/2026",
+      "detail": {
+        "flowSeqno": 5,
+        "stepId": "W03",
+        "flowId": "7",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "02",
+        "goodsId": "3001",
+        "isSect7": false
+      }
+    },
+    "69049415089": {
+      "status": "กำลังประมูล",
+      "publish_date": "15/05/2026",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "U03",
+        "flowId": "1",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69049234631": {
+      "status": "กำลังประมูล",
+      "publish_date": "06/05/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "D0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69049094319": {
+      "status": "กำลังประมูล",
+      "publish_date": "30/04/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69019186505": {
+      "status": "กำลังประมูล",
+      "publish_date": "23/02/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "A",
+        "announceType": "D0",
+        "typeId": "02",
+        "goodsId": "3012",
+        "isSect7": false
+      }
+    },
+    "69049015928": {
+      "status": "กำลังประมูล",
+      "publish_date": "24/04/2026",
+      "detail": {
+        "flowSeqno": 5,
+        "stepId": "W03",
+        "flowId": "7",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "02",
+        "goodsId": "3001",
+        "isSect7": false
+      }
+    },
+    "69049200617": {
+      "status": "กำลังประมูล",
+      "publish_date": "17/04/2026",
+      "detail": {
+        "flowSeqno": 5,
+        "stepId": "W03",
+        "flowId": "7",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1006",
+        "isSect7": false
+      }
+    },
+    "69049353012": {
+      "status": "กำลังประมูล",
+      "publish_date": "24/04/2026",
+      "detail": {
+        "flowSeqno": 5,
+        "stepId": "W03",
+        "flowId": "7",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1017",
+        "isSect7": false
+      }
+    },
+    "69039477716": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "26/03/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1018",
+        "isSect7": false
+      }
+    },
+    "68129508374": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "26/12/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1018",
+        "isSect7": false
+      }
+    },
+    "69039408443": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "24/03/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1012",
+        "isSect7": false
+      }
+    },
+    "68119260580": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "18/11/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1001",
+        "isSect7": false
+      }
+    },
+    "68129221677": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "17/12/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1008",
+        "isSect7": false
+      }
+    },
+    "68109070715": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "03/10/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "68129256502": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "17/12/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "02",
+        "goodsId": "3011",
+        "isSect7": false
+      }
+    },
+    "68109409671": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "28/10/2025",
+      "detail": {
+        "flowSeqno": 7,
+        "stepId": "I03",
+        "flowId": "9",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "68119364290": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "20/11/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "69049454167": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "08/05/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1001",
+        "isSect7": false
+      }
+    },
+    "68109018762": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "08/01/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69039113356": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "25/03/2026",
+      "detail": {
+        "flowSeqno": 7,
+        "stepId": "I03",
+        "flowId": "9",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "02",
+        "goodsId": "3001",
+        "isSect7": false
+      }
+    },
+    "69049212542": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "02/03/2026",
+      "detail": {
+        "flowSeqno": 5,
+        "stepId": "X03",
+        "flowId": "13",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "04",
+        "goodsId": "5003",
+        "isSect7": false
+      }
+    },
+    "68109096718": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "05/11/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1001",
+        "isSect7": false
+      }
+    },
+    "69039558736": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "01/04/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "02",
+        "goodsId": "3012",
+        "isSect7": false
+      }
+    },
+    "69029326096": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "18/02/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1003",
+        "isSect7": false
+      }
+    },
+    "68109121171": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "14/10/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "02",
+        "goodsId": "3012",
+        "isSect7": false
+      }
+    },
+    "69039312561": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "20/03/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1005",
+        "isSect7": false
+      }
+    },
+    "68119554124": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "28/11/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "68129419996": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "22/12/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1002",
+        "isSect7": false
+      }
+    },
+    "68119030490": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "04/11/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "68129503542": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "25/12/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1001",
+        "isSect7": false
+      }
+    },
+    "68109158374": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "09/10/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "69019153440": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "12/01/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1018",
+        "isSect7": false
+      }
+    },
+    "69049093174": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "16/04/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1001",
+        "isSect7": false
+      }
+    },
+    "68129272719": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "23/12/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1018",
+        "isSect7": false
+      }
+    },
+    "68119381131": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "21/11/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "68119172561": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "12/11/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1018",
+        "isSect7": false
+      }
+    },
+    "69019321298": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "26/01/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4012",
+        "isSect7": false
+      }
+    },
+    "68129410388": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "22/12/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "68099167519": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "29/10/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1017",
+        "isSect7": false
+      }
+    },
+    "69049338842": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "24/04/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1017",
+        "isSect7": false
+      }
+    },
+    "68129365933": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "18/12/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1008",
+        "isSect7": false
+      }
+    },
+    "69039415774": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "24/03/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1005",
+        "isSect7": false
+      }
+    },
+    "69029034628": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "30/12/2025",
+      "detail": {
+        "flowSeqno": 5,
+        "stepId": "X01",
+        "flowId": "13",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "68109185685": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "29/01/2026",
+      "detail": {
+        "flowSeqno": 9,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69029215908": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "26/02/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1003",
+        "isSect7": false
+      }
+    },
+    "69039327634": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "18/03/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "68119128770": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "07/11/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1001",
+        "isSect7": false
+      }
+    },
+    "69039455160": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "25/03/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1017",
+        "isSect7": false
+      }
+    },
+    "68129393500": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "22/12/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C03",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1018",
+        "isSect7": false
+      }
+    },
+    "68129258763": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "09/03/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "02",
+        "goodsId": "3011",
+        "isSect7": false
+      }
+    },
+    "69049121757": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "08/04/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4009",
+        "isSect7": false
+      }
+    },
+    "68119420958": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "25/11/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "02",
+        "goodsId": "3006",
+        "isSect7": false
+      }
+    },
+    "69049093523": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "07/04/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "68129429720": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "22/12/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1001",
+        "isSect7": false
+      }
+    },
+    "68109140473": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "08/10/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1003",
+        "isSect7": false
+      }
+    },
+    "68099346674": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "28/11/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1018",
+        "isSect7": false
+      }
+    },
+    "69049003674": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "07/04/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1003",
+        "isSect7": false
+      }
+    },
+    "68129506920": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "26/12/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "69049285846": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "21/04/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1007",
+        "isSect7": false
+      }
+    },
+    "69019225658": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "22/01/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C03",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1008",
+        "isSect7": false
+      }
+    },
+    "68129507341": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "30/12/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1018",
+        "isSect7": false
+      }
+    },
+    "68129531896": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "26/12/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1001",
+        "isSect7": false
+      }
+    },
+    "68109294035": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "21/10/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1009",
+        "isSect7": false
+      }
+    },
+    "68119261796": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "14/11/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "69039434864": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "25/03/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1018",
+        "isSect7": false
+      }
+    },
+    "69049391218": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "27/04/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1001",
+        "isSect7": false
+      }
+    },
+    "68109424621": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "05/11/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C03",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1018",
+        "isSect7": false
+      }
+    },
+    "69039302117": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "17/03/2026",
+      "detail": {
+        "flowSeqno": 7,
+        "stepId": "I03",
+        "flowId": "9",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "68109348788": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "11/12/2025",
+      "detail": {
+        "flowSeqno": 9,
+        "stepId": "C03",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1017",
+        "isSect7": false
+      }
+    },
+    "69029010797": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "08/03/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "69049336324": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "23/04/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1018",
+        "isSect7": false
+      }
+    },
+    "69029145604": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "19/02/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1001",
+        "isSect7": false
+      }
+    },
+    "69019204374": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "14/01/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "69019407289": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "29/01/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1018",
+        "isSect7": false
+      }
+    },
+    "69039567914": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "21/04/2026",
+      "detail": {
+        "flowSeqno": 7,
+        "stepId": "I03",
+        "flowId": "9",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69039499610": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "27/03/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1007",
+        "isSect7": false
+      }
+    },
+    "68109419221": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "03/11/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "69029285200": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "16/02/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C03",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4012",
+        "isSect7": false
+      }
+    },
+    "69019287896": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "19/01/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "69039439980": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "30/03/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1008",
+        "isSect7": false
+      }
+    },
+    "69039115689": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "09/03/2026",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "68129450503": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "23/12/2025",
+      "detail": {
+        "flowSeqno": 8,
+        "stepId": "C01",
+        "flowId": "15",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "03",
+        "goodsId": "4009",
+        "isSect7": false
+      }
+    },
+    "69039070694": {
+      "status": "ประมูลแล้ว",
+      "publish_date": "20/04/2026",
+      "detail": {
+        "flowSeqno": 5,
+        "stepId": "W03",
+        "flowId": "7",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "01",
+        "goodsId": "1015",
+        "isSect7": false
+      }
+    },
+    "68119356119": {
+      "status": "ยกเลิก",
+      "publish_date": "16/03/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "Z01",
+        "flowId": "16",
+        "projectStatus": "R",
+        "announceType": "D1",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69039167465": {
+      "status": "ยกเลิก",
+      "publish_date": "23/03/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "03",
+        "goodsId": "4011",
+        "isSect7": false
+      }
+    },
+    "69049298285": {
+      "status": "ยกเลิก",
+      "publish_date": "24/04/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1008",
+        "isSect7": false
+      }
+    },
+    "68109236872": {
+      "status": "ยกเลิก",
+      "publish_date": "06/01/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "Z01",
+        "flowId": "16",
+        "projectStatus": "R",
+        "announceType": "D1",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69039116059": {
+      "status": "ยกเลิก",
+      "publish_date": "19/03/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1018",
+        "isSect7": false
+      }
+    },
+    "69049431523": {
+      "status": "ยกเลิก",
+      "publish_date": "29/04/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1018",
+        "isSect7": false
+      }
+    },
+    "68119476113": {
+      "status": "ยกเลิก",
+      "publish_date": "19/12/2025",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1008",
+        "isSect7": false
+      }
+    },
+    "68119149367": {
+      "status": "ยกเลิก",
+      "publish_date": "26/11/2025",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1001",
+        "isSect7": false
+      }
+    },
+    "69039295542": {
+      "status": "ยกเลิก",
+      "publish_date": "28/04/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "68129261365": {
+      "status": "ยกเลิก",
+      "publish_date": "15/12/2025",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1018",
+        "isSect7": false
+      }
+    },
+    "68099281425": {
+      "status": "ยกเลิก",
+      "publish_date": "06/10/2025",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "M03",
+        "flowId": "1",
+        "projectStatus": "R",
+        "announceType": "D1",
+        "typeId": "01",
+        "goodsId": "1018",
+        "isSect7": false
+      }
+    },
+    "68119107224": {
+      "status": "ยกเลิก",
+      "publish_date": "30/12/2025",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "R",
+        "announceType": "D1",
+        "typeId": "02",
+        "goodsId": "3011",
+        "isSect7": false
+      }
+    },
+    "68129259415": {
+      "status": "ยกเลิก",
+      "publish_date": "15/12/2025",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1018",
+        "isSect7": false
+      }
+    },
+    "68119508905": {
+      "status": "ยกเลิก",
+      "publish_date": "19/01/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "Z01",
+        "flowId": "16",
+        "projectStatus": "R",
+        "announceType": "D1",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69059101898": {
+      "status": "ยกเลิก",
+      "publish_date": "08/05/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1001",
+        "isSect7": false
+      }
+    },
+    "69039264882": {
+      "status": "ยกเลิก",
+      "publish_date": "17/03/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B01",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1003",
+        "isSect7": false
+      }
+    },
+    "68129232464": {
+      "status": "ยกเลิก",
+      "publish_date": "23/12/2025",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "68129523406": {
+      "status": "ยกเลิก",
+      "publish_date": "27/01/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "Z01",
+        "flowId": "16",
+        "projectStatus": "R",
+        "announceType": "D1",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69039317289": {
+      "status": "ยกเลิก",
+      "publish_date": "24/03/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1005",
+        "isSect7": false
+      }
+    },
+    "68119019554": {
+      "status": "ยกเลิก",
+      "publish_date": "12/12/2025",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "R",
+        "announceType": "D1",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "68109434220": {
+      "status": "ยกเลิก",
+      "publish_date": "05/11/2025",
+      "detail": {
+        "flowSeqno": 1,
+        "stepId": "Q01",
+        "flowId": "10",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "02",
+        "goodsId": "3012",
+        "isSect7": false
+      }
+    },
+    "68109487915": {
+      "status": "ยกเลิก",
+      "publish_date": "31/10/2025",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1003",
+        "isSect7": false
+      }
+    },
+    "68129514949": {
+      "status": "ยกเลิก",
+      "publish_date": "21/01/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "Z01",
+        "flowId": "16",
+        "projectStatus": "R",
+        "announceType": "D1",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "68129108054": {
+      "status": "ยกเลิก",
+      "publish_date": "10/02/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "R",
+        "announceType": "D1",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69049118377": {
+      "status": "ยกเลิก",
+      "publish_date": "08/04/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1008",
+        "isSect7": false
+      }
+    },
+    "69019208610": {
+      "status": "ยกเลิก",
+      "publish_date": "15/01/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "68119295642": {
+      "status": "ยกเลิก",
+      "publish_date": "19/11/2025",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1013",
+        "isSect7": false
+      }
+    },
+    "68109403987": {
+      "status": "ยกเลิก",
+      "publish_date": "28/10/2025",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B01",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1018",
+        "isSect7": false
+      }
+    },
+    "69029101833": {
+      "status": "ยกเลิก",
+      "publish_date": "09/02/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1018",
+        "isSect7": false
+      }
+    },
+    "69019061627": {
+      "status": "ยกเลิก",
+      "publish_date": "07/01/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "03",
+        "goodsId": "4009",
+        "isSect7": false
+      }
+    },
+    "69039082570": {
+      "status": "ยกเลิก",
+      "publish_date": "18/03/2026",
+      "detail": {
+        "flowSeqno": 1,
+        "stepId": "Q03",
+        "flowId": "10",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "68109488272": {
+      "status": "ยกเลิก",
+      "publish_date": "07/11/2025",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1012",
+        "isSect7": false
+      }
+    },
+    "68119008354": {
+      "status": "ยกเลิก",
+      "publish_date": "10/11/2025",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1003",
+        "isSect7": false
+      }
+    },
+    "69029352356": {
+      "status": "ยกเลิก",
+      "publish_date": "05/03/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1013",
+        "isSect7": false
+      }
+    },
+    "69019206692": {
+      "status": "ยกเลิก",
+      "publish_date": "19/01/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1015",
+        "isSect7": false
+      }
+    },
+    "69039091835": {
+      "status": "ยกเลิก",
+      "publish_date": "17/03/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1012",
+        "isSect7": false
+      }
+    },
+    "68109088545": {
+      "status": "ยกเลิก",
+      "publish_date": "06/10/2025",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "68119365181": {
+      "status": "ยกเลิก",
+      "publish_date": "26/02/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "Z01",
+        "flowId": "16",
+        "projectStatus": "R",
+        "announceType": "D1",
+        "typeId": "01",
+        "goodsId": "1013",
+        "isSect7": false
+      }
+    },
+    "69039332978": {
+      "status": "ยกเลิก",
+      "publish_date": "18/03/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1017",
+        "isSect7": false
+      }
+    },
+    "69029205403": {
+      "status": "ยกเลิก",
+      "publish_date": "17/03/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "Z01",
+        "flowId": "16",
+        "projectStatus": "R",
+        "announceType": "D1",
+        "typeId": "02",
+        "goodsId": "3008",
+        "isSect7": false
+      }
+    },
+    "69019034553": {
+      "status": "ยกเลิก",
+      "publish_date": "09/01/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "69039148231": {
+      "status": "ยกเลิก",
+      "publish_date": "07/04/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69019014284": {
+      "status": "ยกเลิก",
+      "publish_date": "07/01/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1001",
+        "isSect7": false
+      }
+    },
+    "68129396003": {
+      "status": "ยกเลิก",
+      "publish_date": "27/01/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "R",
+        "announceType": "D1",
+        "typeId": "01",
+        "goodsId": "1007",
+        "isSect7": false
+      }
+    },
+    "69029066891": {
+      "status": "ยกเลิก",
+      "publish_date": "09/02/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "69049430972": {
+      "status": "ยกเลิก",
+      "publish_date": "07/05/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1008",
+        "isSect7": false
+      }
+    },
+    "69019512209": {
+      "status": "ยกเลิก",
+      "publish_date": "02/02/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1018",
+        "isSect7": false
+      }
+    },
+    "69039037285": {
+      "status": "ยกเลิก",
+      "publish_date": "09/03/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1003",
+        "isSect7": false
+      }
+    },
+    "69059029152": {
+      "status": "ยกเลิก",
+      "publish_date": "05/05/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69049433422": {
+      "status": "ยกเลิก",
+      "publish_date": "14/05/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "Z01",
+        "flowId": "16",
+        "projectStatus": "R",
+        "announceType": "D1",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "68109439083": {
+      "status": "ยกเลิก",
+      "publish_date": "19/01/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "R",
+        "announceType": "D1",
+        "typeId": "02",
+        "goodsId": "3012",
+        "isSect7": false
+      }
+    },
+    "68119479384": {
+      "status": "ยกเลิก",
+      "publish_date": "22/12/2025",
+      "detail": {
+        "flowSeqno": 2,
+        "stepId": "M03",
+        "flowId": "1",
+        "projectStatus": "R",
+        "announceType": "BOQ",
+        "typeId": "02",
+        "goodsId": "3002",
+        "isSect7": false
+      }
+    },
+    "68119360545": {
+      "status": "ยกเลิก",
+      "publish_date": "19/11/2025",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1008",
+        "isSect7": false
+      }
+    },
+    "68119336292": {
+      "status": "ยกเลิก",
+      "publish_date": "01/12/2025",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "M03",
+        "flowId": "1",
+        "projectStatus": "R",
+        "announceType": "D1",
+        "typeId": "02",
+        "goodsId": "3001",
+        "isSect7": false
+      }
+    },
+    "69049395158": {
+      "status": "ยกเลิก",
+      "publish_date": "29/04/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "02",
+        "goodsId": "3004",
+        "isSect7": false
+      }
+    },
+    "68119203776": {
+      "status": "ยกเลิก",
+      "publish_date": "07/01/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "R",
+        "announceType": "D1",
+        "typeId": "02",
+        "goodsId": "3001",
+        "isSect7": false
+      }
+    },
+    "69029498049": {
+      "status": "ยกเลิก",
+      "publish_date": "02/03/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "03",
+        "goodsId": "4012",
+        "isSect7": false
+      }
+    },
+    "68109067931": {
+      "status": "ยกเลิก",
+      "publish_date": "21/10/2025",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "69019205744": {
+      "status": "ยกเลิก",
+      "publish_date": "04/02/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "R",
+        "announceType": "D1",
+        "typeId": "02",
+        "goodsId": "3003",
+        "isSect7": false
+      }
+    },
+    "69049223117": {
+      "status": "ยกเลิก",
+      "publish_date": "21/04/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "68109039139": {
+      "status": "ยกเลิก",
+      "publish_date": "06/10/2025",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "03",
+        "goodsId": "4010",
+        "isSect7": false
+      }
+    },
+    "69039584111": {
+      "status": "ยกเลิก",
+      "publish_date": "31/03/2026",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "E03",
+        "flowId": "16",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "68109318528": {
+      "status": "ยกเลิก",
+      "publish_date": "19/11/2025",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "M03",
+        "flowId": "1",
+        "projectStatus": "R",
+        "announceType": "D1",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69049384450": {
+      "status": "ยกเลิก",
+      "publish_date": "14/05/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1007",
+        "isSect7": false
+      }
+    },
+    "68089020703": {
+      "status": "ยกเลิก",
+      "publish_date": "14/11/2025",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "U03",
+        "flowId": "1",
+        "projectStatus": "R",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3001",
+        "isSect7": false
+      }
+    },
+    "69039144146": {
+      "status": "ยกเลิก",
+      "publish_date": "08/04/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "68129429759": {
+      "status": "ยกเลิก",
+      "publish_date": "15/01/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1003",
+        "isSect7": false
+      }
+    },
+    "68129413194": {
+      "status": "ยกเลิก",
+      "publish_date": "17/03/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1006",
+        "isSect7": false
+      }
+    },
+    "68109421530": {
+      "status": "ยกเลิก",
+      "publish_date": "29/10/2025",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "69029220158": {
+      "status": "ยกเลิก",
+      "publish_date": "23/02/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "01",
+        "goodsId": "1001",
+        "isSect7": false
+      }
+    },
+    "68109271045": {
+      "status": "ยกเลิก",
+      "publish_date": "27/10/2025",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "M03",
+        "flowId": "1",
+        "projectStatus": "R",
+        "announceType": "D1",
+        "typeId": "02",
+        "goodsId": "3001",
+        "isSect7": false
+      }
+    },
+    "69059026988": {
+      "status": "ยกเลิก",
+      "publish_date": "11/05/2026",
+      "detail": {
+        "flowSeqno": 0,
+        "stepId": "B03",
+        "flowId": "0",
+        "projectStatus": "R",
+        "announceType": "W1",
+        "typeId": "03",
+        "goodsId": "4012",
+        "isSect7": false
+      }
+    },
+    "68119298039": {
+      "status": "ยกเลิก",
+      "publish_date": "18/11/2025",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "U03",
+        "flowId": "1",
+        "projectStatus": "R",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3001",
+        "isSect7": false
+      }
+    },
+    "69019024418": {
+      "status": "ยกเลิก",
+      "publish_date": "28/04/2026",
+      "detail": {
+        "flowSeqno": 4,
+        "stepId": "S01",
+        "flowId": "16",
+        "projectStatus": "R",
+        "announceType": "D1",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69039100415": {
+      "status": "ยกเลิก",
+      "publish_date": "16/04/2026",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "M03",
+        "flowId": "1",
+        "projectStatus": "R",
+        "announceType": "D1",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69059139353": {
+      "status": "กำลังเตรียม",
+      "publish_date": "11/05/2026",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "M03",
+        "flowId": "1",
+        "projectStatus": "A",
+        "announceType": "D0",
+        "typeId": "02",
+        "goodsId": "3008",
+        "isSect7": false
+      }
+    },
+    "69049281122": {
+      "status": "กำลังเตรียม",
+      "publish_date": "14/05/2026",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "M03",
+        "flowId": "1",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69049011449": {
+      "status": "กำลังเตรียม",
+      "publish_date": "23/04/2026",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "M03",
+        "flowId": "1",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3011",
+        "isSect7": false
+      }
+    },
+    "69049033345": {
+      "status": "กำลังเตรียม",
+      "publish_date": "",
+      "detail": {
+        "flowSeqno": 1,
+        "stepId": "Q01",
+        "flowId": "10",
+        "projectStatus": "A",
+        "announceType": "BOQ",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69039014126": {
+      "status": "กำลังเตรียม",
+      "publish_date": "08/04/2026",
+      "detail": {
+        "flowSeqno": 1,
+        "stepId": "Q01",
+        "flowId": "10",
+        "projectStatus": "A",
+        "announceType": "W1",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69049442188": {
+      "status": "กำลังเตรียม",
+      "publish_date": "12/05/2026",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "M03",
+        "flowId": "1",
+        "projectStatus": "A",
+        "announceType": "D0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69039512150": {
+      "status": "กำลังเตรียม",
+      "publish_date": "11/05/2026",
+      "detail": {
+        "flowSeqno": 1,
+        "stepId": "Q03",
+        "flowId": "10",
+        "projectStatus": "A",
+        "announceType": "BOQ",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69049235336": {
+      "status": "กำลังเตรียม",
+      "publish_date": "12/05/2026",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "M03",
+        "flowId": "1",
+        "projectStatus": "A",
+        "announceType": "D0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69059130710": {
+      "status": "กำลังเตรียม",
+      "publish_date": "11/05/2026",
+      "detail": {
+        "flowSeqno": 7,
+        "stepId": "I03",
+        "flowId": "9",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69049050342": {
+      "status": "กำลังเตรียม",
+      "publish_date": "",
+      "detail": {
+        "flowSeqno": 1,
+        "stepId": "Q01",
+        "flowId": "10",
+        "projectStatus": "A",
+        "announceType": "BOQ",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69049033147": {
+      "status": "กำลังเตรียม",
+      "publish_date": "",
+      "detail": {
+        "flowSeqno": 1,
+        "stepId": "Q01",
+        "flowId": "10",
+        "projectStatus": "A",
+        "announceType": "BOQ",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69059075123": {
+      "status": "กำลังเตรียม",
+      "publish_date": "12/05/2026",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "U03",
+        "flowId": "1",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3012",
+        "isSect7": false
+      }
+    },
+    "69039176153": {
+      "status": "กำลังเตรียม",
+      "publish_date": "20/03/2026",
+      "detail": {
+        "flowSeqno": 1,
+        "stepId": "Q03",
+        "flowId": "10",
+        "projectStatus": "A",
+        "announceType": "W1",
+        "typeId": "03",
+        "goodsId": "4016",
+        "isSect7": false
+      }
+    },
+    "69039512358": {
+      "status": "กำลังเตรียม",
+      "publish_date": "07/05/2026",
+      "detail": {
+        "flowSeqno": 1,
+        "stepId": "Q03",
+        "flowId": "10",
+        "projectStatus": "A",
+        "announceType": "BOQ",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69039512493": {
+      "status": "กำลังเตรียม",
+      "publish_date": "06/05/2026",
+      "detail": {
+        "flowSeqno": 1,
+        "stepId": "Q03",
+        "flowId": "10",
+        "projectStatus": "A",
+        "announceType": "BOQ",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69059074818": {
+      "status": "กำลังเตรียม",
+      "publish_date": "12/05/2026",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "U03",
+        "flowId": "1",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69049032874": {
+      "status": "กำลังเตรียม",
+      "publish_date": "",
+      "detail": {
+        "flowSeqno": 1,
+        "stepId": "Q01",
+        "flowId": "10",
+        "projectStatus": "A",
+        "announceType": "BOQ",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69039511634": {
+      "status": "กำลังเตรียม",
+      "publish_date": "07/05/2026",
+      "detail": {
+        "flowSeqno": 1,
+        "stepId": "Q03",
+        "flowId": "10",
+        "projectStatus": "A",
+        "announceType": "BOQ",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69049032600": {
+      "status": "กำลังเตรียม",
+      "publish_date": "",
+      "detail": {
+        "flowSeqno": 1,
+        "stepId": "Q01",
+        "flowId": "10",
+        "projectStatus": "A",
+        "announceType": "BOQ",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69059134387": {
+      "status": "กำลังเตรียม",
+      "publish_date": "11/05/2026",
+      "detail": {
+        "flowSeqno": 7,
+        "stepId": "I03",
+        "flowId": "9",
+        "projectStatus": "A",
+        "announceType": "W0",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    },
+    "69049365887": {
+      "status": "กำลังเตรียม",
+      "publish_date": "06/05/2026",
+      "detail": {
+        "flowSeqno": 3,
+        "stepId": "M03",
+        "flowId": "1",
+        "projectStatus": "A",
+        "announceType": "B0",
+        "typeId": "02",
+        "goodsId": "3008",
+        "isSect7": false
+      }
+    },
+    "68129041470": {
+      "status": "กำลังเตรียม",
+      "publish_date": "11/12/2025",
+      "detail": {
+        "flowSeqno": 1,
+        "stepId": "Q03",
+        "flowId": "10",
+        "projectStatus": "A",
+        "announceType": "W1",
+        "typeId": "02",
+        "goodsId": "3001",
+        "isSect7": false
+      }
+    },
+    "69039512046": {
+      "status": "กำลังเตรียม",
+      "publish_date": "07/05/2026",
+      "detail": {
+        "flowSeqno": 1,
+        "stepId": "Q03",
+        "flowId": "10",
+        "projectStatus": "A",
+        "announceType": "BOQ",
+        "typeId": "02",
+        "goodsId": "3010",
+        "isSect7": false
+      }
+    }
+  }
+}

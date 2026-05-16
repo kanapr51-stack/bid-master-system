@@ -119,8 +119,18 @@ PRE_TOR_HEADERS        = ALL_JOBS_HEADERS + ["stage_note"]
 TOR_REVIEW_HEADERS     = ALL_JOBS_HEADERS + ["stage_note"]
 ACTIVE_BIDDING_HEADERS = ALL_JOBS_HEADERS + ["days_remaining"]
 PENDING_AWARD_HEADERS  = ALL_JOBS_HEADERS + ["wait_reason"]
-AWARDED_JOBS_HEADERS   = ALL_JOBS_HEADERS + ["winner_name", "winner_price", "discount_pct", "award_date"]
+# Phase B (2026-05-16): เพิ่ม deliver_day + num_bidders เพื่อ competitive intel
+AWARDED_JOBS_HEADERS   = ALL_JOBS_HEADERS + [
+    "winner_name", "winner_price", "discount_pct", "award_date",
+    "deliver_day", "num_bidders",
+]
 CANCELLED_JOBS_HEADERS = ALL_JOBS_HEADERS + ["cancel_note"]
+# bid_history: 1 row = 1 bidder ต่อ 1 job
+BID_HISTORY_HEADERS = [
+    "job_id", "bidder_name", "bidder_tin", "price_proposal", "price_agree",
+    "result_flag", "is_winner", "is_sme", "is_joint_venture", "jv_partners",
+    "consider_desc", "fetched_at",
+]
 
 
 def log(msg: str):

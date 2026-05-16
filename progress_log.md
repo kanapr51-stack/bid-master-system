@@ -1391,6 +1391,53 @@ if dl is None:
 
 ---
 
+## งานที่ N+9: Phase A complete + audit + Phase B bid_history + cron (2026-05-16)
+
+### Phase A (Classifier rewrite) ✅
+- 6-sheet stepId-driven: pre_tor / tor_review / active_bidding / pending_award / awarded_jobs / cancelled_jobs
+- Letter-prefix fallback (defensive for unknown stepIds)
+- Added 3 columns to all_jobs: step_id, project_status_raw, announce_type
+- Re-scrape + patch_deadlines + refresh
+- Fixed bug: active_bidding ต้อง deadline ≥ today (ไม่งั้น stale M03/S01 ค้าง)
+- Result: active 6 (M03 ทั้งหมด), tor 5, pending 18, awarded 303, cancelled 43
+
+### Audit ชีตอื่น ✅ (35/35 pass)
+- tor_review (5/5): stepId U* + projectStatus=A
+- cancelled (10/10): projectStatus=R OR announce ends "1"
+- awarded sample (20/20): มี winner หรือ stepId W*/C*/I*
+- pre_tor (0): empty (ไม่มี Q stage ใน data ตอนนี้)
+
+### Phase B: bid_history (Competitive Intelligence) ✅
+- สร้าง `bid_history` sheet (12 cols): job_id, bidder_name, bidder_tin, price_proposal, price_agree, result_flag, is_winner, is_sme, is_joint_venture, jv_partners, consider_desc, fetched_at
+- ขยาย `awarded_jobs` schema: +deliver_day, +num_bidders (รวม 24 cols)
+- `scripts/fetch_bid_history.py` (ใหม่) — migration ดึง procureResult ทั้ง bidder list
+- Migration 2 รอบ: 200/303 awarded → 1,545 bidders ใน bid_history
+- 103 ยัง pending (rate limit Cloudflare) — รอ Pipeline 06:00 refresh ครอบคลุม
+
+### Cron 06:00 + Chrome auto-launch ✅
+- พบ Task Scheduler `BidMaster-DailyPipeline` ตั้งไว้แล้ว (NextRun 5/17 06:00)
+- Update `run_pipeline.bat`:
+  - Kill old Chrome Debug + clear lock files
+  - Launch Chrome with --remote-debugging-port=9222
+  - Wait for port 9222 ready (60s timeout)
+  - Run `python Sebastian_Pipeline.py --step all` (8 steps with internal Discord notify)
+  - Kill Chrome at end
+  - Discord notify on success/failure
+- ใช้ Pipeline.py orchestrator แทนเรียก step ทีละอัน
+
+### ไฟล์ที่เพิ่ม/แก้
+- `CLAUDE.md` (ใหม่) — Discord notify protocol + progress logging rules + resume protocol
+- `scripts/audit_all_sheets.py` (ใหม่) — audit helper
+- `scripts/fetch_bid_history.py` (ใหม่) — Phase B migration
+- `scripts/Sebastian_Classifier.py` — เพิ่ม BID_HISTORY_HEADERS + extend AWARDED_JOBS_HEADERS + deadline guard
+- `run_pipeline.bat` — เปลี่ยนเป็น Pipeline.py --step all
+
+### Followup
+- Retry bid_history เหลือ 103 jobs (background รันอยู่ + Pipeline 06:00 จะ catch ใน refresh)
+- Phase C (future): Competitive intel dashboard — pivot tables + LINE summary "งานนี้คู่แข่งเฉลี่ย N ราย"
+
+---
+
 ## Setup (ครั้งแรก)
 
 ```bash

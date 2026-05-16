@@ -1,6 +1,7 @@
 @echo off
 REM ============================================================
 REM  Sebastian Pipeline Runner — รันอัตโนมัติทุกวัน 06:00 น.
+REM  Pipeline 8 steps: scrape → classify → refresh → download → analyze → cost → rank → notify
 REM  Log: C:\Bid-Master-System\logs\pipeline_YYYYMMDD.txt
 REM ============================================================
 
@@ -12,22 +13,27 @@ SET CHROME="C:\Program Files\Google\Chrome\Application\chrome.exe"
 SET LOGFILE=C:\Bid-Master-System\logs\pipeline_%date:~10,4%%date:~4,2%%date:~7,2%.txt
 
 echo ============================================================ >> %LOGFILE%
-echo [%TIME%] Sebastian Pipeline เริ่มต้น >> %LOGFILE%
+echo [%TIME%] Sebastian Pipeline เริ่มต้น (8-step) >> %LOGFILE%
 echo ============================================================ >> %LOGFILE%
 
-%PYTHON% scripts\ask_discord.py --notify "🚀 **Sebastian** Pipeline เริ่มต้น %TIME:~0,5% น. — กำลังดึงข้อมูล eGP..."
+REM --- Discord: pipeline starting ---
+%PYTHON% scripts\ask_discord.py --notify "🚀 **Sebastian Pipeline** เริ่มต้น %TIME:~0,5% น. — 8 steps + Chrome auto-launch"
 
-REM --- Kill Chrome Debug เก่าก่อน (PowerShell — wmic ถูกลบใน Win11 25H2) ---
+REM ============================================================
+REM Chrome Debug — kill old + launch new + wait for port 9222
+REM ============================================================
+
+REM --- Kill Chrome Debug เก่า ---
 powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"Name='chrome.exe'\" | Where-Object { $_.CommandLine -like '*ChromeDebug*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }" > nul 2>&1
 timeout /t 5 /nobreak > nul
 
-REM --- ลบ lock files เก่า (Singleton* คือ lock จริงของ Chrome, ไม่ใช่ lockfile) ---
+REM --- ลบ lock files เก่า ---
 if exist "C:\Temp\ChromeDebug\SingletonLock"   del /f "C:\Temp\ChromeDebug\SingletonLock"   > nul 2>&1
 if exist "C:\Temp\ChromeDebug\SingletonCookie" del /f "C:\Temp\ChromeDebug\SingletonCookie" > nul 2>&1
 if exist "C:\Temp\ChromeDebug\SingletonSocket" del /f "C:\Temp\ChromeDebug\SingletonSocket" > nul 2>&1
 if exist "C:\Temp\ChromeDebug\lockfile"        del /f "C:\Temp\ChromeDebug\lockfile"        > nul 2>&1
 
-REM --- เปิด Chrome Debug (profile แยก ไม่กระทบ Chrome หลัก) ---
+REM --- เปิด Chrome Debug ---
 echo [%TIME%] เปิด Chrome Debug... >> %LOGFILE%
 start "" %CHROME% --remote-debugging-port=9222 --no-first-run --no-restore-last-session --disable-session-crashed-bubble --user-data-dir=C:\Temp\ChromeDebug --window-position=0,0 --window-size=800,600
 
@@ -39,57 +45,36 @@ if %ERRORLEVEL% EQU 0 (
     SET CHROME_OK=1
     echo [%TIME%] Chrome Debug พร้อมใช้งาน (port 9222) >> %LOGFILE%
 ) else (
-    echo [%TIME%] ERROR: Chrome ไม่ผูก port 9222 ภายใน 60 วินาที — ข้าม Step 1 และ Step 3 >> %LOGFILE%
-    %PYTHON% scripts\ask_discord.py --notify "❌ **Chrome Debug ไม่ขึ้น** — ข้าม Scraper และ Winner Checker (port 9222 ไม่ตอบ)"
+    echo [%TIME%] ERROR: Chrome ไม่ผูก port 9222 ภายใน 60 วินาที — ข้าม scrape/refresh/download >> %LOGFILE%
+    %PYTHON% scripts\ask_discord.py --notify "❌ **Chrome Debug ไม่ขึ้น** — Pipeline จะข้าม Chrome-dependent steps (scrape/refresh/download)"
 )
 
-REM --- Step 1: Scrape (ต้องการ Chrome) ---
-if "%CHROME_OK%"=="1" (
-    echo [%TIME%] Step 1: Scraper >> %LOGFILE%
-    %PYTHON% scripts\Sebastian_Pipeline.py --step scrape >> %LOGFILE% 2>&1
-    if errorlevel 1 (
-        %PYTHON% scripts\ask_discord.py --notify "❌ **Step 1** Scraper ผิดพลาด — ดู log: pipeline_%date:~10,4%%date:~4,2%%date:~7,2%.txt"
-    ) else (
-        %PYTHON% scripts\ask_discord.py --notify "✅ **Step 1** Scraper เสร็จ"
-    )
-) else (
-    echo [%TIME%] Step 1: Scraper — SKIP (Chrome ไม่พร้อม) >> %LOGFILE%
-)
+REM ============================================================
+REM Pipeline 8 steps — Sebastian_Pipeline.py orchestrates
+REM (Pipeline.py ภายในมี Discord notify per step + auto-skip ถ้า Chrome ไม่พร้อม)
+REM ============================================================
 
-REM --- Step 2: Classify (ไม่ต้องการ Chrome) ---
-echo [%TIME%] Step 2: Classify >> %LOGFILE%
-%PYTHON% scripts\Sebastian_Pipeline.py --step classify >> %LOGFILE% 2>&1
-if %ERRORLEVEL% NEQ 0 (
-    %PYTHON% scripts\ask_discord.py --notify "❌ **Step 2** Classifier ผิดพลาด — ดู log: pipeline_%date:~10,4%%date:~4,2%%date:~7,2%.txt"
-) else (
-    %PYTHON% scripts\ask_discord.py --notify "✅ **Step 2** Classifier เสร็จ"
-)
+echo [%TIME%] รัน Sebastian_Pipeline.py --step all >> %LOGFILE%
+%PYTHON% scripts\Sebastian_Pipeline.py --step all >> %LOGFILE% 2>&1
+SET PIPELINE_EXIT=%ERRORLEVEL%
 
-REM --- Step 3: Winner Checker (ต้องการ Chrome) ---
-if "%CHROME_OK%"=="1" (
-    echo [%TIME%] Step 3: Winner Checker >> %LOGFILE%
-    %PYTHON% scripts\Sebastian_Winner_Checker.py >> %LOGFILE% 2>&1
-    if errorlevel 1 (
-        %PYTHON% scripts\ask_discord.py --notify "❌ **Step 3** Winner Checker ผิดพลาด — ดู log: pipeline_%date:~10,4%%date:~4,2%%date:~7,2%.txt"
-    ) else (
-        %PYTHON% scripts\ask_discord.py --notify "✅ **Step 3** Winner Checker เสร็จ"
-    )
-) else (
-    echo [%TIME%] Step 3: Winner Checker — SKIP (Chrome ไม่พร้อม) >> %LOGFILE%
-)
+REM ============================================================
+REM Cleanup — kill Chrome Debug
+REM ============================================================
 
-REM --- ปิด Chrome Debug (PowerShell — wmic ถูกลบใน Win11 25H2) ---
 echo [%TIME%] ปิด Chrome Debug... >> %LOGFILE%
 powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"Name='chrome.exe'\" | Where-Object { $_.CommandLine -like '*ChromeDebug*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }" > nul 2>&1
 
-REM --- Step 4: LINE Notify ---
-echo [%TIME%] Step 4: LINE Notify >> %LOGFILE%
-%PYTHON% scripts\Sebastian_LINE_Notify.py >> %LOGFILE% 2>&1
-if %ERRORLEVEL% NEQ 0 (
-    %PYTHON% scripts\ask_discord.py --notify "❌ **Step 4** LINE Notify ผิดพลาด — ดู log: pipeline_%date:~10,4%%date:~4,2%%date:~7,2%.txt"
+REM ============================================================
+REM Final status
+REM ============================================================
+
+if %PIPELINE_EXIT% EQU 0 (
+    echo [%TIME%] Pipeline เสร็จสิ้น (success) >> %LOGFILE%
+    %PYTHON% scripts\ask_discord.py --notify "✅ **Pipeline เสร็จสิ้น** — ดูสรุปใน LINE group + log: pipeline_%date:~10,4%%date:~4,2%%date:~7,2%.txt"
 ) else (
-    %PYTHON% scripts\ask_discord.py --notify "✅ **Step 4** LINE ส่งแล้ว — Pipeline เสร็จสิ้น 🎉"
+    echo [%TIME%] Pipeline ผิดพลาด (exit %PIPELINE_EXIT%) >> %LOGFILE%
+    %PYTHON% scripts\ask_discord.py --notify "❌ **Pipeline ผิดพลาด** (exit %PIPELINE_EXIT%) — ดู log: pipeline_%date:~10,4%%date:~4,2%%date:~7,2%.txt"
 )
 
-echo [%TIME%] Pipeline เสร็จสิ้น >> %LOGFILE%
 echo ============================================================ >> %LOGFILE%

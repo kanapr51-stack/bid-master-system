@@ -209,3 +209,143 @@ Q1 2027  Phase 4 (Deploy Backup PC)
 2. Sebastian แจ้งว่าต้องเตรียมอะไร
 3. Sebastian สร้างและเพิ่มเข้าระบบ
 ```
+
+---
+
+# 🚀 SaaS Competitive Strategy — Bid Master vs G-LEAD (2026-05-17)
+
+## Context
+
+- คู่แข่งหลัก: **G-LEAD** (lightworkai.com) — ราคา **799 บาท/เดือน**
+- Bid Master ไม่ควรแข่งบน "ราคา" อย่างเดียว — race to bottom
+- Strategy: **Same price tier + Better positioning** (Blue Ocean)
+
+## 4 Weaknesses ของ G-LEAD ที่ user identify จากประสบการณ์จริง
+
+### 1. UX ซับซ้อนเกินไป
+- ผู้รับเหมาส่วนใหญ่ไม่ tech-savvy → เข้าถึงยาก
+- คุณกัญจน์ลองเล่นเอง 30+ นาที — ยังหา feature ไม่เจอ
+- → **Bid Master fix:** Setup wizard ง่ายๆ:
+  - แชร์ location
+  - ติ๊กอำเภอ/ตำบลที่สนใจ (checkbox)
+  - กรอกเครื่องจักร/รถที่มี
+  - ระบบ generate keyword auto + custom ได้
+  - **เสร็จใน < 5 นาที**
+
+### 2. ไม่มีทาง verify ประสิทธิภาพ
+- ลูกค้าจ่าย 799/เดือน — ไม่มีหลักฐานว่าระบบดีจริง
+- → **Bid Master fix:** Self-verification dashboard
+  - ทุกเดือนระบบ pull จาก eGP เอง → เทียบกับที่ส่ง LINE
+  - Show coverage % + accuracy %
+  - List งานที่ miss (ถ้ามี)
+  - **คนไม่อยากเช็คก็ไม่เห็น — ไม่มี friction**
+  - = Radical Transparency = trust moat
+
+### 3. การประเมินคู่แข่งอ่อน
+- G-LEAD มีแค่ 2 bar chart + winrate basic
+- → **Bid Master fix:** bid_history + AI analysis
+  - Phase B (bid_history sheet) เป็น data foundation
+  - + AI วิเคราะห์: ราคาตลาด, win probability, คู่แข่งหลัก
+  - Delivered ผ่าน LINE — low friction
+  - ตัวอย่าง: *"งานนี้คู่แข่งหลัก = หจก. A (ชนะ 8/12, avg -25%), ราคาตลาด 2.8-3.2M, คุณควรเสนอ ~2.55M"*
+
+### 4. Feature Discoverability ต่ำ
+- G-LEAD มี Gmail integration แต่ไม่มีใครรู้ (UX ซ่อน)
+- → **Bid Master fix:** Setup-once via LINE wizard, ทุก feature accessible ผ่าน chat
+
+---
+
+## 4 Product Pillars (Bid Master Differentiators)
+
+| Pillar | Description | G-LEAD comparison |
+|---|---|---|
+| 🎯 **Zero-Friction Onboarding** | Equipment/location → auto-keyword | Complex form, manual keyword |
+| 🔍 **Radical Transparency** | Self-verification dashboard, public stats | No verification offered |
+| 🤖 **AI Intelligence** | Competitor analysis ผ่าน LINE | Basic charts, no AI |
+| 💚 **LINE-Native UX** | Setup + alert + Q&A ใน LINE | Web UI + email .xlsx |
+
+---
+
+## Refined Pricing Tiers (Updated after G-LEAD verification)
+
+| Tier | Price | Includes |
+|---|---|---|
+| 🆓 **Free Trial** | 30 วัน | 1 จังหวัด, basic alert |
+| 🥉 **Starter** | **999** บาท/เดือน/จังหวัด | LINE notify + setup wizard + self-verify dashboard |
+| 🥈 **Standard** | **1,990** บาท/เดือน/จังหวัด | + bid_history + AI competitor analysis |
+| 🥇 **Pro** | **3,990** บาท/เดือน | multi-province + cost estimate AI |
+| 🏢 **Enterprise** | **9,990+** บาท/เดือน | white-label + custom AI + API |
+
+**Annual Discount:** 2 เดือนฟรี (16.7% off)
+
+### Pricing Justification (vs G-LEAD 799)
+
+- Bid Master Starter +200 บาท (= 25% premium) เพราะมี:
+  - LINE-native convenience
+  - Self-verify dashboard (trust)
+  - Setup wizard (5-min)
+- ลูกค้ามี willingness to pay +200 เพราะ value clearly > G-LEAD
+
+---
+
+## Implementation Roadmap (Strategic Order)
+
+### Phase 1 — ✅ NOW (มีอยู่แล้ว)
+- LINE notify (6 sheets — pre_tor/tor/active/pending/awarded/cancelled)
+- stepId-driven classification
+- Pipeline cron 02:00 collect + 06:00 notify
+- bid_history schema (Phase B foundation)
+
+### Phase 2 — 🎯 NEXT (Differentiators)
+1. **Setup Wizard** (LINE-based)
+   - แชร์ location → infer province/district
+   - Tick subdistricts (checkbox list)
+   - Input equipment (multi-select)
+   - Auto-generate keywords + custom override
+   - Estimated: 1-2 สัปดาห์ dev
+2. **Self-Verification Dashboard**
+   - Monthly cron: independent eGP scrape per customer
+   - Compare with sent LINE jobs
+   - Output: coverage %, accuracy %, missed list
+   - Estimated: 1 สัปดาห์ dev
+3. **Equipment-Keyword Knowledge Base**
+   - Map: excavator → ขุดดิน, ขนดิน, ปรับพื้นที่
+   - Map: โม่ปูน + เครื่องโรย → ถนนคอนกรีต, ผิวจราจร
+   - Map: grader → ถนนลูกรัง, ปรับเกรด
+   - Estimated: 3-5 วัน (data entry)
+
+### Phase 3 — 🤖 AI Moat
+1. **AI Competitor Analysis ใน LINE**
+   - Per job: ราคาตลาด, top competitors, win probability
+   - Uses bid_history + AI (Claude API)
+2. **In-LINE Chatbot Q&A**
+   - "ดูงานในตำบลโพธิ์หมากแข้งวันนี้"
+   - "วิเคราะห์งาน 69049XXX"
+   - "คู่แข่งหลักในนครพนม"
+3. **Voice Input** สำหรับ keyword setup
+   - คนสูงวัย/ภาคสนาม พิมพ์ช้า — speak instead
+
+### Phase 4 — Scale to SaaS
+- Multi-tenant architecture
+- Payment integration (Stripe/Omise)
+- Per-customer config (separate Google Sheet หรือ database)
+- White-label for Enterprise tier
+- Founder story marketing — "ผมเป็นลูกเจ้าของบริษัทก่อสร้าง..."
+
+---
+
+## Marketing Differentiation (one-liner)
+
+> **G-LEAD:** "ส่ง Excel ทุกวัน, web complicated"
+>
+> **Bid Master:** "ส่ง LINE alert + AI วิเคราะห์คู่แข่ง + dashboard ตรวจสอบเองได้ — ใช้ใน 5 นาที"
+
+---
+
+## Lessons Learned (from user research)
+
+1. **Don't assume pricing tier** — competitor research ก่อนเสมอ (ผม assume G-LEAD = enterprise, จริงๆ = 799)
+2. **UX > Price** สำหรับ SMB Thai market — ผู้รับเหมายินดีจ่ายแพงกว่า ถ้าใช้ง่ายกว่า
+3. **Trust through Transparency** — self-verification dashboard = unique competitive moat
+4. **Insider advantage** — founder จากครอบครัวก่อสร้าง = trust + product instinct (G-LEAD = tech outsider)
+5. **LINE > Web/Email** สำหรับ Thai SMB — native channel ที่ทุกคนใช้อยู่แล้ว

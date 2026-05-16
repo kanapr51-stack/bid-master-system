@@ -23,7 +23,7 @@ from datetime import datetime
 sys.stdout.reconfigure(encoding="utf-8")
 
 DISCORD_API_BASE = "https://discord.com/api/v10"
-TOP_N = 50
+TOP_N = 5  # Discord max 2000 chars per message — TOP 5 fits
 
 
 # ================================================================

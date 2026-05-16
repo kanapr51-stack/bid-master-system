@@ -50,13 +50,45 @@ if %ERRORLEVEL% EQU 0 (
 )
 
 REM ============================================================
-REM Pipeline 8 steps — Sebastian_Pipeline.py orchestrates
-REM (Pipeline.py ภายในมี Discord notify per step + auto-skip ถ้า Chrome ไม่พร้อม)
+REM Pipeline — รันเฉพาะ 4 steps สำคัญสำหรับ LINE notify
+REM (Skip download/analyze/cost/rank — ยังไม่ verified กับ schema 18-col)
+REM Priority: scrape → classify → refresh → notify
+REM ถ้า step ไหน fail → step ถัดไปยังรันได้ (continue-on-error)
 REM ============================================================
 
-echo [%TIME%] รัน Sebastian_Pipeline.py --step all >> %LOGFILE%
-%PYTHON% scripts\Sebastian_Pipeline.py --step all >> %LOGFILE% 2>&1
-SET PIPELINE_EXIT=%ERRORLEVEL%
+SET PIPELINE_EXIT=0
+
+REM --- Step 1: SCRAPE (ต้อง Chrome) ---
+echo [%TIME%] Step 1/4: SCRAPE >> %LOGFILE%
+%PYTHON% scripts\Sebastian_Pipeline.py --step scrape >> %LOGFILE% 2>&1
+if errorlevel 1 (
+    echo [%TIME%] Step 1 SCRAPE failed — continue >> %LOGFILE%
+    SET PIPELINE_EXIT=1
+)
+
+REM --- Step 2: CLASSIFY (ไม่ต้อง Chrome) ---
+echo [%TIME%] Step 2/4: CLASSIFY >> %LOGFILE%
+%PYTHON% scripts\Sebastian_Pipeline.py --step classify >> %LOGFILE% 2>&1
+if errorlevel 1 (
+    echo [%TIME%] Step 2 CLASSIFY failed — continue >> %LOGFILE%
+    SET PIPELINE_EXIT=1
+)
+
+REM --- Step 3: REFRESH (ต้อง Chrome) ---
+echo [%TIME%] Step 3/4: REFRESH (active + tor + pending) >> %LOGFILE%
+%PYTHON% scripts\refresh_active_jobs.py --expand >> %LOGFILE% 2>&1
+if errorlevel 1 (
+    echo [%TIME%] Step 3 REFRESH failed — continue >> %LOGFILE%
+    SET PIPELINE_EXIT=1
+)
+
+REM --- Step 4: NOTIFY (สำคัญสุด — ส่ง LINE) ---
+echo [%TIME%] Step 4/4: NOTIFY (LINE + Discord) >> %LOGFILE%
+%PYTHON% scripts\Sebastian_Pipeline.py --step notify >> %LOGFILE% 2>&1
+if errorlevel 1 (
+    echo [%TIME%] Step 4 NOTIFY failed >> %LOGFILE%
+    SET PIPELINE_EXIT=2
+)
 
 REM ============================================================
 REM Cleanup — kill Chrome Debug

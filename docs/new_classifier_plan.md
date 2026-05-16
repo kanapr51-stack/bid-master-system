@@ -196,3 +196,74 @@ eGP search API ส่ง flowSeqno + flowName มา ไม่ส่ง stepId/p
 4. **flowId** = stage family — useful for grouping แต่ไม่จำเป็นใน classifier
 5. **ไม่มี document endpoint แยก** — tor_url ที่ Scraper เก็บอยู่แล้ว = sufficient
 6. **Letter-prefix fallback** = ทำให้ระบบ resilient ต่อ stepId ใหม่
+
+---
+
+# 🚀 Phase B — bid_history Feature (Future Roadmap)
+
+**Status:** 📋 PLANNED — ทำหลัง Phase A (classifier) verified แล้ว
+**Estimated:** ~55 นาที
+**Decision date:** 2026-05-16
+
+## Why หลัง Phase A?
+
+1. **Foundation first** — bid_history ดึงข้อมูลให้ jobs ที่ classifier จัดเรียบร้อยแล้ว
+2. **Risk isolation** — แก้แยก commit → rollback ง่าย
+3. **Refresh complexity** — Phase A เพิ่ม 1 API call/job, Phase B เพิ่มอีก 1 → ทำที่หลังกัน controllable
+4. **Verifiable** — user ดู Phase A ก่อนว่าใช้ได้ไหม ก่อนต่อ Phase B
+5. **Value sequence** — Phase A แก้ bug urgent, Phase B เพิ่ม feature important-not-urgent
+
+## Schema ใหม่ — `bid_history` sheet
+
+```
+1 row = 1 bidder ต่อ 1 job (1 awarded job มี 2-10 rows)
+```
+
+| column | source field | meaning |
+|---|---|---|
+| `job_id` | projectId | FK to awarded_jobs |
+| `bidder_name` | receiveNameTh | ชื่อบริษัท |
+| `bidder_tin` | receiveTin | เลขผู้เสียภาษี (unique ID) |
+| `price_proposal` | priceProposal | ราคาเสนอ |
+| `price_agree` | priceAgree | ราคาตกลง (มีเฉพาะผู้ชนะ) |
+| `result_flag` | resultFlag | P/N/W |
+| `is_winner` | (priceAgree != null) | derived |
+| `is_sme` | (scoreTypeId == "SME") | derived |
+| `is_joint_venture` | (jointVentureAndConsortiumsResponseList) | derived |
+| `consider_desc` | considerDesc | คำอธิบายงาน |
+
+## เพิ่มใน awarded_jobs (1 row = 1 job):
+
+- `announce_date` — วันประกาศผู้ชนะ
+- `report_date` — วันรายงานผล
+- `deliver_day` — จำนวนวันส่งมอบ
+- `project_cost_type` — C=เกณฑ์ราคา / Q=คุณภาพ
+- `min_quality_score` — คะแนนคุณภาพขั้นต่ำ
+- `num_bidders` — จำนวนผู้เสนอราคา
+
+## 6 Use Cases — Competitive Intelligence
+
+1. **Competitor Profile** — บริษัทไหนชนะบ่อย, อะไรถนัด, win rate
+2. **Pricing Intelligence** — ราคาตลาด, % discount เฉลี่ย, ช่วงราคา
+3. **Win Probability** — จำนวนคู่แข่งเฉลี่ย → predict win prob
+4. **Market Share & Trends** — top winners, ใหม่/หาย, market dynamics
+5. **Joint Venture Network** — ใครเป็น partner ใคร
+6. **SME Advantage** — งานที่มี SME bonus → strategy ต่าง
+
+## Implementation Effort
+
+| งาน | เวลา |
+|---|---|
+| สร้าง bid_history sheet | 5 นาที |
+| เพิ่ม 6 fields ใน awarded_jobs | 10 นาที |
+| Update refresh — parse procureResult ครบ | 20 นาที |
+| Migration — refresh 295 awarded → ดึง bid history | 10 นาที |
+| Verify + tests | 10 นาที |
+| **รวม** | **~55 นาที** |
+
+## SaaS Vision Tie-in
+
+นี่เป็น **premium feature** ที่ลูกค้าจะอยากจ่าย:
+- ตอนนี้: SaaS = LINE notify รายวัน (basic)
+- + bid_history: **Competitive Intelligence Dashboard** (premium)
+- = strong moat — competitors ขายแค่ "list งาน" ของเรามี "ข่าวกรองตลาด"

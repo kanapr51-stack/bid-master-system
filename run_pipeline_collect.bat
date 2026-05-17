@@ -64,6 +64,14 @@ if "!CHROME_OK!"=="1" (
     %PYTHON% scripts\refresh_active_jobs.py --expand >> %LOGFILE% 2>&1
 )
 
+REM --- Step 3.5: RSS QUEUE INGEST (Chrome required) ---
+REM ดึง new projectIds จาก data/rss_queue.json → insert sparse rows ใน all_jobs
+REM Conservative: limit 50/วัน เพื่อทดสอบ ก่อนเปิดเต็ม
+if "!CHROME_OK!"=="1" (
+    echo [%TIME%] Step 3.5: RSS QUEUE INGEST ^(--from-queue --limit 50^) >> %LOGFILE%
+    %PYTHON% scripts\refresh_active_jobs.py --from-queue --limit 50 >> %LOGFILE% 2>&1
+)
+
 REM --- Step 4: PATCH_DEADLINES (Chrome required) ---
 REM ดึง deadline จาก PDF ของ active jobs ที่ deadline ว่าง — มี retry 2 ครั้ง
 if "!CHROME_OK!"=="1" (

@@ -249,15 +249,20 @@ def main():
             _dc(notify_step_warn, "snapshot", "dashboard_extractor ไม่สำเร็จ — ดู log")
 
     if step in ("all", "deploy") and not args.no_deploy:
-        log("Step 10/10: DEPLOY — vercel deploy → dashboard live")
-        ok = run_script("Sebastian_Deploy_Dashboard.py")
+        log("Step 10/10: PUBLISH — upload snapshot ไป Vercel Blob → instant dashboard refresh")
+        ok = run_script("Sebastian_Upload_Snapshot.py")
         if ok:
-            _dc(notify_step_done, "deploy", "Dashboard deployed — bid-master-dashboard.vercel.app")
+            _dc(notify_step_done, "publish", "Snapshot uploaded — dashboard อัปเดตทันที (< 5s)")
         else:
-            print("[WARN] Deploy ไม่สำเร็จ", flush=True)
-            _dc(notify_step_warn, "deploy", "Deploy dashboard ไม่สำเร็จ — ตรวจ vercel CLI/login")
+            # Fallback: ถ้า upload fail (Blob ล่ม) ก็ลอง full deploy
+            print("[WARN] Upload fail — fallback to full deploy", flush=True)
+            ok = run_script("Sebastian_Deploy_Dashboard.py")
+            if ok:
+                _dc(notify_step_done, "deploy", "Dashboard fully redeployed (fallback)")
+            else:
+                _dc(notify_step_warn, "publish", "Publish + deploy ทั้งคู่ fail — ตรวจ token/login")
     elif step in ("all",) and args.no_deploy:
-        print("[INFO] ข้าม deploy step (--no-deploy)", flush=True)
+        print("[INFO] ข้าม publish step (--no-deploy)", flush=True)
 
     elapsed = time.time() - start
     _dc(notify_pipeline_done, elapsed)

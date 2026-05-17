@@ -1707,3 +1707,20 @@ Flow ที่ใช้ได้จริง: pipeline → snapshot.json updated
 - Pipeline integration: เพิ่ม step 9 (`snapshot`) + step 10 (`deploy`)
 - `--no-deploy` flag สำหรับข้าม deploy ใน dev mode
 - ทดสอบ `--step snapshot` ผ่าน (19s, snapshot.json regenerated)
+
+### Update 2 (2026-05-18) — Option A: Vercel Blob
+- สร้าง public Blob store `bid-master-snapshots` (auto-link กับ project ทั้ง 3 env)
+- API route `/api/snapshot` (POST) — รับ JSON body, ลบ blob เก่า, put ใหม่, revalidate 6 pages
+- `snapshot.ts` ตอนนี้ prefer Blob (ถ้ามี `BLOB_READ_WRITE_TOKEN`) — fallback ไป fs ใน dev
+- `Sebastian_Upload_Snapshot.py` — POST snapshot ไป /api/snapshot endpoint
+- Pipeline step 10 เปลี่ยนเป็น `publish` (upload) แทน full deploy → **2.3 วินาที** เทียบกับ deploy 60s
+- มี fallback อัตโนมัติ: ถ้า upload fail จะลอง full deploy
+
+### Real-time flow (ปัจจุบัน)
+```
+pipeline → snapshot.json updated → POST /api/snapshot → Blob (overwrite)
+                                                          ↓
+                                                  revalidatePath × 6 pages
+                                                          ↓
+                                                  dashboard อัปเดต < 5s
+```

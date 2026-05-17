@@ -1,5 +1,6 @@
 import path from "node:path";
 import { readFile } from "node:fs/promises";
+import { list } from "@vercel/blob";
 
 export interface ClassifierCounts {
   pre_tor?: number;
@@ -110,10 +111,29 @@ export interface Snapshot {
 }
 
 /**
- * Read snapshot.json from the public/ folder.
- * Server-side only (uses fs).
+ * Read snapshot.json — prefers Vercel Blob (when BLOB_READ_WRITE_TOKEN is set
+ * and a blob named "snapshot.json" exists), falls back to the bundled
+ * public/snapshot.json otherwise.
+ *
+ * Blob source allows the pipeline to update the snapshot without redeploying
+ * the dashboard (revalidatePath is called by /api/snapshot after each upload).
  */
 export async function readSnapshot(): Promise<Snapshot> {
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    try {
+      const { blobs } = await list({ prefix: "snapshot.json", limit: 1 });
+      const blob = blobs[0];
+      if (blob) {
+        const res = await fetch(blob.url, { cache: "no-store" });
+        if (res.ok) {
+          return (await res.json()) as Snapshot;
+        }
+      }
+    } catch (err) {
+      console.error("[snapshot] Blob read failed, falling back to fs:", err);
+    }
+  }
+
   const publicPath = path.join(process.cwd(), "public", "snapshot.json");
   const text = await readFile(publicPath, "utf-8");
   return JSON.parse(text) as Snapshot;

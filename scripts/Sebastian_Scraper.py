@@ -61,10 +61,27 @@ FILTER_KEYWORDS = [
     "Dowel", "Wire Mesh", "ถมดิน", "ปรับพื้นที่",
 ]
 
-# ---- Department search terms → expected province (ชื่อซ้ำข้ามจังหวัด ต้องระบุจังหวัดที่คาดไว้) ----
-# Key = search term, Value = จังหวัดที่ถูกต้อง
-# ถ้า province ที่ extract ได้ไม่ตรงและไม่ว่าง → ถือว่าผิดจังหวัด → ข้าม
+# ============================================================
+# Search terms (Option B refactor 2026-05-18)
+# ============================================================
+# **กลยุทธ์:** RSS scraper (ทุก 30 นาที) handle D0 (active_bidding)
+# scraper นี้เหลือไว้สำหรับ stages ที่ RSS ไม่ครอบคลุม:
+#   - pre_tor (P0/Q*)        — ขั้นวางแผน
+#   - tor_review (B0/U*)     — รับฟังคำวิจารณ์
+#   - cancelled (D1)         — ยกเลิก
+# ใช้ keyword จังหวัด + อำเภอเป้าหมาย — กว้างพอจับทุก stage แต่น้อยพอลด Cloudflare load
+#
+# Migration: 30 keywords → 4 (ลด ~87%) คาด pipeline 100 → 30 นาที
+
+# **Active:** Province + District (4 ตัว — เน้น pre_tor/tor_review)
 DEPT_PROVINCE_MAP: dict[str, str] = {
+    "บ้านแพง":                               "นครพนม",
+    "บึงโขงหลง":                             "บึงกาฬ",
+}
+
+# **Legacy fallback:** 28 ตำบล/หน่วยงาน (ใช้กับ --full-keywords)
+# RSS catalog ปัจจุบัน 235+ depts → ครอบคลุมหน่วยงานเหล่านี้ผ่าน deptId
+DEPT_PROVINCE_MAP_LEGACY: dict[str, str] = {
     "ตำบลบ้านแพง":                           "นครพนม",
     "ตำบลไผ่ล้อม":                           "นครพนม",
     "ตำบลโพนทอง":                            "นครพนม",
@@ -1094,7 +1111,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--no-incremental", action="store_true",
                         help="Disable incremental scraping (always full scrape)")
+    parser.add_argument("--full-keywords", action="store_true",
+                        help="ใช้ DEPT_PROVINCE_MAP_LEGACY (28 keywords) แทน MINIMAL (2) — fallback ถ้า RSS ไม่ครอบคลุม")
     args = parser.parse_args()
+
+    # Apply --full-keywords: merge LEGACY map into active map
+    if args.full_keywords:
+        global DEPT_PROVINCE_MAP
+        DEPT_PROVINCE_MAP = {**DEPT_PROVINCE_MAP, **DEPT_PROVINCE_MAP_LEGACY}
 
     ensure_dirs()
     seen_ids = load_seen_ids()

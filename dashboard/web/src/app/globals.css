@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+:root {
+  --font-sans: var(--font-inter), var(--font-thai), system-ui, sans-serif;
+  --font-thai: var(--font-thai), system-ui, sans-serif;
+}
+
+@theme inline {
+  --font-sans: var(--font-inter), var(--font-thai), system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--font-thai), var(--font-inter), system-ui, sans-serif;
+  font-feature-settings: "ss01", "ss02";
+}
+
+/* Smooth focus rings */
+*:focus-visible {
+  outline: 2px solid rgb(59 130 246);
+  outline-offset: 2px;
+  border-radius: 4px;
+}

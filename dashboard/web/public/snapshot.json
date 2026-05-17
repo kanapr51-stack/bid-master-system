@@ -1,0 +1,2134 @@
+{
+  "generated_at": "2026-05-17T22:28:26.692803",
+  "version": 1,
+  "kpis": {
+    "pipeline_duration_today": 6731.3,
+    "pipeline_duration_yesterday": 6156.3,
+    "active_jobs": 6,
+    "tor_jobs": 5,
+    "pending_jobs": 18,
+    "awarded_jobs": 303,
+    "cancelled_jobs": 43,
+    "all_jobs_count": 8741,
+    "cloudflare_hits_today": 36,
+    "total_winners": 357
+  },
+  "daily": {
+    "2026-05-11": {
+      "date": "2026-05-11",
+      "total_pipeline_sec": 3018.7,
+      "pipeline_runs": 1,
+      "total_raw_scraped": 0,
+      "total_filtered": 0,
+      "total_new_jobs": 0,
+      "cloudflare_hits": 1,
+      "search_timeouts": 0,
+      "classifier_latest": null,
+      "phases": [
+        "full"
+      ]
+    },
+    "2026-05-12": {
+      "date": "2026-05-12",
+      "total_pipeline_sec": 2182.2,
+      "pipeline_runs": 1,
+      "total_raw_scraped": 0,
+      "total_filtered": 0,
+      "total_new_jobs": 0,
+      "cloudflare_hits": 1,
+      "search_timeouts": 0,
+      "classifier_latest": null,
+      "phases": [
+        "full"
+      ]
+    },
+    "2026-05-13": {
+      "date": "2026-05-13",
+      "total_pipeline_sec": 2760.4,
+      "pipeline_runs": 1,
+      "total_raw_scraped": 0,
+      "total_filtered": 0,
+      "total_new_jobs": 0,
+      "cloudflare_hits": 0,
+      "search_timeouts": 0,
+      "classifier_latest": null,
+      "phases": [
+        "full"
+      ]
+    },
+    "2026-05-14": {
+      "date": "2026-05-14",
+      "total_pipeline_sec": 5899.6,
+      "pipeline_runs": 1,
+      "total_raw_scraped": 0,
+      "total_filtered": 0,
+      "total_new_jobs": 0,
+      "cloudflare_hits": 2,
+      "search_timeouts": 1,
+      "classifier_latest": null,
+      "phases": [
+        "full"
+      ]
+    },
+    "2026-05-15": {
+      "date": "2026-05-15",
+      "total_pipeline_sec": 12031.6,
+      "pipeline_runs": 1,
+      "total_raw_scraped": 0,
+      "total_filtered": 0,
+      "total_new_jobs": 0,
+      "cloudflare_hits": 27,
+      "search_timeouts": 6,
+      "classifier_latest": null,
+      "phases": [
+        "full"
+      ]
+    },
+    "2026-05-16": {
+      "date": "2026-05-16",
+      "total_pipeline_sec": 6156.3,
+      "pipeline_runs": 1,
+      "total_raw_scraped": 30652,
+      "total_filtered": 2581,
+      "total_new_jobs": 51,
+      "cloudflare_hits": 1,
+      "search_timeouts": 0,
+      "classifier_latest": {
+        "tor_review": 8,
+        "active_bidding": 4,
+        "pending_award": 24,
+        "awarded_jobs": 297
+      },
+      "phases": [
+        "full"
+      ]
+    },
+    "2026-05-17": {
+      "date": "2026-05-17",
+      "total_pipeline_sec": 6731.3,
+      "pipeline_runs": 2,
+      "total_raw_scraped": 22934,
+      "total_filtered": 1678,
+      "total_new_jobs": 0,
+      "cloudflare_hits": 36,
+      "search_timeouts": 34,
+      "classifier_latest": {
+        "pre_tor": 0,
+        "tor_review": 5,
+        "active_bidding": 6,
+        "pending_award": 18,
+        "awarded_jobs": 303,
+        "cancelled_jobs": 43
+      },
+      "phases": [
+        "collect",
+        "notify"
+      ]
+    }
+  },
+  "runs": [
+    {
+      "date": "2026-05-11",
+      "filename": "pipeline_20260511.txt",
+      "phase": "full",
+      "file_size": 92388,
+      "last_modified": "2026-05-11T06:52:18.064847",
+      "pipeline_durations_sec": [
+        2995.2,
+        23.5
+      ],
+      "total_duration_sec": 3018.7,
+      "scrape_keywords": [],
+      "total_raw": 0,
+      "total_filtered": 0,
+      "total_new": 0,
+      "cloudflare_hits": 1,
+      "search_timeouts": 0,
+      "rate_limit_hits": 10,
+      "classifier": {},
+      "total_active_pipeline": 0,
+      "all_jobs_count": 98,
+      "line_notify_success": 0,
+      "discord_notify_success": 0
+    },
+    {
+      "date": "2026-05-12",
+      "filename": "pipeline_20260512.txt",
+      "phase": "full",
+      "file_size": 206068,
+      "last_modified": "2026-05-12T06:45:13.941690",
+      "pipeline_durations_sec": [
+        2157.0,
+        25.2
+      ],
+      "total_duration_sec": 2182.2,
+      "scrape_keywords": [],
+      "total_raw": 0,
+      "total_filtered": 0,
+      "total_new": 0,
+      "cloudflare_hits": 1,
+      "search_timeouts": 0,
+      "rate_limit_hits": 7,
+      "classifier": {},
+      "total_active_pipeline": 0,
+      "all_jobs_count": 115,
+      "line_notify_success": 0,
+      "discord_notify_success": 6
+    },
+    {
+      "date": "2026-05-13",
+      "filename": "pipeline_20260513.txt",
+      "phase": "full",
+      "file_size": 19793,
+      "last_modified": "2026-05-13T07:32:04.893253",
+      "pipeline_durations_sec": [
+        2732.3,
+        28.1
+      ],
+      "total_duration_sec": 2760.4,
+      "scrape_keywords": [],
+      "total_raw": 0,
+      "total_filtered": 0,
+      "total_new": 0,
+      "cloudflare_hits": 0,
+      "search_timeouts": 0,
+      "rate_limit_hits": 0,
+      "classifier": {},
+      "total_active_pipeline": 0,
+      "all_jobs_count": 115,
+      "line_notify_success": 2,
+      "discord_notify_success": 6
+    },
+    {
+      "date": "2026-05-14",
+      "filename": "pipeline_20260514.txt",
+      "phase": "full",
+      "file_size": 135739,
+      "last_modified": "2026-05-14T07:38:28.134474",
+      "pipeline_durations_sec": [
+        5899.6
+      ],
+      "total_duration_sec": 5899.6,
+      "scrape_keywords": [],
+      "total_raw": 0,
+      "total_filtered": 0,
+      "total_new": 0,
+      "cloudflare_hits": 2,
+      "search_timeouts": 1,
+      "rate_limit_hits": 15,
+      "classifier": {},
+      "total_active_pipeline": 0,
+      "line_notify_success": 0,
+      "discord_notify_success": 3
+    },
+    {
+      "date": "2026-05-15",
+      "filename": "pipeline_20260515.txt",
+      "phase": "full",
+      "file_size": 496062,
+      "last_modified": "2026-05-15T16:38:32.470079",
+      "pipeline_durations_sec": [
+        6718.7,
+        28.1,
+        5255.5,
+        29.3
+      ],
+      "total_duration_sec": 12031.6,
+      "scrape_keywords": [],
+      "total_raw": 0,
+      "total_filtered": 0,
+      "total_new": 0,
+      "cloudflare_hits": 27,
+      "search_timeouts": 6,
+      "rate_limit_hits": 39,
+      "classifier": {},
+      "total_active_pipeline": 0,
+      "all_jobs_count": 141,
+      "line_notify_success": 0,
+      "discord_notify_success": 12
+    },
+    {
+      "date": "2026-05-16",
+      "filename": "pipeline_20260516.txt",
+      "phase": "full",
+      "file_size": 59941,
+      "last_modified": "2026-05-16T07:44:49.311906",
+      "pipeline_durations_sec": [
+        6138.5,
+        17.8
+      ],
+      "total_duration_sec": 6156.3,
+      "scrape_keywords": [
+        {
+          "keyword": "นครพนม",
+          "raw_items": 9990,
+          "filtered": 687,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "บึงกาฬ",
+          "raw_items": 9226,
+          "filtered": 619,
+          "province_skipped": 0,
+          "new": 48
+        },
+        {
+          "keyword": "ตำบลบ้านแพง",
+          "raw_items": 183,
+          "filtered": 15,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลไผ่ล้อม",
+          "raw_items": 549,
+          "filtered": 11,
+          "province_skipped": 18,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลโพนทอง",
+          "raw_items": 1387,
+          "filtered": 59,
+          "province_skipped": 46,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลนาเข",
+          "raw_items": 180,
+          "filtered": 9,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลหนองแวง",
+          "raw_items": 2819,
+          "filtered": 266,
+          "province_skipped": 111,
+          "new": 3
+        },
+        {
+          "keyword": "ตำบลนาหว้า",
+          "raw_items": 605,
+          "filtered": 65,
+          "province_skipped": 39,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลสามผง",
+          "raw_items": 205,
+          "filtered": 38,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลหาดแพง",
+          "raw_items": 236,
+          "filtered": 44,
+          "province_skipped": 14,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลศรีสงคราม",
+          "raw_items": 721,
+          "filtered": 43,
+          "province_skipped": 28,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลหนองซน",
+          "raw_items": 149,
+          "filtered": 12,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลดอนเตย",
+          "raw_items": 70,
+          "filtered": 9,
+          "province_skipped": 1,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลนาทม",
+          "raw_items": 256,
+          "filtered": 39,
+          "province_skipped": 12,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลดงบัง",
+          "raw_items": 774,
+          "filtered": 24,
+          "province_skipped": 22,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลบุ่งคล้า",
+          "raw_items": 383,
+          "filtered": 23,
+          "province_skipped": 32,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลโคกกว้าง",
+          "raw_items": 95,
+          "filtered": 36,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลหนองเดิ่น",
+          "raw_items": 86,
+          "filtered": 16,
+          "province_skipped": 1,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลท่าดอกคำ",
+          "raw_items": 139,
+          "filtered": 14,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลโพธิ์หมากแข้ง",
+          "raw_items": 251,
+          "filtered": 17,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลบึงงาม",
+          "raw_items": 329,
+          "filtered": 34,
+          "province_skipped": 10,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลบึงโขงหลง",
+          "raw_items": 236,
+          "filtered": 27,
+          "province_skipped": 1,
+          "new": 0
+        },
+        {
+          "keyword": "โยธาธิการและผังเมืองจังหวัดนครพนม",
+          "raw_items": 13,
+          "filtered": 3,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ชลประทานนครพนม",
+          "raw_items": 150,
+          "filtered": 50,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "แขวงทางหลวงชนบทนครพนม",
+          "raw_items": 175,
+          "filtered": 19,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "องค์การบริหารส่วนจังหวัดนครพนม",
+          "raw_items": 675,
+          "filtered": 205,
+          "province_skipped": 3,
+          "new": 0
+        },
+        {
+          "keyword": "โยธาธิการและผังเมืองจังหวัดบึงกาฬ",
+          "raw_items": 11,
+          "filtered": 2,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ชลประทานบึงกาฬ",
+          "raw_items": 332,
+          "filtered": 108,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "แขวงทางหลวงชนบทบึงกาฬ",
+          "raw_items": 145,
+          "filtered": 22,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "องค์การบริหารส่วนจังหวัดบึงกาฬ",
+          "raw_items": 282,
+          "filtered": 65,
+          "province_skipped": 2,
+          "new": 0
+        }
+      ],
+      "total_raw": 30652,
+      "total_filtered": 2581,
+      "total_new": 51,
+      "cloudflare_hits": 1,
+      "search_timeouts": 0,
+      "rate_limit_hits": 28,
+      "classifier": {
+        "tor_review": 8,
+        "active_bidding": 4,
+        "pending_award": 24,
+        "awarded_jobs": 297
+      },
+      "total_active_pipeline": 333,
+      "all_jobs_count": 8741,
+      "line_notify_success": 2,
+      "discord_notify_success": 6
+    },
+    {
+      "date": "2026-05-17",
+      "filename": "pipeline_collect_20260517.txt",
+      "phase": "collect",
+      "file_size": 71538,
+      "last_modified": "2026-05-17T17:02:35.891992",
+      "pipeline_durations_sec": [
+        5218.3,
+        23.4,
+        22.2,
+        1385.3,
+        25.2,
+        22.5
+      ],
+      "total_duration_sec": 6696.900000000001,
+      "scrape_keywords": [
+        {
+          "keyword": "นครพนม",
+          "raw_items": 10000,
+          "filtered": 687,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "บึงกาฬ",
+          "raw_items": 4810,
+          "filtered": 357,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลบ้านแพง",
+          "raw_items": 183,
+          "filtered": 15,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลไผ่ล้อม",
+          "raw_items": 549,
+          "filtered": 11,
+          "province_skipped": 18,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลโพนทอง",
+          "raw_items": 1377,
+          "filtered": 59,
+          "province_skipped": 46,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลนาเข",
+          "raw_items": 180,
+          "filtered": 9,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลหนองแวง",
+          "raw_items": 2819,
+          "filtered": 266,
+          "province_skipped": 111,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลนาหว้า",
+          "raw_items": 605,
+          "filtered": 65,
+          "province_skipped": 39,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลสามผง",
+          "raw_items": 205,
+          "filtered": 38,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลหาดแพง",
+          "raw_items": 236,
+          "filtered": 44,
+          "province_skipped": 14,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลศรีสงคราม",
+          "raw_items": 721,
+          "filtered": 43,
+          "province_skipped": 28,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลหนองซน",
+          "raw_items": 149,
+          "filtered": 12,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลดอนเตย",
+          "raw_items": 70,
+          "filtered": 9,
+          "province_skipped": 1,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลนาทม",
+          "raw_items": 256,
+          "filtered": 39,
+          "province_skipped": 12,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลดงบัง",
+          "raw_items": 774,
+          "filtered": 24,
+          "province_skipped": 22,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลบุ่งคล้า",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลหนองเดิ่น",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลท่าดอกคำ",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลโพธิ์หมากแข้ง",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลบึงงาม",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลบึงโขงหลง",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "โยธาธิการและผังเมืองจังหวัดนครพนม",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ชลประทานนครพนม",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "แขวงทางหลวงชนบทนครพนม",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "องค์การบริหารส่วนจังหวัดนครพนม",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "โยธาธิการและผังเมืองจังหวัดบึงกาฬ",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ชลประทานบึงกาฬ",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "แขวงทางหลวงชนบทบึงกาฬ",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "องค์การบริหารส่วนจังหวัดบึงกาฬ",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "นครพนม",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "บึงกาฬ",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลบ้านแพง",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลไผ่ล้อม",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลโพนทอง",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลนาเข",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลหนองแวง",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลนาหว้า",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลสามผง",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลหาดแพง",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลศรีสงคราม",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลหนองซน",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลดอนเตย",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลนาทม",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลดงบัง",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลบุ่งคล้า",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลโคกกว้าง",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลหนองเดิ่น",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลท่าดอกคำ",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลโพธิ์หมากแข้ง",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลบึงงาม",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลบึงโขงหลง",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "โยธาธิการและผังเมืองจังหวัดนครพนม",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ชลประทานนครพนม",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "แขวงทางหลวงชนบทนครพนม",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "องค์การบริหารส่วนจังหวัดนครพนม",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "โยธาธิการและผังเมืองจังหวัดบึงกาฬ",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ชลประทานบึงกาฬ",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "แขวงทางหลวงชนบทบึงกาฬ",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "องค์การบริหารส่วนจังหวัดบึงกาฬ",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        }
+      ],
+      "total_raw": 22934,
+      "total_filtered": 1678,
+      "total_new": 0,
+      "cloudflare_hits": 36,
+      "search_timeouts": 34,
+      "rate_limit_hits": 11,
+      "classifier": {
+        "pre_tor": 0,
+        "tor_review": 5,
+        "active_bidding": 6,
+        "pending_award": 18,
+        "awarded_jobs": 303,
+        "cancelled_jobs": 43
+      },
+      "total_active_pipeline": 375,
+      "all_jobs_count": 8741,
+      "line_notify_success": 0,
+      "discord_notify_success": 19
+    },
+    {
+      "date": "2026-05-17",
+      "filename": "pipeline_notify_20260517.txt",
+      "phase": "notify",
+      "file_size": 11851,
+      "last_modified": "2026-05-17T06:00:38.310728",
+      "pipeline_durations_sec": [
+        23.0,
+        11.4
+      ],
+      "total_duration_sec": 34.4,
+      "scrape_keywords": [],
+      "total_raw": 0,
+      "total_filtered": 0,
+      "total_new": 0,
+      "cloudflare_hits": 0,
+      "search_timeouts": 0,
+      "rate_limit_hits": 0,
+      "classifier": {
+        "pre_tor": 0,
+        "tor_review": 5,
+        "active_bidding": 6,
+        "pending_award": 18,
+        "awarded_jobs": 303,
+        "cancelled_jobs": 43
+      },
+      "total_active_pipeline": 375,
+      "all_jobs_count": 8741,
+      "line_notify_success": 2,
+      "discord_notify_success": 6
+    }
+  ],
+  "sheet_snapshot": {
+    "fetched_at": "2026-05-17T22:28:11.645583",
+    "pre_tor": 0,
+    "tor_review": 5,
+    "active_bidding": 6,
+    "pending_award": 18,
+    "awarded_jobs": 303,
+    "cancelled_jobs": 43,
+    "all_jobs": 8741
+  },
+  "winners": {
+    "total_winners": 357,
+    "unique_tins": 1,
+    "unique_jobs": 1,
+    "last_modified": "2026-05-16T22:34:34.231929"
+  },
+  "commits": [
+    {
+      "hash": "feadb643",
+      "date": "2026-05-17 21:23:07 +0700",
+      "subject": "EGP RSS feeds POC verified + 14 API catalog (N+13)"
+    },
+    {
+      "hash": "bf5abccd",
+      "date": "2026-05-17 18:51:44 +0700",
+      "subject": "CGD Open Data API discovery (N+12) — endpoint + probe + datasets"
+    },
+    {
+      "hash": "96ccb316",
+      "date": "2026-05-17 16:23:11 +0700",
+      "subject": "Progress log: N+10 (4 fixes ca0474a) + N+11 (Cloudflare stealth d77e159)"
+    },
+    {
+      "hash": "d77e1595",
+      "date": "2026-05-17 16:13:32 +0700",
+      "subject": "Scraper: Cloudflare stealth (deep research 2026-05-17)"
+    },
+    {
+      "hash": "ca0474a1",
+      "date": "2026-05-17 15:11:40 +0700",
+      "subject": "Pipeline: 4 fixes จากรีวิว pipeline 17/05/2026"
+    },
+    {
+      "hash": "c8463c3a",
+      "date": "2026-05-17 05:43:43 +0700",
+      "subject": "Scraper v2: research-driven improvements (Nutch + industry patterns)"
+    },
+    {
+      "hash": "a3f6aa4c",
+      "date": "2026-05-17 05:25:41 +0700",
+      "subject": "Scraper: incremental mode (95% speedup on typical days)"
+    },
+    {
+      "hash": "299ee468",
+      "date": "2026-05-17 05:06:57 +0700",
+      "subject": "LINE Notify: Style A redesign — clean card + Google Sheet links"
+    },
+    {
+      "hash": "38dd468b",
+      "date": "2026-05-17 04:40:52 +0700",
+      "subject": "Classifier: track transitions between sheets (snapshot diff)"
+    },
+    {
+      "hash": "83e08aae",
+      "date": "2026-05-17 04:25:28 +0700",
+      "subject": "roadmap: SaaS competitive strategy vs G-LEAD (4 pillars + pricing)"
+    },
+    {
+      "hash": "0f0ffaac",
+      "date": "2026-05-17 01:41:06 +0700",
+      "subject": "patch_deadlines: ตัด ambiguous keywords ป้องกัน hit วันรับฟังผิด"
+    },
+    {
+      "hash": "6224ab26",
+      "date": "2026-05-17 00:43:52 +0700",
+      "subject": "patch_deadlines: stepId-based filter + retry 2x + integrate to collect.bat"
+    },
+    {
+      "hash": "63fcd3bf",
+      "date": "2026-05-17 00:25:55 +0700",
+      "subject": "Split pipeline: collect at 02:00 + notify at 06:00 sharp"
+    },
+    {
+      "hash": "62251933",
+      "date": "2026-05-17 00:12:20 +0700",
+      "subject": "Pipeline: focus on LINE notify reliability (skip risky steps)"
+    },
+    {
+      "hash": "450dee2a",
+      "date": "2026-05-16 23:59:46 +0700",
+      "subject": "Phase B + Phase 3: bid_history feature + updated Pipeline 8-step bat"
+    },
+    {
+      "hash": "e317faea",
+      "date": "2026-05-16 23:41:02 +0700",
+      "subject": "Add CLAUDE.md — project rules for Discord notify + progress logging"
+    },
+    {
+      "hash": "30885ccd",
+      "date": "2026-05-16 23:13:58 +0700",
+      "subject": "Classifier: active_bidding ต้อง deadline >= today (ป้องกัน stale M03/S01)"
+    },
+    {
+      "hash": "ea06bb74",
+      "date": "2026-05-16 22:36:06 +0700",
+      "subject": "Phase A: 6-sheet stepId-driven Classifier + cancelled detection"
+    },
+    {
+      "hash": "9db93e7b",
+      "date": "2026-05-16 20:26:56 +0700",
+      "subject": "Plan: add Phase B bid_history feature (competitive intelligence)"
+    },
+    {
+      "hash": "0a5f6390",
+      "date": "2026-05-16 18:57:59 +0700",
+      "subject": "Research: complete eGP stepId catalog + new classifier plan"
+    },
+    {
+      "hash": "72746273",
+      "date": "2026-05-16 02:48:06 +0700",
+      "subject": "Heal 50 bad winners + investigate cancelled-in-active bug"
+    },
+    {
+      "hash": "4b949d90",
+      "date": "2026-05-16 01:58:01 +0700",
+      "subject": "Redesign: 4-sheet lifecycle (tor_review + active + pending + awarded)"
+    },
+    {
+      "hash": "bed35845",
+      "date": "2026-05-16 01:23:44 +0700",
+      "subject": "Add eGP API live refresh + integrate into Pipeline (step 4/8)"
+    },
+    {
+      "hash": "0a836b0a",
+      "date": "2026-05-16 01:00:06 +0700",
+      "subject": "Fix schema drift: heal 1,300 misaligned rows in all_jobs"
+    },
+    {
+      "hash": "fc1da867",
+      "date": "2026-05-16 00:59:25 +0700",
+      "subject": "Initial commit: Bid Master System"
+    }
+  ],
+  "inflections": [
+    {
+      "hash": "feadb643",
+      "date": "2026-05-17 21:23:07 +0700",
+      "subject": "EGP RSS feeds POC verified + 14 API catalog (N+13)",
+      "before_metrics": {
+        "date": "2026-05-16",
+        "total_pipeline_sec": 6156.3,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 30652,
+        "total_filtered": 2581,
+        "total_new_jobs": 51,
+        "cloudflare_hits": 1,
+        "search_timeouts": 0,
+        "classifier_latest": {
+          "tor_review": 8,
+          "active_bidding": 4,
+          "pending_award": 24,
+          "awarded_jobs": 297
+        },
+        "phases": [
+          "full"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "bf5abccd",
+      "date": "2026-05-17 18:51:44 +0700",
+      "subject": "CGD Open Data API discovery (N+12) — endpoint + probe + datasets",
+      "before_metrics": {
+        "date": "2026-05-16",
+        "total_pipeline_sec": 6156.3,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 30652,
+        "total_filtered": 2581,
+        "total_new_jobs": 51,
+        "cloudflare_hits": 1,
+        "search_timeouts": 0,
+        "classifier_latest": {
+          "tor_review": 8,
+          "active_bidding": 4,
+          "pending_award": 24,
+          "awarded_jobs": 297
+        },
+        "phases": [
+          "full"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "96ccb316",
+      "date": "2026-05-17 16:23:11 +0700",
+      "subject": "Progress log: N+10 (4 fixes ca0474a) + N+11 (Cloudflare stealth d77e159)",
+      "before_metrics": {
+        "date": "2026-05-16",
+        "total_pipeline_sec": 6156.3,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 30652,
+        "total_filtered": 2581,
+        "total_new_jobs": 51,
+        "cloudflare_hits": 1,
+        "search_timeouts": 0,
+        "classifier_latest": {
+          "tor_review": 8,
+          "active_bidding": 4,
+          "pending_award": 24,
+          "awarded_jobs": 297
+        },
+        "phases": [
+          "full"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "d77e1595",
+      "date": "2026-05-17 16:13:32 +0700",
+      "subject": "Scraper: Cloudflare stealth (deep research 2026-05-17)",
+      "before_metrics": {
+        "date": "2026-05-16",
+        "total_pipeline_sec": 6156.3,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 30652,
+        "total_filtered": 2581,
+        "total_new_jobs": 51,
+        "cloudflare_hits": 1,
+        "search_timeouts": 0,
+        "classifier_latest": {
+          "tor_review": 8,
+          "active_bidding": 4,
+          "pending_award": 24,
+          "awarded_jobs": 297
+        },
+        "phases": [
+          "full"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "ca0474a1",
+      "date": "2026-05-17 15:11:40 +0700",
+      "subject": "Pipeline: 4 fixes จากรีวิว pipeline 17/05/2026",
+      "before_metrics": {
+        "date": "2026-05-16",
+        "total_pipeline_sec": 6156.3,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 30652,
+        "total_filtered": 2581,
+        "total_new_jobs": 51,
+        "cloudflare_hits": 1,
+        "search_timeouts": 0,
+        "classifier_latest": {
+          "tor_review": 8,
+          "active_bidding": 4,
+          "pending_award": 24,
+          "awarded_jobs": 297
+        },
+        "phases": [
+          "full"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "c8463c3a",
+      "date": "2026-05-17 05:43:43 +0700",
+      "subject": "Scraper v2: research-driven improvements (Nutch + industry patterns)",
+      "before_metrics": {
+        "date": "2026-05-16",
+        "total_pipeline_sec": 6156.3,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 30652,
+        "total_filtered": 2581,
+        "total_new_jobs": 51,
+        "cloudflare_hits": 1,
+        "search_timeouts": 0,
+        "classifier_latest": {
+          "tor_review": 8,
+          "active_bidding": 4,
+          "pending_award": 24,
+          "awarded_jobs": 297
+        },
+        "phases": [
+          "full"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "a3f6aa4c",
+      "date": "2026-05-17 05:25:41 +0700",
+      "subject": "Scraper: incremental mode (95% speedup on typical days)",
+      "before_metrics": {
+        "date": "2026-05-16",
+        "total_pipeline_sec": 6156.3,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 30652,
+        "total_filtered": 2581,
+        "total_new_jobs": 51,
+        "cloudflare_hits": 1,
+        "search_timeouts": 0,
+        "classifier_latest": {
+          "tor_review": 8,
+          "active_bidding": 4,
+          "pending_award": 24,
+          "awarded_jobs": 297
+        },
+        "phases": [
+          "full"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "299ee468",
+      "date": "2026-05-17 05:06:57 +0700",
+      "subject": "LINE Notify: Style A redesign — clean card + Google Sheet links",
+      "before_metrics": {
+        "date": "2026-05-16",
+        "total_pipeline_sec": 6156.3,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 30652,
+        "total_filtered": 2581,
+        "total_new_jobs": 51,
+        "cloudflare_hits": 1,
+        "search_timeouts": 0,
+        "classifier_latest": {
+          "tor_review": 8,
+          "active_bidding": 4,
+          "pending_award": 24,
+          "awarded_jobs": 297
+        },
+        "phases": [
+          "full"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "38dd468b",
+      "date": "2026-05-17 04:40:52 +0700",
+      "subject": "Classifier: track transitions between sheets (snapshot diff)",
+      "before_metrics": {
+        "date": "2026-05-16",
+        "total_pipeline_sec": 6156.3,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 30652,
+        "total_filtered": 2581,
+        "total_new_jobs": 51,
+        "cloudflare_hits": 1,
+        "search_timeouts": 0,
+        "classifier_latest": {
+          "tor_review": 8,
+          "active_bidding": 4,
+          "pending_award": 24,
+          "awarded_jobs": 297
+        },
+        "phases": [
+          "full"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "83e08aae",
+      "date": "2026-05-17 04:25:28 +0700",
+      "subject": "roadmap: SaaS competitive strategy vs G-LEAD (4 pillars + pricing)",
+      "before_metrics": {
+        "date": "2026-05-16",
+        "total_pipeline_sec": 6156.3,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 30652,
+        "total_filtered": 2581,
+        "total_new_jobs": 51,
+        "cloudflare_hits": 1,
+        "search_timeouts": 0,
+        "classifier_latest": {
+          "tor_review": 8,
+          "active_bidding": 4,
+          "pending_award": 24,
+          "awarded_jobs": 297
+        },
+        "phases": [
+          "full"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "0f0ffaac",
+      "date": "2026-05-17 01:41:06 +0700",
+      "subject": "patch_deadlines: ตัด ambiguous keywords ป้องกัน hit วันรับฟังผิด",
+      "before_metrics": {
+        "date": "2026-05-16",
+        "total_pipeline_sec": 6156.3,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 30652,
+        "total_filtered": 2581,
+        "total_new_jobs": 51,
+        "cloudflare_hits": 1,
+        "search_timeouts": 0,
+        "classifier_latest": {
+          "tor_review": 8,
+          "active_bidding": 4,
+          "pending_award": 24,
+          "awarded_jobs": 297
+        },
+        "phases": [
+          "full"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "6224ab26",
+      "date": "2026-05-17 00:43:52 +0700",
+      "subject": "patch_deadlines: stepId-based filter + retry 2x + integrate to collect.bat",
+      "before_metrics": {
+        "date": "2026-05-16",
+        "total_pipeline_sec": 6156.3,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 30652,
+        "total_filtered": 2581,
+        "total_new_jobs": 51,
+        "cloudflare_hits": 1,
+        "search_timeouts": 0,
+        "classifier_latest": {
+          "tor_review": 8,
+          "active_bidding": 4,
+          "pending_award": 24,
+          "awarded_jobs": 297
+        },
+        "phases": [
+          "full"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "63fcd3bf",
+      "date": "2026-05-17 00:25:55 +0700",
+      "subject": "Split pipeline: collect at 02:00 + notify at 06:00 sharp",
+      "before_metrics": {
+        "date": "2026-05-16",
+        "total_pipeline_sec": 6156.3,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 30652,
+        "total_filtered": 2581,
+        "total_new_jobs": 51,
+        "cloudflare_hits": 1,
+        "search_timeouts": 0,
+        "classifier_latest": {
+          "tor_review": 8,
+          "active_bidding": 4,
+          "pending_award": 24,
+          "awarded_jobs": 297
+        },
+        "phases": [
+          "full"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "62251933",
+      "date": "2026-05-17 00:12:20 +0700",
+      "subject": "Pipeline: focus on LINE notify reliability (skip risky steps)",
+      "before_metrics": {
+        "date": "2026-05-16",
+        "total_pipeline_sec": 6156.3,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 30652,
+        "total_filtered": 2581,
+        "total_new_jobs": 51,
+        "cloudflare_hits": 1,
+        "search_timeouts": 0,
+        "classifier_latest": {
+          "tor_review": 8,
+          "active_bidding": 4,
+          "pending_award": 24,
+          "awarded_jobs": 297
+        },
+        "phases": [
+          "full"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "450dee2a",
+      "date": "2026-05-16 23:59:46 +0700",
+      "subject": "Phase B + Phase 3: bid_history feature + updated Pipeline 8-step bat",
+      "before_metrics": {
+        "date": "2026-05-15",
+        "total_pipeline_sec": 12031.6,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 0,
+        "total_filtered": 0,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 27,
+        "search_timeouts": 6,
+        "classifier_latest": null,
+        "phases": [
+          "full"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-16",
+        "total_pipeline_sec": 6156.3,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 30652,
+        "total_filtered": 2581,
+        "total_new_jobs": 51,
+        "cloudflare_hits": 1,
+        "search_timeouts": 0,
+        "classifier_latest": {
+          "tor_review": 8,
+          "active_bidding": 4,
+          "pending_award": 24,
+          "awarded_jobs": 297
+        },
+        "phases": [
+          "full"
+        ]
+      },
+      "after_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      }
+    },
+    {
+      "hash": "e317faea",
+      "date": "2026-05-16 23:41:02 +0700",
+      "subject": "Add CLAUDE.md — project rules for Discord notify + progress logging",
+      "before_metrics": {
+        "date": "2026-05-15",
+        "total_pipeline_sec": 12031.6,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 0,
+        "total_filtered": 0,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 27,
+        "search_timeouts": 6,
+        "classifier_latest": null,
+        "phases": [
+          "full"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-16",
+        "total_pipeline_sec": 6156.3,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 30652,
+        "total_filtered": 2581,
+        "total_new_jobs": 51,
+        "cloudflare_hits": 1,
+        "search_timeouts": 0,
+        "classifier_latest": {
+          "tor_review": 8,
+          "active_bidding": 4,
+          "pending_award": 24,
+          "awarded_jobs": 297
+        },
+        "phases": [
+          "full"
+        ]
+      },
+      "after_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      }
+    },
+    {
+      "hash": "30885ccd",
+      "date": "2026-05-16 23:13:58 +0700",
+      "subject": "Classifier: active_bidding ต้อง deadline >= today (ป้องกัน stale M03/S01)",
+      "before_metrics": {
+        "date": "2026-05-15",
+        "total_pipeline_sec": 12031.6,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 0,
+        "total_filtered": 0,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 27,
+        "search_timeouts": 6,
+        "classifier_latest": null,
+        "phases": [
+          "full"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-16",
+        "total_pipeline_sec": 6156.3,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 30652,
+        "total_filtered": 2581,
+        "total_new_jobs": 51,
+        "cloudflare_hits": 1,
+        "search_timeouts": 0,
+        "classifier_latest": {
+          "tor_review": 8,
+          "active_bidding": 4,
+          "pending_award": 24,
+          "awarded_jobs": 297
+        },
+        "phases": [
+          "full"
+        ]
+      },
+      "after_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      }
+    },
+    {
+      "hash": "ea06bb74",
+      "date": "2026-05-16 22:36:06 +0700",
+      "subject": "Phase A: 6-sheet stepId-driven Classifier + cancelled detection",
+      "before_metrics": {
+        "date": "2026-05-15",
+        "total_pipeline_sec": 12031.6,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 0,
+        "total_filtered": 0,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 27,
+        "search_timeouts": 6,
+        "classifier_latest": null,
+        "phases": [
+          "full"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-16",
+        "total_pipeline_sec": 6156.3,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 30652,
+        "total_filtered": 2581,
+        "total_new_jobs": 51,
+        "cloudflare_hits": 1,
+        "search_timeouts": 0,
+        "classifier_latest": {
+          "tor_review": 8,
+          "active_bidding": 4,
+          "pending_award": 24,
+          "awarded_jobs": 297
+        },
+        "phases": [
+          "full"
+        ]
+      },
+      "after_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      }
+    },
+    {
+      "hash": "9db93e7b",
+      "date": "2026-05-16 20:26:56 +0700",
+      "subject": "Plan: add Phase B bid_history feature (competitive intelligence)",
+      "before_metrics": {
+        "date": "2026-05-15",
+        "total_pipeline_sec": 12031.6,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 0,
+        "total_filtered": 0,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 27,
+        "search_timeouts": 6,
+        "classifier_latest": null,
+        "phases": [
+          "full"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-16",
+        "total_pipeline_sec": 6156.3,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 30652,
+        "total_filtered": 2581,
+        "total_new_jobs": 51,
+        "cloudflare_hits": 1,
+        "search_timeouts": 0,
+        "classifier_latest": {
+          "tor_review": 8,
+          "active_bidding": 4,
+          "pending_award": 24,
+          "awarded_jobs": 297
+        },
+        "phases": [
+          "full"
+        ]
+      },
+      "after_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      }
+    },
+    {
+      "hash": "0a5f6390",
+      "date": "2026-05-16 18:57:59 +0700",
+      "subject": "Research: complete eGP stepId catalog + new classifier plan",
+      "before_metrics": {
+        "date": "2026-05-15",
+        "total_pipeline_sec": 12031.6,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 0,
+        "total_filtered": 0,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 27,
+        "search_timeouts": 6,
+        "classifier_latest": null,
+        "phases": [
+          "full"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-16",
+        "total_pipeline_sec": 6156.3,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 30652,
+        "total_filtered": 2581,
+        "total_new_jobs": 51,
+        "cloudflare_hits": 1,
+        "search_timeouts": 0,
+        "classifier_latest": {
+          "tor_review": 8,
+          "active_bidding": 4,
+          "pending_award": 24,
+          "awarded_jobs": 297
+        },
+        "phases": [
+          "full"
+        ]
+      },
+      "after_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      }
+    }
+  ]
+}

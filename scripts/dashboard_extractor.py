@@ -260,6 +260,18 @@ def rss_catalog_stats() -> dict:
         except Exception:
             pass
 
+    # Full list (compact) สำหรับ catalog browser ใน dashboard
+    all_depts = []
+    for d, v in sorted(catalog.items()):
+        titles = v.get('titles', [])
+        first_title = titles[0] if titles else ''
+        all_depts.append({
+            'dept_id': d,
+            'item_count': v.get('item_count', 0),
+            'sample_title': first_title[:120],
+            'pub_date': (v.get('pubDates', []) or [''])[0],
+        })
+
     return {
         'total_depts': total,
         'active_depts': active,
@@ -272,6 +284,7 @@ def rss_catalog_stats() -> dict:
             {'dept_id': d, 'item_count': c, 'sample_title': t[:80]}
             for d, c, t in top
         ],
+        'all_depts': all_depts,
         'history': history,
     }
 

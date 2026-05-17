@@ -5,6 +5,7 @@ import { KpiCard } from "@/components/KpiCard";
 import { ScrapeMetricsChart } from "@/components/ScrapeMetricsChart";
 import { KeywordBreakdown } from "@/components/KeywordBreakdown";
 import { RssCatalogCard } from "@/components/RssCatalogCard";
+import { CatalogBrowser } from "@/components/CatalogBrowser";
 import { Search, ShieldAlert, Clock, Inbox } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -92,6 +93,10 @@ export default async function ScrapePage() {
 
         {snapshot.rss_catalog && (
           <RssCatalogCard rss={snapshot.rss_catalog} />
+        )}
+
+        {snapshot.rss_catalog?.all_depts && (
+          <CatalogBrowser depts={snapshot.rss_catalog.all_depts} />
         )}
 
         <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">

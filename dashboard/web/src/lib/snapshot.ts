@@ -111,6 +111,13 @@ export interface RssCatalogTopDept {
   sample_title: string;
 }
 
+export interface RssCatalogDept {
+  dept_id: string;
+  item_count: number;
+  sample_title: string;
+  pub_date?: string;
+}
+
 export interface RssCatalog {
   total_depts?: number;
   active_depts?: number;
@@ -120,6 +127,7 @@ export interface RssCatalog {
   coverage_pct?: number;
   active_pct?: number;
   top_depts?: RssCatalogTopDept[];
+  all_depts?: RssCatalogDept[];
   history?: RssCatalogHistoryPoint[];
 }
 

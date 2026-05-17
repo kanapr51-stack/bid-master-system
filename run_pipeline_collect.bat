@@ -4,6 +4,7 @@ REM  Pipeline COLLECT — รัน 02:00 ทุกวัน
 REM  scrape → classify → refresh (เก็บข้อมูลพร้อมส่ง 06:00)
 REM ============================================================
 
+setlocal enabledelayedexpansion
 cd /d C:\Bid-Master-System
 if not exist logs mkdir logs
 
@@ -31,17 +32,17 @@ start "" %CHROME% --remote-debugging-port=9222 --no-first-run --no-restore-last-
 REM --- Wait for Chrome port 9222 ---
 SET CHROME_OK=0
 powershell -NoProfile -Command "$ok=$false; for($i=0;$i -lt 30;$i++){ try { Invoke-WebRequest -Uri 'http://127.0.0.1:9222/json/version' -UseBasicParsing -TimeoutSec 2 | Out-Null; $ok=$true; break } catch { Start-Sleep -Seconds 2 } }; if(-not $ok){ exit 1 }"
-if %ERRORLEVEL% EQU 0 (
+if !ERRORLEVEL! EQU 0 (
     timeout /t 5 /nobreak > nul
     SET CHROME_OK=1
-    echo [%TIME%] Chrome Debug พร้อม (port 9222) >> %LOGFILE%
+    echo [%TIME%] Chrome Debug พร้อม ^(port 9222^) >> %LOGFILE%
 ) else (
     echo [%TIME%] ERROR: Chrome ไม่ผูก port 9222 — ข้าม scrape/refresh >> %LOGFILE%
     %PYTHON% scripts\ask_discord.py --notify "❌ Chrome ไม่ขึ้น (collect) — ข้าม scrape/refresh"
 )
 
 REM --- Step 1: SCRAPE (Chrome required) ---
-if "%CHROME_OK%"=="1" (
+if "!CHROME_OK!"=="1" (
     echo [%TIME%] Step 1: SCRAPE >> %LOGFILE%
     %PYTHON% scripts\Sebastian_Pipeline.py --step scrape >> %LOGFILE% 2>&1
 )
@@ -51,14 +52,14 @@ echo [%TIME%] Step 2: CLASSIFY >> %LOGFILE%
 %PYTHON% scripts\Sebastian_Pipeline.py --step classify >> %LOGFILE% 2>&1
 
 REM --- Step 3: REFRESH (Chrome required) ---
-if "%CHROME_OK%"=="1" (
+if "!CHROME_OK!"=="1" (
     echo [%TIME%] Step 3: REFRESH (active + tor + pending) >> %LOGFILE%
     %PYTHON% scripts\refresh_active_jobs.py --expand >> %LOGFILE% 2>&1
 )
 
 REM --- Step 4: PATCH_DEADLINES (Chrome required) ---
 REM ดึง deadline จาก PDF ของ active jobs ที่ deadline ว่าง — มี retry 2 ครั้ง
-if "%CHROME_OK%"=="1" (
+if "!CHROME_OK!"=="1" (
     echo [%TIME%] Step 4: PATCH_DEADLINES (active jobs missing deadline) >> %LOGFILE%
     %PYTHON% scripts\patch_deadlines.py >> %LOGFILE% 2>&1
 )
@@ -74,3 +75,4 @@ powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"Name='ch
 echo [%TIME%] COLLECT phase DONE — รอ NOTIFY phase 06:00 >> %LOGFILE%
 %PYTHON% scripts\ask_discord.py --notify "✅ **Collect phase DONE** — รอ 06:00 ส่ง LINE notify"
 echo ============================================================ >> %LOGFILE%
+endlocal

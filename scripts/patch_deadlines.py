@@ -334,13 +334,18 @@ def main():
 
     # Filter: rows ที่ stepId active (M03/S01/Z*) + deadline ว่าง
     # Fallback: ถ้า step_id ว่าง → ใช้ project_status text เดิม
+    # Skip งานเก่า jid ขึ้นต้น 67/68 (ปีก่อนหน้า) — 3 ตัว stuck ตั้งแต่ปี 2568 (2026-05-17)
     ACTIVE_PREFIXES = ("M", "S", "Z")
+    STALE_YEAR_PREFIXES = ("67", "68")
     def needs_patch(r):
         jid = str(r.get("job_id", "")).strip()
         if not jid:
             return False
         if str(r.get("deadline", "")).strip():
             return False  # already has deadline
+        # Skip stale legacy jobs (jid year prefix older than current)
+        if jid[:2] in STALE_YEAR_PREFIXES:
+            return False
         step = str(r.get("step_id", "")).strip().upper()
         ps_raw = str(r.get("project_status_raw", "")).strip()
         if step:
@@ -350,7 +355,7 @@ def main():
         return str(r.get("project_status", "")).strip() == "กำลังประมูล"
 
     jobs_missing_deadline = [r for r in rows if needs_patch(r)]
-    log(f"  งานต้อง patch (stepId active M*/S*/Z* + deadline ว่าง): {len(jobs_missing_deadline)}")
+    log(f"  งานต้อง patch (stepId active M*/S*/Z* + deadline ว่าง, ไม่นับ 67/68): {len(jobs_missing_deadline)}")
 
     if not jobs_missing_deadline:
         log("ทุกงานมี deadline แล้ว — เสร็จสิ้น")

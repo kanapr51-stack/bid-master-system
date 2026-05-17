@@ -335,48 +335,73 @@ def new_stealth_page(browser):
 # PROCESS5 SCRAPER — API-based (2026)
 # ================================================================
 
-def init_process5_page(page) -> bool:
+def detect_cloudflare_block(page) -> bool:
+    """ตรวจ Cloudflare modal บล็อกหน้า — เจอแล้วต้อง long cooldown"""
+    try:
+        modal = page.query_selector("modal-container.show .modal-body")
+        if modal:
+            txt = (modal.inner_text() or "")
+            if "Cloudflare" in txt and "ไม่ผ่าน" in txt:
+                return True
+    except Exception:
+        pass
+    return False
+
+
+def init_process5_page(page, cloudflare_retries: int = 2) -> bool:
     """
     โหลดหน้า process5 และรอ Cloudflare Turnstile ให้เสร็จ
-    คืนค่า True ถ้าพร้อมใช้งาน
+    ถ้าเจอ Cloudflare modal block → long cooldown 5 นาที + retry
     """
-    log("กำลังโหลด process5.gprocurement.go.th ...")
-    try:
-        page.goto(SEARCH_URL_PROCESS5, wait_until="load", timeout=45000)
-    except Exception as e:
-        log(f"  goto error: {e}")
-        return False
-
-    # รอ page load เบื้องต้น
-    time.sleep(5)
-
-    # รอ input ให้ปรากฏก่อน
-    try:
-        page.wait_for_selector("input[name*='keyword']", timeout=20000)
-    except Exception:
-        log("  ไม่พบ search input")
-        return False
-
-    # รอปุ่ม ค้นหา ให้ enabled (Cloudflare Turnstile ต้องเสร็จก่อน)
-    log("  รอปุ่มค้นหา enabled (Cloudflare Turnstile)...")
-    deadline = time.time() + 35
-    btn_ready = False
-    while time.time() < deadline:
+    for attempt in range(cloudflare_retries + 1):
+        log("กำลังโหลด process5.gprocurement.go.th ...")
         try:
-            btn = page.query_selector("button:has-text('ค้นหา')")
-            if btn and btn.is_enabled():
-                btn_ready = True
-                break
-        except Exception:
-            pass
-        time.sleep(0.8)
-    if btn_ready:
-        log("  ปุ่มค้นหา enabled แล้ว")
-    else:
-        log("  ปุ่มยัง disabled หลัง 35s — ดำเนินการต่อ")
+            page.goto(SEARCH_URL_PROCESS5, wait_until="load", timeout=45000)
+        except Exception as e:
+            log(f"  goto error: {e}")
+            return False
 
-    log("  หน้า process5 พร้อมแล้ว")
-    return True
+        time.sleep(5)
+
+        # ตรวจ Cloudflare modal บล็อกหรือยัง (2026-05-17)
+        if detect_cloudflare_block(page):
+            if attempt < cloudflare_retries:
+                cooldown = 300  # 5 นาที
+                log(f"  🛑 Cloudflare บล็อก — long cooldown {cooldown}s แล้ว retry ({attempt+1}/{cloudflare_retries})")
+                time.sleep(cooldown)
+                continue
+            else:
+                log(f"  🛑 Cloudflare บล็อกต่อเนื่อง — ยอมแพ้")
+                return False
+
+        try:
+            page.wait_for_selector("input[name*='keyword']", timeout=20000)
+        except Exception:
+            log("  ไม่พบ search input")
+            return False
+
+        # รอปุ่ม ค้นหา ให้ enabled (Cloudflare Turnstile ต้องเสร็จก่อน)
+        log("  รอปุ่มค้นหา enabled (Cloudflare Turnstile)...")
+        deadline = time.time() + 35
+        btn_ready = False
+        while time.time() < deadline:
+            try:
+                btn = page.query_selector("button:has-text('ค้นหา')")
+                if btn and btn.is_enabled():
+                    btn_ready = True
+                    break
+            except Exception:
+                pass
+            time.sleep(0.8)
+        if btn_ready:
+            log("  ปุ่มค้นหา enabled แล้ว")
+        else:
+            log("  ปุ่มยัง disabled หลัง 35s — ดำเนินการต่อ")
+
+        log("  หน้า process5 พร้อมแล้ว")
+        return True
+
+    return False
 
 
 def search_keyword_process5(page, keyword: str, max_pages: int = 30, scraper_state: dict = None) -> list[dict]:
@@ -1067,29 +1092,32 @@ def main():
             log("ไม่สามารถโหลด process5 ได้ — หยุด")
             return
 
-        # ---- Search loop เดียว: จังหวัด + หน่วยงาน/ตำบล — กรอง FILTER_KEYWORDS ทุกตัว ----
-        # จังหวัด (นครพนม, บึงกาฬ) มาก่อน — cooldown 90s ระหว่างกัน (ผลเยอะ = หลายหน้า)
-        # หน่วยงาน/ตำบล — cooldown 5s ระหว่างกัน (ผลน้อยกว่า)
+        # ---- Search loop: เฉพาะหน่วยงาน/ตำบลเท่านั้น ----
+        # ตัด "นครพนม"/"บึงกาฬ" ออก (2026-05-17): ดึง 14,810 รายการแต่ใหม่ 0 + กิน Cloudflare quota
+        # → scrape ระดับตำบล/หน่วยงานครอบคลุมพอแล้ว
         ALL_TERMS = [
-            {"keyword": t, "expected_province": None} for t in ["นครพนม", "บึงกาฬ"]
-        ] + [
             {"keyword": t, "expected_province": p} for t, p in DEPT_PROVINCE_MAP.items()
         ]
 
+        consecutive_timeouts = 0
         for i, term_info in enumerate(ALL_TERMS):
             keyword        = term_info["keyword"]
             expected_prov  = term_info["expected_province"]
             is_dept        = expected_prov is not None
 
-            # cooldown ก่อนค้น
+            # cooldown ก่อนค้น — เพิ่มจาก 5s → 15s ระหว่าง dept terms (2026-05-17 กัน Cloudflare)
             if i > 0:
-                prev_is_dept = ALL_TERMS[i - 1]["expected_province"] is not None
-                if not prev_is_dept:
-                    log(f"  รอ 90s ก่อนค้น '{keyword}' ...")
-                    time.sleep(90)
-                else:
-                    log(f"  รอ 5s ก่อนค้น '{keyword}' ...")
-                    time.sleep(5)
+                log(f"  รอ 15s ก่อนค้น '{keyword}' ...")
+                time.sleep(15)
+
+            # ถ้า timeout ติดกัน 2 ครั้ง → long cooldown + reinit + ตรวจ Cloudflare (2026-05-17)
+            if consecutive_timeouts >= 2:
+                log(f"  ⚠️ timeout ติดกัน {consecutive_timeouts} ครั้ง — long cooldown 300s + reinit")
+                time.sleep(300)
+                if not init_process5_page(page):
+                    log("  ❌ reinit ไม่สำเร็จ (Cloudflare?) — หยุด scrape")
+                    break
+                consecutive_timeouts = 0
 
             kw_start = time.time()
             try:
@@ -1097,8 +1125,10 @@ def main():
 
                 if needs_reinit and needs_reinit != "no_new":
                     if needs_reinit == "timeout":
-                        log(f"  Timeout — reinit แล้ว retry '{keyword}' ทันที")
+                        consecutive_timeouts += 1
+                        log(f"  Timeout — reinit แล้ว retry '{keyword}' ทันที (streak={consecutive_timeouts})")
                     else:
+                        consecutive_timeouts = 0
                         log(f"  Rate limit — รอ 90s แล้ว retry '{keyword}'...")
                         time.sleep(90)
                     if init_process5_page(page):
@@ -1141,6 +1171,10 @@ def main():
                 new_jobs = [j for j in filtered if j["job_id"] not in seen_ids]
                 seen_ids.update(j["job_id"] for j in new_jobs)
                 all_new_jobs.extend(new_jobs)
+
+                # search สำเร็จ (มีรายการ) → reset streak (2026-05-17)
+                if jobs:
+                    consecutive_timeouts = 0
 
                 skip_str = f", ข้ามผิดจังหวัด {province_skip}" if province_skip else ""
                 log(f"  '{keyword}': {len(jobs)} รายการ → กรองแล้ว {len(filtered)}{skip_str}, ใหม่ {len(new_jobs)}")

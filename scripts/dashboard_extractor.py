@@ -230,10 +230,12 @@ def rss_catalog_stats() -> dict:
 
     # Top depts by item count
     top = sorted(
-        [(d, v.get('item_count', 0), v.get('titles', [''])[0] if v.get('titles') else '')
+        [(d, v.get('item_count', 0), v.get('titles', [''])[0] if v.get('titles') else '',
+          v.get('dept_name', ''))
          for d, v in catalog.items() if v.get('item_count', 0) > 0],
         key=lambda x: -x[1],
     )[:10]
+    enriched_count = sum(1 for v in catalog.values() if v.get('dept_name'))
 
     # History from rss_run_*.json (last 50 runs)
     run_files = sorted(DATA_DIR.glob("rss_run_*.json"))[-50:]
@@ -267,6 +269,7 @@ def rss_catalog_stats() -> dict:
         first_title = titles[0] if titles else ''
         all_depts.append({
             'dept_id': d,
+            'dept_name': v.get('dept_name', ''),  # enriched via process5 getProjectDetail
             'item_count': v.get('item_count', 0),
             'sample_title': first_title[:120],
             'pub_date': (v.get('pubDates', []) or [''])[0],
@@ -281,9 +284,10 @@ def rss_catalog_stats() -> dict:
         'coverage_pct': round(total / 9999 * 100, 2),
         'active_pct': round(active / max(1, total) * 100, 2),
         'top_depts': [
-            {'dept_id': d, 'item_count': c, 'sample_title': t[:80]}
-            for d, c, t in top
+            {'dept_id': d, 'dept_name': n, 'item_count': c, 'sample_title': t[:80]}
+            for d, c, t, n in top
         ],
+        'enriched_count': enriched_count,
         'all_depts': all_depts,
         'history': history,
     }

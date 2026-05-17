@@ -29,6 +29,7 @@ export function CatalogBrowser({ depts }: Props) {
       result = result.filter(
         (d) =>
           d.dept_id.toLowerCase().includes(q) ||
+          (d.dept_name ?? "").toLowerCase().includes(q) ||
           d.sample_title.toLowerCase().includes(q),
       );
     }
@@ -112,7 +113,7 @@ export function CatalogBrowser({ depts }: Props) {
                   setSearch(e.target.value);
                   setPage(0);
                 }}
-                placeholder="ค้นหา deptId (เช่น 0703) หรือ keyword ใน title (เช่น นครพนม, ก่อสร้าง)"
+                placeholder="ค้นหา deptId / ชื่อหน่วยงาน / keyword ใน title (เช่น 0703, กรมชลประทาน, นครพนม)"
                 className="w-full pl-10 pr-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 dark:text-slate-100"
               />
             </div>
@@ -158,14 +159,15 @@ export function CatalogBrowser({ depts }: Props) {
             </div>
           ) : (
             <div className="overflow-x-auto -mx-6 px-6">
-              <table className="w-full text-sm min-w-[640px]">
+              <table className="w-full text-sm min-w-[720px]">
                 <thead className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 sticky top-0">
                   <tr className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-                    <th className="text-left py-2 w-20">DeptId</th>
-                    <th className="text-right py-2 w-16">Items</th>
-                    <th className="text-left py-2 w-24">pubDate</th>
-                    <th className="text-left py-2 pl-4">ตัวอย่าง title</th>
-                    <th className="text-right py-2 w-12"></th>
+                    <th className="text-left py-2 w-16">DeptId</th>
+                    <th className="text-left py-2 pl-3 min-w-[200px]">ชื่อหน่วยงาน</th>
+                    <th className="text-right py-2 w-14">Items</th>
+                    <th className="text-left py-2 w-20">pubDate</th>
+                    <th className="text-left py-2 pl-4 min-w-[260px]">ตัวอย่าง title</th>
+                    <th className="text-right py-2 w-10"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -178,6 +180,15 @@ export function CatalogBrowser({ depts }: Props) {
                       >
                         <td className="py-2 font-mono font-medium text-slate-700 dark:text-slate-300">
                           {d.dept_id}
+                        </td>
+                        <td className="py-2 pl-3 text-sm">
+                          {d.dept_name ? (
+                            <span className="font-medium text-slate-900 dark:text-slate-100">
+                              {d.dept_name}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 italic text-xs">(ยังไม่ได้ enrich)</span>
+                          )}
                         </td>
                         <td className="py-2 text-right tabular-nums">
                           {d.item_count > 0 ? (

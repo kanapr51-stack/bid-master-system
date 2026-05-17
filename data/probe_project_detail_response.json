@@ -1,0 +1,23 @@
+{
+  "response": {
+    "responseCode": "0",
+    "messageCode": null,
+    "description": null
+  },
+  "data": {
+    "projectId": "69059115189",
+    "methodId": "16",
+    "typeId": "03",
+    "projectName": "ประกวดราคาจ้างดำเนินโครงการทาสีอาคาร สำนักงานปลัดสำนักนายกรัฐมนตรี ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "goodsId": "4016",
+    "flowId": "1",
+    "stepId": "M03",
+    "projectStatus": "A",
+    "realMethodId": "160",
+    "deptSubName": "สำนักงานปลัดสำนักนายกรัฐมนตรี กรุงเทพฯ",
+    "publishTypeName": null,
+    "flowSeqno": 3,
+    "announceType": "D0",
+    "isSect7": false
+  }
+}

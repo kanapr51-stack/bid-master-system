@@ -165,9 +165,9 @@ export function RssCatalogCard({ rss }: Props) {
             <table className="w-full text-sm min-w-[480px]">
               <thead className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 <tr className="border-b border-slate-200 dark:border-slate-800">
-                  <th className="text-left py-2">DeptId</th>
-                  <th className="text-right py-2">Items</th>
-                  <th className="text-left py-2 pl-4">ตัวอย่าง title</th>
+                  <th className="text-left py-2 w-16">DeptId</th>
+                  <th className="text-left py-2 pl-3">ชื่อหน่วยงาน</th>
+                  <th className="text-right py-2 w-16">Items</th>
                 </tr>
               </thead>
               <tbody>
@@ -179,11 +179,17 @@ export function RssCatalogCard({ rss }: Props) {
                     <td className="py-2 font-mono font-medium text-slate-700 dark:text-slate-300">
                       {d.dept_id}
                     </td>
+                    <td className="py-2 pl-3 text-sm">
+                      {d.dept_name ? (
+                        <span className="text-slate-900 dark:text-slate-100">{d.dept_name}</span>
+                      ) : (
+                        <span className="text-slate-400 italic text-xs">
+                          {d.sample_title?.slice(0, 80) || "(ยังไม่ enrich)"}
+                        </span>
+                      )}
+                    </td>
                     <td className="py-2 text-right tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                       {d.item_count}
-                    </td>
-                    <td className="py-2 pl-4 text-xs text-slate-600 dark:text-slate-400">
-                      {d.sample_title || "(no title)"}
                     </td>
                   </tr>
                 ))}

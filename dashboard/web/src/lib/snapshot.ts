@@ -107,12 +107,14 @@ export interface RssCatalogHistoryPoint {
 
 export interface RssCatalogTopDept {
   dept_id: string;
+  dept_name?: string;
   item_count: number;
   sample_title: string;
 }
 
 export interface RssCatalogDept {
   dept_id: string;
+  dept_name?: string;
   item_count: number;
   sample_title: string;
   pub_date?: string;
@@ -129,6 +131,7 @@ export interface RssCatalog {
   top_depts?: RssCatalogTopDept[];
   all_depts?: RssCatalogDept[];
   history?: RssCatalogHistoryPoint[];
+  enriched_count?: number;
 }
 
 export interface Snapshot {

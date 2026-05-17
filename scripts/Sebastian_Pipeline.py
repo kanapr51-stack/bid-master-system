@@ -14,7 +14,7 @@ Usage:
     python Sebastian_Pipeline.py --no-deploy      # รัน full แต่ skip deploy step
 
 Pipeline flow:
-    scrape → classify → refresh → download → analyze → cost → rank → notify → snapshot → deploy
+    scrape → rss → classify → refresh → download → analyze → cost → rank → notify → snapshot → deploy
 
 Steps ที่ต้องการ Chrome (port 9222): scrape, download, refresh
     Start-Process "chrome.exe" -ArgumentList "--remote-debugging-port=9222","--no-first-run","--user-data-dir=C:\\Temp\\ChromeDebug"
@@ -150,7 +150,7 @@ def main():
     parser = argparse.ArgumentParser(description="Sebastian Pipeline Runner")
     parser.add_argument(
         "--step",
-        choices=["scrape", "download", "classify", "refresh", "analyze", "cost", "rank", "notify", "snapshot", "deploy", "all"],
+        choices=["scrape", "rss", "download", "classify", "refresh", "analyze", "cost", "rank", "notify", "snapshot", "deploy", "all"],
         default="all",
         help="step ที่จะรัน (default: all)",
     )
@@ -173,6 +173,15 @@ def main():
         else:
             print("[WARN] Scraper ไม่สำเร็จ", flush=True)
             _dc(notify_step_warn, "scrape", "Scraper ไม่สำเร็จ — ดูรายละเอียดใน log")
+
+    if step in ("all", "rss"):
+        log("Step 1.5: RSS — discovery via RSS feed (cross-check process5)")
+        ok = run_script("Sebastian_RSS_Scraper.py")
+        if ok:
+            _dc(notify_step_done, "rss", "RSS discovery รอบนี้สำเร็จ")
+        else:
+            print("[WARN] RSS discovery ไม่สำเร็จ (อาจไม่มี target_deptids.json)", flush=True)
+            _dc(notify_step_warn, "rss", "RSS discovery ไม่สำเร็จ")
 
     if step in ("all", "download"):
         log("Step 2/8: DOWNLOAD — ดาวน์โหลด ปร.4, ปร.5, TOR")

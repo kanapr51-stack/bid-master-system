@@ -1724,3 +1724,107 @@ pipeline → snapshot.json updated → POST /api/snapshot → Blob (overwrite)
                                                           ↓
                                                   dashboard อัปเดต < 5s
 ```
+
+### Update 3 (2026-05-18) — HTTP Basic Auth
+- เพิ่ม `dashboard/web/src/middleware.ts` — Basic Auth บนทุก route ยกเว้น `/api/snapshot`, `/api/revalidate`, static assets
+- timingSafeEqual ป้องกัน timing attack
+- ENV: `DASHBOARD_USER`, `DASHBOARD_PASS` (ตั้งใน Vercel + .env)
+- ทดสอบครบ: no auth → 401, wrong → 401, correct → 200, /api/* → 200 (bypass)
+- Python upload ยังทำงาน (ใช้ x-revalidate-secret แทน)
+
+---
+
+## งานที่ N+15: Phase 1 RSS-First Pipeline (2026-05-18)
+
+### สถานะ: ✅ เสร็จ (MVP)
+
+### สิ่งที่ทำ
+
+**1. DeptId Discovery**
+- `scripts/scan_egp_deptids.py` — batch scan 0001-9999 (2-pass: fast + retry)
+- ติด HTTP 429 (rate limit) ระหว่าง scan รอบสอง → pivot ไป **incremental discovery**
+- Seed catalog 15 depts (จาก scan รอบแรกที่สำเร็จ + POC verified)
+- ภายหลังโตเป็น 75 depts ผ่าน probe ในการรัน RSS scraper 3 รอบ
+
+**2. `scripts/cgd_api_client.py`**
+- ห่อ CKAN `datastore_search` ใช้สำหรับ enrichment
+- `lookup_project(project_id)` — concurrent search 10 contract files
+- `lookup_winner_by_tin(tin)` — search egpwinner ทุก file
+- `normalize_to_all_jobs(record)` — schema mapping (18 cols)
+- Note: 2569 contract data ยังไม่อยู่ใน CGD → enrichment ทำได้เฉพาะ 2568 awarded
+
+**3. `scripts/Sebastian_RSS_Scraper.py`**
+- Discovery-mode: poll known active depts + probe N=20 random unknowns/run
+- ทำงานเร็ว: 75 depts ใน 17s · concurrent threads workers=4
+- ผลลัพธ์: data/rss_run_TIMESTAMP.json + อัปเดต catalog
+- Mode `--queue` → เขียน new projectIds ลง rss_queue.json (สำหรับ refresh_active_jobs pickup)
+
+**4. `scripts/filter_target_deptids.py`**
+- 2 layers: keyword match (title) + reverse projectId lookup (all_jobs sheet)
+- ปัจจุบัน 1 match (0137 — adjacent province สกลนคร) · 1713 target jobs ใน sheet แต่ 0 overlap (RSS = recent, sheet = historical)
+- จะ effective มากขึ้นเมื่อ RSS รันต่อเนื่องหลายวัน
+
+**5. Pipeline Integration**
+- เพิ่ม step `rss` (1.5) ระหว่าง scrape → download
+- ใช้: `python scripts/Sebastian_Pipeline.py --step rss`
+- Discord notify เมื่อ step done
+- Pipeline หลักรัน rss อัตโนมัติทุกรอบ (cron 06:00)
+
+### ผลลัพธ์ทดสอบ
+- 86 items (active D0) ดึงได้จาก 55 depts ใน 16.9 วินาที
+- **86 items ทั้งหมด "missed by process5 scraper"** (อาจเป็นเพราะ seen_ids snapshot ที่เปรียบเทียบ — ตัวเลขนี้จะค่อยลดเมื่อทั้งสอง source align)
+- Catalog เพิ่มจาก 15 → 75 depts ใน 3 รอบ test
+
+### Followup (Phase 1.5+)
+- [ ] Wire RSS queue → refresh_active_jobs.py เพื่อ fetch detail สำหรับ new projectIds
+- [ ] ตั้ง cron แยกให้ RSS scraper รันทุก 30 นาที (ตามที่ roadmap บอก)
+- [ ] เมื่อ catalog โต 200+ depts → re-run filter_target_deptids.py + curate target list
+- [ ] Measure จริง: เทียบ traffic process5 ก่อน/หลัง RSS adoption → KPI 70
+---
+
+## งานที่ N+15: Phase 1 RSS-First Pipeline (2026-05-18)
+
+### สถานะ: ✅ เสร็จ (MVP)
+
+### สิ่งที่ทำ
+
+**1. DeptId Discovery**
+- `scripts/scan_egp_deptids.py` — batch scan 0001-9999 (2-pass: fast + retry)
+- ติด HTTP 429 (rate limit) ระหว่าง scan รอบสอง → pivot ไป **incremental discovery**
+- Seed catalog 15 depts (จาก scan รอบแรกที่สำเร็จ + POC verified)
+- ภายหลังโตเป็น 75 depts ผ่าน probe ในการรัน RSS scraper 3 รอบ
+
+**2. `scripts/cgd_api_client.py`**
+- ห่อ CKAN `datastore_search` ใช้สำหรับ enrichment
+- `lookup_project(project_id)` — concurrent search 10 contract files
+- `lookup_winner_by_tin(tin)` — search egpwinner ทุก file
+- `normalize_to_all_jobs(record)` — schema mapping (18 cols)
+- Note: 2569 contract data ยังไม่อยู่ใน CGD → enrichment ทำได้เฉพาะ 2568 awarded
+
+**3. `scripts/Sebastian_RSS_Scraper.py`**
+- Discovery-mode: poll known active depts + probe N=20 random unknowns/run
+- ทำงานเร็ว: 75 depts ใน 17s · concurrent threads workers=4
+- ผลลัพธ์: `data/rss_run_TIMESTAMP.json` + อัปเดต catalog
+- Mode `--queue` → เขียน new projectIds ลง rss_queue.json
+
+**4. `scripts/filter_target_deptids.py`**
+- 2 layers: keyword match (title) + reverse projectId lookup (all_jobs sheet)
+- ปัจจุบัน 1 match (0137 — adjacent province สกลนคร)
+- จะ effective มากขึ้นเมื่อ RSS รันต่อเนื่องหลายวัน
+
+**5. Pipeline Integration**
+- เพิ่ม step `rss` (1.5) ระหว่าง scrape → download
+- ใช้: `python scripts/Sebastian_Pipeline.py --step rss`
+- Discord notify เมื่อ step done
+
+### ผลลัพธ์ทดสอบ
+- 86 items (active D0) จาก 55 depts ใน 16.9 วินาที
+- 86 items "missed by process5 scraper" (จะลดเมื่อ sources align)
+- Catalog เพิ่มจาก 15 → 75 depts ใน 3 รอบ test
+
+### Followup
+- Wire RSS queue → refresh_active_jobs.py
+- ตั้ง cron แยก RSS ทุก 30 นาที
+- catalog 200+ → re-run filter + curate target list
+- Measure: เทียบ process5 traffic ก่อน/หลัง RSS adoption (KPI 70% reduction)
+- CGD 2569 ออก → wire enrichment

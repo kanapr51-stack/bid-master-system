@@ -61,6 +61,22 @@ PROBE_WORKERS = 2
 DEPT_ID_RANGE = (1, 9999)
 
 
+_LOG_FILE = None
+
+
+def _init_log_file():
+    """ถ้าตั้ง env BMS_RSS_LOG_DIR → เปิดไฟล์ log + redirect stdout/stderr"""
+    global _LOG_FILE
+    log_dir = os.environ.get("BMS_RSS_LOG_DIR", "")
+    if log_dir:
+        log_path = Path(log_dir)
+        log_path.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        _LOG_FILE = open(log_path / f"rss_{ts}.log", "w", encoding="utf-8", buffering=1)
+        sys.stdout = _LOG_FILE
+        sys.stderr = _LOG_FILE
+
+
 def log(msg: str):
     print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
 
@@ -370,5 +386,6 @@ if __name__ == "__main__":
         help="ข้าม probe unknown depts (เร็วขึ้น แต่ catalog ไม่โต)",
     )
     args = parser.parse_args()
+    _init_log_file()
     result = run(queue_new=args.queue, skip_probe=args.no_probe)
     sys.exit(0 if not result.get("error") else 1)

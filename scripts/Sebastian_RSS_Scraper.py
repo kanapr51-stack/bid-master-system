@@ -56,7 +56,8 @@ HEADERS = {
 # Poll all known depts in parallel (conservative)
 POLL_WORKERS = 4
 # Probe sample size per run (incremental discovery)
-PROBE_SAMPLE_SIZE = 20
+# 2026-05-18: bumped 20 → 50 — catalog completes ~4 days instead of ~10
+PROBE_SAMPLE_SIZE = 50
 PROBE_WORKERS = 2
 DEPT_ID_RANGE = (1, 9999)
 

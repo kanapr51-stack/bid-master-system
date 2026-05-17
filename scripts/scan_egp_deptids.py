@@ -39,9 +39,13 @@ HEADERS = {
 }
 
 SCAN_END = 9999
-PASS1_WORKERS = 12
-PASS2_WORKERS = 4
+# 2026-05-18 revision: SLOW + SAFE — workers=2, sleep=1s = ~2 req/s
+# (POC: ~50 req/min ปลอดภัย → 120 req/min ก็ยังไหว)
+# Time: 9999 ÷ 2 workers ÷ ~1.5 req/s effective = ~55 นาที (รวม retries)
+PASS1_WORKERS = 2
+PASS2_WORKERS = 1
 PASS2_MAX_RETRIES = 3
+INTER_REQUEST_SLEEP = 0.5  # delay between completed requests per worker
 
 
 def log(msg: str):
@@ -103,12 +107,14 @@ def fetch_one(n: int, timeout: int = 12) -> tuple[str, str, list[dict]]:
 
 
 def add_to_catalog(catalog: dict, dept_id: str, items: list[dict]):
+    """บันทึก dept entry — รวม empty results เพื่อป้องกันการ re-probe โดย RSS scraper"""
     catalog[dept_id] = {
         "item_count": len(items),
         "projectIds": [it.get("projectId") for it in items if it.get("projectId")][:15],
         "titles": [it.get("title", "")[:120] for it in items[:5]],
         "pubDates": [it.get("pubDate", "") for it in items[:3]],
         "scanned_at": datetime.now().isoformat(timespec="seconds"),
+        "source": "batch_scan",
     }
 
 
@@ -142,15 +148,17 @@ def run_pass(name: str, numbers: list[int], workers: int, timeout: int,
                 continue
 
             if status == "ok":
+                with save_lock:
+                    add_to_catalog(catalog, dept_id, items)
                 if items:
-                    with save_lock:
-                        add_to_catalog(catalog, dept_id, items)
-                        first_title = items[0].get("title", "")[:60]
+                    first_title = items[0].get("title", "")[:60]
                     log(f"  ✅ {dept_id}: {len(items)} items · {first_title}")
+                # ถ้า empty (0 items) ก็บันทึกไว้ — กัน RSS scraper มา re-probe
             else:
                 errored.append(n)
                 with save_lock:
                     errors_out.append({"deptId": dept_id, "status": status, "pass": name})
+            time.sleep(INTER_REQUEST_SLEEP)
 
             if n > highest:
                 highest = n
@@ -173,9 +181,20 @@ def main():
     errors_log: list = []
     save_lock = threading.Lock()
 
-    # Pass 1: Fast scan
-    nums = list(range(1, SCAN_END + 1))
-    errored = run_pass("Pass 1 (fast)", nums, PASS1_WORKERS, timeout=10,
+    # Load existing catalog — skip deptIds already known
+    if OUT_FILE.exists():
+        try:
+            catalog = json.loads(OUT_FILE.read_text(encoding="utf-8"))
+            log(f"Loaded existing catalog: {len(catalog)} entries (จะข้ามตอน scan)")
+        except json.JSONDecodeError:
+            catalog = {}
+
+    known_ids = {int(k) for k in catalog.keys() if k.isdigit()}
+
+    # Pass 1: Slow scan — skip already-known
+    nums = [n for n in range(1, SCAN_END + 1) if n not in known_ids]
+    log(f"Will scan {len(nums)} unknown deptIds (skip {len(known_ids)} known)")
+    errored = run_pass("Pass 1 (slow)", nums, PASS1_WORKERS, timeout=15,
                        catalog=catalog, errors_out=errors_log, save_lock=save_lock)
     save(catalog, errors_log, SCAN_END)
 

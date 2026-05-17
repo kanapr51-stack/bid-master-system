@@ -1,3 +1,7 @@
+"use client";
+
+import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { formatThaiDate } from "@/lib/utils";
 import { Activity, Bell } from "lucide-react";
 
@@ -5,7 +9,17 @@ interface HeaderBarProps {
   generatedAt: string;
 }
 
+const NAV_ITEMS = [
+  { href: "/", label: "Overview" },
+  { href: "/scrape", label: "Scrape" },
+  { href: "/classifier", label: "Classifier" },
+  { href: "/funnel", label: "Funnel" },
+  { href: "/timeline", label: "Timeline" },
+  { href: "/history", label: "History" },
+];
+
 export function HeaderBar({ generatedAt }: HeaderBarProps) {
+  const pathname = usePathname();
   return (
     <header className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-10">
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -40,27 +54,24 @@ export function HeaderBar({ generatedAt }: HeaderBarProps) {
         </div>
       </div>
       <nav className="border-t border-slate-200 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto px-6 flex gap-1">
-          {[
-            { href: "/", label: "Overview", active: true },
-            { href: "/scrape", label: "Scrape", active: false },
-            { href: "/classifier", label: "Classifier", active: false },
-            { href: "/funnel", label: "Funnel", active: false },
-            { href: "/timeline", label: "Timeline", active: false },
-            { href: "/history", label: "History", active: false },
-          ].map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              className={
-                item.active
-                  ? "px-4 py-3 text-sm font-medium border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
-                  : "px-4 py-3 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-              }
-            >
-              {item.label}
-            </a>
-          ))}
+        <div className="max-w-7xl mx-auto px-6 flex gap-1 overflow-x-auto">
+          {NAV_ITEMS.map((item) => {
+            const active =
+              item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={
+                  active
+                    ? "px-4 py-3 text-sm font-medium border-b-2 border-blue-600 text-blue-600 dark:text-blue-400 whitespace-nowrap"
+                    : "px-4 py-3 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 whitespace-nowrap"
+                }
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </div>
       </nav>
     </header>

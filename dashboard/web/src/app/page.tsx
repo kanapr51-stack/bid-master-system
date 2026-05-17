@@ -59,17 +59,21 @@ export default async function HomePage() {
     };
   });
 
-  // Inflection markers (commits today / yesterday)
-  const recentCommits = snapshot.commits
-    .filter((c) => {
-      const d = new Date(c.date);
-      const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
-      return d.getTime() > cutoff;
-    })
+  // Inflection markers (commits within last 7 days) — grouped by date
+  const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const commitsByDate = new Map<string, string[]>();
+  for (const c of snapshot.commits) {
+    if (new Date(c.date).getTime() <= cutoff) continue;
+    const day = c.date.slice(0, 10);
+    const arr = commitsByDate.get(day) ?? [];
+    arr.push(c.hash);
+    commitsByDate.set(day, arr);
+  }
+  const recentCommits = Array.from(commitsByDate.entries())
     .slice(0, 5)
-    .map((c) => ({
-      date: c.date.slice(0, 10),
-      label: c.hash,
+    .map(([date, hashes]) => ({
+      date,
+      label: hashes.length > 1 ? `${hashes[0]} +${hashes.length - 1}` : hashes[0],
     }));
 
   return (

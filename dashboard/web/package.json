@@ -23,6 +23,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vercel/config": "^0.5.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

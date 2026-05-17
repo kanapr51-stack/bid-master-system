@@ -9,9 +9,12 @@ Usage:
     python Sebastian_Pipeline.py --step cost      # cost calculation → Sheet 3
     python Sebastian_Pipeline.py --step rank      # ranking → Sheet 4
     python Sebastian_Pipeline.py --step notify    # ส่งสรุปไป LINE + Discord
+    python Sebastian_Pipeline.py --step snapshot  # extract metrics → snapshot.json
+    python Sebastian_Pipeline.py --step deploy    # vercel deploy → dashboard live
+    python Sebastian_Pipeline.py --no-deploy      # รัน full แต่ skip deploy step
 
 Pipeline flow:
-    scrape → classify → refresh → download → analyze → cost → rank → notify
+    scrape → classify → refresh → download → analyze → cost → rank → notify → snapshot → deploy
 
 Steps ที่ต้องการ Chrome (port 9222): scrape, download, refresh
     Start-Process "chrome.exe" -ArgumentList "--remote-debugging-port=9222","--no-first-run","--user-data-dir=C:\\Temp\\ChromeDebug"
@@ -147,9 +150,14 @@ def main():
     parser = argparse.ArgumentParser(description="Sebastian Pipeline Runner")
     parser.add_argument(
         "--step",
-        choices=["scrape", "download", "classify", "refresh", "analyze", "cost", "rank", "notify", "all"],
+        choices=["scrape", "download", "classify", "refresh", "analyze", "cost", "rank", "notify", "snapshot", "deploy", "all"],
         default="all",
         help="step ที่จะรัน (default: all)",
+    )
+    parser.add_argument(
+        "--no-deploy",
+        action="store_true",
+        help="skip dashboard deploy (มีประโยชน์ตอน dev — ประหยัด build time)",
     )
     args = parser.parse_args()
     step = args.step
@@ -213,7 +221,7 @@ def main():
             _dc(notify_step_done, "rank", "จัดอันดับงานสำเร็จ")
 
     if step in ("all", "notify"):
-        log("Step 8/8: NOTIFY — ส่งสรุปไป LINE + Discord")
+        log("Step 8/10: NOTIFY — ส่งสรุปไป LINE + Discord")
         # LINE
         try:
             from Sebastian_LINE_Notify import notify_ranked_jobs as line_notify
@@ -230,6 +238,26 @@ def main():
             print(f"[SKIP] Discord Notify: {e}", flush=True)
         except Exception as e:
             print(f"[WARN] Discord Notify ผิดพลาด: {e}", flush=True)
+
+    if step in ("all", "snapshot"):
+        log("Step 9/10: SNAPSHOT — รวบรวม metrics → dashboard/web/public/snapshot.json")
+        ok = run_script("dashboard_extractor.py")
+        if ok:
+            _dc(notify_step_done, "snapshot", "Snapshot dashboard สร้างสำเร็จ")
+        else:
+            print("[WARN] dashboard_extractor ไม่สำเร็จ", flush=True)
+            _dc(notify_step_warn, "snapshot", "dashboard_extractor ไม่สำเร็จ — ดู log")
+
+    if step in ("all", "deploy") and not args.no_deploy:
+        log("Step 10/10: DEPLOY — vercel deploy → dashboard live")
+        ok = run_script("Sebastian_Deploy_Dashboard.py")
+        if ok:
+            _dc(notify_step_done, "deploy", "Dashboard deployed — bid-master-dashboard.vercel.app")
+        else:
+            print("[WARN] Deploy ไม่สำเร็จ", flush=True)
+            _dc(notify_step_warn, "deploy", "Deploy dashboard ไม่สำเร็จ — ตรวจ vercel CLI/login")
+    elif step in ("all",) and args.no_deploy:
+        print("[INFO] ข้าม deploy step (--no-deploy)", flush=True)
 
     elapsed = time.time() - start
     _dc(notify_pipeline_done, elapsed)

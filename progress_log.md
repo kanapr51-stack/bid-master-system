@@ -1672,3 +1672,38 @@ DISCORD_BOT_TOKEN=...
 DISCORD_CHANNEL_ID=...
 OPEND_USER_TOKEN=...    # data.go.th User Token (CKAN Data API)
 ```
+
+---
+
+## งานที่ N+14: Dashboard Pages + Vercel Deploy (2026-05-17/18)
+
+### สถานะ: ✅ เสร็จ
+
+### สิ่งที่ทำ
+1. **Fix duplicate React keys** ใน `PipelineDurationChart` — dedupe commits ตามวัน + label `+N` เมื่อมี multiple commits/วัน
+2. **HeaderBar refactor** เป็น `"use client"` + `usePathname` → active state แท้จริง (ก่อนนี้ hardcoded)
+3. **สร้าง 5 หน้า dashboard:**
+   - `/scrape` — Cloudflare/timeout trend, keyword breakdown (`ScrapeMetricsChart` + `KeywordBreakdown`)
+   - `/classifier` — Lifecycle stack + trend, sheet-vs-classifier diff (`ClassifierTrendChart`)
+   - `/funnel` — Funnel diagram (Raw→Filtered→New→Classified→Actionable) (`FunnelDiagram`)
+   - `/timeline` — Inflection list with before/after metrics (`InflectionList`)
+   - `/history` — Pipeline run history grouped by day
+4. **Vercel deploy production** — `https://bid-master-dashboard.vercel.app`
+5. **`/api/revalidate`** — POST + secret header → ใช้ revalidatePath
+6. **Helper scripts:**
+   - `scripts/Sebastian_Revalidate_Dashboard.py` — เรียก revalidate API
+   - `scripts/Sebastian_Deploy_Dashboard.py` — รัน `vercel deploy --prod`
+
+### Real-time strategy (ปัจจุบัน)
+Git ยังไม่มี remote → `vercel deploy` ผ่าน CLI เท่านั้น  
+Flow ที่ใช้ได้จริง: pipeline → snapshot.json updated → `python scripts/Sebastian_Deploy_Dashboard.py` → deploy ~1 นาที
+
+### Followup
+- [ ] Option A: ย้าย snapshot ไป Vercel Blob → instant update (< 5s) ไม่ต้อง redeploy
+- [ ] Option C: setup GitHub remote → auto-deploy บน push
+- [ ] เพิ่มในเป็น step สุดท้ายของ `Sebastian_Pipeline.py` หลัง snapshot generate
+
+### Update (2026-05-18)
+- Pipeline integration: เพิ่ม step 9 (`snapshot`) + step 10 (`deploy`)
+- `--no-deploy` flag สำหรับข้าม deploy ใน dev mode
+- ทดสอบ `--step snapshot` ผ่าน (19s, snapshot.json regenerated)

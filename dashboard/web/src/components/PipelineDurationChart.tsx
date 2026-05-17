@@ -55,7 +55,7 @@ export function PipelineDurationChart({ data, inflections = [] }: PipelineDurati
         />
         {inflections.map((inf) => (
           <ReferenceLine
-            key={inf.date}
+            key={`${inf.date}-${inf.label}`}
             x={inf.date}
             stroke="#ef4444"
             strokeDasharray="3 3"

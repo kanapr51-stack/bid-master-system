@@ -1438,6 +1438,85 @@ if dl is None:
 
 ---
 
+## งานที่ N+10: Pipeline 17/05 รีวิว + 4 fixes (2026-05-17, commit ca0474a)
+
+### สถานะ: ✅ เสร็จ
+
+### Root cause (จาก pipeline_collect_20260517.txt log)
+1. **Cloudflare บล็อกครึ่งหลัง:** scrape ต่อเนื่อง 87 นาที → modal "ไม่ผ่านการตรวจสอบ" หลัง 50 นาที → 14 search terms สุดท้าย 0 รายการทุกตัว
+2. **SCRAPE 87 นาที (ยาวเกิน):** `นครพนม` 10,000 + `บึงกาฬ` 4,810 = ใช้ 30 นาที, ใหม่ 0 (วันนั้น)
+3. **PATCH_DEADLINES fail 3/3:** งาน id 68xxx (ปี 2568) ค้างใน all_jobs — stepId M*/S*/Z* + deadline ว่าง + หา PDF ประกาศไม่เจอ → patch fail ซ้ำๆ ทุกเช้า
+4. **False alarm "Chrome ไม่ผูก port 9222":** ใน `run_pipeline_collect.bat` ใช้ `%ERRORLEVEL%` ภายในบล็อก if/else → ค่า expand ตอน parse ไม่ใช่ runtime → log ทั้ง "พร้อม" + "ERROR" พร้อมกัน
+
+### Fix
+1. **Scraper:** ตัด `["นครพนม", "บึงกาฬ"]` ออกจาก ALL_TERMS (revert ภายหลัง — ดู N+11)
+2. **Scraper:** เพิ่ม `detect_cloudflare_block()` + `init_process5_page(cloudflare_retries=2)` → long cooldown 300s + reinit
+3. **Scraper:** track `consecutive_timeouts` → ถ้าติด 2 ครั้ง → long cooldown 300s + reinit
+4. **patch_deadlines.py:** เพิ่ม `STALE_YEAR_PREFIXES = ("67", "68")` → skip jid ปีก่อนหน้า (stop bleed งานเก่าค้าง)
+5. **run_pipeline_collect.bat:** `setlocal enabledelayedexpansion` + `%ERRORLEVEL%` → `!ERRORLEVEL!`
+
+### Followup
+- รัน audit_pending.py ตอน Chrome เปิด → ตรวจ 18 pending_award + 3 งาน 68xxx ใน all_jobs
+- ตรวจผล SCRAPE พรุ่งนี้
+
+---
+
+## งานที่ N+11: Cloudflare Stealth — Deep Research + Apply (2026-05-17, commit d77e159)
+
+### สถานะ: ✅ เสร็จ (ลุ้นผลพรุ่งนี้)
+
+### Trigger
+คุณกัญจน์สงสัย: "ตัด keyword จังหวัดจะไม่เป็นอะไรใช่ไหม?" → เช็คแล้วพบ:
+- 16/05 'บึงกาฬ' **ใหม่ 48 งาน** (งานหน่วยงานชาติ/ภาค — กรมทางหลวงชนบทกรุงเทพฯ, ประปาภูมิภาค ฯลฯ ที่ทำในจังหวัด)
+- ถ้าตัด keyword จังหวัด → **พลาดงานหน่วยงานชาติทันที** เพราะ scrape ตำบล/หน่วยงานท้องถิ่นเจอไม่ได้
+
+### Deep research findings (Top 5 Cloudflare bot signals 2025-2026)
+1. **Runtime.enable / CDP isolation leak** ← แก้ด้วย JS ไม่ได้ (ต้อง Patchright)
+2. **JA4 TLS fingerprint** ← เราใช้ Chrome จริง = OK
+3. **navigator.webdriver + --enable-automation flag**
+4. **Behavioral / bot score escalation** (session ยาว → คะแนนสะสม)
+5. **window.chrome ไม่ครบ + WebGL/plugins mismatch**
+
+### Fix (4 layers)
+**Layer 1 — Stealth init script (`new_stealth_page()`):**
+- navigator.webdriver = undefined + delete จาก prototype
+- window.chrome ครบ (runtime/loadTimes/csi/app/webstore)
+- permissions.query Notification fix
+- plugins/languages `['th-TH','th','en-US','en']`
+- WebGL vendor Intel Iris (Windows realistic)
+
+**Layer 2 — Chrome launch flags (`run_pipeline*.bat`):**
+- `--disable-blink-features=AutomationControlled`
+- `--disable-features=...,AutomationControlled`
+- window-size `800x600 → 1280x800` (bot-tell)
+
+**Layer 3 — Pacing:**
+- Fixed 5-15s → **random jitter 2.5-6.5s**
+- Idle gap 45-90s ทุก 15 keywords (bot score sediment)
+- Session warmup: mouse move + scroll หลัง init
+
+**Layer 4 — Revert keyword cut + page limit:**
+- คืน `"นครพนม"` + `"บึงกาฬ"` 
+- max_pages **9999 → 20** สำหรับ keyword จังหวัด (200 รายการล่าสุด เพียงพอ เพราะใหม่สุด/วัน = 48)
+
+### ผลคาด
+- SCRAPE **87 → ~25 นาที**
+- Cloudflare hits **81 → <20**
+- ครอบคลุมเท่าเดิม (ไม่พลาดงานหน่วยงานชาติ)
+
+### ที่ยังไม่ทำ (Phase ถัดไป — Option upgrade)
+**Patchright** drop-in replacement ของ playwright — แก้ root cause `Runtime.enable` leak:
+- `pip install patchright && patchright install chrome`
+- เปลี่ยน import ใน 15+ scripts
+- ความเสี่ยง: ต้อง smoke test ทุก script
+- **เก็บไว้รอผลพรุ่งนี้ — ถ้า 4 layer ปัจจุบันยังไม่พอ ค่อยทำ**
+
+### Followup
+- ดูผล SCRAPE 18/05 06:00 — เทียบ time, Cloudflare hits, งานใหม่
+- ถ้ายังติด → Patchright Phase ถัดไป
+
+---
+
 ## Setup (ครั้งแรก)
 
 ```bash

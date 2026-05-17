@@ -1,0 +1,49 @@
+{
+  "help": "https://data.go.th/api/3/action/help_show?name=datastore_search",
+  "success": true,
+  "result": {
+    "include_total": true,
+    "limit": 2,
+    "records_format": "objects",
+    "resource_id": "bf6017ec-b731-43e1-b5b8-abc2e91d1f95",
+    "total_estimation_threshold": null,
+    "records": [
+      {
+        "_id": 1,
+        "ลำดับ": 1,
+        "เลขประจำตัวนิติบุคคล": "xxxx",
+        "ผู้ชนะการเสนอราคา": "ห้างหุ้นส่วนจำกัด A.T.C. ดีวีดรอมเม้นต์"
+      },
+      {
+        "_id": 2,
+        "ลำดับ": 2,
+        "เลขประจำตัวนิติบุคคล": "xxxx",
+        "ผู้ชนะการเสนอราคา": "นางสาวธีรดา สมคำ"
+      }
+    ],
+    "fields": [
+      {
+        "id": "_id",
+        "type": "int"
+      },
+      {
+        "id": "ลำดับ",
+        "type": "numeric"
+      },
+      {
+        "id": "เลขประจำตัวนิติบุคคล",
+        "type": "text"
+      },
+      {
+        "id": "ผู้ชนะการเสนอราคา",
+        "type": "text"
+      }
+    ],
+    "_links": {
+      "start": "/api/3/action/datastore_search?resource_id=bf6017ec-b731-43e1-b5b8-abc2e91d1f95&limit=2",
+      "next": "/api/3/action/datastore_search?resource_id=bf6017ec-b731-43e1-b5b8-abc2e91d1f95&limit=2&offset=2"
+    },
+    "total": 500000,
+    "total_was_estimated": false
+  }
+}

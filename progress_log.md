@@ -1517,6 +1517,68 @@ if dl is None:
 
 ---
 
+## งานที่ N+12: CGD Open Data API Discovery (2026-05-17)
+
+### สถานะ: ✅ Discovery เสร็จ + probe ใช้งานได้ (commit pending)
+
+### Trigger
+1. รัน pipeline เทสต์ Cloudflare stealth (commit d77e159) ก่อน 02:00 ตามตาราง
+2. ผล: 4 keywords แรก (นครพนม, บึงกาฬ, ตำบลบ้านแพง, ตำบลไผ่ล้อม) ติด timeout ทุกตัว → **stealth 4 layers ไม่พอ** (confirmed ต้อง Patchright หรือลดบทบาท scraper)
+3. ลุยวิจัย G-LEAD: พบว่า **data.go.th มี Open API ฟรี** สำหรับข้อมูลจัดซื้อจัดจ้าง — G-LEAD ก็ใช้ source เดียวกัน
+
+### Process
+1. คุณกัญจน์ลงทะเบียนที่ https://opend.data.go.th/register_api/signup.php → ได้ User Token ทันที
+2. Probe API หา auth pattern — ลอง parameter name หลายแบบ (query + header) → ทุกตัว 401 "No API key found"
+3. คุณกัญจน์อัปโหลด user manual: `downloads/2025-07-08-051605.3384232025-03-07-DATAGOTH3USERMANUAL.pdf`
+4. อ่าน manual หน้า 36-37 → พบ endpoint + auth pattern ที่ถูกต้อง
+
+### API ที่ใช่ (จาก DATAGOTH3 manual หน้า 36-37)
+```
+URL:    https://opend.data.go.th/get-ckan/datastore_search
+Header: api-key: <user_token>    # มี dash
+Method: GET
+Params: resource_id=<UUID> + q=<keyword> + limit=N + offset=N + filters=<JSON>
+```
+
+### Datasets ที่ใช้ได้ (datastore_active=True)
+| Dataset | Files | Records/file | Last update | ใช้ |
+|---|---|---|---|---|
+| **egp-contact-2568** | 10 | ~500K | 2026-05-11 | awarded_jobs backfill + winner |
+| **egpwinner** | 5 | 500K | 2026-05-05 | company lookup (TIN ↔ ชื่อ) |
+| **thai-government-procurement** | 2 | (ZIP เก่า, API POST) | 2020 | skip |
+
+### ผลทดสอบ
+- ✅ filter `จังหวัด=นครพนม` exact: **5,757 records** ใน file-1 เพียงตัวเดียว
+- ✅ keyword `q=นครพนม` ทุก file รวม: **37,936 งาน** (ปี 2568 ทั่วประเทศ)
+- ✅ pagination `limit=1000` ทำงาน → **1 ล้าน records/วัน ได้** (quota = 1,000 calls/วัน)
+- ⚠️ Schema มี **column drift** (CSV upload field order ไม่ตรง) — ต้อง map ใหม่ก่อนใช้:
+  - `แขวง/ตำบล` มีค่า `POINT(lon lat)` (พิกัด)
+  - `ละติจูดโครงการ` มีค่าชื่อบริษัท
+  - ฯลฯ
+- ⚠️ ค้น "ยศประทาน" ใน egpwinner file-1 ไม่เจอ — อาจอยู่ใน file 2-5 หรือ TIN ไม่ตรง search
+
+### Schema (32 columns ของ egp-contact-2568)
+ลำดับ, รหัสโครงการ, ชื่อโครงการ, ชื่อประเภทโครงการ, ชื่อหน่วยงาน, ชื่อหน่วยงานย่อย, วิธีจัดซื้อฯ, กลุ่มวิธีจัดซื้อฯ, วันที่ประกาศ, งบประมาณ(บาท), ราคากลาง(บาท), ราคาตกลงซื้อ/จ้าง, ปีงบประมาณ, วันที่เกิดรายการ, จังหวัด, จังหวัด(Eng), เขต/อำเภอ, เขต/อำเภอ(Eng), แขวง/ตำบล, แขวง/ตำบล(Eng), สถานะโครงการ, พิกัดของโครงการ, ละติจูดโครงการ, ลองจิจูดโครงการ, เลขนิติบุคคล, ชื่อผู้ชนะ, เลขที่สัญญา, วันที่ลงนามสัญญา, วันที่สิ้นสุดสัญญา, งบสัญญา(บาท), สถานะสัญญา
+
+### ไฟล์ที่เพิ่ม
+- `scripts/probe_cgd_api.py` — script ทดสอบ API (มี EGP_CONTRACT_2568_RIDS + EGPWINNER_RIDS hard-coded)
+- `data/cgd_step1_basic.json` — sample 2 records
+- `data/cgd_egp_contract_2568_sample.json` — search "นครพนม" sample
+- `data/cgd_egpwinner_bf6017ec.json` — egpwinner sample
+
+### Followup (Phase ถัดไป — Hybrid Integration)
+- Map column names เก็บ schema ที่ถูก (CSV upload schema drift)
+- เขียน `scripts/cgd_api_client.py` — fetch/normalize → Sheet awarded_jobs
+- ออกแบบ pipeline ใหม่: API หลัก (awarded_jobs) + Scraper เสริม (pre_tor/tor/active เฉพาะที่ API ไม่มี)
+- Audit หจก.ยศประทาน TIN — ค้นใน egpwinner file 2-5 หา record บริษัท
+
+### Insight สำคัญ
+- **G-LEAD ก็ใช้ API นี้** — ไม่มี data moat → เราแข่งบน real-time scraper + UX ได้
+- **Real-time bidding ยังต้อง scrape** (API ครอบคลุมแค่ awarded contract)
+- **Cloudflare stealth Phase 1 ไม่พอ** → ต้องลดบทบาท scraper (ผ่าน API hybrid) + Patchright Phase ต่อไปถ้ายังจำเป็น
+
+---
+
 ## Setup (ครั้งแรก)
 
 ```bash
@@ -1527,4 +1589,7 @@ playwright install chromium
 สร้างไฟล์ `.env` ที่ root:
 ```
 ANTHROPIC_API_KEY=sk-ant-...
+DISCORD_BOT_TOKEN=...
+DISCORD_CHANNEL_ID=...
+OPEND_USER_TOKEN=...    # data.go.th User Token (CKAN Data API)
 ```

@@ -1877,3 +1877,37 @@ pipeline → snapshot.json updated → POST /api/snapshot → Blob (overwrite)
 **Files modified:**
 - scripts/Sebastian_RSS_Scraper.py (queue format)
 - scripts/refresh_active_jobs.py (--from-queue support)
+
+---
+
+## งานที่ N+16: Option A + B + Hybrid Catalog (2026-05-18)
+
+### Option A: Wire RSS queue → 02:00 collect (commit 8d22d13)
+- เพิ่ม Step 3.5 ใน run_pipeline_collect.bat
+- `refresh_active_jobs.py --from-queue --limit 50`
+- ใช้ Chrome session ของ 02:00 collect (reuse)
+- ทดสอบ live: queue 91 → 86, +5 sparse rows ใน all_jobs
+
+### Option B: Shrink scraper keywords 30 → 4 (commit 1a52fe0)
+- Active: นครพนม, บึงกาฬ, บ้านแพง, บึงโขงหลง
+- Legacy 28 ตำบล/หน่วยงาน เก็บไว้ใน `DEPT_PROVINCE_MAP_LEGACY`
+- Fallback: `--full-keywords`
+- Expected: scrape 30-45 → 4-6 นาที, pipeline 100 → 60-70 นาที
+
+### Hybrid Catalog Growth (commit 2d1e1a4)
+- Sebastian_RSS_Scraper.py: PROBE_SAMPLE_SIZE 20 → 50
+- scan_egp_deptids.py: workers=2, sleep=0.5s, save empty entries
+- Slow batch scan รัน background — ครบ 9999 ใน ~74 นาที (ที่ 2.25 req/s)
+- Catalog 235 → expected ~850-1500 active depts หลัง scan เสร็จ
+
+### Closed Loop (ทั้งหมดรวมกัน)
+```
+RSS scraper (every 30 min, probe 50)
+  → queue projectId
+02:00 collect (4 keywords)
+  → Step 3.5: --from-queue --limit 50 (ingest sparse rows)
+  → all_jobs ขยายทั่วประเทศ
+refresh tracks transitions
+  → getProcureResult fires
+  → winner_cache + awarded_jobs grow nationwide
+```

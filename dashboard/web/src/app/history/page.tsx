@@ -62,12 +62,12 @@ export default async function HistoryPage() {
                 key={day}
                 className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden"
               >
-                <header className="bg-slate-50 dark:bg-slate-800/50 px-5 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <header className="bg-slate-50 dark:bg-slate-800/50 px-5 py-3 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
                   <div className="font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
                     {day}
                   </div>
                   {dayD && (
-                    <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400 tabular-nums">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400 tabular-nums">
                       <span className="flex items-center gap-1">
                         <Clock className="size-3" />
                         {formatDuration(dayD.total_pipeline_sec)}
@@ -83,7 +83,8 @@ export default async function HistoryPage() {
                     </div>
                   )}
                 </header>
-                <table className="w-full text-sm">
+                <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[920px]">
                   <thead className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     <tr className="border-b border-slate-100 dark:border-slate-800">
                       <th className="text-left px-5 py-2">Time</th>
@@ -152,6 +153,7 @@ export default async function HistoryPage() {
                     })}
                   </tbody>
                 </table>
+                </div>
               </section>
             );
           })}

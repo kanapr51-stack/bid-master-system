@@ -9,8 +9,8 @@ export function KeywordBreakdown({ items }: KeywordBreakdownProps) {
   const maxRaw = Math.max(1, ...sorted.map((i) => i.raw_items));
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+    <div className="overflow-x-auto -mx-6 px-6">
+      <table className="w-full text-sm min-w-[640px]">
         <thead className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
           <tr className="border-b border-slate-200 dark:border-slate-800">
             <th className="text-left py-2 pl-1">Keyword</th>

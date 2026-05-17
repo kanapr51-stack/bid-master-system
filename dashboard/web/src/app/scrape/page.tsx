@@ -125,7 +125,8 @@ export default async function ScrapePage() {
             <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
               Day-over-Day Delta
             </h2>
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto -mx-6 px-6">
+            <table className="w-full text-sm min-w-[480px]">
               <thead className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 <tr className="border-b border-slate-200 dark:border-slate-800">
                   <th className="text-left py-2">Metric</th>
@@ -169,6 +170,7 @@ export default async function ScrapePage() {
                 })}
               </tbody>
             </table>
+            </div>
           </section>
         )}
       </main>

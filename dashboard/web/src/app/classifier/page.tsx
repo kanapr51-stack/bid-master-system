@@ -158,7 +158,8 @@ export default async function ClassifierPage() {
           <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
             เปรียบเทียบจำนวนใน Google Sheet กับผลการ classify ครั้งสุดท้าย
           </p>
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-6 px-6">
+          <table className="w-full text-sm min-w-[480px]">
             <thead className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
               <tr className="border-b border-slate-200 dark:border-slate-800">
                 <th className="text-left py-2">Sheet</th>
@@ -200,6 +201,7 @@ export default async function ClassifierPage() {
               })}
             </tbody>
           </table>
+          </div>
         </section>
       </main>
     </>

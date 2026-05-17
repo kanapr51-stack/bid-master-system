@@ -1828,3 +1828,52 @@ pipeline → snapshot.json updated → POST /api/snapshot → Blob (overwrite)
 - catalog 200+ → re-run filter + curate target list
 - Measure: เทียบ process5 traffic ก่อน/หลัง RSS adoption (KPI 70% reduction)
 - CGD 2569 ออก → wire enrichment
+
+### 📌 Phase 1 Followup Tasks (อ้างถึง 2026-05-18)
+
+**🅰️ HIGH priority — blocking ของ #3:**
+- [ ] **#1 Slow scan ครบ 9999** — workers=1, sleep 2s, background run ~4-5 ชม.
+  - แก้: HTTP 429 issue → จะได้ catalog เต็ม (~1000+ depts vs 75 ปัจจุบัน)
+  - ปลดบล็อก: target filter จะ effective ขึ้น
+  - เลือกเวลา: รันตอนพักนาน หรือ overnight
+
+**🅱️ MEDIUM priority — ทำหลัง #1 + รอ data สะสม:**
+- [ ] **#3 Smart filter improvement** — ทำตอน catalog 500+ depts + RSS history สะสม 1 สัปดาห์
+  - เพิ่ม keywords: "เทศบาล", "อบต.", "อบจ.", "กรมโยธา", "กรมทางหลวง"
+  - Search description + title (full text)
+  - Cross-reference all_jobs department text → infer deptId mapping
+
+**🅲️ LOW priority — passive waiting:**
+- [ ] **#2 CGD 2569 dataset** — เช็คทุก 3 เดือน
+  - ปัจจุบัน: 2568 data only (5M records contracts + 2.5M winners)
+  - เมื่อ 2569 ออก: update `EGP_CONTRACT_2569_RIDS` ใน `cgd_api_client.py`
+  - แหล่ง check: https://opend.data.go.th/dataset/egp-contact
+
+**Priority logic:**
+- #1 blocking #3 (catalog ใหญ่ → filter ฉลาดได้)
+- #2 รอนอกการควบคุม → ไม่ทำให้ workflow ติด
+- ทำ #1 ใน background → ไม่กิน focus
+
+### Update Phase 1.5 (2026-05-18, 01:30)
+
+**1.5a Wire rss_queue → refresh_active_jobs:**
+- `Sebastian_RSS_Scraper.py`: queue ตอนนี้เก็บ full context (projectId, title, deptId, pubDate, link)
+- `refresh_active_jobs.py`: เพิ่ม flags `--from-queue`, `--dry-run`, `--limit`
+- Logic: jid ใน queue ที่ไม่อยู่ใน all_jobs → fetch detail + insert sparse row (จาก title RSS + getProjectDetail)
+- Auto-cleanup queue: remove items ที่ process หรือเข้า all_jobs แล้ว
+- ทดสอบ: `--dry-run --limit 5` ผ่าน, queue มี 86 items พร้อม process
+
+**1.5b 30-min cron:**
+- `scripts/run_rss_scraper.bat`: wrapper พร้อม log rotation
+- `scripts/setup_rss_cron.ps1`: สร้าง Windows Scheduled Task
+- Task `BidMaster_RSS_Scraper`: รันทุก 30 นาที, indefinite
+- Verified: first auto-trigger เวลา 1:26:56 · Last Result: 0 (success)
+- Catalog growing in production: 75 → 95 → 115 → 135 ใน 4 รอบ
+
+**Files added:**
+- scripts/run_rss_scraper.bat
+- scripts/setup_rss_cron.ps1
+
+**Files modified:**
+- scripts/Sebastian_RSS_Scraper.py (queue format)
+- scripts/refresh_active_jobs.py (--from-queue support)

@@ -161,7 +161,8 @@ def save_seen(path: Path, seen: set[str]):
     path.write_text(json.dumps(sorted(seen), ensure_ascii=False), encoding="utf-8")
 
 
-def queue_for_lookup(project_ids: list[str]):
+def queue_for_lookup(items_to_queue: list[dict]):
+    """items_to_queue: list of dicts ที่มี projectId, title, deptId, pubDate"""
     queue: list[dict] = []
     if RSS_QUEUE_FILE.exists():
         try:
@@ -172,13 +173,25 @@ def queue_for_lookup(project_ids: list[str]):
             queue = []
     existing_ids = {q.get("projectId") for q in queue}
     now = datetime.now().isoformat(timespec="seconds")
-    for pid in project_ids:
-        if pid not in existing_ids:
-            queue.append({"projectId": pid, "queued_at": now, "source": "rss"})
+    added = 0
+    for item in items_to_queue:
+        pid = item.get("projectId")
+        if not pid or pid in existing_ids:
+            continue
+        queue.append({
+            "projectId": pid,
+            "title": item.get("title", ""),
+            "deptId": item.get("deptId", ""),
+            "pubDate": item.get("pubDate", ""),
+            "link": item.get("link", ""),
+            "queued_at": now,
+            "source": "rss",
+        })
+        added += 1
     RSS_QUEUE_FILE.write_text(
         json.dumps(queue, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    log(f"📥 Queue: {len(queue)} items pending (added {len(project_ids)} new)")
+    log(f"📥 Queue: {len(queue)} items pending (added {added} new)")
 
 
 # ================================================================
@@ -303,7 +316,12 @@ def run(queue_new: bool = False, skip_probe: bool = False) -> dict:
             by_dept[it["deptId"]] = by_dept.get(it["deptId"], 0) + 1
 
     if queue_new and new_to_rss:
-        queue_for_lookup(sorted(new_to_rss))
+        # Build queue items with full context (title, deptId, pubDate)
+        items_for_queue = [
+            it for it in all_items
+            if it.get("projectId") and it["projectId"] in new_to_rss
+        ]
+        queue_for_lookup(items_for_queue)
 
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     run_file = DATA_DIR / f"rss_run_{ts}.json"

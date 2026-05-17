@@ -170,14 +170,36 @@ def main():
     ap.add_argument("--jids", help="comma-separated job_ids")
     ap.add_argument("--all",  action="store_true", help="refresh ทุก row ใน active_bidding")
     ap.add_argument("--expand", action="store_true", help="refresh active + tor_review + pending_award (default for cron)")
+    ap.add_argument("--from-queue", action="store_true", help="ingest projectIds จาก data/rss_queue.json (เพิ่ม sparse rows ถ้ายังไม่อยู่ใน all_jobs)")
+    ap.add_argument("--dry-run", action="store_true", help="ไม่ write จริง — แค่ log ว่าจะ ingest อะไรบ้าง")
+    ap.add_argument("--limit", type=int, default=0, help="จำกัดจำนวน jobs ที่ process (สำหรับ test)")
     args = ap.parse_args()
 
     log("=" * 60)
     log("Refresh Active Jobs — query eGP API สด")
     log("=" * 60)
 
+    # ── โหลด queue (ถ้าใช้ --from-queue) ──
+    queue_items: list[dict] = []
+    queue_file = Path(__file__).parent.parent / "data" / "rss_queue.json"
+    if args.from_queue:
+        if queue_file.exists():
+            try:
+                queue_items = json.loads(queue_file.read_text(encoding="utf-8"))
+                if not isinstance(queue_items, list):
+                    queue_items = []
+            except json.JSONDecodeError:
+                queue_items = []
+            log(f"  📥 queue: {len(queue_items)} items pending")
+        else:
+            log(f"  ⚠️ {queue_file} ไม่พบ — queue ว่าง")
+
     # ── เลือก jobs ที่จะรีเฟรช ──
-    if args.jids:
+    if args.from_queue:
+        target_jids = [q.get("projectId", "").strip() for q in queue_items if q.get("projectId")]
+        target_jids = [j for j in target_jids if j]
+        log(f"  from-queue: {len(target_jids)} jobs from queue")
+    elif args.jids:
         target_jids = [j.strip() for j in args.jids.split(",") if j.strip()]
         log(f"  targeted refresh: {len(target_jids)} jobs")
     elif args.expand:
@@ -200,8 +222,24 @@ def main():
         target_jids = [r[0] for r in rows[1:] if r and r[0]]
         log(f"  full refresh: {len(target_jids)} active_bidding jobs")
 
+    if args.limit > 0 and len(target_jids) > args.limit:
+        log(f"  --limit applied: ใช้แค่ {args.limit} jobs แรก (จาก {len(target_jids)})")
+        target_jids = target_jids[: args.limit]
+
     if not target_jids:
         log("ไม่มี jobs ที่จะรีเฟรช — เสร็จสิ้น")
+        return
+
+    if args.dry_run:
+        log("\n🔍 DRY RUN — ไม่ write จริง")
+        if args.from_queue:
+            queue_by_pid_dry = {q.get("projectId", ""): q for q in queue_items}
+            new_count = 0
+            for jid in target_jids:
+                q_item = queue_by_pid_dry.get(jid, {})
+                log(f"  [DRY] {jid}: title={q_item.get('title', '')[:60]} · dept={q_item.get('deptId', '')}")
+                new_count += 1
+            log(f"\n  DRY RUN: {new_count} jobs จะ process (need Chrome to validate)")
         return
 
     # ── อ่าน all_jobs เพื่อหา row index + budget ──
@@ -238,8 +276,51 @@ def main():
         status_updates = 0
         update_payload = []
 
+        # สำหรับ from-queue: lookup queue items by projectId (เพื่อดึง title/deptId/pubDate)
+        queue_by_pid: dict[str, dict] = {}
+        if args.from_queue:
+            queue_by_pid = {q.get("projectId", ""): q for q in queue_items}
+
+        appended_rows: list[list] = []   # for sparse insert (from-queue case)
+        processed_pids: set[str] = set()
+
         for i, jid in enumerate(target_jids, 1):
             if jid not in row_map:
+                if args.from_queue and jid in queue_by_pid:
+                    # ── Sparse insert: ดึง detail แล้วเพิ่มใน all_jobs ──
+                    q_item = queue_by_pid[jid]
+                    log(f"\n[{i}/{len(target_jids)}] {jid}: NEW from RSS queue")
+                    detail = fetch_project_detail(page, jid)
+                    if not detail.get("valid"):
+                        log(f"  ⚠️ getProjectDetail ไม่ valid — ข้าม (จะลองใหม่รอบหน้า)")
+                        time.sleep(1.5)
+                        continue
+                    now_iso = datetime.now().isoformat(timespec="seconds")
+                    sparse_row = [
+                        jid,                                # job_id
+                        q_item.get("title", ""),            # title (จาก RSS)
+                        "",                                 # department
+                        "",                                 # province
+                        "",                                 # district
+                        "",                                 # subdistrict
+                        "",                                 # procurement_type
+                        "",                                 # budget
+                        q_item.get("pubDate", ""),          # publish_date
+                        "",                                 # deadline
+                        detail.get("project_status", ""),   # project_status
+                        f"keyword:rss | dept:{q_item.get('deptId', '')}",  # search_keyword (quantity_note style)
+                        q_item.get("link", ""),             # tor_url
+                        now_iso,                            # first_seen_at
+                        now_iso,                            # last_seen_at
+                        detail.get("step_id", ""),          # step_id
+                        detail.get("project_status_raw", ""), # project_status_raw
+                        detail.get("announce_type", ""),    # announce_type
+                    ]
+                    appended_rows.append(sparse_row)
+                    processed_pids.add(jid)
+                    log(f"  ✅ sparse row prepared (status={detail.get('project_status')}, step={detail.get('step_id')}, announce={detail.get('announce_type')})")
+                    time.sleep(1.5)
+                    continue
                 log(f"\n[{i}/{len(target_jids)}] {jid}: ไม่พบใน all_jobs — ข้าม")
                 continue
 
@@ -301,6 +382,25 @@ def main():
                 time.sleep(30)
 
         page.close()
+
+    # ── Append sparse rows สำหรับ jids ใหม่จาก queue ──
+    if args.from_queue and appended_rows:
+        log(f"\nAppend {len(appended_rows)} new sparse rows from RSS queue...")
+        ws_all.append_rows(appended_rows, value_input_option="USER_ENTERED")
+        log(f"  ✅ {len(appended_rows)} rows appended")
+
+    # ── Remove processed items from queue ──
+    if args.from_queue:
+        remaining = [q for q in queue_items if q.get("projectId") not in processed_pids
+                                            and q.get("projectId") not in row_map]
+        # Items ที่ jid อยู่ใน all_jobs แล้ว (refresh ปกติ) ก็เอาออกจาก queue
+        sheet_existing = set(row_map.keys())
+        processed_existing = sheet_existing & {q.get("projectId") for q in queue_items}
+        remaining = [q for q in remaining if q.get("projectId") not in processed_existing]
+        queue_file.write_text(
+            json.dumps(remaining, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        log(f"  📥 queue: removed {len(queue_items) - len(remaining)} processed, {len(remaining)} remaining")
 
     # ── Apply updates to all_jobs ──
     if update_payload:

@@ -1,0 +1,156 @@
+{
+  "baseline": {
+    "status": 200,
+    "item_count": 0
+  },
+  "by_announce_type": {
+    "P0": {
+      "desc": "แผนการจัดซื้อจัดจ้าง (pre_tor / Q-stepId)",
+      "status": 200,
+      "item_count": 0,
+      "sample": null
+    },
+    "15": {
+      "desc": "ประกาศราคากลาง",
+      "status": 200,
+      "item_count": 0,
+      "sample": null
+    },
+    "B0": {
+      "desc": "ร่างเอกสารประกวด (tor_review / U-stepId)",
+      "status": 200,
+      "item_count": 0,
+      "sample": null
+    },
+    "D0": {
+      "desc": "ประกาศเชิญชวน (active_bidding / M-stepId)",
+      "status": 200,
+      "item_count": 0,
+      "sample": null
+    },
+    "D1": {
+      "desc": "ยกเลิกประกาศเชิญชวน (cancelled)",
+      "status": 200,
+      "item_count": 0,
+      "sample": null
+    },
+    "D2": {
+      "desc": "เปลี่ยนแปลงประกาศเชิญชวน",
+      "status": 200,
+      "item_count": 0,
+      "sample": null
+    },
+    "W0": {
+      "desc": "ประกาศผู้ชนะ (awarded_jobs / W-stepId)",
+      "status": 200,
+      "item_count": 0,
+      "sample": null
+    },
+    "W1": {
+      "desc": "ยกเลิกประกาศผู้ชนะ",
+      "status": 200,
+      "item_count": 0,
+      "sample": null
+    },
+    "W2": {
+      "desc": "เปลี่ยนแปลงประกาศผู้ชนะ",
+      "status": 200,
+      "item_count": 0,
+      "sample": null
+    }
+  },
+  "by_dept": {
+    "0307": {
+      "status": 200,
+      "item_count": 3,
+      "titles": [
+        "ประกวดราคาซื้อโครงการบูรณาการระบบสำรวจและติดตามธุรกิจนอกระบบ",
+        "ประกวดราคาซื้อโครงการจัดหาระบบจัดเก็บและวิเคราะห์ข้อมูลจราจร",
+        "ประกวดราคาซื้อรถบรรทุก(ดีเซล) ขนาด 1 ตัน ขับเคลื่อน 2 ล้อแบบ"
+      ]
+    },
+    "0708": {
+      "status": 200,
+      "item_count": 13,
+      "titles": [
+        "ประกวดราคาจ้างก่อสร้างจ้างก่อสร้างระบบเก็บกักและระบายน้ำในพื",
+        "ประกวดราคาจ้างก่อสร้างก่อสร้างระบบอนุรักษ์ดินและบริหารจัดการ",
+        "ประกวดราคาจ้างก่อสร้างปรับปรุงพื้นที่บ่อกุ้งร้างในเขตน้ำเค็ม"
+      ]
+    },
+    "0205": {
+      "status": 200,
+      "item_count": 1,
+      "titles": [
+        "ประกวดราคาซื้อแบตเตอรี่และน้ำสำหรับเติมแบตเตอรี่ จำนวน 6 ราย"
+      ]
+    },
+    "0506": {
+      "status": 200,
+      "item_count": 1,
+      "titles": [
+        "ประกวดราคาจ้างจัดพิธีเปิดและพิธีปิด การแข่งขันกีฬาโรงเรียนกี"
+      ]
+    },
+    "1209": {
+      "status": 200,
+      "item_count": 0,
+      "titles": []
+    },
+    "1407": {
+      "status": 200,
+      "item_count": 0,
+      "titles": []
+    },
+    "0703": {
+      "status": 200,
+      "item_count": 20,
+      "titles": [
+        "ประกวดราคาเช่าเครื่องจักรกลพร้อมพนักงานขับ และอื่นๆ จำนวน 4 ",
+        "ประกวดราคาซื้อท่อเหล็กกล้าเชื่อมด้วยไฟฟ้าแบบตะเข็บเกลียว ชนิ",
+        "ประกวดราคาซื้อท่อเหล็กกล้าเชื่อมด้วยไฟฟ้าแบบตะเข็บเกลียว ชนิ"
+      ]
+    }
+  },
+  "combinations": [
+    {
+      "params": {
+        "announceType": "D0",
+        "deptId": "0307"
+      },
+      "status": 200,
+      "item_count": 0,
+      "first_item": null
+    },
+    {
+      "params": {
+        "announceType": "W0",
+        "deptId": "0307"
+      },
+      "status": 200,
+      "item_count": 0,
+      "first_item": null
+    }
+  ],
+  "encoding_check": {
+    "thai_chars_in_title": 92,
+    "projectId_extracted": true,
+    "sample": {
+      "title": "ประกวดราคาซื้อโครงการบูรณาการระบบสำรวจและติดตามธุรกิจนอกระบบ ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+      "description": "69049437914, ประกวดราคาอิเล็กทรอนิกส์ (e-bidding), ประกาศเชิญชวน",
+      "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=28b9d62e-0e9d-4f98-a277-a8b22fcea166",
+      "pubDate": "2026-05-15",
+      "projectId": "69049437914"
+    }
+  },
+  "cross_match": {
+    "tested": 3,
+    "matched": 0
+  },
+  "scraper_overlap": {
+    "seen_ids_count": 8741,
+    "rss_pids": 0,
+    "overlap": 0,
+    "new": 0
+  }
+}

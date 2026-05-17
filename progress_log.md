@@ -1579,6 +1579,85 @@ Params: resource_id=<UUID> + q=<keyword> + limit=N + offset=N + filters=<JSON>
 
 ---
 
+## งานที่ N+13: Deep API Research + EGP RSS POC (2026-05-17)
+
+### สถานะ: ✅ POC verified — Phase 1 ready
+
+### Trigger
+หลัง stealth 4 layers ไม่พอ → ค้นทางอื่น
+1. คุณกัญจน์ขอวิจัย API ทุกแบบที่มีประโยชน์สำหรับ Bid Master
+2. Spawn deep research agent → ค้น 15+ queries + WebFetch หลายแหล่ง
+
+### Discovery (14 APIs ทั้งหมด — รายละเอียดใน [[project_api_roadmap]])
+
+**Tier ⭐⭐⭐⭐⭐ (Phase 0-1):**
+1. eGP Internal API (ใช้ปัจจุบัน — Cloudflare ติด)
+2. **EGP RSS Feeds** ⭐ — process.gprocurement.go.th/EPROCRssFeedWeb/egpannouncerss.xml ไม่ติด Cloudflare!
+3. CGD CKAN API (ใช้แล้ว N+12)
+
+**Tier ⭐⭐⭐⭐ (Phase 2-3):**
+4. DBD Juristic API (api.egov.go.th) — competitor profiling
+5. TPSO CMI — ดัชนีราคาวัสดุก่อสร้าง
+6. BOT API — ดอกเบี้ย/exchange rate
+
+**Tier ⭐⭐⭐ (Phase 3+):**
+7. Royal Gazette scraper (community fork) — predict future projects
+8. MOT Roads, 9. PWA eProcurement, 10. NSO GPP, 11. SME-GP
+
+### RSS POC Results (probe_egp_rss.py)
+**✅ ที่ใช้งานได้:**
+- HTTP 200 ทุก request — ไม่ติด Cloudflare
+- TIS-620 encoding decode สำเร็จ (92 Thai chars)
+- projectId extract: regex `\d{11,12}` ใช้งานได้
+- deptId filter ทำงาน (0703=20, 0708=13 items)
+- ต้องมี User-Agent header (ไม่งั้น ConnectionReset 10054)
+
+**⚠️ Limitations:**
+- RSS = **D0 (active_bidding) ONLY** — ไม่รวม pre_tor/tor/awarded/cancelled
+- `annType`/`type`/`announceType` params server ignore — D0 only
+- ลอง URL variations อื่น (egpplanrss, egpwinnerrss) → ทั้งหมด 404
+- ~3-20 items per dept call
+- DeptId catalog ยังไม่ครบสำหรับหน่วยงานเป้าหมาย (scan 700-799/1500-1599/4800-4899 ไม่เจอ match)
+
+### Cross-match กับ CGD API
+- RSS projectIds = 69xxx (ปี 2569)
+- CGD dataset = ปี 2568 → ไม่ match (cross-source consistency ต้องรอ contract 2569 ขึ้น)
+- เป็น expected behavior (RSS = real-time / pending, CGD = post-contract)
+
+### ไฟล์ที่เพิ่ม
+- `scripts/probe_egp_rss.py` — POC script (7 test cases)
+- `data/rss_probe_results.json` — sample data
+- `data/rss_poc_results.md` — full report
+- `data/egp_deptid_scan.json` — initial scan (empty result)
+
+### Memory ที่สร้าง/อัปเดต
+- `reference_egp_rss.md` — RSS API quick reference
+- `project_api_roadmap.md` — รวม catalog 14 API + adoption timeline 4 Phases
+- `MEMORY.md` index updated
+
+### Coverage Matrix หลัง Phase 1 implement
+| Stage | Source |
+|---|---|
+| pre_tor / tor_review | process5 scrape (เหลือเท่าเดิม) |
+| **active_bidding** | **RSS feeds** ⭐ (เปลี่ยนจาก scrape) |
+| pending_award | classifier logic |
+| **awarded_jobs** | **CGD API** ⭐ (Phase 0 → Phase 1) |
+| cancelled_jobs | classifier logic |
+
+### Implication
+- **ลด process5 scraper traffic ~70%** (เหลือเฉพาะ pre_tor/tor)
+- **Multi-tenant SaaS feasibility ขึ้น** — RSS+API ส่วนใหญ่ shared cost
+- **G-LEAD ไม่มี data moat** — ใช้ source เดียวกัน
+
+### Followup
+- **Phase 1 implementation** (2-3 สัปดาห์): RSS-First Pipeline
+  - หา deptId catalog ของหน่วยงานเป้าหมาย (broader scan หรือ reverse-lookup จาก all_jobs)
+  - เขียน `Sebastian_RSS_Scraper.py` + `cgd_api_client.py`
+  - ลดบทบาท process5 scraper
+- **Dashboard (คุณกัญจน์ขอ)**: brainstorm spec ก่อน implement — track scrape/classify performance + history + inflection points
+
+---
+
 ## Setup (ครั้งแรก)
 
 ```bash

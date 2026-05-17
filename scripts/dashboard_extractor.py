@@ -210,6 +210,73 @@ def winner_cache_stats() -> dict:
 
 
 # ================================================================
+# 4.5 RSS catalog stats (Phase 1)
+# ================================================================
+def rss_catalog_stats() -> dict:
+    """อ่าน egp_deptid_catalog.json + history จาก rss_run_*.json"""
+    catalog_file = DATA_DIR / "egp_deptid_catalog.json"
+    if not catalog_file.exists():
+        return {}
+    try:
+        catalog = json.loads(catalog_file.read_text(encoding='utf-8'))
+    except Exception as e:
+        log(f"⚠️ catalog parse error: {e}")
+        return {}
+
+    total = len(catalog)
+    active = sum(1 for v in catalog.values() if v.get('item_count', 0) > 0)
+    total_items = sum(v.get('item_count', 0) for v in catalog.values())
+    empty = total - active
+
+    # Top depts by item count
+    top = sorted(
+        [(d, v.get('item_count', 0), v.get('titles', [''])[0] if v.get('titles') else '')
+         for d, v in catalog.items() if v.get('item_count', 0) > 0],
+        key=lambda x: -x[1],
+    )[:10]
+
+    # History from rss_run_*.json (last 50 runs)
+    run_files = sorted(DATA_DIR.glob("rss_run_*.json"))[-50:]
+    history = []
+    for rf in run_files:
+        try:
+            d = json.loads(rf.read_text(encoding='utf-8'))
+            history.append({
+                'at': d.get('run_at', ''),
+                'catalog_size': d.get('catalog_size', 0),
+                'total_items': d.get('total_items', 0),
+                'missed_by_process5': d.get('missed_by_process5_count', 0),
+            })
+        except Exception:
+            continue
+
+    # Queue size
+    queue_file = DATA_DIR / "rss_queue.json"
+    queue_count = 0
+    if queue_file.exists():
+        try:
+            q = json.loads(queue_file.read_text(encoding='utf-8'))
+            queue_count = len(q) if isinstance(q, list) else 0
+        except Exception:
+            pass
+
+    return {
+        'total_depts': total,
+        'active_depts': active,
+        'empty_depts': empty,
+        'total_items': total_items,
+        'queue_size': queue_count,
+        'coverage_pct': round(total / 9999 * 100, 2),
+        'active_pct': round(active / max(1, total) * 100, 2),
+        'top_depts': [
+            {'dept_id': d, 'item_count': c, 'sample_title': t[:80]}
+            for d, c, t in top
+        ],
+        'history': history,
+    }
+
+
+# ================================================================
 # 5. Build daily aggregates สำหรับ time-series
 # ================================================================
 def build_daily_aggregates(runs: list[dict]) -> dict:
@@ -340,6 +407,13 @@ def main():
         kpis['pipeline_duration_yesterday'] = daily[dates_sorted[-2]].get('total_pipeline_sec', 0)
 
     # ================================================================
+    # RSS catalog stats
+    # ================================================================
+    log("\n📡 Collecting RSS catalog stats...")
+    rss_catalog = rss_catalog_stats()
+    log(f"  ✅ total={rss_catalog.get('total_depts', 0)} active={rss_catalog.get('active_depts', 0)} coverage={rss_catalog.get('coverage_pct', 0)}%")
+
+    # ================================================================
     # Build final snapshot
     # ================================================================
     snapshot = {
@@ -352,6 +426,7 @@ def main():
         'winners': winners,
         'commits': commits,
         'inflections': inflections,
+        'rss_catalog': rss_catalog,
     }
 
     # Save to both locations: dashboard/data + dashboard/web/public

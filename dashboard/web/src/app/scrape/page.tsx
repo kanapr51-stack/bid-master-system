@@ -4,6 +4,7 @@ import { HeaderBar } from "@/components/HeaderBar";
 import { KpiCard } from "@/components/KpiCard";
 import { ScrapeMetricsChart } from "@/components/ScrapeMetricsChart";
 import { KeywordBreakdown } from "@/components/KeywordBreakdown";
+import { RssCatalogCard } from "@/components/RssCatalogCard";
 import { Search, ShieldAlert, Clock, Inbox } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -88,6 +89,10 @@ export default async function ScrapePage() {
             accent={totalCloudflare > 300 ? "red" : totalCloudflare > 100 ? "yellow" : "green"}
           />
         </section>
+
+        {snapshot.rss_catalog && (
+          <RssCatalogCard rss={snapshot.rss_catalog} />
+        )}
 
         <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
           <div className="mb-4">

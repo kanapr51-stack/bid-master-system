@@ -98,6 +98,31 @@ export interface WinnerStats {
   last_modified?: string;
 }
 
+export interface RssCatalogHistoryPoint {
+  at: string;
+  catalog_size: number;
+  total_items: number;
+  missed_by_process5: number;
+}
+
+export interface RssCatalogTopDept {
+  dept_id: string;
+  item_count: number;
+  sample_title: string;
+}
+
+export interface RssCatalog {
+  total_depts?: number;
+  active_depts?: number;
+  empty_depts?: number;
+  total_items?: number;
+  queue_size?: number;
+  coverage_pct?: number;
+  active_pct?: number;
+  top_depts?: RssCatalogTopDept[];
+  history?: RssCatalogHistoryPoint[];
+}
+
 export interface Snapshot {
   generated_at: string;
   version: number;
@@ -108,6 +133,7 @@ export interface Snapshot {
   winners: WinnerStats;
   commits: Commit[];
   inflections: InflectionPoint[];
+  rss_catalog?: RssCatalog;
 }
 
 /**

@@ -15,6 +15,7 @@ import sys
 import time
 import re
 import json
+import random
 import hashlib
 import base64
 import io
@@ -322,11 +323,38 @@ def connect_browser(p):
 
 
 def new_stealth_page(browser):
+    """Stealth init script — 2026-05-17 deep research patches (Cloudflare bot detection)"""
     context = browser.contexts[0]
     context.add_init_script("""
+        // 1. webdriver — return undefined (not false), delete from prototype
         Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
-        delete navigator.__proto__.webdriver;
-        window.chrome = { runtime: {}, loadTimes: function(){}, csi: function(){}, app: {} };
+        delete Navigator.prototype.webdriver;
+
+        // 2. window.chrome — full object structure
+        window.chrome = {
+            runtime: {}, loadTimes: function(){}, csi: function(){},
+            app: {}, webstore: {}
+        };
+
+        // 3. permissions.query — fix Notification.permission detection
+        const origQuery = navigator.permissions.query;
+        navigator.permissions.query = (p) => p.name === 'notifications'
+            ? Promise.resolve({state: Notification.permission})
+            : origQuery(p);
+
+        // 4. plugins / languages — non-empty + Thai locale (residential user)
+        Object.defineProperty(navigator, 'plugins',
+            {get: () => [1,2,3,4,5].map(() => ({}))});
+        Object.defineProperty(navigator, 'languages',
+            {get: () => ['th-TH','th','en-US','en']});
+
+        // 5. WebGL vendor — consistent with Windows Chrome (Intel default)
+        const getParam = WebGLRenderingContext.prototype.getParameter;
+        WebGLRenderingContext.prototype.getParameter = function(p){
+            if (p === 37445) return 'Intel Inc.';
+            if (p === 37446) return 'Intel Iris OpenGL Engine';
+            return getParam.call(this, p);
+        };
     """)
     return context.new_page()
 
@@ -397,6 +425,16 @@ def init_process5_page(page, cloudflare_retries: int = 2) -> bool:
             log("  ปุ่มค้นหา enabled แล้ว")
         else:
             log("  ปุ่มยัง disabled หลัง 35s — ดำเนินการต่อ")
+
+        # Session warmup: human-like activity ก่อนเริ่ม search (2026-05-17 deep research)
+        # → ช่วยสร้าง Cloudflare session token + bot score ที่ดีขึ้น
+        try:
+            page.mouse.move(random.randint(200, 800), random.randint(150, 500))
+            time.sleep(random.uniform(0.5, 1.2))
+            page.mouse.wheel(0, random.randint(100, 300))
+            time.sleep(random.uniform(2.0, 4.0))
+        except Exception:
+            pass
 
         log("  หน้า process5 พร้อมแล้ว")
         return True
@@ -1092,11 +1130,17 @@ def main():
             log("ไม่สามารถโหลด process5 ได้ — หยุด")
             return
 
-        # ---- Search loop: เฉพาะหน่วยงาน/ตำบลเท่านั้น ----
-        # ตัด "นครพนม"/"บึงกาฬ" ออก (2026-05-17): ดึง 14,810 รายการแต่ใหม่ 0 + กิน Cloudflare quota
-        # → scrape ระดับตำบล/หน่วยงานครอบคลุมพอแล้ว
+        # ---- Search loop: 2 จังหวัด (limit pages) + 28 หน่วยงาน/ตำบล ----
+        # 2026-05-17 revert: 16/05 'บึงกาฬ' ใหม่ 48 งาน — keyword จังหวัดดักงานหน่วยงานชาติ
+        # ใช้ max_pages_per_term limit เพื่อกัน Cloudflare bot score escalation
+        PROVINCE_MAX_PAGES = 20  # 200 รายการล่าสุด ต่อจังหวัด (เคยใหม่สุด = 48 ตัว/วัน)
+        DEPT_MAX_PAGES = 9999    # ตำบล/หน่วยงาน — ผลน้อย ดึงครบ
         ALL_TERMS = [
-            {"keyword": t, "expected_province": p} for t, p in DEPT_PROVINCE_MAP.items()
+            {"keyword": t, "expected_province": None, "max_pages": PROVINCE_MAX_PAGES}
+            for t in ["นครพนม", "บึงกาฬ"]
+        ] + [
+            {"keyword": t, "expected_province": p, "max_pages": DEPT_MAX_PAGES}
+            for t, p in DEPT_PROVINCE_MAP.items()
         ]
 
         consecutive_timeouts = 0
@@ -1104,11 +1148,19 @@ def main():
             keyword        = term_info["keyword"]
             expected_prov  = term_info["expected_province"]
             is_dept        = expected_prov is not None
+            max_pages_term = term_info["max_pages"]
 
-            # cooldown ก่อนค้น — เพิ่มจาก 5s → 15s ระหว่าง dept terms (2026-05-17 กัน Cloudflare)
+            # Random delay 2.5-6.5s (2026-05-17 deep research: jitter > fixed delay)
+            # Idle gap 45-90s ทุก 15 คำค้น → ลด bot score sediment
             if i > 0:
-                log(f"  รอ 15s ก่อนค้น '{keyword}' ...")
-                time.sleep(15)
+                if i % 15 == 0:
+                    idle = random.uniform(45, 90)
+                    log(f"  💤 idle gap {idle:.0f}s (every 15 keywords) ก่อนค้น '{keyword}' ...")
+                    time.sleep(idle)
+                else:
+                    delay = random.uniform(2.5, 6.5)
+                    log(f"  รอ {delay:.1f}s ก่อนค้น '{keyword}' ...")
+                    time.sleep(delay)
 
             # ถ้า timeout ติดกัน 2 ครั้ง → long cooldown + reinit + ตรวจ Cloudflare (2026-05-17)
             if consecutive_timeouts >= 2:
@@ -1121,7 +1173,7 @@ def main():
 
             kw_start = time.time()
             try:
-                jobs, needs_reinit = search_keyword_process5(page, keyword, max_pages=9999, scraper_state=scraper_state)
+                jobs, needs_reinit = search_keyword_process5(page, keyword, max_pages=max_pages_term, scraper_state=scraper_state)
 
                 if needs_reinit and needs_reinit != "no_new":
                     if needs_reinit == "timeout":
@@ -1137,7 +1189,7 @@ def main():
                         except Exception:
                             pass
                         time.sleep(1)
-                        jobs, _ = search_keyword_process5(page, keyword, max_pages=9999, scraper_state=scraper_state)
+                        jobs, _ = search_keyword_process5(page, keyword, max_pages=max_pages_term, scraper_state=scraper_state)
                     else:
                         log("  Reinit ไม่สำเร็จ — ข้าม")
                         jobs = []

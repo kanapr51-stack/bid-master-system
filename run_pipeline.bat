@@ -35,7 +35,14 @@ if exist "C:\Temp\ChromeDebug\lockfile"        del /f "C:\Temp\ChromeDebug\lockf
 
 REM --- เปิด Chrome Debug ---
 echo [%TIME%] เปิด Chrome Debug... >> %LOGFILE%
-start "" %CHROME% --remote-debugging-port=9222 --no-first-run --no-restore-last-session --disable-session-crashed-bubble --user-data-dir=C:\Temp\ChromeDebug --window-position=0,0 --window-size=800,600
+REM Stealth flags (2026-05-17): disable AutomationControlled + realistic window size
+start "" %CHROME% --remote-debugging-port=9222 ^
+  --disable-blink-features=AutomationControlled ^
+  --disable-features=IsolateOrigins,site-per-process,AutomationControlled ^
+  --no-first-run --no-default-browser-check ^
+  --no-restore-last-session --disable-session-crashed-bubble ^
+  --user-data-dir=C:\Temp\ChromeDebug ^
+  --window-position=0,0 --window-size=1280,800
 
 REM --- รอ Chrome ผูก port 9222 (health-check, fail fast ภายใน ~60 วินาที) ---
 SET CHROME_OK=0

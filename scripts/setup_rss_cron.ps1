@@ -40,7 +40,7 @@ if ($existing) {
 # Pass BMS_RSS_LOG_DIR via env to make script write its own log file
 $action = New-ScheduledTaskAction `
     -Execute $pythonw `
-    -Argument "scripts\Sebastian_RSS_Scraper.py --queue" `
+    -Argument "scripts\Sebastian_RSS_Scraper.py --queue --stage rotate" `
     -WorkingDirectory $ScriptDir
 
 $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) `

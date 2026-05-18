@@ -411,6 +411,32 @@ def run(queue_new: bool = False, skip_probe: bool = False,
     return run_data
 
 
+STAGE_ROTATION = list(STAGE_CODES.keys())  # ['P0', 'B0', 'D0', 'D1', 'W0']
+ROTATION_STATE_FILE = DATA_DIR / "rss_stage_rotation.json"
+
+
+def get_next_stage() -> str:
+    """Read state file → rotate to next stage. Persist updated state.
+    Cycle: D0 → P0 → B0 → W0 → D1 → D0 ... (D0 first since most important)
+    """
+    rotation = ["D0", "P0", "B0", "W0", "D1"]
+    state = {"index": 0, "last_run": ""}
+    if ROTATION_STATE_FILE.exists():
+        try:
+            state = json.loads(ROTATION_STATE_FILE.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            pass
+    idx = state.get("index", 0) % len(rotation)
+    stage = rotation[idx]
+    state["index"] = (idx + 1) % len(rotation)
+    state["last_run"] = datetime.now().isoformat(timespec="seconds")
+    state["last_stage"] = stage
+    ROTATION_STATE_FILE.write_text(
+        json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    return stage
+
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Sebastian RSS Scraper (discovery)")
@@ -424,9 +450,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--stage",
-        choices=list(STAGE_CODES.keys()) + ["all"],
-        default="D0",
-        help="anounceType: P0 (pre_tor) / B0 (tor_review) / D0 (active) / W0 (awarded) / D1 (cancelled) / all (loop)",
+        choices=list(STAGE_CODES.keys()) + ["all", "rotate"],
+        default="rotate",
+        help="anounceType: P0/B0/D0/W0/D1 หรือ all (sequential), rotate (1 stage per run จาก state file)",
     )
     args = parser.parse_args()
     _init_log_file()
@@ -440,6 +466,12 @@ if __name__ == "__main__":
             if result.get("error"):
                 any_error = True
         sys.exit(1 if any_error else 0)
+    elif args.stage == "rotate":
+        # Cron-friendly: pick next stage from rotation state
+        next_stage = get_next_stage()
+        log(f"\n🔄 ROTATE → stage={next_stage}")
+        result = run(queue_new=args.queue, skip_probe=args.no_probe, anounce_type=next_stage)
+        sys.exit(0 if not result.get("error") else 1)
     else:
         result = run(queue_new=args.queue, skip_probe=args.no_probe, anounce_type=args.stage)
         sys.exit(0 if not result.get("error") else 1)

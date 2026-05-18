@@ -56,9 +56,9 @@ HEADERS = {
 # Poll all known depts in parallel (conservative)
 POLL_WORKERS = 4
 # Probe sample size per run (incremental discovery)
-# 2026-05-18: bumped 20 → 50 — catalog completes ~4 days instead of ~10
-PROBE_SAMPLE_SIZE = 50
-PROBE_WORKERS = 2
+# 2026-05-19: ลด 50 → 20 + serial (workers=1) เพราะ probe หลัง poll → 429 rate limit
+PROBE_SAMPLE_SIZE = 20
+PROBE_WORKERS = 1
 DEPT_ID_RANGE = (1, 9999)
 
 
@@ -264,6 +264,8 @@ def probe_unknown_depts(catalog: dict) -> int:
     if not candidates:
         return 0
     new_found = 0
+    # sleep ก่อน probe เพื่อให้ rate limit window reset หลัง poll
+    time.sleep(3)
     with ThreadPoolExecutor(max_workers=PROBE_WORKERS) as ex:
         futures = {ex.submit(fetch_dept, d): d for d in candidates}
         for fut in as_completed(futures):
@@ -272,6 +274,9 @@ def probe_unknown_depts(catalog: dict) -> int:
                 status, items = fut.result()
             except Exception:
                 continue
+            if status == 429:
+                log(f"  ⚠️ probe rate limited — หยุด probe รอบนี้")
+                break
             if status == 200:
                 # Record empty too (so we don't re-probe)
                 catalog[dept_id] = {
@@ -287,6 +292,7 @@ def probe_unknown_depts(catalog: dict) -> int:
                 if items:
                     new_found += 1
                     log(f"  🔍 probe {dept_id}: {len(items)} items · {items[0].get('title', '')[:50]}")
+                time.sleep(1)
     return new_found
 
 
@@ -470,7 +476,9 @@ if __name__ == "__main__":
         # Cron-friendly: pick next stage from rotation state
         next_stage = get_next_stage()
         log(f"\n🔄 ROTATE → stage={next_stage}")
+        # probe ทุก rotate รอบ (catalog growth) — ยกเว้นถ้าสั่ง --no-probe
         result = run(queue_new=args.queue, skip_probe=args.no_probe, anounce_type=next_stage)
+
         sys.exit(0 if not result.get("error") else 1)
     else:
         result = run(queue_new=args.queue, skip_probe=args.no_probe, anounce_type=args.stage)

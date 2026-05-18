@@ -66,16 +66,27 @@ _LOG_FILE = None
 
 
 def _init_log_file():
-    """ถ้าตั้ง env BMS_RSS_LOG_DIR → เปิดไฟล์ log + redirect stdout/stderr"""
+    """เปิดไฟล์ log + redirect stdout/stderr
+    Fallback chain (resilient to missing env after PC sleep):
+      1. env BMS_RSS_LOG_DIR
+      2. project_root/logs/rss (default)
+      3. stderr only (if all fails)
+    """
     global _LOG_FILE
-    log_dir = os.environ.get("BMS_RSS_LOG_DIR", "")
-    if log_dir:
+    log_dir = os.environ.get("BMS_RSS_LOG_DIR", "").strip()
+    if not log_dir:
+        # Self-recovery: derive from script location (works after PC sleep)
+        log_dir = str(Path(__file__).parent.parent / "logs" / "rss")
+    try:
         log_path = Path(log_dir)
         log_path.mkdir(parents=True, exist_ok=True)
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         _LOG_FILE = open(log_path / f"rss_{ts}.log", "w", encoding="utf-8", buffering=1)
         sys.stdout = _LOG_FILE
         sys.stderr = _LOG_FILE
+    except Exception:
+        # ถ้าเปิด log file ไม่ได้ → fallback ใช้ stderr (จะ show ตอน schtasks /Run interactive)
+        pass
 
 
 def log(msg: str):

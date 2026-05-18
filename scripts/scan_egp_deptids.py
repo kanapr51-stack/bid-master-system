@@ -40,12 +40,16 @@ HEADERS = {
 
 SCAN_END = 9999
 # 2026-05-18 revision: SLOW + SAFE — workers=2, sleep=1s = ~2 req/s
-# (POC: ~50 req/min ปลอดภัย → 120 req/min ก็ยังไหว)
-# Time: 9999 ÷ 2 workers ÷ ~1.5 req/s effective = ~55 นาที (รวม retries)
+# 2026-05-18 (afternoon): + 429 resilience (cooldown long if rate-limited)
 PASS1_WORKERS = 2
 PASS2_WORKERS = 1
 PASS2_MAX_RETRIES = 3
 INTER_REQUEST_SLEEP = 0.5  # delay between completed requests per worker
+
+# 429 handling
+RATE_LIMIT_BACKOFF = [10, 30, 60, 120]  # seconds — escalating cooldown
+RATE_LIMIT_THRESHOLD = 5  # consecutive 429s before long cooldown
+LONG_COOLDOWN = 300  # 5 min after sustained rate limit
 
 
 def log(msg: str):
@@ -90,6 +94,28 @@ def session() -> requests.Session:
     return s
 
 
+_rate_limit_state = {"consecutive_429": 0, "lock": threading.Lock()}
+
+
+def _handle_429():
+    """ขึ้น consecutive_429 + sleep ตาม backoff"""
+    with _rate_limit_state["lock"]:
+        _rate_limit_state["consecutive_429"] += 1
+        n = _rate_limit_state["consecutive_429"]
+    if n >= RATE_LIMIT_THRESHOLD:
+        log(f"  🛑 sustained 429 (#{n}) → long cooldown {LONG_COOLDOWN}s")
+        time.sleep(LONG_COOLDOWN)
+    else:
+        backoff = RATE_LIMIT_BACKOFF[min(n - 1, len(RATE_LIMIT_BACKOFF) - 1)]
+        log(f"  ⏸  429 hit (#{n}) → backoff {backoff}s")
+        time.sleep(backoff)
+
+
+def _reset_429():
+    with _rate_limit_state["lock"]:
+        _rate_limit_state["consecutive_429"] = 0
+
+
 def fetch_one(n: int, timeout: int = 12) -> tuple[str, str, list[dict]]:
     """Return (dept_id, status, items)
     status: 'ok' | 'http_NNN' | 'error_<exception>'
@@ -97,8 +123,12 @@ def fetch_one(n: int, timeout: int = 12) -> tuple[str, str, list[dict]]:
     dept_id = f"{n:04d}"
     try:
         r = session().get(RSS_URL, params={"deptId": dept_id}, timeout=timeout)
+        if r.status_code == 429:
+            _handle_429()
+            return dept_id, "http_429", []
         if r.status_code != 200:
             return dept_id, f"http_{r.status_code}", []
+        _reset_429()
         text = decode_thai(r.content)
         items = parse_items(text)
         return dept_id, "ok", items

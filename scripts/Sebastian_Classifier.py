@@ -31,8 +31,19 @@ BOOTSTRAP_FILE = Path(__file__).parent.parent / "data" / "winner_cache_bootstrap
 TARGET_PROVINCES = ["นครพนม", "บึงกาฬ"]
 
 # Import DEPT_PROVINCE_MAP + FLOW_STATUS_MAP from Scraper — single source of truth
+# 2026-05-18: Use union of MINIMAL + LEGACY for target detection
+#   (Option B shrunk MINIMAL to 2 keywords for scrape, but LEGACY tambon names are
+#   still target areas — classifier needs both for correct in_target_province check)
 try:
-    from Sebastian_Scraper import DEPT_PROVINCE_MAP, FLOW_STATUS_MAP
+    from Sebastian_Scraper import (
+        DEPT_PROVINCE_MAP as _MINIMAL_MAP,
+        FLOW_STATUS_MAP,
+    )
+    try:
+        from Sebastian_Scraper import DEPT_PROVINCE_MAP_LEGACY as _LEGACY_MAP
+    except ImportError:
+        _LEGACY_MAP = {}
+    DEPT_PROVINCE_MAP = {**_LEGACY_MAP, **_MINIMAL_MAP}  # MINIMAL overrides LEGACY ถ้าซ้ำ
 except ImportError:
     DEPT_PROVINCE_MAP = {}
     FLOW_STATUS_MAP = {}

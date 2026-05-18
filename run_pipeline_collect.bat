@@ -72,6 +72,13 @@ if "!CHROME_OK!"=="1" (
     %PYTHON% scripts\refresh_active_jobs.py --from-queue --limit 50 >> %LOGFILE% 2>&1
 )
 
+REM --- Step 3.6: ENRICH DEPT NAMES (Chrome required) ---
+REM Auto-enrich active depts ใหม่ๆ ที่ probe เจอ → catalog ได้ชื่อหน่วยงานครบ
+if "!CHROME_OK!"=="1" (
+    echo [%TIME%] Step 3.6: ENRICH DEPT NAMES >> %LOGFILE%
+    %PYTHON% scripts\enrich_dept_names.py >> %LOGFILE% 2>&1
+)
+
 REM --- Step 4: PATCH_DEADLINES (Chrome required) ---
 REM ดึง deadline จาก PDF ของ active jobs ที่ deadline ว่าง — มี retry 2 ครั้ง
 if "!CHROME_OK!"=="1" (

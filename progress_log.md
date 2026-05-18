@@ -1911,3 +1911,77 @@ refresh tracks transitions
   → getProcureResult fires
   → winner_cache + awarded_jobs grow nationwide
 ```
+
+---
+
+## งานที่ N+17: Mega Session — Phase 2 SaaS + Multi-stage RSS + Postgres (2026-05-18 → 19)
+
+### สถานะ: ✅ เสร็จ (23+ commits)
+
+### สิ่งที่ทำ (เรียงตามเวลา)
+
+**ช่วงค่ำ (Phase 1.5 + Option A/B):**
+- Option A: wire RSS queue → 02:00 collect (Step 3.5)
+- Option B: shrink scraper keywords 30 → 4
+- Hybrid catalog growth: probe 50/run + slow scan
+- P0 classifier fix (37 dropped jobs restored)
+- Dashboard refresh cron auto
+
+**กลางคืน (RSS + LINE OA):**
+- LINE OA Sebastian Phase 2 foundation:
+  - Customer Google Sheet schema (12 cols)
+  - /customer/[lineUserId] form page (public)
+  - /api/line/webhook (welcome + commands)
+  - /api/line/customer (REST API)
+  - SEBASTIAN_LINE_TOKEN/SECRET (separate from BSC Concrete)
+  - LINE OA channel "Sebastian Michaelis" @768itodz live
+- ทดสอบ end-to-end: ทักบอท → reply + create customer + status command
+
+**คืน (Research + Migration):**
+- 🔥 **Pre-TOR breakthrough**: ค้นพบ param `anounceType` (typo!) ทำให้ RSS ครอบคลุมทุก stage (P0/B0/D0/W0/D1)
+- Multi-stage RSS scraper deploy + rotate mode
+- **Phase A** (Postgres): Neon Marketplace + schema 7 tables + ETL 11K rows
+- **Phase B** (ETL sync): cron every 30 min — Sheet → DB always-fresh mirror
+
+### Commits สำคัญใน session (23 commits)
+
+```
+625d7b8 Quick wins: RSS rotate mode + classifier audit
+27e4b4d Phase A: Neon Postgres setup + ETL Sheet→DB foundation
+d2b1d77 Fix Sebastian_Dashboard_Refresh subprocess encoding
+89e4e1d Sebastian LINE OA: separate env vars from BSC Concrete
+082682c LINE OA Sebastian Phase 2: web signup + webhook
+d479769 Fix P0 + 3 resilience improvements (morning fixes)
+933b4e8 Dashboard: enrich catalog with dept names
+a575f88 Dashboard: searchable catalog browser on /scrape
+f7fbc3b Dashboard: RSS Catalog Tracker on /scrape page
+0e7ce84 RSS scraper: support multi-stage polling (P0/B0/D0/W0/D1)
+871ed87 Research: RSS supports ALL stages via anounceType param
+2d1e1a4 Hybrid catalog growth: probe 50 + slow safe batch scan
+1a52fe0 Option B: shrink scraper keywords 30 -> 4
+8d22d13 Option A: wire RSS queue ingest into 02:00 collect
+0596494 RSS cron: drop .bat wrapper, use pythonw directly
+5203f0e RSS cron: hide CMD window (pythonw + Hidden task)
+29a6062 Phase 1.5: RSS queue ingestion + 30-min cron
+05c1414 Phase 1 RSS-First Pipeline MVP
+63e26e2 Dashboard: error boundaries + mobile polish
+2f20467 Dashboard: HTTP Basic Auth via middleware
+d08dda0 Dashboard: Vercel Blob real-time snapshot
+8c5926c Dashboard: 5 pages + Vercel deploy + pipeline integration
+```
+
+### Cron tasks ที่รันอยู่
+- BidMaster-Collect-0200 (02:00 ทุกวัน)
+- BidMaster-Notify-0600 (06:00 ทุกวัน)
+- BidMaster_RSS_Scraper (30 นาที, stage rotate)
+- BidMaster_Dashboard_Refresh (30 นาที)
+- BidMaster_ETL_Sync (30 นาที)
+
+### Followup ค้าง
+- Multi-tenant LINE notify (Task #31) — loop customers + filter + push
+- bid_history sheet → populate from process5/CGD
+- History job analytics (Priority #3)
+- Package tiers + pricing UI (Priority #4)
+- Claude API for Sebastian Q&A (Priority #5)
+- Enrich sparse RSS rows with province from dept_catalog (filter gap)
+- Phase C: DB primary, Sheet mirror

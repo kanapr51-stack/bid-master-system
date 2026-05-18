@@ -1985,3 +1985,20 @@ d08dda0 Dashboard: Vercel Blob real-time snapshot
 - Claude API for Sebastian Q&A (Priority #5)
 - Enrich sparse RSS rows with province from dept_catalog (filter gap)
 - Phase C: DB primary, Sheet mirror
+
+### Update (2026-05-19, 01:35) — Discipline + Followups
+
+**คุณกัญจน์ตัดสินใจ:** ทำตามลำดับ priority ไม่กระโดด
+
+**ที่จดไว้เป็น followup สำหรับ Phase ประมวลผลข้อมูล (Priority #3):**
+- Bulk pull CGD 2568 (~5M records) → Postgres
+- Populate bid_history จาก process5 getProcureResult
+- → Foundation สำหรับ Sebastian deep analytics
+
+**Vision document พร้อมแล้ว:**
+- `memory/project_product_vision_2026_05_19.md`
+- 6 core features + tiers + stickiness + roadmap
+
+**RSS-First architecture ค้นพบ:**
+- `docs/rss_full_replacement_research.md` — Chrome-less ทุก step
+- เก็บไว้ implement ตอนทำ HTTP migration

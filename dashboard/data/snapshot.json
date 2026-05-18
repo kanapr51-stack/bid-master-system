@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-05-17T22:28:26.692803",
+  "generated_at": "2026-05-18T12:46:37.096858",
   "version": 1,
   "kpis": {
-    "pipeline_duration_today": 6731.3,
-    "pipeline_duration_yesterday": 6156.3,
+    "pipeline_duration_today": 8590.3,
+    "pipeline_duration_yesterday": 6731.3,
     "active_jobs": 6,
     "tor_jobs": 5,
     "pending_jobs": 18,
-    "awarded_jobs": 303,
+    "awarded_jobs": 304,
     "cancelled_jobs": 43,
-    "all_jobs_count": 8741,
-    "cloudflare_hits_today": 36,
+    "all_jobs_count": 8796,
+    "cloudflare_hits_today": 45,
     "total_winners": 357
   },
   "daily": {
@@ -119,6 +119,28 @@
         "pending_award": 18,
         "awarded_jobs": 303,
         "cancelled_jobs": 43
+      },
+      "phases": [
+        "collect",
+        "notify"
+      ]
+    },
+    "2026-05-18": {
+      "date": "2026-05-18",
+      "total_pipeline_sec": 8590.3,
+      "pipeline_runs": 2,
+      "total_raw_scraped": 0,
+      "total_filtered": 0,
+      "total_new_jobs": 0,
+      "cloudflare_hits": 45,
+      "search_timeouts": 60,
+      "classifier_latest": {
+        "pre_tor": 0,
+        "tor_review": 3,
+        "active_bidding": 5,
+        "pending_award": 16,
+        "awarded_jobs": 274,
+        "cancelled_jobs": 41
       },
       "phases": [
         "collect",
@@ -937,6 +959,248 @@
       "discord_notify_success": 19
     },
     {
+      "date": "2026-05-18",
+      "filename": "pipeline_collect_20260518.txt",
+      "phase": "collect",
+      "file_size": 77213,
+      "last_modified": "2026-05-18T04:44:36.193922",
+      "pipeline_durations_sec": [
+        8528.0,
+        25.3
+      ],
+      "total_duration_sec": 8553.3,
+      "scrape_keywords": [
+        {
+          "keyword": "นครพนม",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "บึงกาฬ",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลบ้านแพง",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลไผ่ล้อม",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลโพนทอง",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลนาเข",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลหนองแวง",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลนาหว้า",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลสามผง",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลหาดแพง",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลศรีสงคราม",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลหนองซน",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลดอนเตย",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลนาทม",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลดงบัง",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลบุ่งคล้า",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลโคกกว้าง",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลหนองเดิ่น",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลท่าดอกคำ",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลโพธิ์หมากแข้ง",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลบึงงาม",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ตำบลบึงโขงหลง",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "โยธาธิการและผังเมืองจังหวัดนครพนม",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ชลประทานนครพนม",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "แขวงทางหลวงชนบทนครพนม",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "องค์การบริหารส่วนจังหวัดนครพนม",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "โยธาธิการและผังเมืองจังหวัดบึงกาฬ",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "ชลประทานบึงกาฬ",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "แขวงทางหลวงชนบทบึงกาฬ",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        },
+        {
+          "keyword": "องค์การบริหารส่วนจังหวัดบึงกาฬ",
+          "raw_items": 0,
+          "filtered": 0,
+          "province_skipped": 0,
+          "new": 0
+        }
+      ],
+      "total_raw": 0,
+      "total_filtered": 0,
+      "total_new": 0,
+      "cloudflare_hits": 45,
+      "search_timeouts": 60,
+      "rate_limit_hits": 0,
+      "classifier": {
+        "pre_tor": 0,
+        "tor_review": 3,
+        "active_bidding": 5,
+        "pending_award": 16,
+        "awarded_jobs": 274,
+        "cancelled_jobs": 41
+      },
+      "total_active_pipeline": 339,
+      "all_jobs_count": 8746,
+      "line_notify_success": 0,
+      "discord_notify_success": 7
+    },
+    {
       "date": "2026-05-17",
       "filename": "pipeline_notify_20260517.txt",
       "phase": "notify",
@@ -966,17 +1230,48 @@
       "all_jobs_count": 8741,
       "line_notify_success": 2,
       "discord_notify_success": 6
+    },
+    {
+      "date": "2026-05-18",
+      "filename": "pipeline_notify_20260518.txt",
+      "phase": "notify",
+      "file_size": 10915,
+      "last_modified": "2026-05-18T06:00:42.137172",
+      "pipeline_durations_sec": [
+        24.7,
+        12.3
+      ],
+      "total_duration_sec": 37.0,
+      "scrape_keywords": [],
+      "total_raw": 0,
+      "total_filtered": 0,
+      "total_new": 0,
+      "cloudflare_hits": 0,
+      "search_timeouts": 0,
+      "rate_limit_hits": 0,
+      "classifier": {
+        "pre_tor": 0,
+        "tor_review": 3,
+        "active_bidding": 5,
+        "pending_award": 16,
+        "awarded_jobs": 274,
+        "cancelled_jobs": 41
+      },
+      "total_active_pipeline": 339,
+      "all_jobs_count": 8796,
+      "line_notify_success": 2,
+      "discord_notify_success": 6
     }
   ],
   "sheet_snapshot": {
-    "fetched_at": "2026-05-17T22:28:11.645583",
+    "fetched_at": "2026-05-18T12:46:20.048126",
     "pre_tor": 0,
     "tor_review": 5,
     "active_bidding": 6,
     "pending_award": 18,
-    "awarded_jobs": 303,
+    "awarded_jobs": 304,
     "cancelled_jobs": 43,
-    "all_jobs": 8741
+    "all_jobs": 8796
   },
   "winners": {
     "total_winners": 357,
@@ -985,6 +1280,91 @@
     "last_modified": "2026-05-16T22:34:34.231929"
   },
   "commits": [
+    {
+      "hash": "d479769e",
+      "date": "2026-05-18 12:45:59 +0700",
+      "subject": "Fix P0 + 3 resilience improvements (morning fixes)"
+    },
+    {
+      "hash": "933b4e85",
+      "date": "2026-05-18 05:31:35 +0700",
+      "subject": "Dashboard: enrich catalog with dept names (deptSubName from process5)"
+    },
+    {
+      "hash": "a575f889",
+      "date": "2026-05-18 04:51:38 +0700",
+      "subject": "Dashboard: searchable catalog browser on /scrape"
+    },
+    {
+      "hash": "f7fbc3b8",
+      "date": "2026-05-18 04:44:03 +0700",
+      "subject": "Dashboard: RSS Catalog Tracker on /scrape page"
+    },
+    {
+      "hash": "c11ade92",
+      "date": "2026-05-18 04:39:01 +0700",
+      "subject": "progress_log: N+16 (Option A + B + Hybrid catalog)"
+    },
+    {
+      "hash": "2d1e1a4b",
+      "date": "2026-05-18 04:37:42 +0700",
+      "subject": "Hybrid catalog growth: probe 50/run + slow safe batch scan"
+    },
+    {
+      "hash": "1a52fe09",
+      "date": "2026-05-18 04:19:00 +0700",
+      "subject": "Option B: shrink scraper keywords 30 -> 4 (RSS handles rest)"
+    },
+    {
+      "hash": "8d22d135",
+      "date": "2026-05-18 04:12:58 +0700",
+      "subject": "Option A: wire RSS queue ingest into 02:00 collect pipeline"
+    },
+    {
+      "hash": "05964942",
+      "date": "2026-05-18 03:52:09 +0700",
+      "subject": "RSS cron: drop .bat wrapper, use pythonw directly (silent)"
+    },
+    {
+      "hash": "5203f0e1",
+      "date": "2026-05-18 01:41:16 +0700",
+      "subject": "RSS cron: hide CMD window (pythonw + Hidden task)"
+    },
+    {
+      "hash": "29a6062b",
+      "date": "2026-05-18 01:30:13 +0700",
+      "subject": "Phase 1.5: RSS queue ingestion + 30-min cron (N+15b)"
+    },
+    {
+      "hash": "05c14140",
+      "date": "2026-05-18 00:59:50 +0700",
+      "subject": "Phase 1 RSS-First Pipeline MVP (N+15)"
+    },
+    {
+      "hash": "63e26e21",
+      "date": "2026-05-18 00:30:52 +0700",
+      "subject": "Dashboard: error boundaries + mobile polish (N+14d)"
+    },
+    {
+      "hash": "2f204677",
+      "date": "2026-05-18 00:27:02 +0700",
+      "subject": "Dashboard: HTTP Basic Auth via middleware (N+14c)"
+    },
+    {
+      "hash": "d08dda0e",
+      "date": "2026-05-18 00:21:55 +0700",
+      "subject": "Dashboard: Vercel Blob real-time snapshot (Option A, N+14b)"
+    },
+    {
+      "hash": "8c5926c1",
+      "date": "2026-05-18 00:14:23 +0700",
+      "subject": "Dashboard: 5 pages + Vercel deploy + pipeline integration (N+14)"
+    },
+    {
+      "hash": "dc408c33",
+      "date": "2026-05-17 22:34:01 +0700",
+      "subject": "Dashboard MVP D1-D3: data extractor + Next.js Overview page"
+    },
     {
       "hash": "feadb643",
       "date": "2026-05-17 21:23:07 +0700",
@@ -1113,6 +1493,874 @@
   ],
   "inflections": [
     {
+      "hash": "d479769e",
+      "date": "2026-05-18 12:45:59 +0700",
+      "subject": "Fix P0 + 3 resilience improvements (morning fixes)",
+      "before_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-18",
+        "total_pipeline_sec": 8590.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 0,
+        "total_filtered": 0,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 45,
+        "search_timeouts": 60,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 3,
+          "active_bidding": 5,
+          "pending_award": 16,
+          "awarded_jobs": 274,
+          "cancelled_jobs": 41
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "933b4e85",
+      "date": "2026-05-18 05:31:35 +0700",
+      "subject": "Dashboard: enrich catalog with dept names (deptSubName from process5)",
+      "before_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-18",
+        "total_pipeline_sec": 8590.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 0,
+        "total_filtered": 0,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 45,
+        "search_timeouts": 60,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 3,
+          "active_bidding": 5,
+          "pending_award": 16,
+          "awarded_jobs": 274,
+          "cancelled_jobs": 41
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "a575f889",
+      "date": "2026-05-18 04:51:38 +0700",
+      "subject": "Dashboard: searchable catalog browser on /scrape",
+      "before_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-18",
+        "total_pipeline_sec": 8590.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 0,
+        "total_filtered": 0,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 45,
+        "search_timeouts": 60,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 3,
+          "active_bidding": 5,
+          "pending_award": 16,
+          "awarded_jobs": 274,
+          "cancelled_jobs": 41
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "f7fbc3b8",
+      "date": "2026-05-18 04:44:03 +0700",
+      "subject": "Dashboard: RSS Catalog Tracker on /scrape page",
+      "before_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-18",
+        "total_pipeline_sec": 8590.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 0,
+        "total_filtered": 0,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 45,
+        "search_timeouts": 60,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 3,
+          "active_bidding": 5,
+          "pending_award": 16,
+          "awarded_jobs": 274,
+          "cancelled_jobs": 41
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "c11ade92",
+      "date": "2026-05-18 04:39:01 +0700",
+      "subject": "progress_log: N+16 (Option A + B + Hybrid catalog)",
+      "before_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-18",
+        "total_pipeline_sec": 8590.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 0,
+        "total_filtered": 0,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 45,
+        "search_timeouts": 60,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 3,
+          "active_bidding": 5,
+          "pending_award": 16,
+          "awarded_jobs": 274,
+          "cancelled_jobs": 41
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "2d1e1a4b",
+      "date": "2026-05-18 04:37:42 +0700",
+      "subject": "Hybrid catalog growth: probe 50/run + slow safe batch scan",
+      "before_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-18",
+        "total_pipeline_sec": 8590.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 0,
+        "total_filtered": 0,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 45,
+        "search_timeouts": 60,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 3,
+          "active_bidding": 5,
+          "pending_award": 16,
+          "awarded_jobs": 274,
+          "cancelled_jobs": 41
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "1a52fe09",
+      "date": "2026-05-18 04:19:00 +0700",
+      "subject": "Option B: shrink scraper keywords 30 -> 4 (RSS handles rest)",
+      "before_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-18",
+        "total_pipeline_sec": 8590.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 0,
+        "total_filtered": 0,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 45,
+        "search_timeouts": 60,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 3,
+          "active_bidding": 5,
+          "pending_award": 16,
+          "awarded_jobs": 274,
+          "cancelled_jobs": 41
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "8d22d135",
+      "date": "2026-05-18 04:12:58 +0700",
+      "subject": "Option A: wire RSS queue ingest into 02:00 collect pipeline",
+      "before_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-18",
+        "total_pipeline_sec": 8590.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 0,
+        "total_filtered": 0,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 45,
+        "search_timeouts": 60,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 3,
+          "active_bidding": 5,
+          "pending_award": 16,
+          "awarded_jobs": 274,
+          "cancelled_jobs": 41
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "05964942",
+      "date": "2026-05-18 03:52:09 +0700",
+      "subject": "RSS cron: drop .bat wrapper, use pythonw directly (silent)",
+      "before_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-18",
+        "total_pipeline_sec": 8590.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 0,
+        "total_filtered": 0,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 45,
+        "search_timeouts": 60,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 3,
+          "active_bidding": 5,
+          "pending_award": 16,
+          "awarded_jobs": 274,
+          "cancelled_jobs": 41
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "5203f0e1",
+      "date": "2026-05-18 01:41:16 +0700",
+      "subject": "RSS cron: hide CMD window (pythonw + Hidden task)",
+      "before_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-18",
+        "total_pipeline_sec": 8590.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 0,
+        "total_filtered": 0,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 45,
+        "search_timeouts": 60,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 3,
+          "active_bidding": 5,
+          "pending_award": 16,
+          "awarded_jobs": 274,
+          "cancelled_jobs": 41
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "29a6062b",
+      "date": "2026-05-18 01:30:13 +0700",
+      "subject": "Phase 1.5: RSS queue ingestion + 30-min cron (N+15b)",
+      "before_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-18",
+        "total_pipeline_sec": 8590.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 0,
+        "total_filtered": 0,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 45,
+        "search_timeouts": 60,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 3,
+          "active_bidding": 5,
+          "pending_award": 16,
+          "awarded_jobs": 274,
+          "cancelled_jobs": 41
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "05c14140",
+      "date": "2026-05-18 00:59:50 +0700",
+      "subject": "Phase 1 RSS-First Pipeline MVP (N+15)",
+      "before_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-18",
+        "total_pipeline_sec": 8590.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 0,
+        "total_filtered": 0,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 45,
+        "search_timeouts": 60,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 3,
+          "active_bidding": 5,
+          "pending_award": 16,
+          "awarded_jobs": 274,
+          "cancelled_jobs": 41
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "63e26e21",
+      "date": "2026-05-18 00:30:52 +0700",
+      "subject": "Dashboard: error boundaries + mobile polish (N+14d)",
+      "before_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-18",
+        "total_pipeline_sec": 8590.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 0,
+        "total_filtered": 0,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 45,
+        "search_timeouts": 60,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 3,
+          "active_bidding": 5,
+          "pending_award": 16,
+          "awarded_jobs": 274,
+          "cancelled_jobs": 41
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "2f204677",
+      "date": "2026-05-18 00:27:02 +0700",
+      "subject": "Dashboard: HTTP Basic Auth via middleware (N+14c)",
+      "before_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-18",
+        "total_pipeline_sec": 8590.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 0,
+        "total_filtered": 0,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 45,
+        "search_timeouts": 60,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 3,
+          "active_bidding": 5,
+          "pending_award": 16,
+          "awarded_jobs": 274,
+          "cancelled_jobs": 41
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "d08dda0e",
+      "date": "2026-05-18 00:21:55 +0700",
+      "subject": "Dashboard: Vercel Blob real-time snapshot (Option A, N+14b)",
+      "before_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-18",
+        "total_pipeline_sec": 8590.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 0,
+        "total_filtered": 0,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 45,
+        "search_timeouts": 60,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 3,
+          "active_bidding": 5,
+          "pending_award": 16,
+          "awarded_jobs": 274,
+          "cancelled_jobs": 41
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "8c5926c1",
+      "date": "2026-05-18 00:14:23 +0700",
+      "subject": "Dashboard: 5 pages + Vercel deploy + pipeline integration (N+14)",
+      "before_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-18",
+        "total_pipeline_sec": 8590.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 0,
+        "total_filtered": 0,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 45,
+        "search_timeouts": 60,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 3,
+          "active_bidding": 5,
+          "pending_award": 16,
+          "awarded_jobs": 274,
+          "cancelled_jobs": 41
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": null
+    },
+    {
+      "hash": "dc408c33",
+      "date": "2026-05-17 22:34:01 +0700",
+      "subject": "Dashboard MVP D1-D3: data extractor + Next.js Overview page",
+      "before_metrics": {
+        "date": "2026-05-16",
+        "total_pipeline_sec": 6156.3,
+        "pipeline_runs": 1,
+        "total_raw_scraped": 30652,
+        "total_filtered": 2581,
+        "total_new_jobs": 51,
+        "cloudflare_hits": 1,
+        "search_timeouts": 0,
+        "classifier_latest": {
+          "tor_review": 8,
+          "active_bidding": 4,
+          "pending_award": 24,
+          "awarded_jobs": 297
+        },
+        "phases": [
+          "full"
+        ]
+      },
+      "current_metrics": {
+        "date": "2026-05-17",
+        "total_pipeline_sec": 6731.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 22934,
+        "total_filtered": 1678,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 36,
+        "search_timeouts": 34,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 5,
+          "active_bidding": 6,
+          "pending_award": 18,
+          "awarded_jobs": 303,
+          "cancelled_jobs": 43
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      },
+      "after_metrics": {
+        "date": "2026-05-18",
+        "total_pipeline_sec": 8590.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 0,
+        "total_filtered": 0,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 45,
+        "search_timeouts": 60,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 3,
+          "active_bidding": 5,
+          "pending_award": 16,
+          "awarded_jobs": 274,
+          "cancelled_jobs": 41
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      }
+    },
+    {
       "hash": "feadb643",
       "date": "2026-05-17 21:23:07 +0700",
       "subject": "EGP RSS feeds POC verified + 14 API catalog (N+13)",
@@ -1157,7 +2405,28 @@
           "notify"
         ]
       },
-      "after_metrics": null
+      "after_metrics": {
+        "date": "2026-05-18",
+        "total_pipeline_sec": 8590.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 0,
+        "total_filtered": 0,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 45,
+        "search_timeouts": 60,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 3,
+          "active_bidding": 5,
+          "pending_award": 16,
+          "awarded_jobs": 274,
+          "cancelled_jobs": 41
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      }
     },
     {
       "hash": "bf5abccd",
@@ -1204,7 +2473,28 @@
           "notify"
         ]
       },
-      "after_metrics": null
+      "after_metrics": {
+        "date": "2026-05-18",
+        "total_pipeline_sec": 8590.3,
+        "pipeline_runs": 2,
+        "total_raw_scraped": 0,
+        "total_filtered": 0,
+        "total_new_jobs": 0,
+        "cloudflare_hits": 45,
+        "search_timeouts": 60,
+        "classifier_latest": {
+          "pre_tor": 0,
+          "tor_review": 3,
+          "active_bidding": 5,
+          "pending_award": 16,
+          "awarded_jobs": 274,
+          "cancelled_jobs": 41
+        },
+        "phases": [
+          "collect",
+          "notify"
+        ]
+      }
     },
     {
       "hash": "96ccb316",
@@ -1251,878 +2541,22 @@
           "notify"
         ]
       },
-      "after_metrics": null
-    },
-    {
-      "hash": "d77e1595",
-      "date": "2026-05-17 16:13:32 +0700",
-      "subject": "Scraper: Cloudflare stealth (deep research 2026-05-17)",
-      "before_metrics": {
-        "date": "2026-05-16",
-        "total_pipeline_sec": 6156.3,
-        "pipeline_runs": 1,
-        "total_raw_scraped": 30652,
-        "total_filtered": 2581,
-        "total_new_jobs": 51,
-        "cloudflare_hits": 1,
-        "search_timeouts": 0,
-        "classifier_latest": {
-          "tor_review": 8,
-          "active_bidding": 4,
-          "pending_award": 24,
-          "awarded_jobs": 297
-        },
-        "phases": [
-          "full"
-        ]
-      },
-      "current_metrics": {
-        "date": "2026-05-17",
-        "total_pipeline_sec": 6731.3,
+      "after_metrics": {
+        "date": "2026-05-18",
+        "total_pipeline_sec": 8590.3,
         "pipeline_runs": 2,
-        "total_raw_scraped": 22934,
-        "total_filtered": 1678,
-        "total_new_jobs": 0,
-        "cloudflare_hits": 36,
-        "search_timeouts": 34,
-        "classifier_latest": {
-          "pre_tor": 0,
-          "tor_review": 5,
-          "active_bidding": 6,
-          "pending_award": 18,
-          "awarded_jobs": 303,
-          "cancelled_jobs": 43
-        },
-        "phases": [
-          "collect",
-          "notify"
-        ]
-      },
-      "after_metrics": null
-    },
-    {
-      "hash": "ca0474a1",
-      "date": "2026-05-17 15:11:40 +0700",
-      "subject": "Pipeline: 4 fixes จากรีวิว pipeline 17/05/2026",
-      "before_metrics": {
-        "date": "2026-05-16",
-        "total_pipeline_sec": 6156.3,
-        "pipeline_runs": 1,
-        "total_raw_scraped": 30652,
-        "total_filtered": 2581,
-        "total_new_jobs": 51,
-        "cloudflare_hits": 1,
-        "search_timeouts": 0,
-        "classifier_latest": {
-          "tor_review": 8,
-          "active_bidding": 4,
-          "pending_award": 24,
-          "awarded_jobs": 297
-        },
-        "phases": [
-          "full"
-        ]
-      },
-      "current_metrics": {
-        "date": "2026-05-17",
-        "total_pipeline_sec": 6731.3,
-        "pipeline_runs": 2,
-        "total_raw_scraped": 22934,
-        "total_filtered": 1678,
-        "total_new_jobs": 0,
-        "cloudflare_hits": 36,
-        "search_timeouts": 34,
-        "classifier_latest": {
-          "pre_tor": 0,
-          "tor_review": 5,
-          "active_bidding": 6,
-          "pending_award": 18,
-          "awarded_jobs": 303,
-          "cancelled_jobs": 43
-        },
-        "phases": [
-          "collect",
-          "notify"
-        ]
-      },
-      "after_metrics": null
-    },
-    {
-      "hash": "c8463c3a",
-      "date": "2026-05-17 05:43:43 +0700",
-      "subject": "Scraper v2: research-driven improvements (Nutch + industry patterns)",
-      "before_metrics": {
-        "date": "2026-05-16",
-        "total_pipeline_sec": 6156.3,
-        "pipeline_runs": 1,
-        "total_raw_scraped": 30652,
-        "total_filtered": 2581,
-        "total_new_jobs": 51,
-        "cloudflare_hits": 1,
-        "search_timeouts": 0,
-        "classifier_latest": {
-          "tor_review": 8,
-          "active_bidding": 4,
-          "pending_award": 24,
-          "awarded_jobs": 297
-        },
-        "phases": [
-          "full"
-        ]
-      },
-      "current_metrics": {
-        "date": "2026-05-17",
-        "total_pipeline_sec": 6731.3,
-        "pipeline_runs": 2,
-        "total_raw_scraped": 22934,
-        "total_filtered": 1678,
-        "total_new_jobs": 0,
-        "cloudflare_hits": 36,
-        "search_timeouts": 34,
-        "classifier_latest": {
-          "pre_tor": 0,
-          "tor_review": 5,
-          "active_bidding": 6,
-          "pending_award": 18,
-          "awarded_jobs": 303,
-          "cancelled_jobs": 43
-        },
-        "phases": [
-          "collect",
-          "notify"
-        ]
-      },
-      "after_metrics": null
-    },
-    {
-      "hash": "a3f6aa4c",
-      "date": "2026-05-17 05:25:41 +0700",
-      "subject": "Scraper: incremental mode (95% speedup on typical days)",
-      "before_metrics": {
-        "date": "2026-05-16",
-        "total_pipeline_sec": 6156.3,
-        "pipeline_runs": 1,
-        "total_raw_scraped": 30652,
-        "total_filtered": 2581,
-        "total_new_jobs": 51,
-        "cloudflare_hits": 1,
-        "search_timeouts": 0,
-        "classifier_latest": {
-          "tor_review": 8,
-          "active_bidding": 4,
-          "pending_award": 24,
-          "awarded_jobs": 297
-        },
-        "phases": [
-          "full"
-        ]
-      },
-      "current_metrics": {
-        "date": "2026-05-17",
-        "total_pipeline_sec": 6731.3,
-        "pipeline_runs": 2,
-        "total_raw_scraped": 22934,
-        "total_filtered": 1678,
-        "total_new_jobs": 0,
-        "cloudflare_hits": 36,
-        "search_timeouts": 34,
-        "classifier_latest": {
-          "pre_tor": 0,
-          "tor_review": 5,
-          "active_bidding": 6,
-          "pending_award": 18,
-          "awarded_jobs": 303,
-          "cancelled_jobs": 43
-        },
-        "phases": [
-          "collect",
-          "notify"
-        ]
-      },
-      "after_metrics": null
-    },
-    {
-      "hash": "299ee468",
-      "date": "2026-05-17 05:06:57 +0700",
-      "subject": "LINE Notify: Style A redesign — clean card + Google Sheet links",
-      "before_metrics": {
-        "date": "2026-05-16",
-        "total_pipeline_sec": 6156.3,
-        "pipeline_runs": 1,
-        "total_raw_scraped": 30652,
-        "total_filtered": 2581,
-        "total_new_jobs": 51,
-        "cloudflare_hits": 1,
-        "search_timeouts": 0,
-        "classifier_latest": {
-          "tor_review": 8,
-          "active_bidding": 4,
-          "pending_award": 24,
-          "awarded_jobs": 297
-        },
-        "phases": [
-          "full"
-        ]
-      },
-      "current_metrics": {
-        "date": "2026-05-17",
-        "total_pipeline_sec": 6731.3,
-        "pipeline_runs": 2,
-        "total_raw_scraped": 22934,
-        "total_filtered": 1678,
-        "total_new_jobs": 0,
-        "cloudflare_hits": 36,
-        "search_timeouts": 34,
-        "classifier_latest": {
-          "pre_tor": 0,
-          "tor_review": 5,
-          "active_bidding": 6,
-          "pending_award": 18,
-          "awarded_jobs": 303,
-          "cancelled_jobs": 43
-        },
-        "phases": [
-          "collect",
-          "notify"
-        ]
-      },
-      "after_metrics": null
-    },
-    {
-      "hash": "38dd468b",
-      "date": "2026-05-17 04:40:52 +0700",
-      "subject": "Classifier: track transitions between sheets (snapshot diff)",
-      "before_metrics": {
-        "date": "2026-05-16",
-        "total_pipeline_sec": 6156.3,
-        "pipeline_runs": 1,
-        "total_raw_scraped": 30652,
-        "total_filtered": 2581,
-        "total_new_jobs": 51,
-        "cloudflare_hits": 1,
-        "search_timeouts": 0,
-        "classifier_latest": {
-          "tor_review": 8,
-          "active_bidding": 4,
-          "pending_award": 24,
-          "awarded_jobs": 297
-        },
-        "phases": [
-          "full"
-        ]
-      },
-      "current_metrics": {
-        "date": "2026-05-17",
-        "total_pipeline_sec": 6731.3,
-        "pipeline_runs": 2,
-        "total_raw_scraped": 22934,
-        "total_filtered": 1678,
-        "total_new_jobs": 0,
-        "cloudflare_hits": 36,
-        "search_timeouts": 34,
-        "classifier_latest": {
-          "pre_tor": 0,
-          "tor_review": 5,
-          "active_bidding": 6,
-          "pending_award": 18,
-          "awarded_jobs": 303,
-          "cancelled_jobs": 43
-        },
-        "phases": [
-          "collect",
-          "notify"
-        ]
-      },
-      "after_metrics": null
-    },
-    {
-      "hash": "83e08aae",
-      "date": "2026-05-17 04:25:28 +0700",
-      "subject": "roadmap: SaaS competitive strategy vs G-LEAD (4 pillars + pricing)",
-      "before_metrics": {
-        "date": "2026-05-16",
-        "total_pipeline_sec": 6156.3,
-        "pipeline_runs": 1,
-        "total_raw_scraped": 30652,
-        "total_filtered": 2581,
-        "total_new_jobs": 51,
-        "cloudflare_hits": 1,
-        "search_timeouts": 0,
-        "classifier_latest": {
-          "tor_review": 8,
-          "active_bidding": 4,
-          "pending_award": 24,
-          "awarded_jobs": 297
-        },
-        "phases": [
-          "full"
-        ]
-      },
-      "current_metrics": {
-        "date": "2026-05-17",
-        "total_pipeline_sec": 6731.3,
-        "pipeline_runs": 2,
-        "total_raw_scraped": 22934,
-        "total_filtered": 1678,
-        "total_new_jobs": 0,
-        "cloudflare_hits": 36,
-        "search_timeouts": 34,
-        "classifier_latest": {
-          "pre_tor": 0,
-          "tor_review": 5,
-          "active_bidding": 6,
-          "pending_award": 18,
-          "awarded_jobs": 303,
-          "cancelled_jobs": 43
-        },
-        "phases": [
-          "collect",
-          "notify"
-        ]
-      },
-      "after_metrics": null
-    },
-    {
-      "hash": "0f0ffaac",
-      "date": "2026-05-17 01:41:06 +0700",
-      "subject": "patch_deadlines: ตัด ambiguous keywords ป้องกัน hit วันรับฟังผิด",
-      "before_metrics": {
-        "date": "2026-05-16",
-        "total_pipeline_sec": 6156.3,
-        "pipeline_runs": 1,
-        "total_raw_scraped": 30652,
-        "total_filtered": 2581,
-        "total_new_jobs": 51,
-        "cloudflare_hits": 1,
-        "search_timeouts": 0,
-        "classifier_latest": {
-          "tor_review": 8,
-          "active_bidding": 4,
-          "pending_award": 24,
-          "awarded_jobs": 297
-        },
-        "phases": [
-          "full"
-        ]
-      },
-      "current_metrics": {
-        "date": "2026-05-17",
-        "total_pipeline_sec": 6731.3,
-        "pipeline_runs": 2,
-        "total_raw_scraped": 22934,
-        "total_filtered": 1678,
-        "total_new_jobs": 0,
-        "cloudflare_hits": 36,
-        "search_timeouts": 34,
-        "classifier_latest": {
-          "pre_tor": 0,
-          "tor_review": 5,
-          "active_bidding": 6,
-          "pending_award": 18,
-          "awarded_jobs": 303,
-          "cancelled_jobs": 43
-        },
-        "phases": [
-          "collect",
-          "notify"
-        ]
-      },
-      "after_metrics": null
-    },
-    {
-      "hash": "6224ab26",
-      "date": "2026-05-17 00:43:52 +0700",
-      "subject": "patch_deadlines: stepId-based filter + retry 2x + integrate to collect.bat",
-      "before_metrics": {
-        "date": "2026-05-16",
-        "total_pipeline_sec": 6156.3,
-        "pipeline_runs": 1,
-        "total_raw_scraped": 30652,
-        "total_filtered": 2581,
-        "total_new_jobs": 51,
-        "cloudflare_hits": 1,
-        "search_timeouts": 0,
-        "classifier_latest": {
-          "tor_review": 8,
-          "active_bidding": 4,
-          "pending_award": 24,
-          "awarded_jobs": 297
-        },
-        "phases": [
-          "full"
-        ]
-      },
-      "current_metrics": {
-        "date": "2026-05-17",
-        "total_pipeline_sec": 6731.3,
-        "pipeline_runs": 2,
-        "total_raw_scraped": 22934,
-        "total_filtered": 1678,
-        "total_new_jobs": 0,
-        "cloudflare_hits": 36,
-        "search_timeouts": 34,
-        "classifier_latest": {
-          "pre_tor": 0,
-          "tor_review": 5,
-          "active_bidding": 6,
-          "pending_award": 18,
-          "awarded_jobs": 303,
-          "cancelled_jobs": 43
-        },
-        "phases": [
-          "collect",
-          "notify"
-        ]
-      },
-      "after_metrics": null
-    },
-    {
-      "hash": "63fcd3bf",
-      "date": "2026-05-17 00:25:55 +0700",
-      "subject": "Split pipeline: collect at 02:00 + notify at 06:00 sharp",
-      "before_metrics": {
-        "date": "2026-05-16",
-        "total_pipeline_sec": 6156.3,
-        "pipeline_runs": 1,
-        "total_raw_scraped": 30652,
-        "total_filtered": 2581,
-        "total_new_jobs": 51,
-        "cloudflare_hits": 1,
-        "search_timeouts": 0,
-        "classifier_latest": {
-          "tor_review": 8,
-          "active_bidding": 4,
-          "pending_award": 24,
-          "awarded_jobs": 297
-        },
-        "phases": [
-          "full"
-        ]
-      },
-      "current_metrics": {
-        "date": "2026-05-17",
-        "total_pipeline_sec": 6731.3,
-        "pipeline_runs": 2,
-        "total_raw_scraped": 22934,
-        "total_filtered": 1678,
-        "total_new_jobs": 0,
-        "cloudflare_hits": 36,
-        "search_timeouts": 34,
-        "classifier_latest": {
-          "pre_tor": 0,
-          "tor_review": 5,
-          "active_bidding": 6,
-          "pending_award": 18,
-          "awarded_jobs": 303,
-          "cancelled_jobs": 43
-        },
-        "phases": [
-          "collect",
-          "notify"
-        ]
-      },
-      "after_metrics": null
-    },
-    {
-      "hash": "62251933",
-      "date": "2026-05-17 00:12:20 +0700",
-      "subject": "Pipeline: focus on LINE notify reliability (skip risky steps)",
-      "before_metrics": {
-        "date": "2026-05-16",
-        "total_pipeline_sec": 6156.3,
-        "pipeline_runs": 1,
-        "total_raw_scraped": 30652,
-        "total_filtered": 2581,
-        "total_new_jobs": 51,
-        "cloudflare_hits": 1,
-        "search_timeouts": 0,
-        "classifier_latest": {
-          "tor_review": 8,
-          "active_bidding": 4,
-          "pending_award": 24,
-          "awarded_jobs": 297
-        },
-        "phases": [
-          "full"
-        ]
-      },
-      "current_metrics": {
-        "date": "2026-05-17",
-        "total_pipeline_sec": 6731.3,
-        "pipeline_runs": 2,
-        "total_raw_scraped": 22934,
-        "total_filtered": 1678,
-        "total_new_jobs": 0,
-        "cloudflare_hits": 36,
-        "search_timeouts": 34,
-        "classifier_latest": {
-          "pre_tor": 0,
-          "tor_review": 5,
-          "active_bidding": 6,
-          "pending_award": 18,
-          "awarded_jobs": 303,
-          "cancelled_jobs": 43
-        },
-        "phases": [
-          "collect",
-          "notify"
-        ]
-      },
-      "after_metrics": null
-    },
-    {
-      "hash": "450dee2a",
-      "date": "2026-05-16 23:59:46 +0700",
-      "subject": "Phase B + Phase 3: bid_history feature + updated Pipeline 8-step bat",
-      "before_metrics": {
-        "date": "2026-05-15",
-        "total_pipeline_sec": 12031.6,
-        "pipeline_runs": 1,
         "total_raw_scraped": 0,
         "total_filtered": 0,
         "total_new_jobs": 0,
-        "cloudflare_hits": 27,
-        "search_timeouts": 6,
-        "classifier_latest": null,
-        "phases": [
-          "full"
-        ]
-      },
-      "current_metrics": {
-        "date": "2026-05-16",
-        "total_pipeline_sec": 6156.3,
-        "pipeline_runs": 1,
-        "total_raw_scraped": 30652,
-        "total_filtered": 2581,
-        "total_new_jobs": 51,
-        "cloudflare_hits": 1,
-        "search_timeouts": 0,
-        "classifier_latest": {
-          "tor_review": 8,
-          "active_bidding": 4,
-          "pending_award": 24,
-          "awarded_jobs": 297
-        },
-        "phases": [
-          "full"
-        ]
-      },
-      "after_metrics": {
-        "date": "2026-05-17",
-        "total_pipeline_sec": 6731.3,
-        "pipeline_runs": 2,
-        "total_raw_scraped": 22934,
-        "total_filtered": 1678,
-        "total_new_jobs": 0,
-        "cloudflare_hits": 36,
-        "search_timeouts": 34,
+        "cloudflare_hits": 45,
+        "search_timeouts": 60,
         "classifier_latest": {
           "pre_tor": 0,
-          "tor_review": 5,
-          "active_bidding": 6,
-          "pending_award": 18,
-          "awarded_jobs": 303,
-          "cancelled_jobs": 43
-        },
-        "phases": [
-          "collect",
-          "notify"
-        ]
-      }
-    },
-    {
-      "hash": "e317faea",
-      "date": "2026-05-16 23:41:02 +0700",
-      "subject": "Add CLAUDE.md — project rules for Discord notify + progress logging",
-      "before_metrics": {
-        "date": "2026-05-15",
-        "total_pipeline_sec": 12031.6,
-        "pipeline_runs": 1,
-        "total_raw_scraped": 0,
-        "total_filtered": 0,
-        "total_new_jobs": 0,
-        "cloudflare_hits": 27,
-        "search_timeouts": 6,
-        "classifier_latest": null,
-        "phases": [
-          "full"
-        ]
-      },
-      "current_metrics": {
-        "date": "2026-05-16",
-        "total_pipeline_sec": 6156.3,
-        "pipeline_runs": 1,
-        "total_raw_scraped": 30652,
-        "total_filtered": 2581,
-        "total_new_jobs": 51,
-        "cloudflare_hits": 1,
-        "search_timeouts": 0,
-        "classifier_latest": {
-          "tor_review": 8,
-          "active_bidding": 4,
-          "pending_award": 24,
-          "awarded_jobs": 297
-        },
-        "phases": [
-          "full"
-        ]
-      },
-      "after_metrics": {
-        "date": "2026-05-17",
-        "total_pipeline_sec": 6731.3,
-        "pipeline_runs": 2,
-        "total_raw_scraped": 22934,
-        "total_filtered": 1678,
-        "total_new_jobs": 0,
-        "cloudflare_hits": 36,
-        "search_timeouts": 34,
-        "classifier_latest": {
-          "pre_tor": 0,
-          "tor_review": 5,
-          "active_bidding": 6,
-          "pending_award": 18,
-          "awarded_jobs": 303,
-          "cancelled_jobs": 43
-        },
-        "phases": [
-          "collect",
-          "notify"
-        ]
-      }
-    },
-    {
-      "hash": "30885ccd",
-      "date": "2026-05-16 23:13:58 +0700",
-      "subject": "Classifier: active_bidding ต้อง deadline >= today (ป้องกัน stale M03/S01)",
-      "before_metrics": {
-        "date": "2026-05-15",
-        "total_pipeline_sec": 12031.6,
-        "pipeline_runs": 1,
-        "total_raw_scraped": 0,
-        "total_filtered": 0,
-        "total_new_jobs": 0,
-        "cloudflare_hits": 27,
-        "search_timeouts": 6,
-        "classifier_latest": null,
-        "phases": [
-          "full"
-        ]
-      },
-      "current_metrics": {
-        "date": "2026-05-16",
-        "total_pipeline_sec": 6156.3,
-        "pipeline_runs": 1,
-        "total_raw_scraped": 30652,
-        "total_filtered": 2581,
-        "total_new_jobs": 51,
-        "cloudflare_hits": 1,
-        "search_timeouts": 0,
-        "classifier_latest": {
-          "tor_review": 8,
-          "active_bidding": 4,
-          "pending_award": 24,
-          "awarded_jobs": 297
-        },
-        "phases": [
-          "full"
-        ]
-      },
-      "after_metrics": {
-        "date": "2026-05-17",
-        "total_pipeline_sec": 6731.3,
-        "pipeline_runs": 2,
-        "total_raw_scraped": 22934,
-        "total_filtered": 1678,
-        "total_new_jobs": 0,
-        "cloudflare_hits": 36,
-        "search_timeouts": 34,
-        "classifier_latest": {
-          "pre_tor": 0,
-          "tor_review": 5,
-          "active_bidding": 6,
-          "pending_award": 18,
-          "awarded_jobs": 303,
-          "cancelled_jobs": 43
-        },
-        "phases": [
-          "collect",
-          "notify"
-        ]
-      }
-    },
-    {
-      "hash": "ea06bb74",
-      "date": "2026-05-16 22:36:06 +0700",
-      "subject": "Phase A: 6-sheet stepId-driven Classifier + cancelled detection",
-      "before_metrics": {
-        "date": "2026-05-15",
-        "total_pipeline_sec": 12031.6,
-        "pipeline_runs": 1,
-        "total_raw_scraped": 0,
-        "total_filtered": 0,
-        "total_new_jobs": 0,
-        "cloudflare_hits": 27,
-        "search_timeouts": 6,
-        "classifier_latest": null,
-        "phases": [
-          "full"
-        ]
-      },
-      "current_metrics": {
-        "date": "2026-05-16",
-        "total_pipeline_sec": 6156.3,
-        "pipeline_runs": 1,
-        "total_raw_scraped": 30652,
-        "total_filtered": 2581,
-        "total_new_jobs": 51,
-        "cloudflare_hits": 1,
-        "search_timeouts": 0,
-        "classifier_latest": {
-          "tor_review": 8,
-          "active_bidding": 4,
-          "pending_award": 24,
-          "awarded_jobs": 297
-        },
-        "phases": [
-          "full"
-        ]
-      },
-      "after_metrics": {
-        "date": "2026-05-17",
-        "total_pipeline_sec": 6731.3,
-        "pipeline_runs": 2,
-        "total_raw_scraped": 22934,
-        "total_filtered": 1678,
-        "total_new_jobs": 0,
-        "cloudflare_hits": 36,
-        "search_timeouts": 34,
-        "classifier_latest": {
-          "pre_tor": 0,
-          "tor_review": 5,
-          "active_bidding": 6,
-          "pending_award": 18,
-          "awarded_jobs": 303,
-          "cancelled_jobs": 43
-        },
-        "phases": [
-          "collect",
-          "notify"
-        ]
-      }
-    },
-    {
-      "hash": "9db93e7b",
-      "date": "2026-05-16 20:26:56 +0700",
-      "subject": "Plan: add Phase B bid_history feature (competitive intelligence)",
-      "before_metrics": {
-        "date": "2026-05-15",
-        "total_pipeline_sec": 12031.6,
-        "pipeline_runs": 1,
-        "total_raw_scraped": 0,
-        "total_filtered": 0,
-        "total_new_jobs": 0,
-        "cloudflare_hits": 27,
-        "search_timeouts": 6,
-        "classifier_latest": null,
-        "phases": [
-          "full"
-        ]
-      },
-      "current_metrics": {
-        "date": "2026-05-16",
-        "total_pipeline_sec": 6156.3,
-        "pipeline_runs": 1,
-        "total_raw_scraped": 30652,
-        "total_filtered": 2581,
-        "total_new_jobs": 51,
-        "cloudflare_hits": 1,
-        "search_timeouts": 0,
-        "classifier_latest": {
-          "tor_review": 8,
-          "active_bidding": 4,
-          "pending_award": 24,
-          "awarded_jobs": 297
-        },
-        "phases": [
-          "full"
-        ]
-      },
-      "after_metrics": {
-        "date": "2026-05-17",
-        "total_pipeline_sec": 6731.3,
-        "pipeline_runs": 2,
-        "total_raw_scraped": 22934,
-        "total_filtered": 1678,
-        "total_new_jobs": 0,
-        "cloudflare_hits": 36,
-        "search_timeouts": 34,
-        "classifier_latest": {
-          "pre_tor": 0,
-          "tor_review": 5,
-          "active_bidding": 6,
-          "pending_award": 18,
-          "awarded_jobs": 303,
-          "cancelled_jobs": 43
-        },
-        "phases": [
-          "collect",
-          "notify"
-        ]
-      }
-    },
-    {
-      "hash": "0a5f6390",
-      "date": "2026-05-16 18:57:59 +0700",
-      "subject": "Research: complete eGP stepId catalog + new classifier plan",
-      "before_metrics": {
-        "date": "2026-05-15",
-        "total_pipeline_sec": 12031.6,
-        "pipeline_runs": 1,
-        "total_raw_scraped": 0,
-        "total_filtered": 0,
-        "total_new_jobs": 0,
-        "cloudflare_hits": 27,
-        "search_timeouts": 6,
-        "classifier_latest": null,
-        "phases": [
-          "full"
-        ]
-      },
-      "current_metrics": {
-        "date": "2026-05-16",
-        "total_pipeline_sec": 6156.3,
-        "pipeline_runs": 1,
-        "total_raw_scraped": 30652,
-        "total_filtered": 2581,
-        "total_new_jobs": 51,
-        "cloudflare_hits": 1,
-        "search_timeouts": 0,
-        "classifier_latest": {
-          "tor_review": 8,
-          "active_bidding": 4,
-          "pending_award": 24,
-          "awarded_jobs": 297
-        },
-        "phases": [
-          "full"
-        ]
-      },
-      "after_metrics": {
-        "date": "2026-05-17",
-        "total_pipeline_sec": 6731.3,
-        "pipeline_runs": 2,
-        "total_raw_scraped": 22934,
-        "total_filtered": 1678,
-        "total_new_jobs": 0,
-        "cloudflare_hits": 36,
-        "search_timeouts": 34,
-        "classifier_latest": {
-          "pre_tor": 0,
-          "tor_review": 5,
-          "active_bidding": 6,
-          "pending_award": 18,
-          "awarded_jobs": 303,
-          "cancelled_jobs": 43
+          "tor_review": 3,
+          "active_bidding": 5,
+          "pending_award": 16,
+          "awarded_jobs": 274,
+          "cancelled_jobs": 41
         },
         "phases": [
           "collect",
@@ -2130,5 +2564,3496 @@
         ]
       }
     }
-  ]
+  ],
+  "rss_catalog": {
+    "total_depts": 475,
+    "active_depts": 20,
+    "empty_depts": 455,
+    "total_items": 92,
+    "queue_size": 36,
+    "coverage_pct": 4.75,
+    "active_pct": 4.21,
+    "top_depts": [
+      {
+        "dept_id": "0703",
+        "dept_name": "โครงการส่งน้ำฯ คลองสียัด (ฉะเชิงเทรา) กรมชลประทาน",
+        "item_count": 20,
+        "sample_title": "ประกวดราคาเช่าเครื่องจักรกลพร้อมพนักงานขับ และอื่นๆ จำนวน 4 รายการ ของงานอาคารบั"
+      },
+      {
+        "dept_id": "0204",
+        "dept_name": "กรมการทหารช่าง ราชบุรี",
+        "item_count": 19,
+        "sample_title": "ประกวดราคาซื้อแบตเตอรี่สำหรับสิ่งอุปกรณ์สายช่าง ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์"
+      },
+      {
+        "dept_id": "0208",
+        "dept_name": "สำนักงานพัฒนาภาค 4 หน่วยบัญชาการทหารพัฒนา พัทลุง",
+        "item_count": 14,
+        "sample_title": "ประกวดราคาซื้อวัสดุก่อสร้าง เพื่อใช้ในงานปรับปรุงทางลูกรังเป็นทางผิวจราจรคอนกรีต"
+      },
+      {
+        "dept_id": "0708",
+        "dept_name": "สำนักงานพัฒนาที่ดินเขต 4 อุบลราชธานี",
+        "item_count": 13,
+        "sample_title": "ประกวดราคาจ้างก่อสร้างจ้างก่อสร้างระบบเก็บกักและระบายน้ำในพื้นที่ทุ่งหมาหิว บ้าน"
+      },
+      {
+        "dept_id": "0137",
+        "dept_name": "สำนักงานส่งเสริมเศรษฐกิจสร้างสรรค์ (องค์การมหาชน)",
+        "item_count": 4,
+        "sample_title": "ประกวดราคาจ้างจัดกิจกรรมสร้างสรรค์เพื่อสร้างแบรนด์เมืองสกลนคร (Sakon Nakhon City"
+      },
+      {
+        "dept_id": "0125",
+        "dept_name": "สำนักงานบริหารและพัฒนาองค์ความรู้ (องค์การมหาชน)",
+        "item_count": 3,
+        "sample_title": "ประกวดราคาจ้างจัดกิจกรรมเวทีแสดงความสามารถของผู้ที่มีศักยภาพด้านดนตรี (Talent Sh"
+      },
+      {
+        "dept_id": "0307",
+        "dept_name": "กรมสรรพากร",
+        "item_count": 3,
+        "sample_title": "ประกวดราคาซื้อโครงการบูรณาการระบบสำรวจและติดตามธุรกิจนอกระบบ ด้วยวิธีประกวดราคาอ"
+      },
+      {
+        "dept_id": "1504",
+        "dept_name": "กรมการพัฒนาชุมชน กรุงเทพฯ",
+        "item_count": 3,
+        "sample_title": "ประกวดราคาจ้างดำเนินโครงการเพิ่มประสิทธิภาพแพลตฟอร์มบริการดิจิทัล Click ชุมชน เพ"
+      },
+      {
+        "dept_id": "0102",
+        "dept_name": "ส่วนบริหารกิจการโทรทัศน์ ภาคใต้ จังหวัดสุราษฎร์ธานี",
+        "item_count": 2,
+        "sample_title": "ประกวดราคาจ้างโครงการซ่อมแซมบำรุงรักษาระบบทำความเย็นแบบรวมศูนย์ (Chiller System)"
+      },
+      {
+        "dept_id": "0101",
+        "dept_name": "สำนักงานปลัดสำนักนายกรัฐมนตรี กรุงเทพฯ",
+        "item_count": 1,
+        "sample_title": "ประกวดราคาจ้างดำเนินโครงการทาสีอาคาร สำนักงานปลัดสำนักนายกรัฐมนตรี ด้วยวิธีประกว"
+      }
+    ],
+    "enriched_count": 20,
+    "all_depts": [
+      {
+        "dept_id": "0001",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0002",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0003",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0004",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0005",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0006",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0007",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0008",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0009",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0010",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0011",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0012",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0013",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0014",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0015",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0016",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0017",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0018",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0019",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0020",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0021",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0022",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0023",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0024",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0025",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0026",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0027",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0028",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0029",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0030",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0031",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0032",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0033",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0034",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0035",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0036",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0037",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0038",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0039",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0040",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0041",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0042",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0043",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0044",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0045",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0046",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0047",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0048",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0049",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0050",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0051",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0052",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0053",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0054",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0055",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0056",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0057",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0058",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0059",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0060",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0061",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0062",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0063",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0064",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0065",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0066",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0067",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0068",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0069",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0070",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0071",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0072",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0073",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0074",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0075",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0076",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0077",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0078",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0079",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0080",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0081",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0082",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0083",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0084",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0085",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0086",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0087",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0088",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0089",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0090",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0091",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0092",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0093",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0094",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0095",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0096",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0097",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0098",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0099",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0100",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0101",
+        "dept_name": "สำนักงานปลัดสำนักนายกรัฐมนตรี กรุงเทพฯ",
+        "item_count": 1,
+        "sample_title": "ประกวดราคาจ้างดำเนินโครงการทาสีอาคาร สำนักงานปลัดสำนักนายกรัฐมนตรี ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+        "pub_date": "2026-05-11"
+      },
+      {
+        "dept_id": "0102",
+        "dept_name": "ส่วนบริหารกิจการโทรทัศน์ ภาคใต้ จังหวัดสุราษฎร์ธานี",
+        "item_count": 2,
+        "sample_title": "ประกวดราคาจ้างโครงการซ่อมแซมบำรุงรักษาระบบทำความเย็นแบบรวมศูนย์ (Chiller System) ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bid",
+        "pub_date": "2026-05-11"
+      },
+      {
+        "dept_id": "0103",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0104",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0105",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0106",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0107",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0108",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0109",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0110",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0112",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0113",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0114",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0115",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0116",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0117",
+        "dept_name": "สำนักงานกองทุนสนับสนุนการสร้างเสริมสุขภาพ",
+        "item_count": 1,
+        "sample_title": "ประกวดราคาจ้างตรวจสอบบัญชีกองทุนสนับสนุนการสร้างเสริมสุขภาพประจำปีงบประมาณ พ.ศ. 2570 ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e",
+        "pub_date": "2026-05-12"
+      },
+      {
+        "dept_id": "0118",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0119",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0120",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0121",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0122",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0123",
+        "dept_name": "องค์การบริหารการพัฒนาพื้นที่พิเศษเพื่อการท่องเที่ยวอย่างยั่งยืน กรุงเทพฯ",
+        "item_count": 1,
+        "sample_title": "ประกวดราคาจ้างกิจกรรมการพัฒนาผลิตภัณฑ์และบริการด้านเวลเนส บนฐานทรัพยากรธรรมชาติ ภูมิปัญญา และธรณีวิทยา เพื่อเชื่อมโยงเส้",
+        "pub_date": "2026-05-14"
+      },
+      {
+        "dept_id": "0124",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0125",
+        "dept_name": "สำนักงานบริหารและพัฒนาองค์ความรู้ (องค์การมหาชน)",
+        "item_count": 3,
+        "sample_title": "ประกวดราคาจ้างจัดกิจกรรมเวทีแสดงความสามารถของผู้ที่มีศักยภาพด้านดนตรี (Talent Showcase) ระดับประเทศ ภายใต้โครงการ Talent",
+        "pub_date": "2026-05-11"
+      },
+      {
+        "dept_id": "0126",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0127",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0128",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0129",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0131",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0132",
+        "dept_name": "สำนักงานคณะกรรมการส่งเสริมการลงทุน กรุงเทพฯ",
+        "item_count": 1,
+        "sample_title": "ประกวดราคาจ้างจัดทำหลักสูตรพัฒนาศักยภาพผู้ประกอบการไทยเพื่อการขยายการลงทุนสู่ตลาดต่างประเทศ ด้วยวิธีประกวดราคาอิเล็กทรอน",
+        "pub_date": "2026-05-12"
+      },
+      {
+        "dept_id": "0133",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0134",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0135",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0136",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0137",
+        "dept_name": "สำนักงานส่งเสริมเศรษฐกิจสร้างสรรค์ (องค์การมหาชน)",
+        "item_count": 4,
+        "sample_title": "ประกวดราคาจ้างจัดกิจกรรมสร้างสรรค์เพื่อสร้างแบรนด์เมืองสกลนคร (Sakon Nakhon City Brand Experience Program) ด้วยวิธีประกว",
+        "pub_date": "2026-05-15"
+      },
+      {
+        "dept_id": "0138",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0139",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0140",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0141",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0142",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0143",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0144",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0145",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0146",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0147",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0148",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0149",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0150",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0151",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0152",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0153",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0154",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0155",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0156",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0157",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0158",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0159",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0160",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0161",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0162",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0163",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0164",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0165",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0166",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0167",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0168",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0169",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0170",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0171",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0172",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0173",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0174",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0175",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0176",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0177",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0178",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0179",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0180",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0181",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0182",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0183",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0184",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0185",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0186",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0187",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0188",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0189",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0190",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0191",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0192",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0193",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0194",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0195",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0196",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0197",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0198",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0199",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0200",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0201",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0202",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0203",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0204",
+        "dept_name": "กรมการทหารช่าง ราชบุรี",
+        "item_count": 19,
+        "sample_title": "ประกวดราคาซื้อแบตเตอรี่สำหรับสิ่งอุปกรณ์สายช่าง ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+        "pub_date": "2026-05-15"
+      },
+      {
+        "dept_id": "0205",
+        "dept_name": "กรมการขนส่งทหารเรือ กรุงเทพฯ",
+        "item_count": 1,
+        "sample_title": "ประกวดราคาซื้อแบตเตอรี่และน้ำสำหรับเติมแบตเตอรี่ จำนวน 6 รายการ ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+        "pub_date": "2026-05-11"
+      },
+      {
+        "dept_id": "0206",
+        "dept_name": "กองบิน 23",
+        "item_count": 1,
+        "sample_title": "ประกวดราคาจ้างก่อสร้างสร้างหลังคาคลุมสนามกีฬา ที่ กองบิน 23 ตำบลหมากแข้ง อำเภอเมืองอุดรธานี จังหวัดอุดรธานี จำนวน 1 งาน ",
+        "pub_date": "2026-05-15"
+      },
+      {
+        "dept_id": "0207",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0208",
+        "dept_name": "สำนักงานพัฒนาภาค 4 หน่วยบัญชาการทหารพัฒนา พัทลุง",
+        "item_count": 14,
+        "sample_title": "ประกวดราคาซื้อวัสดุก่อสร้าง เพื่อใช้ในงานปรับปรุงทางลูกรังเป็นทางผิวจราจรคอนกรีตเสริมเหล็ก ขนาดกว้าง ๕ เมตร หนา ๐.๑๕ เมต",
+        "pub_date": "2026-05-14"
+      },
+      {
+        "dept_id": "0209",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0210",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0211",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0212",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0213",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0214",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0215",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0216",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0217",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0218",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0219",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0220",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0221",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0222",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0223",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0224",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0225",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0226",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0227",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0228",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0229",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0230",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0231",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0232",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0234",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0235",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0236",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0237",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0238",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0239",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0240",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0241",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0242",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0243",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0244",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0245",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0246",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0247",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0248",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0249",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0250",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0251",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0252",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0253",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0254",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0255",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0257",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0258",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0259",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0260",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0261",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0262",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0263",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0264",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0307",
+        "dept_name": "กรมสรรพากร",
+        "item_count": 3,
+        "sample_title": "ประกวดราคาซื้อโครงการบูรณาการระบบสำรวจและติดตามธุรกิจนอกระบบ ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+        "pub_date": "2026-05-15"
+      },
+      {
+        "dept_id": "0316",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0317",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0348",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0394",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0395",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0471",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0503",
+        "dept_name": "กรมพลศึกษา",
+        "item_count": 1,
+        "sample_title": "ประกวดราคาซื้อครุภัณฑ์สำนักงาน (เครื่องปรับอากาศ) จำนวน 2 รายการ ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+        "pub_date": "2026-05-15"
+      },
+      {
+        "dept_id": "0506",
+        "dept_name": "โรงเรียนกีฬาจังหวัดนครสวรรค์",
+        "item_count": 1,
+        "sample_title": "ประกวดราคาจ้างจัดพิธีเปิดและพิธีปิด การแข่งขันกีฬาโรงเรียนกีฬาแห่งประเทศไทย ครั้งที่ 27 นครสี่แควเกมส์ ด้วยวิธีประกวดราค",
+        "pub_date": "2026-05-11"
+      },
+      {
+        "dept_id": "0547",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0665",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0668",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0669",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0681",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0703",
+        "dept_name": "โครงการส่งน้ำฯ คลองสียัด (ฉะเชิงเทรา) กรมชลประทาน",
+        "item_count": 20,
+        "sample_title": "ประกวดราคาเช่าเครื่องจักรกลพร้อมพนักงานขับ และอื่นๆ จำนวน 4 รายการ ของงานอาคารบังคับน้ำบ้านดอนท่านา โครงการส่งน้ำและบำรุ",
+        "pub_date": "2026-05-15"
+      },
+      {
+        "dept_id": "0708",
+        "dept_name": "สำนักงานพัฒนาที่ดินเขต 4 อุบลราชธานี",
+        "item_count": 13,
+        "sample_title": "ประกวดราคาจ้างก่อสร้างจ้างก่อสร้างระบบเก็บกักและระบายน้ำในพื้นที่ทุ่งหมาหิว บ้านโนนสำราญ หมู่ 12 บ้านโนนจิก หมู่ 2 ตำบลน",
+        "pub_date": "2026-05-15"
+      },
+      {
+        "dept_id": "0709",
+        "dept_name": "กองวิจัยพัฒนาการอารักขาพืช",
+        "item_count": 1,
+        "sample_title": "ประกวดราคาจ้างเหมาพัฒนาแบบจำลองปัญญาประดิษฐ์เพื่อการวินิจฉัยและจำแนกศัตรูที่สำคัญของทุเรียนและมันสำปะหลัง จำนวน 1 งาน ด้",
+        "pub_date": "2026-05-14"
+      },
+      {
+        "dept_id": "0723",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0733",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0820",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0872",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0892",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0904",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0937",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "0990",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "1006",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "1078",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "1103",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "1143",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "1149",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "1185",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "1203",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "1324",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "1328",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "1366",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "1423",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "1447",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "1458",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "1499",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "1504",
+        "dept_name": "กรมการพัฒนาชุมชน กรุงเทพฯ",
+        "item_count": 3,
+        "sample_title": "ประกวดราคาจ้างดำเนินโครงการเพิ่มประสิทธิภาพแพลตฟอร์มบริการดิจิทัล Click ชุมชน เพื่อบริการประชาชนแบบ One Stop Service ด้ว",
+        "pub_date": "2026-05-15"
+      },
+      {
+        "dept_id": "1561",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "1572",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "1602",
+        "dept_name": "สำนักงานปลัดกระทรวงยุติธรรม กรุงเทพฯ",
+        "item_count": 1,
+        "sample_title": "ประกวดราคาจ้างเหมาบำรุงรักษาระบบวิเคราะห์ข้อมูลขนาดใหญ่ (Big Data) กระทรวงยุติธรรม ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-b",
+        "pub_date": "2026-05-11"
+      },
+      {
+        "dept_id": "1703",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "1710",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "1718",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "1863",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "1872",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "1887",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "1924",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "1964",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "2030",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "2083",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "2129",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "2151",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "2202",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "2257",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "2287",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "2309",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "2386",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "2387",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "2416",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "2466",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "2511",
+        "dept_name": "สำนักงานเลขาธิการสภาผู้แทนราษฎร กรุงเทพฯ",
+        "item_count": 1,
+        "sample_title": "ประกวดราคาซื้อโครงการปรับปรุงระบบไฟส่องสว่างเพิ่มเติมภายในและภายนอกบริเวณห้องประชุมสัมมนา ชั้น B1 และ B2 เพื่อสนับสนุนภา",
+        "pub_date": "2026-05-11"
+      },
+      {
+        "dept_id": "2552",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "2568",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "2600",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "2611",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "2639",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "2675",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "2717",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "2797",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "2830",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "2887",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "2950",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "2991",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "3009",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "3053",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "3069",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "3084",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "3138",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "3180",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "3227",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "3246",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "3260",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "3284",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "3353",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "3392",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "3415",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "3482",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "3647",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "3688",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "3744",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "3761",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "3766",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "3804",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "3811",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "3892",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "3907",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "3959",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "3976",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "4004",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "4060",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "4061",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "4095",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "4107",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "4110",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "4146",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "4148",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "4270",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "4366",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "4459",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "4462",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "4508",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "4516",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "4579",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "4687",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "4746",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "4848",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "5042",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "5112",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "5121",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "5138",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "5298",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "5384",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "5490",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "5593",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "5633",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "5638",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "5660",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "5720",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "5749",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "5761",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "5832",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "5901",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "5923",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "5925",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "5965",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "6071",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "6108",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "6248",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "6305",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "6331",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "6333",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "6337",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "6357",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "6408",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "6497",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "6537",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "6540",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "6622",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "6650",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "6767",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "6839",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "6890",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "6949",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "6973",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "6977",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "7030",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "7032",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "7195",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "7263",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "7336",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "7602",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "7624",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "7723",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "7736",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "7760",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "7761",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "7887",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "7889",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "7916",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "7920",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "7929",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "8003",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "8082",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "8190",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "8205",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "8241",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "8271",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "8300",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "8311",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "8429",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "8533",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "8750",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "8813",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "8839",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "8847",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9096",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9118",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9128",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9141",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9160",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9183",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9248",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9250",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9265",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9310",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9363",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9398",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9413",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9448",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9461",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9519",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9585",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9660",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9689",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9716",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9749",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9800",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9838",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9932",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9935",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9936",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      },
+      {
+        "dept_id": "9967",
+        "dept_name": "",
+        "item_count": 0,
+        "sample_title": "",
+        "pub_date": ""
+      }
+    ],
+    "history": [
+      {
+        "at": "2026-05-18T00:56:53",
+        "catalog_size": 15,
+        "total_items": 85,
+        "missed_by_process5": 85
+      },
+      {
+        "at": "2026-05-18T00:57:26",
+        "catalog_size": 35,
+        "total_items": 85,
+        "missed_by_process5": 85
+      },
+      {
+        "at": "2026-05-18T00:58:02",
+        "catalog_size": 55,
+        "total_items": 4,
+        "missed_by_process5": 4
+      },
+      {
+        "at": "2026-05-18T00:58:37",
+        "catalog_size": 75,
+        "total_items": 86,
+        "missed_by_process5": 86
+      },
+      {
+        "at": "2026-05-18T01:21:20",
+        "catalog_size": 75,
+        "total_items": 86,
+        "missed_by_process5": 86
+      },
+      {
+        "at": "2026-05-18T01:21:37",
+        "catalog_size": 75,
+        "total_items": 86,
+        "missed_by_process5": 86
+      },
+      {
+        "at": "2026-05-18T01:23:18",
+        "catalog_size": 95,
+        "total_items": 86,
+        "missed_by_process5": 86
+      },
+      {
+        "at": "2026-05-18T01:25:17",
+        "catalog_size": 115,
+        "total_items": 86,
+        "missed_by_process5": 86
+      },
+      {
+        "at": "2026-05-18T01:27:17",
+        "catalog_size": 135,
+        "total_items": 86,
+        "missed_by_process5": 86
+      },
+      {
+        "at": "2026-05-18T01:41:04",
+        "catalog_size": 155,
+        "total_items": 86,
+        "missed_by_process5": 86
+      },
+      {
+        "at": "2026-05-18T01:41:57",
+        "catalog_size": 155,
+        "total_items": 90,
+        "missed_by_process5": 90
+      },
+      {
+        "at": "2026-05-18T02:11:58",
+        "catalog_size": 175,
+        "total_items": 90,
+        "missed_by_process5": 90
+      },
+      {
+        "at": "2026-05-18T02:42:01",
+        "catalog_size": 195,
+        "total_items": 91,
+        "missed_by_process5": 91
+      },
+      {
+        "at": "2026-05-18T03:12:06",
+        "catalog_size": 215,
+        "total_items": 91,
+        "missed_by_process5": 91
+      },
+      {
+        "at": "2026-05-18T03:42:09",
+        "catalog_size": 235,
+        "total_items": 91,
+        "missed_by_process5": 91
+      }
+    ]
+  }
 }

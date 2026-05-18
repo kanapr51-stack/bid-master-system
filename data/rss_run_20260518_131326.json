@@ -1,0 +1,17 @@
+{
+  "run_at": "2026-05-18T13:13:26",
+  "poll_elapsed_sec": 1841.4,
+  "depts_polled": 475,
+  "poll_errors": 475,
+  "total_items": 0,
+  "unique_project_ids": 0,
+  "new_to_rss_count": 0,
+  "missed_by_process5_count": 0,
+  "scraper_seen_size": 8741,
+  "rss_seen_size": 91,
+  "probe_new_depts": 0,
+  "catalog_size": 475,
+  "by_dept_counts": {},
+  "new_project_ids_sample": [],
+  "missed_by_process5_sample": []
+}

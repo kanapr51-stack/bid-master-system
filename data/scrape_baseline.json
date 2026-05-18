@@ -1,0 +1,20 @@
+{
+  "updated": "2026-05-18T04:22:18",
+  "avg_duration_min": 82.56495,
+  "history": [
+    {
+      "date": "2026-05-17",
+      "duration_min": 23.05785,
+      "total_items": 0,
+      "total_new_items": 0,
+      "incremental_skipped": 0
+    },
+    {
+      "date": "2026-05-18",
+      "duration_min": 142.07205,
+      "total_items": 0,
+      "total_new_items": 0,
+      "incremental_skipped": 0
+    }
+  ]
+}

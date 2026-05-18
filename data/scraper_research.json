@@ -1,0 +1,203 @@
+{
+  "r1_hidden_endpoints": {
+    "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement/getAllProjects": {
+      "status": 404,
+      "json": true,
+      "len": 170
+    },
+    "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement/exportData": {
+      "status": 404,
+      "json": true,
+      "len": 166
+    },
+    "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement/exportProjects": {
+      "status": 404,
+      "json": true,
+      "len": 170
+    },
+    "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement/bulkSearch": {
+      "status": 404,
+      "json": true,
+      "len": 166
+    },
+    "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement/sumProject": {
+      "status": 404,
+      "json": true,
+      "len": 166
+    },
+    "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement/sumProject?methodId=16": {
+      "status": 404,
+      "json": true,
+      "len": 166
+    },
+    "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement/listProject": {
+      "status": 404,
+      "json": true,
+      "len": 167
+    },
+    "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement/getProjects": {
+      "status": 404,
+      "json": true,
+      "len": 167
+    },
+    "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement/searchProjects": {
+      "status": 404,
+      "json": true,
+      "len": 170
+    },
+    "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/api/all": {
+      "status": 404,
+      "json": true,
+      "len": 150
+    },
+    "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/api/list": {
+      "status": 404,
+      "json": true,
+      "len": 151
+    },
+    "https://process5.gprocurement.go.th/egp-atpj27-service/v3/api-docs": {
+      "status": 404,
+      "json": false,
+      "len": 0
+    },
+    "https://process5.gprocurement.go.th/egp-atpj27-service/swagger-ui.html": {
+      "status": "ERR",
+      "json": false,
+      "len": 0
+    },
+    "https://process5.gprocurement.go.th/egp-atpj27-service/api-docs": {
+      "status": 404,
+      "json": false,
+      "len": 0
+    },
+    "https://process5.gprocurement.go.th/egp-atpj27-service/actuator": {
+      "status": "ERR",
+      "json": false,
+      "len": 0
+    },
+    "https://process5.gprocurement.go.th/egp-atpj27-service/health": {
+      "status": 404,
+      "json": false,
+      "len": 0
+    },
+    "https://process5.gprocurement.go.th/robots.txt": {
+      "status": 404,
+      "json": false,
+      "len": 0
+    },
+    "https://process5.gprocurement.go.th/sitemap.xml": {
+      "status": 404,
+      "json": false,
+      "len": 0
+    },
+    "https://process5.gprocurement.go.th/egp-agpc01-web/sitemap.xml": {
+      "status": 200,
+      "json": false,
+      "len": 2456
+    }
+  },
+  "r2_pagination": {
+    "10": {
+      "items_returned": 0,
+      "total_records": null,
+      "text_len": 28
+    },
+    "20": {
+      "items_returned": 0,
+      "total_records": null,
+      "text_len": 28
+    },
+    "50": {
+      "items_returned": 0,
+      "total_records": null,
+      "text_len": 28
+    },
+    "100": {
+      "items_returned": 0,
+      "total_records": null,
+      "text_len": 28
+    },
+    "200": {
+      "items_returned": 0,
+      "total_records": null,
+      "text_len": 28
+    },
+    "500": {
+      "items_returned": 0,
+      "total_records": null,
+      "text_len": 28
+    },
+    "1000": {
+      "items_returned": 0,
+      "total_records": null,
+      "text_len": 28
+    }
+  },
+  "r3_params": {
+    "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement?keyword=นครพนม&methodId=16&dateFrom=2026-05-01": {
+      "total": null,
+      "items": 0
+    },
+    "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement?keyword=นครพนม&methodId=16&since=2026-05-15": {
+      "total": null,
+      "items": 0
+    },
+    "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement?keyword=นครพนม&methodId=16&lastDays=7": {
+      "total": null,
+      "items": 0
+    },
+    "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement?keyword=นครพนม&methodId=16&modifiedAfter=2026-05-15": {
+      "total": null,
+      "items": 0
+    },
+    "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement?methodId=16&page=1&size=100": {
+      "total": null,
+      "items": 0
+    },
+    "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement?methodId=16&province=NAKHON_PHANOM": {
+      "total": null,
+      "items": 0
+    },
+    "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement?methodId=16&provinceId=48": {
+      "total": null,
+      "items": 0
+    }
+  },
+  "r4_other_services": {
+    "https://www.gprocurement.go.th": {
+      "status": null,
+      "json": false,
+      "len": null
+    },
+    "https://www.gprocurement.go.th/sitemap.xml": {
+      "status": null,
+      "json": false,
+      "len": null
+    },
+    "https://www.gprocurement.go.th/robots.txt": {
+      "status": null,
+      "json": false,
+      "len": null
+    },
+    "https://process3.gprocurement.go.th": {
+      "status": 200,
+      "json": false,
+      "len": 720
+    },
+    "https://data.go.th/dataset/gprocurement": {
+      "status": null,
+      "json": false,
+      "len": null
+    },
+    "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement/getRecentlyUpdated": {
+      "status": 404,
+      "json": true,
+      "len": 174
+    },
+    "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement/getNewToday": {
+      "status": 404,
+      "json": true,
+      "len": 167
+    }
+  }
+}

@@ -1,0 +1,532 @@
+{
+  "tor_review": {
+    "results": [
+      {
+        "jid": "69049214773",
+        "result": {
+          "stepId": "U06",
+          "flowSeqno": 3,
+          "projectStatus": "A",
+          "announceType": "B0",
+          "winner": null,
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "U-stepId active = correct tor_review"
+      },
+      {
+        "jid": "69049265563",
+        "result": {
+          "stepId": "U03",
+          "flowSeqno": 3,
+          "projectStatus": "A",
+          "announceType": "B0",
+          "winner": null,
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "U-stepId active = correct tor_review"
+      },
+      {
+        "jid": "69059074818",
+        "result": {
+          "stepId": "U03",
+          "flowSeqno": 3,
+          "projectStatus": "A",
+          "announceType": "B0",
+          "winner": null,
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "U-stepId active = correct tor_review"
+      },
+      {
+        "jid": "69059075123",
+        "result": {
+          "stepId": "U03",
+          "flowSeqno": 3,
+          "projectStatus": "A",
+          "announceType": "B0",
+          "winner": null,
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "U-stepId active = correct tor_review"
+      },
+      {
+        "jid": "69049415089",
+        "result": {
+          "stepId": "U03",
+          "flowSeqno": 3,
+          "projectStatus": "A",
+          "announceType": "B0",
+          "winner": null,
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "U-stepId active = correct tor_review"
+      }
+    ],
+    "wrong": 0
+  },
+  "cancelled_jobs": {
+    "results": [
+      {
+        "jid": "68109439204",
+        "result": {
+          "stepId": "U03",
+          "flowSeqno": 3,
+          "projectStatus": "R",
+          "announceType": "B0",
+          "winner": null,
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "projectStatus=R = correct cancelled"
+      },
+      {
+        "jid": "69019440598",
+        "result": {
+          "stepId": "M03",
+          "flowSeqno": 3,
+          "projectStatus": "R",
+          "announceType": "D1",
+          "winner": null,
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "projectStatus=R = correct cancelled"
+      },
+      {
+        "jid": "69039054231",
+        "result": {
+          "stepId": "S01",
+          "flowSeqno": 4,
+          "projectStatus": "R",
+          "announceType": "D1",
+          "winner": null,
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "projectStatus=R = correct cancelled"
+      },
+      {
+        "jid": "68129368489",
+        "result": {
+          "stepId": "S01",
+          "flowSeqno": 4,
+          "projectStatus": "R",
+          "announceType": "D1",
+          "winner": null,
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "projectStatus=R = correct cancelled"
+      },
+      {
+        "jid": "68119107224",
+        "result": {
+          "stepId": "S01",
+          "flowSeqno": 4,
+          "projectStatus": "R",
+          "announceType": "D1",
+          "winner": null,
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "projectStatus=R = correct cancelled"
+      },
+      {
+        "jid": "69019190864",
+        "result": {
+          "stepId": "S01",
+          "flowSeqno": 4,
+          "projectStatus": "R",
+          "announceType": "D1",
+          "winner": null,
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "projectStatus=R = correct cancelled"
+      },
+      {
+        "jid": "69019453226",
+        "result": {
+          "stepId": "M03",
+          "flowSeqno": 3,
+          "projectStatus": "R",
+          "announceType": "D1",
+          "winner": null,
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "projectStatus=R = correct cancelled"
+      },
+      {
+        "jid": "69029205403",
+        "result": {
+          "stepId": "Z01",
+          "flowSeqno": 4,
+          "projectStatus": "R",
+          "announceType": "D1",
+          "winner": null,
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "projectStatus=R = correct cancelled"
+      },
+      {
+        "jid": "69019260161",
+        "result": {
+          "stepId": "S01",
+          "flowSeqno": 4,
+          "projectStatus": "R",
+          "announceType": "D1",
+          "winner": null,
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "projectStatus=R = correct cancelled"
+      },
+      {
+        "jid": "68129253873",
+        "result": {
+          "stepId": "Z03",
+          "flowSeqno": 4,
+          "projectStatus": "R",
+          "announceType": "D1",
+          "winner": null,
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "projectStatus=R = correct cancelled"
+      }
+    ],
+    "wrong": 0
+  },
+  "awarded_jobs": {
+    "results": [
+      {
+        "jid": "68109450159",
+        "result": {
+          "stepId": "C01",
+          "flowSeqno": 9,
+          "projectStatus": "A",
+          "announceType": "W0",
+          "winner": {
+            "name": "ห้างหุ้นส่วนจำกัด ยศประทานรุ่งเรืองทรัพย์",
+            "price": 1480000
+          },
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "has winner ห้างหุ้นส่วนจำกัด ยศประทานรุ่งเรืองทรัพย์"
+      },
+      {
+        "jid": "68109151321",
+        "result": {
+          "stepId": "C01",
+          "flowSeqno": 9,
+          "projectStatus": "A",
+          "announceType": "W0",
+          "winner": {
+            "name": "บริษัท เซ็นจูรี่ เอ็นจิเนียริ่ง 999 จำกัด",
+            "price": 919000
+          },
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "has winner บริษัท เซ็นจูรี่ เอ็นจิเนียริ่ง 999 จำกัด"
+      },
+      {
+        "jid": "69049015928",
+        "result": {
+          "stepId": "W03",
+          "flowSeqno": 5,
+          "projectStatus": "A",
+          "announceType": "W0",
+          "winner": {
+            "name": "ห้างหุ้นส่วนจำกัด ชมศิริ วิศวกรรม",
+            "price": 13430000
+          },
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "has winner ห้างหุ้นส่วนจำกัด ชมศิริ วิศวกรรม"
+      },
+      {
+        "jid": "69049353012",
+        "result": {
+          "stepId": "W03",
+          "flowSeqno": 5,
+          "projectStatus": "A",
+          "announceType": "W0",
+          "winner": {
+            "name": "ห้างหุ้นส่วนจำกัด โรจน์สิทธา",
+            "price": 5704770
+          },
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "has winner ห้างหุ้นส่วนจำกัด โรจน์สิทธา"
+      },
+      {
+        "jid": "69029007593",
+        "result": {
+          "stepId": "I03",
+          "flowSeqno": 8,
+          "projectStatus": "A",
+          "announceType": "W0",
+          "winner": {
+            "name": "กิจการค้าร่วมฐษา",
+            "price": 13681120
+          },
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "has winner กิจการค้าร่วมฐษา"
+      },
+      {
+        "jid": "68119250128",
+        "result": {
+          "stepId": "I03",
+          "flowSeqno": 8,
+          "projectStatus": "A",
+          "announceType": "W0",
+          "winner": {
+            "name": "ห้างหุ้นส่วนจำกัด เดชา คอนสตรัคชั่น",
+            "price": 21120000
+          },
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "has winner ห้างหุ้นส่วนจำกัด เดชา คอนสตรัคชั่น"
+      },
+      {
+        "jid": "68109388175",
+        "result": {
+          "stepId": "I03",
+          "flowSeqno": 8,
+          "projectStatus": "A",
+          "announceType": "W0",
+          "winner": {
+            "name": "บริษัท อดิศักดิ์รวี จำกัด",
+            "price": 7148000
+          },
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "has winner บริษัท อดิศักดิ์รวี จำกัด"
+      },
+      {
+        "jid": "68109347028",
+        "result": {
+          "stepId": "I03",
+          "flowSeqno": 8,
+          "projectStatus": "A",
+          "announceType": "W0",
+          "winner": {
+            "name": "ห้างหุ้นส่วนจำกัด สกลนครสิทธิชัยวิศวกรรม",
+            "price": 2737490.16
+          },
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "has winner ห้างหุ้นส่วนจำกัด สกลนครสิทธิชัยวิศวกรรม"
+      },
+      {
+        "jid": "69039501838",
+        "result": {
+          "stepId": "X01",
+          "flowSeqno": 6,
+          "projectStatus": "A",
+          "announceType": "W0",
+          "winner": {
+            "name": "บริษัท เล้าจิ้นเงี้ยบ บ้านโฮมเดคคอร์ จำกัด",
+            "price": 5425471.44
+          },
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "has winner บริษัท เล้าจิ้นเงี้ยบ บ้านโฮมเดคคอร์ จำกัด"
+      },
+      {
+        "jid": "68119044303",
+        "result": {
+          "stepId": "I03",
+          "flowSeqno": 8,
+          "projectStatus": "A",
+          "announceType": "W0",
+          "winner": {
+            "name": "ห้างหุ้นส่วนจำกัด ทรัพย์ทวีคูณก่อสร้าง",
+            "price": 1238887.76
+          },
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "has winner ห้างหุ้นส่วนจำกัด ทรัพย์ทวีคูณก่อสร้าง"
+      },
+      {
+        "jid": "68119068192",
+        "result": {
+          "stepId": "I03",
+          "flowSeqno": 8,
+          "projectStatus": "A",
+          "announceType": "W0",
+          "winner": {
+            "name": "บริษัท เบสท์-แพค โซลูชั่น จำกัด",
+            "price": 1300000
+          },
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "has winner บริษัท เบสท์-แพค โซลูชั่น จำกัด"
+      },
+      {
+        "jid": "69019266110",
+        "result": {
+          "stepId": "I03",
+          "flowSeqno": 8,
+          "projectStatus": "A",
+          "announceType": "W0",
+          "winner": {
+            "name": "บริษัท เอ็นทีเอ็น อินเตอร์เท็ค จำกัด",
+            "price": 53393000
+          },
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "has winner บริษัท เอ็นทีเอ็น อินเตอร์เท็ค จำกัด"
+      },
+      {
+        "jid": "68109170521",
+        "result": {
+          "stepId": "C01",
+          "flowSeqno": 9,
+          "projectStatus": "A",
+          "announceType": "W0",
+          "winner": {
+            "name": "บริษัท อาร์พีซี คอนกรีต จำกัด",
+            "price": 1797000
+          },
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "has winner บริษัท อาร์พีซี คอนกรีต จำกัด"
+      },
+      {
+        "jid": "68119288248",
+        "result": {
+          "stepId": "I03",
+          "flowSeqno": 8,
+          "projectStatus": "A",
+          "announceType": "W0",
+          "winner": {
+            "name": "ห้างหุ้นส่วนจำกัด เดชา คอนสตรัคชั่น",
+            "price": 20320000
+          },
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "has winner ห้างหุ้นส่วนจำกัด เดชา คอนสตรัคชั่น"
+      },
+      {
+        "jid": "68119231031",
+        "result": {
+          "stepId": "C01",
+          "flowSeqno": 9,
+          "projectStatus": "A",
+          "announceType": "W0",
+          "winner": {
+            "name": "บริษัท แกร่ง จำกัด",
+            "price": 9885000
+          },
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "has winner บริษัท แกร่ง จำกัด"
+      },
+      {
+        "jid": "68119068263",
+        "result": {
+          "stepId": "O03",
+          "flowSeqno": 7,
+          "projectStatus": "A",
+          "announceType": "W0",
+          "winner": {
+            "name": "ห้างหุ้นส่วนจำกัด นพรัตน์ก่อสร้าง (1993)",
+            "price": 2898000
+          },
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "has winner ห้างหุ้นส่วนจำกัด นพรัตน์ก่อสร้าง (1993)"
+      },
+      {
+        "jid": "68119442853",
+        "result": {
+          "stepId": "O03",
+          "flowSeqno": 7,
+          "projectStatus": "A",
+          "announceType": "W0",
+          "winner": {
+            "name": "ห้างหุ้นส่วนจำกัด คณินัญ 777 ก่อสร้าง",
+            "price": 2120000
+          },
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "has winner ห้างหุ้นส่วนจำกัด คณินัญ 777 ก่อสร้าง"
+      },
+      {
+        "jid": "69019120825",
+        "result": {
+          "stepId": "X03",
+          "flowSeqno": 6,
+          "projectStatus": "A",
+          "announceType": "W2",
+          "winner": {
+            "name": "ห้างหุ้นส่วนจำกัด ดวงจินดา 999",
+            "price": 3088000
+          },
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "has winner ห้างหุ้นส่วนจำกัด ดวงจินดา 999"
+      },
+      {
+        "jid": "69019081550",
+        "result": {
+          "stepId": "I03",
+          "flowSeqno": 8,
+          "projectStatus": "A",
+          "announceType": "W0",
+          "winner": {
+            "name": "บริษัท นครหลวงท่าอุเทน คอนสตรัคชั่น จำกัด",
+            "price": 1492500
+          },
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "has winner บริษัท นครหลวงท่าอุเทน คอนสตรัคชั่น จำกัด"
+      },
+      {
+        "jid": "68099207311",
+        "result": {
+          "stepId": "I03",
+          "flowSeqno": 8,
+          "projectStatus": "A",
+          "announceType": "W0",
+          "winner": {
+            "name": "ห้างหุ้นส่วนจำกัด เมืองทองทรัพย์ทวี",
+            "price": 1168000
+          },
+          "valid": true
+        },
+        "correct": true,
+        "verdict": "has winner ห้างหุ้นส่วนจำกัด เมืองทองทรัพย์ทวี"
+      }
+    ],
+    "wrong": 0
+  }
+}

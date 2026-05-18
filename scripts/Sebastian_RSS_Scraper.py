@@ -113,30 +113,50 @@ def parse_items(xml_text: str) -> list[dict]:
             if m:
                 item[tag] = m.group(1).strip()
         if "description" in item:
-            pid_match = re.search(r"\b(\d{11,12})\b", item["description"])
+            # Pre-TOR (P0) projectIds prefixed "P" e.g., P69050012229
+            # Other stages use plain digits e.g., 69049437914
+            pid_match = re.search(r"(P?\d{11,12})", item["description"])
             item["projectId"] = pid_match.group(1) if pid_match else None
         items.append(item)
     return items
 
 
-def fetch_dept(dept_id: str) -> tuple[int, list[dict]]:
-    """Return (http_status, items)"""
+# ================================================================
+# Stage codes (discovered 2026-05-18 — see docs/rss_full_coverage_discovery.md)
+# ================================================================
+# Param: anounceType (typo! รัฐบาลพิมพ์ขาด 'n')
+STAGE_CODES = {
+    "P0": "pre_tor",         # แผนการจัดซื้อจัดจ้าง
+    "B0": "tor_review",      # ร่างเอกสารประกวดราคา
+    "D0": "active_bidding",  # ประกาศเชิญชวน
+    "D1": "cancelled",       # ยกเลิกประกาศเชิญชวน
+    "W0": "awarded",         # ประกาศผู้ชนะ
+}
+
+
+def fetch_dept(dept_id: str, anounce_type: str | None = None) -> tuple[int, list[dict]]:
+    """Return (http_status, items)
+    anounce_type: P0/B0/D0/W0/D1 (None = D0 default behavior)
+    Note: param name is 'anounceType' (typo by government)
+    """
+    params: dict[str, str] = {"deptId": dept_id}
+    if anounce_type:
+        params["anounceType"] = anounce_type
     try:
-        r = requests.get(
-            RSS_URL,
-            params={"deptId": dept_id},
-            headers=HEADERS,
-            timeout=15,
-        )
+        r = requests.get(RSS_URL, params=params, headers=HEADERS, timeout=15)
         if r.status_code != 200:
             return r.status_code, []
         text = decode_thai(r.content)
         items = parse_items(text)
+        # Annotate stage in items
+        stage_tag = STAGE_CODES.get(anounce_type or "D0", "active_bidding")
         for it in items:
             it["deptId"] = dept_id
+            it["anounceType"] = anounce_type or "D0"
+            it["stage"] = stage_tag
         return 200, items
     except Exception as e:
-        log(f"  ⚠️ {dept_id}: {e}")
+        log(f"  ⚠️ {dept_id} ({anounce_type or 'D0'}): {e}")
         return -1, []
 
 
@@ -274,7 +294,11 @@ def probe_unknown_depts(catalog: dict) -> int:
 # Main
 # ================================================================
 
-def run(queue_new: bool = False, skip_probe: bool = False) -> dict:
+def run(queue_new: bool = False, skip_probe: bool = False,
+        anounce_type: str | None = None) -> dict:
+    """anounce_type: P0/B0/D0/W0/D1 (None = D0 default).
+    Multi-stage support discovered 2026-05-18.
+    """
     catalog = load_catalog()
     targets = load_target_depts(catalog)
 
@@ -282,7 +306,8 @@ def run(queue_new: bool = False, skip_probe: bool = False) -> dict:
         log("⚠️ ไม่มี target depts — initialize catalog with seed data")
         return {"error": "no_targets"}
 
-    log(f"=== RSS Discovery Run ===")
+    stage_label = STAGE_CODES.get(anounce_type or "D0", "active_bidding")
+    log(f"=== RSS Discovery Run · stage={anounce_type or 'D0'} ({stage_label}) ===")
     log(f"Catalog: {len(catalog)} depts known · Target: {len(targets)}")
 
     # Pass 1: Poll target depts
@@ -291,7 +316,7 @@ def run(queue_new: bool = False, skip_probe: bool = False) -> dict:
     poll_errors = 0
 
     with ThreadPoolExecutor(max_workers=POLL_WORKERS) as ex:
-        futures = {ex.submit(fetch_dept, d): d for d in targets}
+        futures = {ex.submit(fetch_dept, d, anounce_type): d for d in targets}
         for fut in as_completed(futures):
             dept_id = futures[fut]
             try:
@@ -397,7 +422,24 @@ if __name__ == "__main__":
         "--no-probe", action="store_true",
         help="ข้าม probe unknown depts (เร็วขึ้น แต่ catalog ไม่โต)",
     )
+    parser.add_argument(
+        "--stage",
+        choices=list(STAGE_CODES.keys()) + ["all"],
+        default="D0",
+        help="anounceType: P0 (pre_tor) / B0 (tor_review) / D0 (active) / W0 (awarded) / D1 (cancelled) / all (loop)",
+    )
     args = parser.parse_args()
     _init_log_file()
-    result = run(queue_new=args.queue, skip_probe=args.no_probe)
-    sys.exit(0 if not result.get("error") else 1)
+
+    if args.stage == "all":
+        # Sequential through all stages
+        any_error = False
+        for code in STAGE_CODES.keys():
+            log(f"\n┌─── STAGE {code} ({STAGE_CODES[code]}) ───")
+            result = run(queue_new=args.queue, skip_probe=True, anounce_type=code)
+            if result.get("error"):
+                any_error = True
+        sys.exit(1 if any_error else 0)
+    else:
+        result = run(queue_new=args.queue, skip_probe=args.no_probe, anounce_type=args.stage)
+        sys.exit(0 if not result.get("error") else 1)

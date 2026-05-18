@@ -113,11 +113,11 @@ async function statusMessage(userId: string): Promise<string> {
 }
 
 export async function POST(req: Request) {
-  const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
-  const secret = process.env.LINE_CHANNEL_SECRET;
+  const token = process.env.SEBASTIAN_LINE_TOKEN;
+  const secret = process.env.SEBASTIAN_LINE_SECRET;
   if (!token) {
     return NextResponse.json(
-      { ok: false, error: "LINE_CHANNEL_ACCESS_TOKEN not set" },
+      { ok: false, error: "SEBASTIAN_LINE_TOKEN not set" },
       { status: 500 },
     );
   }
@@ -198,6 +198,6 @@ export async function GET() {
   return NextResponse.json({
     ok: true,
     hint: "POST line webhook events here",
-    expected_envs: ["LINE_CHANNEL_ACCESS_TOKEN", "LINE_CHANNEL_SECRET (optional)"],
+    expected_envs: ["SEBASTIAN_LINE_TOKEN", "SEBASTIAN_LINE_SECRET (optional)"],
   });
 }

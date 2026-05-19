@@ -64,8 +64,11 @@ def etl_all_jobs():
             procurement_type, budget, publish_date, deadline,
             project_status, search_keyword, tor_url,
             first_seen_at, last_seen_at,
-            step_id, project_status_raw, announce_type
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            step_id, project_status_raw, announce_type,
+            project_type, construction_subtype, budget_tier, urgency_tier,
+            method_id, sme_suitable, geographic_precision, unspsc_family
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                  %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (job_id) DO UPDATE SET
             title = EXCLUDED.title,
             department = EXCLUDED.department,
@@ -83,7 +86,15 @@ def etl_all_jobs():
             last_seen_at = EXCLUDED.last_seen_at,
             step_id = EXCLUDED.step_id,
             project_status_raw = EXCLUDED.project_status_raw,
-            announce_type = EXCLUDED.announce_type
+            announce_type = EXCLUDED.announce_type,
+            project_type = EXCLUDED.project_type,
+            construction_subtype = EXCLUDED.construction_subtype,
+            budget_tier = EXCLUDED.budget_tier,
+            urgency_tier = EXCLUDED.urgency_tier,
+            method_id = EXCLUDED.method_id,
+            sme_suitable = EXCLUDED.sme_suitable,
+            geographic_precision = EXCLUDED.geographic_precision,
+            unspsc_family = EXCLUDED.unspsc_family
     """
 
     batch = []
@@ -113,6 +124,14 @@ def etl_all_jobs():
             g("step_id"),
             g("project_status_raw"),
             g("announce_type"),
+            g("project_type"),
+            g("construction_subtype"),
+            g("budget_tier"),
+            g("urgency_tier"),
+            g("method_id"),
+            g("sme_suitable"),
+            g("geographic_precision"),
+            g("unspsc_family"),
         ))
 
     log(f"  Inserting {len(batch)} rows…")

@@ -124,6 +124,9 @@ ALL_JOBS_HEADERS = [
     "first_seen_at", "last_seen_at",
     # 2026-05-16: เพิ่มเพื่อรองรับ stepId-driven classifier
     "step_id", "project_status_raw", "announce_type",
+    # 2026-05-19: Phase 1+2 multi-dim classifier tags (cols S-Z)
+    "project_type", "construction_subtype", "budget_tier", "urgency_tier",
+    "method_id", "sme_suitable", "geographic_precision", "unspsc_family",
 ]
 
 PRE_TOR_HEADERS        = ALL_JOBS_HEADERS + ["stage_note"]

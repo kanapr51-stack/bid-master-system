@@ -2002,3 +2002,39 @@ d08dda0 Dashboard: Vercel Blob real-time snapshot
 **RSS-First architecture ค้นพบ:**
 - `docs/rss_full_replacement_research.md` — Chrome-less ทุก step
 - เก็บไว้ implement ตอนทำ HTTP migration
+
+---
+
+## งานที่ 19: Classifier Phase 1+2 — Multi-dim tags (2026-05-19)
+
+### สถานะ: ✅ เสร็จ (~30 นาที)
+
+### Root cause / สิ่งที่ทำ
+- Classifier เดิมมีมิติเดียว (lifecycle stage 6 buckets) — ไม่มี project type / budget tier / urgency
+- เพิ่ม 8 columns ใหม่ใน `all_jobs` (cols S-Z): `project_type`, `construction_subtype`, `budget_tier`, `urgency_tier`, `method_id`, `sme_suitable`, `geographic_precision`, `unspsc_family`
+- สร้าง `scripts/classifier_tags.py` — pure-function rule-based classifier
+- `scripts/backfill_classifier_tags.py` — backfill 8,832 rows ใน 8.3 วินาที
+- Update `Sebastian_Scraper.py` `_build_all_jobs_row` (18 → 26 cols) — row ใหม่ได้ tags ทันทีตอน scrape
+- Update `Sebastian_Classifier.py` `ALL_JOBS_HEADERS` (18 → 26 cols)
+- Postgres: migration 002 + update `etl_sheet_to_db.py` + sync 8,832 rows
+
+### Fix / ผล
+- Distribution 1,000 sample (project_type):
+  - ก่อสร้าง 28.5% · บริการ 24.7% · วัสดุ 24.3% · อุปกรณ์ 12.6% · อื่นๆ 9.6% · IT 0.3%
+- Postgres full table (8,832 rows):
+  - ก่อสร้าง 31.0% · วัสดุ 23.8% · บริการ 22.9% · อื่นๆ 11.8% · อุปกรณ์ 10.2% · IT 0.3%
+- Classifier ปกติ: pre_tor 0 / tor_review 5 / active 4 / pending 16 / awarded 307 / cancelled 44
+
+### Files
+- `scripts/classifier_tags.py` (NEW) — 8 classification functions + `classify_all()`
+- `scripts/backfill_classifier_tags.py` (NEW) — one-time backfill
+- `scripts/db_migration_002_classifier_tags.sql` (NEW) — Postgres ALTER TABLE
+- `scripts/Sebastian_Scraper.py` (MODIFIED) — `_build_all_jobs_row` produces 26 cols
+- `scripts/Sebastian_Classifier.py` (MODIFIED) — `ALL_JOBS_HEADERS` 18 → 26
+- `scripts/etl_sheet_to_db.py` (MODIFIED) — INSERT 26 cols + ON CONFLICT UPDATE
+- `scripts/db_schema.sql` (MODIFIED) — schema canonical + 4 new indexes
+
+### Followup
+- Phase 3: AI Deep Search (Claude API) — รอ HTTP-only migration
+- Phase 4: UNSPSC mapping (unspsc_family ยังว่าง)
+- Phase 5: Per-customer ranking score

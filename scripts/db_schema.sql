@@ -26,6 +26,15 @@ CREATE TABLE IF NOT EXISTS all_jobs (
     step_id             VARCHAR(10) NOT NULL DEFAULT '',
     project_status_raw  VARCHAR(10) NOT NULL DEFAULT '',
     announce_type       VARCHAR(10) NOT NULL DEFAULT '',
+    -- 2026-05-19: Phase 1+2 multi-dim classifier tags
+    project_type            VARCHAR(20) NOT NULL DEFAULT '',
+    construction_subtype    VARCHAR(20) NOT NULL DEFAULT '',
+    budget_tier             VARCHAR(20) NOT NULL DEFAULT '',
+    urgency_tier            VARCHAR(20) NOT NULL DEFAULT '',
+    method_id               VARCHAR(5)  NOT NULL DEFAULT '',
+    sme_suitable            VARCHAR(5)  NOT NULL DEFAULT '',
+    geographic_precision    VARCHAR(20) NOT NULL DEFAULT '',
+    unspsc_family           VARCHAR(10) NOT NULL DEFAULT '',
     -- Metadata
     created_at          TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at          TIMESTAMP NOT NULL DEFAULT NOW()
@@ -35,6 +44,11 @@ CREATE INDEX IF NOT EXISTS idx_all_jobs_step_id ON all_jobs(step_id);
 CREATE INDEX IF NOT EXISTS idx_all_jobs_announce ON all_jobs(announce_type);
 CREATE INDEX IF NOT EXISTS idx_all_jobs_publish ON all_jobs(publish_date);
 CREATE INDEX IF NOT EXISTS idx_all_jobs_dept ON all_jobs(department);
+-- Phase 1+2 classifier indexes (สำหรับ filter ใน SaaS)
+CREATE INDEX IF NOT EXISTS idx_all_jobs_project_type ON all_jobs(project_type);
+CREATE INDEX IF NOT EXISTS idx_all_jobs_budget_tier ON all_jobs(budget_tier);
+CREATE INDEX IF NOT EXISTS idx_all_jobs_urgency_tier ON all_jobs(urgency_tier);
+CREATE INDEX IF NOT EXISTS idx_all_jobs_construction_sub ON all_jobs(construction_subtype);
 
 -- ============================================================
 -- winners — ผู้ชนะการเสนอราคา (refresh from process5 + CGD)

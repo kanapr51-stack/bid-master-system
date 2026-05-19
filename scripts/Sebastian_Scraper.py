@@ -229,12 +229,16 @@ def _extract_search_keyword(quantity_note: str) -> str:
 
 
 def _build_all_jobs_row(j: dict, first_seen: str, last_seen: str) -> list:
-    """all_jobs schema (18 cols) — Source of Truth
-    3 fields ท้าย (step_id, project_status_raw, announce_type) เว้นว่าง —
-    refresh_active_jobs.py จะเติมจาก getProjectDetail
+    """all_jobs schema (26 cols) — Source of Truth
+    - cols A-O (1-15): core scrape data
+    - cols P-R (16-18): step_id / project_status_raw / announce_type
+        (เว้นว่าง — refresh_active_jobs.py เติมจาก getProjectDetail)
+    - cols S-Z (19-26): classifier tags (Phase 1+2) — เติมตอน scrape เลย
     """
+    from classifier_tags import classify_all, TAG_COLUMNS
+
     note = j.get("quantity_note", "")
-    return [
+    base = [
         j.get("job_id", ""),
         j.get("title", ""),
         j.get("department", ""),
@@ -254,6 +258,19 @@ def _build_all_jobs_row(j: dict, first_seen: str, last_seen: str) -> list:
         j.get("project_status_raw", ""),
         j.get("announce_type", ""),
     ]
+
+    row_dict = {
+        "title":             j.get("title", ""),
+        "budget":            j.get("budget", ""),
+        "deadline":          j.get("deadline", ""),
+        "procurement_type":  j.get("procurement_type", ""),
+        "province":          j.get("province", ""),
+        "district":          j.get("district", ""),
+        "subdistrict":       j.get("subdistrict", ""),
+    }
+    tags = classify_all(row_dict)
+    base.extend(tags[col] for col in TAG_COLUMNS)
+    return base
 
 
 def append_jobs_to_sheet(jobs: list[dict]):
@@ -296,7 +313,7 @@ def append_jobs_to_sheet(jobs: list[dict]):
             row_num, first_seen = existing[jid]
             row = _build_all_jobs_row(j, first_seen, now)
             update_data.append({
-                "range": f"all_jobs!A{row_num}:R{row_num}",
+                "range": f"all_jobs!A{row_num}:Z{row_num}",
                 "values": [row],
             })
         else:

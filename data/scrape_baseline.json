@@ -1,6 +1,6 @@
 {
-  "updated": "2026-05-18T04:22:18",
-  "avg_duration_min": 82.56495,
+  "updated": "2026-05-19T02:14:20",
+  "avg_duration_min": 59.73472222222222,
   "history": [
     {
       "date": "2026-05-17",
@@ -12,6 +12,13 @@
     {
       "date": "2026-05-18",
       "duration_min": 142.07205,
+      "total_items": 0,
+      "total_new_items": 0,
+      "incremental_skipped": 0
+    },
+    {
+      "date": "2026-05-19",
+      "duration_min": 14.074266666666666,
       "total_items": 0,
       "total_new_items": 0,
       "incremental_skipped": 0

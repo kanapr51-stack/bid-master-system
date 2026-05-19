@@ -16,9 +16,20 @@ _SA_PATH = Path(__file__).parent.parent / "credentials" / "service_account.json"
 
 
 def get_client() -> gspread.Client:
-    """Return an authenticated gspread Client using Service Account."""
-    sa_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", str(_SA_PATH))
-    creds = Credentials.from_service_account_file(sa_path, scopes=SCOPES)
+    """Return an authenticated gspread Client using Service Account.
+    Priority:
+      1. GOOGLE_SERVICE_ACCOUNT_JSON (JSON string — for cloud/GitHub Actions)
+      2. GOOGLE_APPLICATION_CREDENTIALS (file path — for local override)
+      3. Default credentials/service_account.json (local dev)
+    """
+    import json as _json
+    sa_json = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON", "").strip()
+    if sa_json:
+        info = _json.loads(sa_json)
+        creds = Credentials.from_service_account_info(info, scopes=SCOPES)
+    else:
+        sa_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", str(_SA_PATH))
+        creds = Credentials.from_service_account_file(sa_path, scopes=SCOPES)
     return gspread.authorize(creds)
 
 

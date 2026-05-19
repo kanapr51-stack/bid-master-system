@@ -1,0 +1,9 @@
+gspread>=6.2
+google-auth>=2.49
+requests>=2.33
+pdfplumber>=0.11
+anthropic>=0.97
+curl_cffi>=0.15
+discord.py>=2.7
+psycopg2-binary>=2.9
+python-dotenv>=1.0

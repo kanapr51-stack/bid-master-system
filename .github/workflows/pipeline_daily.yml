@@ -1,0 +1,71 @@
+name: BMS Daily Pipeline
+
+on:
+  schedule:
+    - cron: '0 23 * * *'   # 06:00 Thailand (UTC+7) = 23:00 UTC ของวันก่อน
+  workflow_dispatch:        # รันมือได้จาก GitHub UI
+
+permissions:
+  contents: write           # สำหรับ commit state files กลับ
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run pipeline — refresh + patch + classify + notify
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          DATABASE_URL:                ${{ secrets.DATABASE_URL }}
+          DISCORD_BOT_TOKEN:           ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID:          ${{ secrets.DISCORD_CHANNEL_ID }}
+          LINE_CHANNEL_ACCESS_TOKEN:   ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_GROUP_ID:               ${{ secrets.LINE_GROUP_ID }}
+          SEBASTIAN_LINE_TOKEN:        ${{ secrets.SEBASTIAN_LINE_TOKEN }}
+          SEBASTIAN_LINE_SECRET:       ${{ secrets.SEBASTIAN_LINE_SECRET }}
+          ANTHROPIC_API_KEY:           ${{ secrets.ANTHROPIC_API_KEY }}
+          VERCEL_DASHBOARD_URL:        ${{ secrets.VERCEL_DASHBOARD_URL }}
+          REVALIDATE_SECRET:           ${{ secrets.REVALIDATE_SECRET }}
+        run: |
+          set -e
+          echo "=== Step 1: Refresh active jobs ==="
+          python scripts/refresh_active_jobs.py --expand --workers 5
+
+          echo "=== Step 2: Patch missing deadlines ==="
+          python scripts/patch_deadlines.py || true
+
+          echo "=== Step 3: Classify (rebuild derived sheets) ==="
+          python scripts/Sebastian_Classifier.py
+
+          echo "=== Step 4: LINE Notify ==="
+          python scripts/Sebastian_LINE_Notify.py || true
+
+          echo "=== Step 5: Dashboard snapshot ==="
+          python scripts/dashboard_extractor.py || true
+
+      - name: Commit updated state files
+        run: |
+          git config user.name  "Sebastian Bot"
+          git config user.email "bot@bidmaster.local"
+          git add data/winner_cache_bootstrap.json \
+                  data/transitions_latest.json \
+                  data/sheet_snapshot.json \
+                  data/scrape_baseline.json || true
+          git diff --staged --quiet || \
+            git commit -m "chore: auto-update state files $(date -u '+%Y-%m-%d %H:%M') [skip ci]"
+          git push || true

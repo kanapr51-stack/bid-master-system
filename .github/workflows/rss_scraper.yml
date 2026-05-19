@@ -1,0 +1,58 @@
+name: BMS RSS Scraper
+
+on:
+  schedule:
+    - cron: '22 * * * *'   # ทุกชั่วโมงที่ :22 (stagger จาก dashboard :07)
+    - cron: '52 * * * *'   # ทุกชั่วโมงที่ :52
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  rss:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run RSS Scraper
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          DATABASE_URL:                ${{ secrets.DATABASE_URL }}
+          DISCORD_BOT_TOKEN:           ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID:          ${{ secrets.DISCORD_CHANNEL_ID }}
+        run: |
+          python scripts/Sebastian_RSS_Scraper.py --stage rotate --queue || true
+
+      - name: Process RSS queue (refresh from-queue)
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          DATABASE_URL:                ${{ secrets.DATABASE_URL }}
+          DISCORD_BOT_TOKEN:           ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID:          ${{ secrets.DISCORD_CHANNEL_ID }}
+        run: |
+          python scripts/refresh_active_jobs.py --from-queue --workers 5 || true
+
+      - name: Commit RSS state files
+        run: |
+          git config user.name  "Sebastian Bot"
+          git config user.email "bot@bidmaster.local"
+          git add data/rss_queue.json \
+                  data/rss_seen_ids.json \
+                  data/rss_stage_rotation.json \
+                  data/winner_cache_bootstrap.json || true
+          git diff --staged --quiet || \
+            git commit -m "chore: rss state $(date -u '+%Y-%m-%d %H:%M') [skip ci]"
+          git push || true

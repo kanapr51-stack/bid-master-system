@@ -54,10 +54,13 @@ export function middleware(req: NextRequest) {
 // Apply auth to all routes EXCEPT:
 //   - /api/snapshot, /api/revalidate (use x-revalidate-secret header instead)
 //   - /api/line/* (LINE webhook + customer API — secured separately)
+//   - /api/auth/line/* (LINE OAuth for customer portal)
+//   - /api/portal/* (customer portal API — uses session cookie auth)
 //   - /signup, /customer/* (public customer-facing pages)
+//   - /portal/* (customer-facing portal — uses session cookie auth)
 //   - _next/static, _next/image, favicon.ico (static assets)
 export const config = {
   matcher: [
-    "/((?!api/snapshot|api/revalidate|api/line|signup|customer|_next/static|_next/image|favicon.ico).*)",
+    "/((?!api/snapshot|api/revalidate|api/line|api/auth/line|api/portal|signup|customer|portal|_next/static|_next/image|favicon.ico).*)",
   ],
 };

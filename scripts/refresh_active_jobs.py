@@ -1,146 +1,36 @@
 """
 refresh_active_jobs.py — รีเฟรชสถานะงาน active_bidding จาก eGP API สด
 
-ปัญหา: ข้อมูลใน all_jobs frozen ตั้งแต่ migration → งานที่ผ่านไปนาน
-อาจมี winner หรือเปลี่ยน flow status แล้ว แต่ระบบเรายังคิดว่า "กำลังประมูล"
-
-วิธีแก้: ตรวจสอบสด 2 ทาง per job:
-  1. getProcureResult → ถ้ามี winner → update awarded_jobs cache
-  2. getProjectDetail (sumProject) → ถ้า flowName เปลี่ยน → update project_status + deadline
+HTTP-only version (2026-05-19): ไม่ต้องใช้ Chrome อีกต่อไป
+ใช้ process5_http_client (Mozilla UA + Referer) แทน
 
 วิธีใช้:
-    1. Start-Process "chrome.exe" -ArgumentList "--remote-debugging-port=9222","--no-first-run","--user-data-dir=C:\\Temp\\ChromeDebug"
-    2. python scripts/refresh_active_jobs.py [--jids id1,id2,...] [--all]
-       - --jids: รีเฟรชเฉพาะ job_id ที่ระบุ
-       - --all: รีเฟรชทุก row ใน active_bidding
-       - default: รีเฟรช active_bidding ทั้งหมด
+    python scripts/refresh_active_jobs.py [--jids id1,id2,...] [--all]
+    python scripts/refresh_active_jobs.py --from-queue     # ingest จาก rss_queue.json
+    python scripts/refresh_active_jobs.py --expand         # refresh active + tor_review + pending_award
+    python scripts/refresh_active_jobs.py --workers 5      # parallel (default 3)
 """
 
 import sys
 import json
 import time
 import argparse
+import concurrent.futures
 from pathlib import Path
 from datetime import datetime
-from playwright.sync_api import sync_playwright
 
 sys.stdout.reconfigure(encoding="utf-8")
 sys.path.insert(0, str(Path(__file__).parent))
 
 from sheets_client import open_sheet
-from Sebastian_Scraper import FLOW_STATUS_MAP, connect_browser
+from process5_http_client import get_project_detail, get_procure_result
 
-DEBUG_PORT     = 9222
 SPREADSHEET_ID = "1gz7qLDIWphDhqxLf8Pxm08_cPmNb_IXTDvyxm6uThps"
-PROCESS5_BASE  = "https://process5.gprocurement.go.th"
 WINNER_CACHE   = Path(__file__).parent.parent / "data" / "winner_cache_bootstrap.json"
 
 
 def log(msg: str):
     print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
-
-
-def parse_iso_to_thai(date_str: str) -> str:
-    if not date_str:
-        return ""
-    s = str(date_str)
-    if "T" in s:
-        try:
-            return datetime.fromisoformat(s.replace("Z", "+00:00")).strftime("%d/%m/%Y")
-        except Exception:
-            return s[:10]
-    return s
-
-
-def fetch_winner_info(page, jid: str) -> dict:
-    """
-    ดึง winner จาก getProcureResult — ผู้ชนะคือ row ที่มี priceAgree != null
-
-    Response shape:
-      data.procureResultList[].procureResultDataResponse[]
-        .receiveNameTh, .priceAgree (= ราคาตกลง = ผู้ชนะ), .priceProposal, .resultFlag
-      data.announceDate = วันประกาศผู้ชนะ
-    """
-    js = """async (url) => {
-        try {
-            const r = await fetch(url, {credentials: 'include'});
-            return await r.json();
-        } catch(e) { return {error: e.toString()}; }
-    }"""
-
-    base = f"{PROCESS5_BASE}/egp-atpj27-service/pb/a-egp-allt-project/announcement"
-
-    try:
-        body = page.evaluate(js, f"{base}/getProcureResult?projectId={jid}")
-        if isinstance(body, dict):
-            data = body.get("data", {}) or {}
-            announce_date = parse_iso_to_thai(data.get("announceDate", ""))
-            for group in data.get("procureResultList", []) or []:
-                for item in group.get("procureResultDataResponse", []) or []:
-                    if item.get("priceAgree") is not None:  # นี่คือผู้ชนะที่ตกลงราคาแล้ว
-                        return {
-                            "winner":         item.get("receiveNameTh", ""),
-                            "winning_price":  str(item.get("priceAgree", "")),
-                            "announce_date":  announce_date,
-                        }
-    except Exception as e:
-        log(f"  getProcureResult err: {e}")
-
-    return {}
-
-
-def fetch_project_detail(page, jid: str, retry: bool = True) -> dict:
-    """
-    ดึงสถานะปัจจุบันจาก getProjectDetail
-    flowSeqno guide:
-      1-3 → 'กำลังเตรียม' (รับฟังคำวิจารณ์ / TOR)
-      4   → 'กำลังประมูล' (เปิดให้ยื่นซองจริง)
-      5+  → 'ประมูลแล้ว' (รอประกาศ / ประกาศแล้ว)
-
-    Note: ถ้า API rate-limited จะคืน data partial (flowSeqno=0, stepId='')
-    → ตรวจ valid_data ก่อน return — caller ต้องเช็ค .get("valid")
-    """
-    js = """async (url) => {
-        try {
-            const r = await fetch(url, {credentials: 'include'});
-            return await r.json();
-        } catch(e) { return {error: e.toString()}; }
-    }"""
-
-    url = f"{PROCESS5_BASE}/egp-atpj27-service/pb/a-egp-allt-project/announcement/getProjectDetail?projectId={jid}"
-    try:
-        body = page.evaluate(js, url)
-        if isinstance(body, dict):
-            data = body.get("data", {}) or {}
-            seqno  = data.get("flowSeqno", 0) or 0
-            stepId = data.get("stepId", "")
-            flowId = data.get("flowId", "")
-
-            # Valid data = flowSeqno > 0 หรือ stepId มีค่า
-            valid = bool(seqno > 0 or stepId or flowId)
-            if not valid and retry:
-                # Rate limit — รอ + retry 1 ครั้ง
-                time.sleep(3)
-                return fetch_project_detail(page, jid, retry=False)
-
-            if seqno <= 3:
-                status = "กำลังเตรียม"
-            elif seqno == 4:
-                status = "กำลังประมูล"
-            else:
-                status = "ประมูลแล้ว"
-            return {
-                "project_status":       status,
-                "flow_seqno":           seqno,
-                "step_id":              stepId,
-                "flow_id":              flowId,
-                "project_status_raw":   data.get("projectStatus", ""),  # A or R
-                "announce_type":        data.get("announceType", ""),   # B0/D0/W0/D1/W1/BOQ/...
-                "valid":                valid,
-            }
-    except Exception as e:
-        log(f"  getProjectDetail err: {e}")
-    return {"valid": False}
 
 
 def calc_pct_discount(budget_str, price_str: str) -> str:
@@ -165,21 +55,122 @@ def save_winner_cache(cache: dict):
     WINNER_CACHE.write_text(json.dumps(cache, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def _process_one(jid: str, budget: str) -> dict:
+    """
+    ประมวลผล 1 job → คืน dict ที่มี fields ที่ต้องอัปเดต + winner info
+    ใช้ process5_http_client โดยตรง (ไม่ต้อง Chrome)
+    """
+    now_iso = datetime.now().isoformat(timespec="seconds")
+    fields  = {"last_seen_at": now_iso}
+    winner  = {}
+
+    detail = get_project_detail(jid)
+    if detail.get("valid"):
+        stepId  = detail.get("step_id", "")
+        ps_raw  = detail.get("project_status_raw", "")
+        a_type  = detail.get("announce_type", "")
+        seqno   = detail.get("flow_seqno", 0)
+
+        fields["step_id"]            = stepId
+        fields["project_status_raw"] = ps_raw
+        fields["announce_type"]      = a_type
+
+        new_status = detail.get("project_status", "")
+        if new_status:
+            fields["project_status"] = new_status
+
+        is_cancelled = (ps_raw == "R") or (a_type in ("D1", "W1"))
+        if is_cancelled:
+            fields["project_status"] = "ยกเลิก"
+
+    if ps_raw := fields.get("project_status_raw", ""):
+        if ps_raw != "R":
+            winfo = get_procure_result(jid)
+            if winfo.get("winner"):
+                price = winfo.get("winning_price", "")
+                pct   = calc_pct_discount(budget, price)
+                winner = {
+                    "winner_name":  winfo["winner"],
+                    "winner_price": str(price),
+                    "discount_pct": pct,
+                    "award_date":   winfo.get("announce_date", ""),
+                }
+                fields["project_status"] = "ประมูลแล้ว"
+    else:
+        # ถ้า detail ไม่ valid → ลองดู winner อยู่ดี (conservative — recall > precision)
+        winfo = get_procure_result(jid)
+        if winfo.get("winner"):
+            price = winfo.get("winning_price", "")
+            pct   = calc_pct_discount(budget, price)
+            winner = {
+                "winner_name":  winfo["winner"],
+                "winner_price": str(price),
+                "discount_pct": pct,
+                "award_date":   winfo.get("announce_date", ""),
+            }
+            fields["project_status"] = "ประมูลแล้ว"
+
+    return {"fields": fields, "winner": winner, "detail_valid": detail.get("valid", False)}
+
+
+def _build_sparse_row(jid: str, q_item: dict, detail: dict) -> list:
+    """สร้าง sparse row 26 cols สำหรับ new job จาก RSS queue + getProjectDetail"""
+    from classifier_tags import classify_all, TAG_COLUMNS
+
+    now_iso = datetime.now().isoformat(timespec="seconds")
+    title   = q_item.get("title", "")
+    row_dict = {
+        "title": title,
+        "procurement_type": "",
+        "budget": "",
+        "deadline": "",
+        "province": "",
+        "district": "",
+        "subdistrict": "",
+        "announce_type": detail.get("announce_type", ""),
+    }
+    tags = classify_all(row_dict)
+
+    base = [
+        jid,
+        title,
+        "",                                              # department
+        "",                                              # province
+        "",                                              # district
+        "",                                              # subdistrict
+        "",                                              # procurement_type
+        "",                                              # budget
+        q_item.get("pubDate", ""),                       # publish_date
+        "",                                              # deadline
+        detail.get("project_status", ""),
+        f"keyword:rss | dept:{q_item.get('deptId', '')}",
+        q_item.get("link", ""),                          # tor_url
+        now_iso,                                         # first_seen_at
+        now_iso,                                         # last_seen_at
+        detail.get("step_id", ""),
+        detail.get("project_status_raw", ""),
+        detail.get("announce_type", ""),
+    ]
+    base.extend(tags[col] for col in TAG_COLUMNS)
+    return base  # 26 cols
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--jids", help="comma-separated job_ids")
-    ap.add_argument("--all",  action="store_true", help="refresh ทุก row ใน active_bidding")
-    ap.add_argument("--expand", action="store_true", help="refresh active + tor_review + pending_award (default for cron)")
-    ap.add_argument("--from-queue", action="store_true", help="ingest projectIds จาก data/rss_queue.json (เพิ่ม sparse rows ถ้ายังไม่อยู่ใน all_jobs)")
-    ap.add_argument("--dry-run", action="store_true", help="ไม่ write จริง — แค่ log ว่าจะ ingest อะไรบ้าง")
-    ap.add_argument("--limit", type=int, default=0, help="จำกัดจำนวน jobs ที่ process (สำหรับ test)")
+    ap.add_argument("--jids",      help="comma-separated job_ids")
+    ap.add_argument("--all",       action="store_true", help="refresh ทุก row ใน active_bidding")
+    ap.add_argument("--expand",    action="store_true", help="refresh active + tor_review + pending_award")
+    ap.add_argument("--from-queue",action="store_true", help="ingest projectIds จาก data/rss_queue.json")
+    ap.add_argument("--dry-run",   action="store_true", help="ไม่ write จริง — แค่ log")
+    ap.add_argument("--limit",     type=int, default=0, help="จำกัด jobs (สำหรับ test)")
+    ap.add_argument("--workers",   type=int, default=3, help="parallel workers (default 3)")
     args = ap.parse_args()
 
     log("=" * 60)
-    log("Refresh Active Jobs — query eGP API สด")
+    log("Refresh Active Jobs — HTTP-only (no Chrome required)")
     log("=" * 60)
 
-    # ── โหลด queue (ถ้าใช้ --from-queue) ──
+    # ── โหลด queue ──
     queue_items: list[dict] = []
     queue_file = Path(__file__).parent.parent / "data" / "rss_queue.json"
     if args.from_queue:
@@ -194,11 +185,11 @@ def main():
         else:
             log(f"  ⚠️ {queue_file} ไม่พบ — queue ว่าง")
 
-    # ── เลือก jobs ที่จะรีเฟรช ──
+    # ── เลือก jobs ──
     if args.from_queue:
         target_jids = [q.get("projectId", "").strip() for q in queue_items if q.get("projectId")]
         target_jids = [j for j in target_jids if j]
-        log(f"  from-queue: {len(target_jids)} jobs from queue")
+        log(f"  from-queue: {len(target_jids)} jobs")
     elif args.jids:
         target_jids = [j.strip() for j in args.jids.split(",") if j.strip()]
         log(f"  targeted refresh: {len(target_jids)} jobs")
@@ -213,44 +204,40 @@ def main():
                 log(f"  {sn}: +{len(jids)} jobs")
             except Exception as e:
                 log(f"  {sn}: error {e}")
-        # dedup
         target_jids = list(dict.fromkeys(target_jids))
         log(f"  expand mode: {len(target_jids)} unique jobs")
     else:
         ws_act = open_sheet(SPREADSHEET_ID, "active_bidding")
-        rows = ws_act.get_all_values()
+        rows   = ws_act.get_all_values()
         target_jids = [r[0] for r in rows[1:] if r and r[0]]
         log(f"  full refresh: {len(target_jids)} active_bidding jobs")
 
     if args.limit > 0 and len(target_jids) > args.limit:
-        log(f"  --limit applied: ใช้แค่ {args.limit} jobs แรก (จาก {len(target_jids)})")
-        target_jids = target_jids[: args.limit]
+        log(f"  --limit applied: ใช้แค่ {args.limit} (จาก {len(target_jids)})")
+        target_jids = target_jids[:args.limit]
 
     if not target_jids:
-        log("ไม่มี jobs ที่จะรีเฟรช — เสร็จสิ้น")
+        log("ไม่มี jobs — เสร็จสิ้น")
         return
 
     if args.dry_run:
-        log("\n🔍 DRY RUN — ไม่ write จริง")
-        if args.from_queue:
-            queue_by_pid_dry = {q.get("projectId", ""): q for q in queue_items}
-            new_count = 0
-            for jid in target_jids:
-                q_item = queue_by_pid_dry.get(jid, {})
-                log(f"  [DRY] {jid}: title={q_item.get('title', '')[:60]} · dept={q_item.get('deptId', '')}")
-                new_count += 1
-            log(f"\n  DRY RUN: {new_count} jobs จะ process (need Chrome to validate)")
+        log("\n🔍 DRY RUN")
+        queue_by_pid_dry = {q.get("projectId", ""): q for q in queue_items}
+        for jid in target_jids[:20]:
+            q_item = queue_by_pid_dry.get(jid, {})
+            log(f"  [DRY] {jid}: {q_item.get('title', '')[:60]}")
+        if len(target_jids) > 20:
+            log(f"  ... และอีก {len(target_jids) - 20} jobs")
         return
 
-    # ── อ่าน all_jobs เพื่อหา row index + budget ──
+    # ── อ่าน all_jobs ──
     log("\nReading all_jobs...")
-    ws_all = open_sheet(SPREADSHEET_ID, "all_jobs")
+    ws_all     = open_sheet(SPREADSHEET_ID, "all_jobs")
     all_values = ws_all.get_all_values()
-    hdrs = all_values[0]
-    h_idx = {h: i for i, h in enumerate(hdrs)}
+    hdrs       = all_values[0]
+    h_idx      = {h: i for i, h in enumerate(hdrs)}
 
-    # job_id → (row_num, budget)
-    row_map = {}
+    row_map: dict[str, tuple[int, str]] = {}
     for row_num, r in enumerate(all_values[1:], start=2):
         jid = r[0] if r else ""
         if jid in target_jids:
@@ -261,162 +248,103 @@ def main():
 
     cache = load_winner_cache()
     log(f"  winner cache: {len(cache)} entries")
+    log(f"  workers: {args.workers}")
 
-    # ── เปิด Chrome + refresh ทีละ job ──
-    log("\nเชื่อมต่อ Chrome...")
-    with sync_playwright() as p:
-        browser = connect_browser(p)
-        page = browser.contexts[0].new_page()
+    queue_by_pid = {q.get("projectId", ""): q for q in queue_items}
 
-        log("  navigate ไป process5...")
-        page.goto(f"{PROCESS5_BASE}/egp-agpc01-web/announcement", wait_until="load", timeout=45000)
-        time.sleep(5)
+    # ── Process existing jobs (parallel) ──
+    existing_jids = [jid for jid in target_jids if jid in row_map]
+    new_jids      = [jid for jid in target_jids if jid not in row_map and jid in queue_by_pid]
 
-        new_winners = 0
-        status_updates = 0
-        update_payload = []
+    update_payload = []
+    new_winners    = 0
+    status_updates = 0
 
-        # สำหรับ from-queue: lookup queue items by projectId (เพื่อดึง title/deptId/pubDate)
-        queue_by_pid: dict[str, dict] = {}
-        if args.from_queue:
-            queue_by_pid = {q.get("projectId", ""): q for q in queue_items}
+    if existing_jids:
+        log(f"\nProcessing {len(existing_jids)} existing jobs (workers={args.workers})...")
 
-        appended_rows: list[list] = []   # for sparse insert (from-queue case)
-        processed_pids: set[str] = set()
-
-        for i, jid in enumerate(target_jids, 1):
-            if jid not in row_map:
-                if args.from_queue and jid in queue_by_pid:
-                    # ── Sparse insert: ดึง detail แล้วเพิ่มใน all_jobs ──
-                    q_item = queue_by_pid[jid]
-                    log(f"\n[{i}/{len(target_jids)}] {jid}: NEW from RSS queue")
-                    detail = fetch_project_detail(page, jid)
-                    if not detail.get("valid"):
-                        log(f"  ⚠️ getProjectDetail ไม่ valid — ข้าม (จะลองใหม่รอบหน้า)")
-                        time.sleep(1.5)
-                        continue
-                    now_iso = datetime.now().isoformat(timespec="seconds")
-                    sparse_row = [
-                        jid,                                # job_id
-                        q_item.get("title", ""),            # title (จาก RSS)
-                        "",                                 # department
-                        "",                                 # province
-                        "",                                 # district
-                        "",                                 # subdistrict
-                        "",                                 # procurement_type
-                        "",                                 # budget
-                        q_item.get("pubDate", ""),          # publish_date
-                        "",                                 # deadline
-                        detail.get("project_status", ""),   # project_status
-                        f"keyword:rss | dept:{q_item.get('deptId', '')}",  # search_keyword (quantity_note style)
-                        q_item.get("link", ""),             # tor_url
-                        now_iso,                            # first_seen_at
-                        now_iso,                            # last_seen_at
-                        detail.get("step_id", ""),          # step_id
-                        detail.get("project_status_raw", ""), # project_status_raw
-                        detail.get("announce_type", ""),    # announce_type
-                    ]
-                    appended_rows.append(sparse_row)
-                    processed_pids.add(jid)
-                    log(f"  ✅ sparse row prepared (status={detail.get('project_status')}, step={detail.get('step_id')}, announce={detail.get('announce_type')})")
-                    time.sleep(1.5)
-                    continue
-                log(f"\n[{i}/{len(target_jids)}] {jid}: ไม่พบใน all_jobs — ข้าม")
-                continue
-
+        def _worker(jid: str):
             row_num, budget = row_map[jid]
-            log(f"\n[{i}/{len(target_jids)}] {jid} (row {row_num})")
+            result = _process_one(jid, budget)
+            return jid, row_num, result
 
-            # ── ดึง getProjectDetail ก่อน (ได้ stepId/projectStatus/announceType) ──
-            detail = fetch_project_detail(page, jid)
-            now_iso = datetime.now().isoformat(timespec="seconds")
-            fields = {"last_seen_at": now_iso}
+        with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as ex:
+            futures = {ex.submit(_worker, jid): jid for jid in existing_jids}
+            done = 0
+            for future in concurrent.futures.as_completed(futures):
+                done += 1
+                jid, row_num, result = future.result()
+                fields = result["fields"]
+                winner = result["winner"]
+                valid  = result["detail_valid"]
 
-            if detail.get("valid"):
-                stepId  = detail.get("step_id", "")
-                ps_raw  = detail.get("project_status_raw", "")  # added below
-                a_type  = detail.get("announce_type", "")       # added below
-                seqno   = detail.get("flow_seqno", 0)
-                # เก็บ 3 fields ใหม่
-                fields["step_id"] = stepId
-                fields["project_status_raw"] = ps_raw
-                fields["announce_type"] = a_type
-                # Derive project_status text
-                new_status = detail.get("project_status", "")
-                if new_status:
-                    fields["project_status"] = new_status
-                # Cancellation detection
-                is_cancelled = (ps_raw == "R") or (a_type in ("D1", "W1"))
-                if is_cancelled:
-                    fields["project_status"] = "ยกเลิก"
-                    log(f"  🚫 CANCELLED detected: ps_raw={ps_raw} announce={a_type} stepId={stepId}")
-                else:
-                    log(f"  flowSeqno={seqno} stepId={stepId} ps={ps_raw} announce={a_type} → {new_status!r}")
-                status_updates += 1
-            else:
-                log(f"  ⚠️  empty data หลัง retry — keep current project_status")
+                if valid:
+                    status_updates += 1
 
-            # ── ตรวจ winner (ถ้ามี — override status เป็น 'ประมูลแล้ว') ──
-            # ทำหลัง project detail เพื่อให้ stepId/projectStatus_raw/announceType ติดมาด้วย
-            if not detail.get("valid") or detail.get("project_status_raw") != "R":
-                winfo = fetch_winner_info(page, jid)
-                if winfo and winfo.get("winner"):
-                    price = winfo.get("winning_price", "")
-                    pct = calc_pct_discount(budget, price)
-                    cache[jid] = {
-                        "winner_name":  winfo["winner"],
-                        "winner_price": str(price),
-                        "discount_pct": pct,
-                        "award_date":   winfo.get("announce_date", ""),
-                    }
+                if winner:
+                    cache[jid] = winner
                     new_winners += 1
-                    log(f"  ✅ WINNER: {winfo['winner']} | {price} | -{pct}%")
-                    fields["project_status"] = "ประมูลแล้ว"
 
-            update_payload.append({"row": row_num, "fields": fields})
+                update_payload.append({"row": row_num, "fields": fields})
 
-            # Rate limit guard
-            time.sleep(1.5)
-            if i % 50 == 0:
-                log(f"  ⏸  cooldown 30s หลังจาก {i} jobs (rate limit guard)...")
-                time.sleep(30)
+                if done % 20 == 0:
+                    log(f"  [{done}/{len(existing_jids)}] ...")
 
-        page.close()
+        log(f"  ✅ {len(existing_jids)} jobs processed")
 
-    # ── Append sparse rows สำหรับ jids ใหม่จาก queue ──
-    if args.from_queue and appended_rows:
-        log(f"\nAppend {len(appended_rows)} new sparse rows from RSS queue...")
+    # ── Sparse insert สำหรับ jids ใหม่จาก queue ──
+    appended_rows: list[list] = []
+    processed_pids: set[str]  = set()
+
+    if new_jids:
+        log(f"\nProcessing {len(new_jids)} new jobs from RSS queue...")
+        for jid in new_jids:
+            q_item = queue_by_pid[jid]
+            detail = get_project_detail(jid)
+            if not detail.get("valid"):
+                log(f"  ⚠️ {jid}: detail ไม่ valid — ข้าม (retry รอบหน้า)")
+                time.sleep(1)
+                continue
+            sparse_row = _build_sparse_row(jid, q_item, detail)
+            appended_rows.append(sparse_row)
+            processed_pids.add(jid)
+            log(f"  ✅ {jid}: sparse row prepared (step={detail.get('step_id')}, announce={detail.get('announce_type')})")
+            time.sleep(1)
+
+    # ── Write ──
+    if appended_rows:
+        log(f"\nAppend {len(appended_rows)} sparse rows...")
         ws_all.append_rows(appended_rows, value_input_option="USER_ENTERED")
         log(f"  ✅ {len(appended_rows)} rows appended")
 
-    # ── Remove processed items from queue ──
+    # ── Remove processed from queue ──
     if args.from_queue:
-        remaining = [q for q in queue_items if q.get("projectId") not in processed_pids
-                                            and q.get("projectId") not in row_map]
-        # Items ที่ jid อยู่ใน all_jobs แล้ว (refresh ปกติ) ก็เอาออกจาก queue
-        sheet_existing = set(row_map.keys())
+        sheet_existing     = set(row_map.keys())
         processed_existing = sheet_existing & {q.get("projectId") for q in queue_items}
-        remaining = [q for q in remaining if q.get("projectId") not in processed_existing]
-        queue_file.write_text(
-            json.dumps(remaining, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
-        log(f"  📥 queue: removed {len(queue_items) - len(remaining)} processed, {len(remaining)} remaining")
+        remaining = [
+            q for q in queue_items
+            if q.get("projectId") not in processed_pids
+            and q.get("projectId") not in processed_existing
+        ]
+        queue_file.write_text(json.dumps(remaining, ensure_ascii=False, indent=2), encoding="utf-8")
+        removed = len(queue_items) - len(remaining)
+        log(f"  📥 queue: removed {removed}, remaining {len(remaining)}")
 
-    # ── Apply updates to all_jobs ──
+    # ── Apply cell updates ──
     if update_payload:
-        log(f"\nApply {len(update_payload)} updates ลง all_jobs...")
+        log(f"\nApply {len(update_payload)} row updates → all_jobs...")
         batch_data = []
         for u in update_payload:
             for field, val in u["fields"].items():
                 if field in h_idx:
                     col = chr(ord("A") + h_idx[field])
                     batch_data.append({
-                        "range": f"all_jobs!{col}{u['row']}",
+                        "range":  f"all_jobs!{col}{u['row']}",
                         "values": [[val]],
                     })
         BATCH = 200
         for i in range(0, len(batch_data), BATCH):
-            chunk = batch_data[i:i+BATCH]
+            chunk = batch_data[i:i + BATCH]
             ws_all.spreadsheet.values_batch_update(
                 {"valueInputOption": "USER_ENTERED", "data": chunk}
             )
@@ -435,10 +363,11 @@ def main():
         except Exception as e:
             log(f"  ⚠️ Classifier error: {e}")
 
-    log(f"\nสรุป:")
-    log(f"  new winners: {new_winners}")
-    log(f"  status/deadline updates: {status_updates}")
-    log(f"  total updates applied: {len(update_payload)}")
+    log(f"\n✅ สรุป:")
+    log(f"  new winners:    {new_winners}")
+    log(f"  status updates: {status_updates}")
+    log(f"  cell updates:   {len(update_payload)}")
+    log(f"  sparse inserts: {len(appended_rows)}")
 
 
 if __name__ == "__main__":

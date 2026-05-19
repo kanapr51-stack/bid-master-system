@@ -2038,3 +2038,37 @@ d08dda0 Dashboard: Vercel Blob real-time snapshot
 - Phase 3: AI Deep Search (Claude API) — รอ HTTP-only migration
 - Phase 4: UNSPSC mapping (unspsc_family ยังว่าง)
 - Phase 5: Per-customer ranking score
+
+---
+
+## งานที่ 20: HTTP-only Migration — เอา Chrome ออกจาก Pipeline (2026-05-19)
+
+### สถานะ: ✅ เสร็จ (~1.5 ชั่วโมง)
+
+### Root cause / สิ่งที่ทำ
+- refresh_active_jobs.py + patch_deadlines.py ใช้ Chrome/Playwright → pipeline crash ถ้า Chrome ไม่เปิด
+- Discovery: getProjectDetail / getProcureResult / PDF download ผ่าน HTTP โดยตรงได้ (Mozilla UA + Referer) ไม่ต้อง Cloudflare session
+- Search endpoint ติด Cloudflare Turnstile — Sebastian_Scraper.py ยังต้อง Chrome (แต่ graceful fail)
+
+### Fix / ผล
+- สร้าง `scripts/process5_http_client.py` — HTTP wrapper สำหรับ 3 endpoints (test ผ่านทันที)
+- Rewrite `scripts/refresh_active_jobs.py` — HTTP-only + parallel workers (default 3) + 26-col sparse insert
+- Rewrite `scripts/patch_deadlines.py` — HTTP PDF download + pdfplumber parse (88/88 jobs มี templateId)
+- `Sebastian_Scraper.py` — graceful fail ถ้า Chrome ไม่อยู่ (exit 0 ไม่ crash pipeline)
+- `Sebastian_Pipeline.py` — อัปเดต comment (refresh ไม่ต้อง Chrome แล้ว)
+
+### ผลทดสอบ
+- process5_http_client: getProjectDetail + getProcureResult ทั้ง 6 bidders ✅
+- refresh_active_jobs --limit 2: 10 cell updates ✅ (ไม่มี Chrome)
+- patch_deadlines --limit 3: PDF 3 ชิ้น download + parse deadline ✅ (ไม่มี Chrome)
+
+### Files
+- `scripts/process5_http_client.py` (NEW)
+- `scripts/refresh_active_jobs.py` (REWRITTEN)
+- `scripts/patch_deadlines.py` (REWRITTEN)
+- `scripts/Sebastian_Scraper.py` (MODIFIED — graceful fail)
+- `scripts/Sebastian_Pipeline.py` (MODIFIED — comments)
+
+### Followup
+- Sebastian_Scraper.py search ยังต้อง Chrome (Cloudflare Turnstile) — แต่ RSS cover ทุก stage แล้ว
+- Cloud Migration: ตอนนี้ทุก critical path ไม่ต้อง Chrome → deploy cloud ได้แล้ว

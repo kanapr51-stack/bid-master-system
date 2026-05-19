@@ -16,7 +16,7 @@ Usage:
 Pipeline flow:
     scrape → rss → classify → refresh → download → analyze → cost → rank → notify → snapshot → deploy
 
-Steps ที่ต้องการ Chrome (port 9222): scrape, download, refresh
+Steps ที่ต้องการ Chrome (port 9222): scrape, download  [refresh ใช้ HTTP-only แล้ว — ไม่ต้อง Chrome]
     Start-Process "chrome.exe" -ArgumentList "--remote-debugging-port=9222","--no-first-run","--user-data-dir=C:\\Temp\\ChromeDebug"
 """
 
@@ -205,8 +205,8 @@ def main():
         if ok:
             _dc(notify_step_done, "refresh", "รีเฟรชสถานะ active_bidding สำเร็จ")
         else:
-            print("[WARN] Refresh ไม่สำเร็จ (อาจไม่ได้เปิด Chrome)", flush=True)
-            _dc(notify_step_warn, "refresh", "รีเฟรช active_bidding ไม่สำเร็จ — Chrome อาจไม่ได้เปิด")
+            print("[WARN] Refresh ไม่สำเร็จ", flush=True)
+            _dc(notify_step_warn, "refresh", "รีเฟรช active_bidding ไม่สำเร็จ (HTTP-only — ตรวจสอบ network/rate limit)")
 
     if step in ("all", "analyze"):
         log("Step 5/8: ANALYZE — PR45 Parser + TOR AI + JSON Merge → Sheet 2")

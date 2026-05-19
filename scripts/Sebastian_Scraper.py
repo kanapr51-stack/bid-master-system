@@ -1163,7 +1163,12 @@ def main():
     all_new_jobs = []
 
     with sync_playwright() as p:
-        browser = connect_browser(p)
+        try:
+            browser = connect_browser(p)
+        except RuntimeError as e:
+            log(f"⚠️ Chrome ไม่พร้อม: {e}")
+            log("   RSS Scraper ยังทำงานปกติ (HTTP-only) — scraper ข้ามได้ถ้า RSS ครอบคลุมแล้ว")
+            return
         page = new_stealth_page(browser)
 
         # โหลด process5 และรอ Turnstile ครั้งเดียว

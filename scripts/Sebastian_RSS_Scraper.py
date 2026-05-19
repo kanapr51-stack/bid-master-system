@@ -57,7 +57,8 @@ HEADERS = {
 POLL_WORKERS = 4
 # Probe sample size per run (incremental discovery)
 # 2026-05-19: ลด 50 → 20 + serial (workers=1) เพราะ probe หลัง poll → 429 rate limit
-PROBE_SAMPLE_SIZE = 20
+# 2026-05-20: เพิ่ม 20 → 100 — GitHub Actions ใช้ IP ใหม่ทุกรัน ไม่สะสม rate limit
+PROBE_SAMPLE_SIZE = 100
 PROBE_WORKERS = 1
 DEPT_ID_RANGE = (1, 9999)
 

@@ -240,6 +240,7 @@ def rss_catalog_stats() -> dict:
     # History from rss_run_*.json (last 50 runs)
     run_files = sorted(DATA_DIR.glob("rss_run_*.json"))[-50:]
     history = []
+    last_run: dict = {}
     for rf in run_files:
         try:
             d = json.loads(rf.read_text(encoding='utf-8'))
@@ -248,9 +249,19 @@ def rss_catalog_stats() -> dict:
                 'catalog_size': d.get('catalog_size', 0),
                 'total_items': d.get('total_items', 0),
                 'missed_by_process5': d.get('missed_by_process5_count', 0),
+                'depts_polled': d.get('depts_polled', 0),
+                'poll_errors': d.get('poll_errors', 0),
+                'new_to_rss': d.get('new_to_rss_count', 0),
             })
+            last_run = d
         except Exception:
             continue
+
+    # Use last run's catalog_size as the authoritative total_depts
+    # (catalog file may lag behind if git pull reset it; run file reflects scraper's actual state)
+    last_catalog_size = last_run.get('catalog_size', total)
+    scraper_total = max(total, last_catalog_size)
+    scraper_seen = last_run.get('scraper_seen_size', 0)
 
     # Queue size
     queue_file = DATA_DIR / "rss_queue.json"
@@ -276,13 +287,19 @@ def rss_catalog_stats() -> dict:
         })
 
     return {
-        'total_depts': total,
+        'total_depts': scraper_total,
+        'catalog_file_depts': total,
         'active_depts': active,
-        'empty_depts': empty,
+        'empty_depts': scraper_total - active,
         'total_items': total_items,
+        'scraper_seen_size': scraper_seen,
         'queue_size': queue_count,
-        'coverage_pct': round(total / 9999 * 100, 2),
-        'active_pct': round(active / max(1, total) * 100, 2),
+        'coverage_pct': round(scraper_total / 9999 * 100, 2),
+        'active_pct': round(active / max(1, scraper_total) * 100, 2),
+        'last_run_at': last_run.get('run_at', ''),
+        'last_run_items': last_run.get('total_items', 0),
+        'last_run_new': last_run.get('new_to_rss_count', 0),
+        'last_run_missed_process5': last_run.get('missed_by_process5_count', 0),
         'top_depts': [
             {'dept_id': d, 'dept_name': n, 'item_count': c, 'sample_title': t[:80]}
             for d, c, t, n in top

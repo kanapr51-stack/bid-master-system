@@ -52,7 +52,8 @@ jobs:
           git add data/rss_queue.json \
                   data/rss_seen_ids.json \
                   data/rss_stage_rotation.json \
-                  data/winner_cache_bootstrap.json || true
+                  data/winner_cache_bootstrap.json \
+                  data/egp_deptid_catalog.json || true
           git diff --staged --quiet || \
             git commit -m "chore: rss state $(date -u '+%Y-%m-%d %H:%M') [skip ci]"
           git push || true

@@ -67,11 +67,29 @@ def run_step(name: str, script: str) -> bool:
         return False
 
 
+def git_pull():
+    """pull latest catalog + state files ก่อน extract"""
+    try:
+        result = subprocess.run(
+            ["git", "pull", "--ff-only", "origin", "main"],
+            cwd=str(ROOT),
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        log(f"   git pull: {result.stdout.strip() or result.stderr.strip()}")
+    except Exception as e:
+        log(f"   git pull failed (ok to continue): {e}")
+
+
 def main():
     started = datetime.now()
     log("=" * 50)
     log(f"Dashboard Refresh START")
     log("=" * 50)
+
+    log("📥 git pull — sync catalog จาก GitHub Actions...")
+    git_pull()
 
     ok_extract = run_step("Extract snapshot", "dashboard_extractor.py")
     if not ok_extract:

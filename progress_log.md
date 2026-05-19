@@ -2072,3 +2072,28 @@ d08dda0 Dashboard: Vercel Blob real-time snapshot
 ### Followup
 - Sebastian_Scraper.py search ยังต้อง Chrome (Cloudflare Turnstile) — แต่ RSS cover ทุก stage แล้ว
 - Cloud Migration: ตอนนี้ทุก critical path ไม่ต้อง Chrome → deploy cloud ได้แล้ว
+
+---
+
+## งานที่ 21: Cloud Migration — GitHub Actions (2026-05-19)
+
+### สถานะ: ✅ เสร็จ (~1 ชั่วโมง)
+
+### Root cause / สิ่งที่ทำ
+- Pipeline รันบน Windows Task Scheduler → ต้องเปิดคอมตลอด
+- เปลี่ยนมา GitHub Actions — ฟรี, รัน cloud, ไม่ต้องเปิดคอม
+
+### Fix / ผล
+- `requirements.txt` — Python deps สำหรับ cloud
+- `sheets_client.py` — รองรับ `GOOGLE_SERVICE_ACCOUNT_JSON` (JSON string env var)
+- `.github/workflows/pipeline_daily.yml` — cron 06:00 Thailand (23:00 UTC)
+  - Steps: refresh → patch → classify → LINE notify → snapshot → commit state
+- `.github/workflows/rss_scraper.yml` — hourly :22/:52
+- Push to GitHub: `github.com/kanapr51-stack/bid-master-system` (private)
+- ตั้ง 34 GitHub Secrets อัตโนมัติจาก .env + .env.db + credentials/
+- Test run สำเร็จ: ✅ 3m18s ทุก step ผ่าน
+
+### Followup
+- RSS workflow รอ eGP RSS กลับมา
+- Multi-tenant LINE notify (ยังส่งแค่ 1 user)
+- Package signup flow + payment

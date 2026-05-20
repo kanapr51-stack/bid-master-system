@@ -31,11 +31,10 @@ from datetime import datetime
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+import asyncio
 import requests
-# curl_cffi: HTTP client ที่เลียนแบบ TLS fingerprint ของ Chrome จริง
-# จำเป็นเพราะ process.gprocurement.go.th block TLS fingerprint ของ python-requests
-# (TCP open ได้ แต่ HTTPS handshake ไม่ตอบ) — 2026-05-20
 from curl_cffi import requests as cffi_requests
+from playwright.async_api import async_playwright
 
 sys.stdout.reconfigure(encoding="utf-8")
 sys.path.insert(0, str(Path(__file__).parent))
@@ -63,11 +62,14 @@ HEADERS = {
 POLL_WORKERS = 8
 POLL_TIMEOUT = 8   # connect + read timeout — fail-fast เมื่อ server stuck
 # Probe sample size per run (incremental discovery)
-# 2026-05-19: ลด 50 → 20 + serial (workers=1) เพราะ probe หลัง poll → 429 rate limit
-# 2026-05-20: เพิ่ม 20 → 100 — GitHub Actions ใช้ IP ใหม่ทุกรัน ไม่สะสม rate limit
 PROBE_SAMPLE_SIZE = 100
 PROBE_WORKERS = 1
 DEPT_ID_RANGE = (1, 9999)
+
+# Playwright settings — ใช้เมื่อ curl_cffi โดน Cloudflare block (2026-05-20)
+# Real Chrome browser ผ่าน Cloudflare ได้เสมอ
+PW_CONCURRENCY = 4      # concurrent pages ต่อ browser
+PW_TIMEOUT = 30_000     # ms — รอ Cloudflare JS challenge ผ่าน
 
 
 _LOG_FILE = None
@@ -176,6 +178,62 @@ def fetch_dept(dept_id: str, anounce_type: str | None = None) -> tuple[int, list
     except Exception as e:
         log(f"  ⚠️ {dept_id} ({anounce_type or 'D0'}): {e}")
         return -1, []
+
+
+# ================================================================
+# Playwright batch fetch (ใช้เมื่อ curl_cffi โดน Cloudflare block)
+# ================================================================
+
+async def _pw_fetch_one(context, sem, dept_id, anounce_type):
+    params = f"deptId={dept_id}"
+    if anounce_type:
+        params += f"&anounceType={anounce_type}"
+    url = f"{RSS_URL}?{params}"
+    async with sem:
+        page = await context.new_page()
+        try:
+            resp = await page.goto(url, timeout=PW_TIMEOUT, wait_until="networkidle")
+            if resp is None or resp.status != 200:
+                return dept_id, resp.status if resp else -1, []
+            body = await resp.body()
+            text = decode_thai(body)
+            items = parse_items(text)
+            stage_tag = STAGE_CODES.get(anounce_type or "D0", "active_bidding")
+            for it in items:
+                it["deptId"] = dept_id
+                it["anounceType"] = anounce_type or "D0"
+                it["stage"] = stage_tag
+            return dept_id, 200, items
+        except Exception as e:
+            log(f"  ⚠️ {dept_id} ({anounce_type or 'D0'}) PW: {type(e).__name__}: {str(e)[:80]}")
+            return dept_id, -1, []
+        finally:
+            await page.close()
+
+
+async def _fetch_all_pw_async(targets, anounce_type=None):
+    sem = asyncio.Semaphore(PW_CONCURRENCY)
+    results = {}
+    async with async_playwright() as pw:
+        browser = await pw.chromium.launch(headless=True)
+        context = await browser.new_context(
+            user_agent=HEADERS["User-Agent"],
+            extra_http_headers={k: v for k, v in HEADERS.items() if k != "User-Agent"},
+        )
+        tasks = [_pw_fetch_one(context, sem, d, anounce_type) for d in targets]
+        done = await asyncio.gather(*tasks, return_exceptions=True)
+        for item in done:
+            if isinstance(item, Exception):
+                continue
+            dept_id, status, items = item
+            results[dept_id] = (status, items)
+        await browser.close()
+    return results
+
+
+def fetch_all_playwright(targets, anounce_type=None):
+    """Sync wrapper — launch one Chrome browser, fetch all targets concurrently."""
+    return asyncio.run(_fetch_all_pw_async(targets, anounce_type))
 
 
 # ================================================================
@@ -297,35 +355,22 @@ def probe_unknown_depts(catalog: dict) -> int:
     if not candidates:
         return 0
     new_found = 0
-    # sleep ก่อน probe เพื่อให้ rate limit window reset หลัง poll
-    time.sleep(3)
-    with ThreadPoolExecutor(max_workers=PROBE_WORKERS) as ex:
-        futures = {ex.submit(fetch_dept, d): d for d in candidates}
-        for fut in as_completed(futures):
-            dept_id = futures[fut]
-            try:
-                status, items = fut.result()
-            except Exception:
-                continue
-            if status == 429:
-                log(f"  ⚠️ probe rate limited — หยุด probe รอบนี้")
-                break
-            if status == 200:
-                # Record empty too (so we don't re-probe)
-                catalog[dept_id] = {
-                    "item_count": len(items),
-                    "projectIds": [
-                        it.get("projectId") for it in items if it.get("projectId")
-                    ][:15],
-                    "titles": [it.get("title", "")[:120] for it in items[:5]],
-                    "pubDates": [it.get("pubDate", "") for it in items[:3]],
-                    "scanned_at": datetime.now().isoformat(timespec="seconds"),
-                    "note": "incremental_probe",
-                }
-                if items:
-                    new_found += 1
-                    log(f"  🔍 probe {dept_id}: {len(items)} items · {items[0].get('title', '')[:50]}")
-                time.sleep(1)
+    pw_results = fetch_all_playwright(candidates, "D0")
+    for dept_id, (status, items) in pw_results.items():
+        if status == 200:
+            catalog[dept_id] = {
+                "item_count": len(items),
+                "projectIds": [
+                    it.get("projectId") for it in items if it.get("projectId")
+                ][:15],
+                "titles": [it.get("title", "")[:120] for it in items[:5]],
+                "pubDates": [it.get("pubDate", "") for it in items[:3]],
+                "scanned_at": datetime.now().isoformat(timespec="seconds"),
+                "note": "incremental_probe",
+            }
+            if items:
+                new_found += 1
+                log(f"  🔍 probe {dept_id}: {len(items)} items · {items[0].get('title', '')[:50]}")
     return new_found
 
 
@@ -350,35 +395,27 @@ def run(queue_new: bool = False, skip_probe: bool = False,
     log(f"=== RSS Discovery Run · stage={anounce_type or 'D0'} ({stage_label}) ===")
     log(f"Catalog: {len(catalog)} depts known · Target: {len(targets)}")
 
-    # Pass 1: Poll target depts
+    # Pass 1: Poll target depts (Playwright — real Chrome ผ่าน Cloudflare)
     all_items: list[dict] = []
     poll_started = time.time()
     poll_errors = 0
 
-    with ThreadPoolExecutor(max_workers=POLL_WORKERS) as ex:
-        futures = {ex.submit(fetch_dept, d, anounce_type): d for d in targets}
-        for fut in as_completed(futures):
-            dept_id = futures[fut]
-            try:
-                status, items = fut.result()
-            except Exception as e:
-                poll_errors += 1
-                continue
-            if status != 200:
-                poll_errors += 1
-                continue
-            if items:
-                all_items.extend(items)
-                # Refresh catalog entry
-                catalog[dept_id] = {
-                    "item_count": len(items),
-                    "projectIds": [
-                        it.get("projectId") for it in items if it.get("projectId")
-                    ][:15],
-                    "titles": [it.get("title", "")[:120] for it in items[:5]],
-                    "pubDates": [it.get("pubDate", "") for it in items[:3]],
-                    "scanned_at": datetime.now().isoformat(timespec="seconds"),
-                }
+    pw_results = fetch_all_playwright(targets, anounce_type)
+    for dept_id, (status, items) in pw_results.items():
+        if status != 200:
+            poll_errors += 1
+            continue
+        if items:
+            all_items.extend(items)
+            catalog[dept_id] = {
+                "item_count": len(items),
+                "projectIds": [
+                    it.get("projectId") for it in items if it.get("projectId")
+                ][:15],
+                "titles": [it.get("title", "")[:120] for it in items[:5]],
+                "pubDates": [it.get("pubDate", "") for it in items[:3]],
+                "scanned_at": datetime.now().isoformat(timespec="seconds"),
+            }
 
     poll_elapsed = time.time() - poll_started
     log(f"Polled {len(targets)} depts in {poll_elapsed:.1f}s · {len(all_items)} items · {poll_errors} errors")

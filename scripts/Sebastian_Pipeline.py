@@ -1,10 +1,13 @@
 """
-Sebastian_Pipeline.py — Master runner รัน pipeline ทั้งหมด
+Sebastian_Pipeline.py — Master runner รัน pipeline ทั้งหมด (local debug only)
+
+NOTE: Automated pipeline รันบน GitHub Actions ไม่ต้องการ Chrome และไม่ต้องเปิดคอม
+  - pipeline_daily.yml  → refresh + patch + classify + notify (ทุกวัน 06:00 ไทย)
+  - rss_scraper.yml     → RSS discovery (ทุก :22 และ :52 UTC)
 
 Usage:
     python Sebastian_Pipeline.py                  # รัน full pipeline
-    python Sebastian_Pipeline.py --step scrape    # เฉพาะ scraper
-    python Sebastian_Pipeline.py --step download  # เฉพาะ doc download
+    python Sebastian_Pipeline.py --step download  # เฉพาะ doc download (ต้องการ Chrome)
     python Sebastian_Pipeline.py --step analyze   # parse + AI + merge → Sheet 2
     python Sebastian_Pipeline.py --step cost      # cost calculation → Sheet 3
     python Sebastian_Pipeline.py --step rank      # ranking → Sheet 4
@@ -13,10 +16,10 @@ Usage:
     python Sebastian_Pipeline.py --step deploy    # vercel deploy → dashboard live
     python Sebastian_Pipeline.py --no-deploy      # รัน full แต่ skip deploy step
 
-Pipeline flow:
-    scrape → rss → classify → refresh → download → analyze → cost → rank → notify → snapshot → deploy
+Pipeline flow (local):
+    rss → classify → refresh → download → analyze → cost → rank → notify → snapshot → deploy
 
-Steps ที่ต้องการ Chrome (port 9222): scrape, download  [refresh ใช้ HTTP-only แล้ว — ไม่ต้อง Chrome]
+Steps ที่ต้องการ Chrome (port 9222): download เท่านั้น
     Start-Process "chrome.exe" -ArgumentList "--remote-debugging-port=9222","--no-first-run","--user-data-dir=C:\\Temp\\ChromeDebug"
 """
 
@@ -150,7 +153,7 @@ def main():
     parser = argparse.ArgumentParser(description="Sebastian Pipeline Runner")
     parser.add_argument(
         "--step",
-        choices=["scrape", "rss", "download", "classify", "refresh", "analyze", "cost", "rank", "notify", "snapshot", "deploy", "all"],
+        choices=["rss", "download", "classify", "refresh", "analyze", "cost", "rank", "notify", "snapshot", "deploy", "all"],
         default="all",
         help="step ที่จะรัน (default: all)",
     )
@@ -164,15 +167,6 @@ def main():
 
     start = time.time()
     _dc(notify_pipeline_start)
-
-    if step in ("all", "scrape"):
-        log("Step 1/8: SCRAPE — ดึงงานจาก gprocurement.go.th → all_jobs")
-        ok = run_script("Sebastian_Scraper.py")
-        if ok:
-            _dc(notify_step_done, "scrape", "ดึงงานจาก gprocurement.go.th สำเร็จ")
-        else:
-            print("[WARN] Scraper ไม่สำเร็จ", flush=True)
-            _dc(notify_step_warn, "scrape", "Scraper ไม่สำเร็จ — ดูรายละเอียดใน log")
 
     if step in ("all", "rss"):
         log("Step 1.5: RSS — discovery via RSS feed (cross-check process5)")

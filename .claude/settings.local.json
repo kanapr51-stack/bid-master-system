@@ -107,7 +107,9 @@
       "PowerShell(& 'C:\\\\Bid-Master-System\\\\scripts\\\\setup_rss_cron.ps1')",
       "PowerShell(Get-Item *)",
       "PowerShell(Disable-ScheduledTask *)",
-      "Bash(python -c ' *)"
+      "Bash(python -c ' *)",
+      "WebFetch(domain:www.dss.go.th)",
+      "WebFetch(domain:developers.cloudflare.com)"
     ]
   }
 }

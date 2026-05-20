@@ -10,12 +10,16 @@ on:
       mode:
         description: 'Probe mode: d0 (catalog growth) หรือ w1 (target-area discovery)'
         required: false
-        default: 'w1'
+        default: 'd0'
         type: choice
         options:
           - w1
           - d0
           - w0_full
+  schedule:
+    # ทุกวันพุธ 01:00 ICT (UTC+7) = ทุกวันอังคาร 18:00 UTC
+    # probe D0 ครบ 9999 deptIds → จับหน่วยงานท้องถิ่นที่เพิ่งมีงานใหม่ภายใน 7 วัน
+    - cron: '0 18 * * 2'
 
 permissions:
   contents: write

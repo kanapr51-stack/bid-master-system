@@ -37,8 +37,8 @@ jobs:
         run: |
           git config user.name  "Sebastian Bot"
           git config user.email "bot@bidmaster.local"
-          git add data/egp_deptid_catalog.json \
-                  data/target_deptids.json || true
+          git add data/egp_deptid_catalog.json || true
+          git add data/target_deptids.json || true
           git diff --staged --quiet || \
             git commit -m "chore: full catalog probe $(date -u '+%Y-%m-%d %H:%M') [skip ci]"
           git push || true

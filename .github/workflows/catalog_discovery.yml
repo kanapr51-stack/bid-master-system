@@ -15,6 +15,7 @@ on:
         options:
           - w1
           - d0
+          - w0_full
 
 permissions:
   contents: write
@@ -42,6 +43,8 @@ jobs:
           MODE="${{ github.event.inputs.mode || 'w1' }}"
           if [ "$MODE" = "w1" ]; then
             python scripts/Sebastian_RSS_Scraper.py --probe-w1
+          elif [ "$MODE" = "w0_full" ]; then
+            python scripts/Sebastian_RSS_Scraper.py --probe-w0-full
           else
             python scripts/Sebastian_RSS_Scraper.py --probe-all
           fi
@@ -53,6 +56,7 @@ jobs:
           git config user.email "bot@bidmaster.local"
           git add data/egp_deptid_catalog.json || true
           git add data/target_deptids.json || true
+          git add data/egp_w0_catalog.json || true
           git diff --staged --quiet || \
             git commit -m "chore: catalog probe [${{ github.event.inputs.mode || 'w1' }}] $(date -u '+%Y-%m-%d %H:%M') [skip ci]"
           git push || true

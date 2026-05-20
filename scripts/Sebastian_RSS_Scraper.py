@@ -361,14 +361,19 @@ def pick_probe_candidates(catalog: dict, n: int) -> list[str]:
     return random.sample(pool, min(n, len(pool)))
 
 
+W0_CATALOG_FILE = DATA_DIR / "egp_w0_catalog.json"
+
+
 def probe_all_depts(catalog: dict, anounce_type: str = "D0",
-                    force_all: bool = False) -> dict:
+                    force_all: bool = False, save_all_w0: bool = False) -> dict:
     """
     Probe dept IDs 0001-9999 ด้วย cffi_requests
 
     Args:
-        anounce_type: "D0" (active bidding) หรือ "W1" (award — ดูย้อนหลัง)
-        force_all: True = probe ทุก ID แม้อยู่ใน catalog แล้ว (ใช้กับ W1)
+        anounce_type: "D0" (active bidding) หรือ "W0" (award — ดูย้อนหลัง)
+        force_all: True = probe ทุก ID แม้อยู่ใน catalog แล้ว (ใช้กับ W0)
+        save_all_w0: True = บันทึก ALL depts ที่มี items ลง egp_w0_catalog.json
+                     (ไม่กรอง keyword) เพื่อ post-process ทีหลัง
 
     Returns: {"found": int, "target_area": list[str], "total_probed": int}
     """
@@ -387,10 +392,12 @@ def probe_all_depts(catalog: dict, anounce_type: str = "D0",
         log("✅ probe-all: catalog ครบแล้ว (ไม่มี ID ที่ยังไม่ได้ probe)")
         return {"found": 0, "target_area": [], "total_probed": 0}
 
-    log(f"🔍 probe-all [{anounce_type}]: {total} dept IDs (workers={PROBE_ALL_WORKERS})")
+    log(f"🔍 probe-all [{anounce_type}]: {total} dept IDs (workers={PROBE_ALL_WORKERS})"
+        + (" [save_all_w0]" if save_all_w0 else ""))
     t0 = time.time()
     found_active = 0
     target_depts: list[str] = []
+    w0_catalog: dict[str, dict] = {}  # deptId → {item_count, projectIds[]}
     done = 0
 
     def _probe_one(dept_id: str):
@@ -406,15 +413,25 @@ def probe_all_depts(catalog: dict, anounce_type: str = "D0",
             if status == 200:
                 if items:
                     found_active += 1
-                    title_blob = " ".join(it.get("title", "") for it in items)
-                    is_target = any(kw in title_blob for kw in TARGET_KEYWORDS)
-                    if is_target:
-                        target_depts.append(dept_id)
-                        log(f"  🎯 TARGET {dept_id}: {items[0].get('title','')[:70]}")
-                    else:
+                    if save_all_w0:
+                        # เก็บทุก dept ที่มี items ไม่กรอง keyword
+                        w0_catalog[dept_id] = {
+                            "item_count": len(items),
+                            "projectIds": [it.get("projectId") for it in items
+                                           if it.get("projectId")][:10],
+                            "scanned_at": datetime.now().isoformat(timespec="seconds"),
+                        }
                         log(f"  📦 {dept_id}: {len(items)} items · {items[0].get('title','')[:50]}")
+                    else:
+                        title_blob = " ".join(it.get("title", "") for it in items)
+                        is_target = any(kw in title_blob for kw in TARGET_KEYWORDS)
+                        if is_target:
+                            target_depts.append(dept_id)
+                            log(f"  🎯 TARGET {dept_id}: {items[0].get('title','')[:70]}")
+                        else:
+                            log(f"  📦 {dept_id}: {len(items)} items · {items[0].get('title','')[:50]}")
 
-                # อัปเดต catalog เฉพาะ D0 probe (W1 ใช้แค่หา target keywords)
+                # อัปเดต catalog เฉพาะ D0 probe
                 if not force_all:
                     entry = {
                         "item_count": len(items),
@@ -440,14 +457,20 @@ def probe_all_depts(catalog: dict, anounce_type: str = "D0",
                 elapsed = time.time() - t0
                 log(f"  ↳ progress {done}/{total} ({elapsed:.0f}s) active={found_active}")
 
-    if not force_all:
+    if save_all_w0:
+        W0_CATALOG_FILE.write_text(
+            json.dumps(w0_catalog, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        log(f"💾 egp_w0_catalog.json: {len(w0_catalog)} depts saved")
+    elif not force_all:
         save_catalog(catalog)
+
     elapsed = time.time() - t0
     log(f"\n✅ probe-all [{anounce_type}] เสร็จ: {done}/{total} probed, {found_active} active, "
         f"{len(target_depts)} target-area depts ({elapsed:.0f}s)")
 
-    # อัปเดต target_deptids.json ถ้าเจอ target area depts
-    if target_depts:
+    # อัปเดต target_deptids.json ถ้าเจอ target area depts (keyword mode เท่านั้น)
+    if target_depts and not save_all_w0:
         existing: list[str] = []
         if TARGET_FILE.exists():
             try:
@@ -663,6 +686,13 @@ if __name__ == "__main__":
              "→ save ลง target_deptids.json. "
              "รัน workflow_dispatch จาก GHA หรือ manual เท่านั้น",
     )
+    parser.add_argument(
+        "--probe-w0-full", action="store_true",
+        help="Probe ทุก dept ID 0001-9999 ด้วย W0 → บันทึก egp_w0_catalog.json "
+             "(ทุก dept ที่มี items, ไม่กรอง keyword) เพื่อ post-process "
+             "→ map deptSubName → จังหวัด ทีหลัง. "
+             "รัน workflow_dispatch จาก GHA หรือ manual เท่านั้น",
+    )
     args = parser.parse_args()
     _init_log_file()
 
@@ -677,7 +707,7 @@ if __name__ == "__main__":
             f"probed={result['total_probed']}")
         sys.exit(0)
 
-    # ── probe-w1 mode: หา target-area depts จาก W1 ย้อนหลัง ──
+    # ── probe-w1 mode: หา target-area depts จาก W0 ย้อนหลัง (keyword filter) ──
     if args.probe_w1:
         log("=" * 60)
         log("PROBE-W0 MODE: หา target-area depts จาก anounceType=W0 (ประกาศผู้ชนะ ย้อนหลัง)")
@@ -686,6 +716,18 @@ if __name__ == "__main__":
         result = probe_all_depts(catalog, anounce_type="W0", force_all=True)
         log(f"\nสรุป W0: found={result['found']}, target_area={result['target_area']}, "
             f"probed={result['total_probed']}")
+        sys.exit(0)
+
+    # ── probe-w0-full mode: เก็บ ALL depts ที่มี W0 items → post-process ทีหลัง ──
+    if args.probe_w0_full:
+        log("=" * 60)
+        log("PROBE-W0-FULL MODE: เก็บ egp_w0_catalog.json ทุก dept (ไม่กรอง keyword)")
+        log("  → ใช้ build_target_deptids.py ทีหลังเพื่อ map deptSubName → จังหวัด")
+        log("=" * 60)
+        catalog = load_catalog()
+        result = probe_all_depts(catalog, anounce_type="W0", force_all=True, save_all_w0=True)
+        log(f"\nสรุป W0-full: found={result['found']}, probed={result['total_probed']}")
+        log(f"  → egp_w0_catalog.json พร้อมให้ build_target_deptids.py ประมวลผล")
         sys.exit(0)
 
     if args.stage == "all":

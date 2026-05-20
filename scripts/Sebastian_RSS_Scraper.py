@@ -658,7 +658,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--probe-w1", action="store_true",
-        help="Probe ทุก dept ID 0001-9999 ด้วย anounceType=W1 (ประกาศผู้ชนะ) "
+        help="Probe ทุก dept ID 0001-9999 ด้วย anounceType=W0 (ประกาศผู้ชนะ) "
              "→ หา target-area depts จากข้อมูลย้อนหลัง แม้ตอนนี้ไม่มี active bid "
              "→ save ลง target_deptids.json. "
              "รัน workflow_dispatch จาก GHA หรือ manual เท่านั้น",
@@ -680,11 +680,11 @@ if __name__ == "__main__":
     # ── probe-w1 mode: หา target-area depts จาก W1 ย้อนหลัง ──
     if args.probe_w1:
         log("=" * 60)
-        log("PROBE-W1 MODE: หา target-area depts จาก anounceType=W1 (ย้อนหลัง)")
+        log("PROBE-W0 MODE: หา target-area depts จาก anounceType=W0 (ประกาศผู้ชนะ ย้อนหลัง)")
         log("=" * 60)
         catalog = load_catalog()
-        result = probe_all_depts(catalog, anounce_type="W1", force_all=True)
-        log(f"\nสรุป W1: found={result['found']}, target_area={result['target_area']}, "
+        result = probe_all_depts(catalog, anounce_type="W0", force_all=True)
+        log(f"\nสรุป W0: found={result['found']}, target_area={result['target_area']}, "
             f"probed={result['total_probed']}")
         sys.exit(0)
 

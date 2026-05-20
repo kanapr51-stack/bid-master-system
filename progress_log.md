@@ -2,6 +2,37 @@
 
 ---
 
+## งานที่ N+20: ซ่อม RSS Catalog — กู้ 475→2111 + harden workflow (2026-05-20 13:30)
+
+### สถานะ: ✅ เสร็จแล้ว (commit b7e6044)
+
+### Root Causes ที่เจอ (4 อย่างซ้อนกัน)
+1. **catalog หาย**: `gentle_scan_egp.py` สร้าง 2091 entries (May 18 22:00) แต่ไม่ commit → ทุกครั้งที่ dashboard_extractor ทำ `git pull` (commit e714fdf) → reset เป็น 475 entries
+2. **dashboard โกหก**: `rss_catalog_stats()` ใช้ `max(catalog_file, last_run.catalog_size)` → แสดง 2111 ทั้งที่ไฟล์จริง 475
+3. **GHA timeout**: POLL_WORKERS=4 × 15s timeout × 2111 depts → 10 นาที (success case), 25+ นาที (server ช้า) → cancelled
+4. **Commit late**: catalog commit step อยู่หลัง queue refresh → cancelled = catalog หาย (ไม่ถูก commit)
+
+### Fixes
+- ✅ กู้ catalog 475 → 2111 จาก `git stash` (มี diff +8775 lines เก็บไว้)
+- ✅ `dashboard_extractor.py`: ใช้ catalog file เป็นความจริง ลบ max() fallback
+- ✅ `Sebastian_RSS_Scraper.py`: POLL_WORKERS 4 → 8, timeout 15s → 10s (fail-fast)
+- ✅ `.github/workflows/rss_scraper.yml`:
+  - job timeout 25 → 35 นาที
+  - step-level timeout 15 นาที (แต่ละ step)
+  - **early catalog commit** ก่อน queue refresh + `if: always()`
+
+### ผลลัพธ์
+- catalog file: 2111 entries (41 active, 2070 empty, 21.11% coverage)
+- dashboard แสดงเลขจริง: 2111
+- GHA run ต่อไป จะใช้ code ใหม่ — มี slack timeout มากขึ้น + commit ก่อน
+
+### Followup
+- monitor GHA run ใหม่ (26145215108) ว่า poll เร็วขึ้นจาก 10 → ~5-6 นาที (8 workers) ไหม
+- ถ้า server ยังบล็อก local IP อยู่ → ต้องพึ่ง GHA อย่างเดียว
+
+---
+
+
 ## งานที่ 1: แก้ Sheet cost_data_By_Dexter
 
 ### สถานะ: ✅ เสร็จแล้ว (2026-04-29)
@@ -2097,3 +2128,22 @@ d08dda0 Dashboard: Vercel Blob real-time snapshot
 - RSS workflow รอ eGP RSS กลับมา
 - Multi-tenant LINE notify (ยังส่งแค่ 1 user)
 - Package signup flow + payment
+
+## งานที่ 22: Dashboard RSS Catalog Tracker อัพเดต (2026-05-20)
+
+### สถานะ: ✅ เสร็จ
+
+### Root cause / สิ่งที่ทำ
+- `rss_catalog_stats()` ใน dashboard_extractor.py อ่าน total_depts จาก `egp_deptid_catalog.json` (475 entries)
+- แต่ scraper จริงรันด้วย 2,111 depts (catalog file ถูก reset โดย git pull หลัง gentle_scan)
+- Source of truth ที่ถูกต้อง = `rss_run_*.json` ล่าสุด → `catalog_size` field
+
+### Fix / ผล
+- อัพเดต `rss_catalog_stats()` ให้ใช้ `max(catalog_file_count, last_run.catalog_size)` เป็น total_depts
+- เพิ่ม fields: `last_run_at`, `last_run_items`, `last_run_new`, `last_run_missed_process5`, `scraper_seen_size`
+- Dashboard แสดง: total=2111, active=20, coverage=21.11% (เดิม: 475, 4.75%)
+- Commit: c3fd529
+
+### Followup
+- commit egp_deptid_catalog.json เมื่อ catalog ขยายใหญ่ขึ้น (ตอนนี้ 475 entries ใน git)
+- RssCatalogCard component อาจต้องใช้ last_run_at แสดง "Last Run" timestamp

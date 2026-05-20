@@ -1,11 +1,20 @@
 name: BMS Catalog Discovery (Full Probe)
 
-# รันมือเท่านั้น — ทำครั้งเดียวเพื่อ probe dept IDs 0001-9999 ทั้งหมด
-# ใช้เวลา ~1-2 นาที (20 workers, cffi_requests)
-# ผลลัพธ์: egp_deptid_catalog.json ครบ + target_deptids.json (ถ้าเจอพื้นที่เป้าหมาย)
+# รันมือเท่านั้น
+# mode=d0 → probe unchecked IDs ด้วย D0 (active bidding) — ขยาย catalog
+# mode=w1 → probe ทุก ID ด้วย W1 (ประกาศผู้ชนะ) — หา target-area depts ย้อนหลัง
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Probe mode: d0 (catalog growth) หรือ w1 (target-area discovery)'
+        required: false
+        default: 'w1'
+        type: choice
+        options:
+          - w1
+          - d0
 
 permissions:
   contents: write
@@ -13,7 +22,7 @@ permissions:
 jobs:
   probe-all:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v6
@@ -28,11 +37,16 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Probe all dept IDs (0001-9999)
+      - name: Probe dept IDs
         run: |
-          python scripts/Sebastian_RSS_Scraper.py --probe-all
+          MODE="${{ github.event.inputs.mode || 'w1' }}"
+          if [ "$MODE" = "w1" ]; then
+            python scripts/Sebastian_RSS_Scraper.py --probe-w1
+          else
+            python scripts/Sebastian_RSS_Scraper.py --probe-all
+          fi
 
-      - name: Commit expanded catalog
+      - name: Commit results
         if: always()
         run: |
           git config user.name  "Sebastian Bot"
@@ -40,5 +54,5 @@ jobs:
           git add data/egp_deptid_catalog.json || true
           git add data/target_deptids.json || true
           git diff --staged --quiet || \
-            git commit -m "chore: full catalog probe $(date -u '+%Y-%m-%d %H:%M') [skip ci]"
+            git commit -m "chore: catalog probe [${{ github.event.inputs.mode || 'w1' }}] $(date -u '+%Y-%m-%d %H:%M') [skip ci]"
           git push || true

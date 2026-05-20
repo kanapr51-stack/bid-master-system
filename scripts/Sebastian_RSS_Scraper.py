@@ -361,33 +361,40 @@ def pick_probe_candidates(catalog: dict, n: int) -> list[str]:
     return random.sample(pool, min(n, len(pool)))
 
 
-def probe_all_depts(catalog: dict) -> dict:
+def probe_all_depts(catalog: dict, anounce_type: str = "D0",
+                    force_all: bool = False) -> dict:
     """
-    Probe ALL dept IDs 0001-9999 ที่ยังไม่อยู่ใน catalog ด้วย cffi_requests
-    (ไม่ใช้ Playwright — เร็วกว่า 10x, ไม่ต้องการ browser)
+    Probe dept IDs 0001-9999 ด้วย cffi_requests
+
+    Args:
+        anounce_type: "D0" (active bidding) หรือ "W1" (award — ดูย้อนหลัง)
+        force_all: True = probe ทุก ID แม้อยู่ใน catalog แล้ว (ใช้กับ W1)
 
     Returns: {"found": int, "target_area": list[str], "total_probed": int}
     """
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
     known = set(catalog.keys())
-    candidates = sorted(
-        f"{i:04d}" for i in range(DEPT_ID_RANGE[0], DEPT_ID_RANGE[1] + 1)
-        if f"{i:04d}" not in known
-    )
+    if force_all:
+        candidates = sorted(f"{i:04d}" for i in range(DEPT_ID_RANGE[0], DEPT_ID_RANGE[1] + 1))
+    else:
+        candidates = sorted(
+            f"{i:04d}" for i in range(DEPT_ID_RANGE[0], DEPT_ID_RANGE[1] + 1)
+            if f"{i:04d}" not in known
+        )
     total = len(candidates)
     if not total:
         log("✅ probe-all: catalog ครบแล้ว (ไม่มี ID ที่ยังไม่ได้ probe)")
         return {"found": 0, "target_area": [], "total_probed": 0}
 
-    log(f"🔍 probe-all: {total} dept IDs remaining (workers={PROBE_ALL_WORKERS})")
+    log(f"🔍 probe-all [{anounce_type}]: {total} dept IDs (workers={PROBE_ALL_WORKERS})")
     t0 = time.time()
     found_active = 0
     target_depts: list[str] = []
     done = 0
 
     def _probe_one(dept_id: str):
-        status, items = fetch_dept(dept_id, "D0", timeout=PROBE_ALL_TIMEOUT)
+        status, items = fetch_dept(dept_id, anounce_type, timeout=PROBE_ALL_TIMEOUT)
         return dept_id, status, items
 
     with ThreadPoolExecutor(max_workers=PROBE_ALL_WORKERS) as ex:
@@ -397,16 +404,6 @@ def probe_all_depts(catalog: dict) -> dict:
             done += 1
 
             if status == 200:
-                entry = {
-                    "item_count": len(items),
-                    "projectIds": [it.get("projectId") for it in items if it.get("projectId")][:15],
-                    "titles":    [it.get("title", "")[:120] for it in items[:5]],
-                    "pubDates":  [it.get("pubDate", "") for it in items[:3]],
-                    "scanned_at": datetime.now().isoformat(timespec="seconds"),
-                    "note": "probe_all",
-                }
-                catalog[dept_id] = entry
-
                 if items:
                     found_active += 1
                     title_blob = " ".join(it.get("title", "") for it in items)
@@ -416,23 +413,37 @@ def probe_all_depts(catalog: dict) -> dict:
                         log(f"  🎯 TARGET {dept_id}: {items[0].get('title','')[:70]}")
                     else:
                         log(f"  📦 {dept_id}: {len(items)} items · {items[0].get('title','')[:50]}")
-            else:
-                # timeout/error → mark as scanned (empty) so we don't retry
-                catalog[dept_id] = {
-                    "item_count": 0, "projectIds": [], "titles": [],
-                    "scanned_at": datetime.now().isoformat(timespec="seconds"),
-                    "note": f"probe_all_err_{status}",
-                }
 
-            # save progress ทุก N entries กัน crash
-            if done % PROBE_ALL_SAVE_EVERY == 0:
+                # อัปเดต catalog เฉพาะ D0 probe (W1 ใช้แค่หา target keywords)
+                if not force_all:
+                    entry = {
+                        "item_count": len(items),
+                        "projectIds": [it.get("projectId") for it in items if it.get("projectId")][:15],
+                        "titles":    [it.get("title", "")[:120] for it in items[:5]],
+                        "pubDates":  [it.get("pubDate", "") for it in items[:3]],
+                        "scanned_at": datetime.now().isoformat(timespec="seconds"),
+                        "note": "probe_all",
+                    }
+                    catalog[dept_id] = entry
+            else:
+                # timeout/error → mark as scanned (empty) เฉพาะ D0 probe
+                if not force_all:
+                    catalog[dept_id] = {
+                        "item_count": 0, "projectIds": [], "titles": [],
+                        "scanned_at": datetime.now().isoformat(timespec="seconds"),
+                        "note": f"probe_all_err_{status}",
+                    }
+
+            # save progress ทุก N entries กัน crash (เฉพาะ D0 probe)
+            if not force_all and done % PROBE_ALL_SAVE_EVERY == 0:
                 save_catalog(catalog)
                 elapsed = time.time() - t0
                 log(f"  ↳ progress {done}/{total} ({elapsed:.0f}s) active={found_active}")
 
-    save_catalog(catalog)
+    if not force_all:
+        save_catalog(catalog)
     elapsed = time.time() - t0
-    log(f"\n✅ probe-all เสร็จ: {done}/{total} probed, {found_active} active, "
+    log(f"\n✅ probe-all [{anounce_type}] เสร็จ: {done}/{total} probed, {found_active} active, "
         f"{len(target_depts)} target-area depts ({elapsed:.0f}s)")
 
     # อัปเดต target_deptids.json ถ้าเจอ target area depts
@@ -645,6 +656,13 @@ if __name__ == "__main__":
              "→ ขยาย catalog ให้ครบในครั้งเดียว (~1-2 นาที). "
              "รัน workflow_dispatch จาก GHA หรือ manual เท่านั้น",
     )
+    parser.add_argument(
+        "--probe-w1", action="store_true",
+        help="Probe ทุก dept ID 0001-9999 ด้วย anounceType=W1 (ประกาศผู้ชนะ) "
+             "→ หา target-area depts จากข้อมูลย้อนหลัง แม้ตอนนี้ไม่มี active bid "
+             "→ save ลง target_deptids.json. "
+             "รัน workflow_dispatch จาก GHA หรือ manual เท่านั้น",
+    )
     args = parser.parse_args()
     _init_log_file()
 
@@ -656,6 +674,17 @@ if __name__ == "__main__":
         catalog = load_catalog()
         result = probe_all_depts(catalog)
         log(f"\nสรุป: found={result['found']}, target_area={result['target_area']}, "
+            f"probed={result['total_probed']}")
+        sys.exit(0)
+
+    # ── probe-w1 mode: หา target-area depts จาก W1 ย้อนหลัง ──
+    if args.probe_w1:
+        log("=" * 60)
+        log("PROBE-W1 MODE: หา target-area depts จาก anounceType=W1 (ย้อนหลัง)")
+        log("=" * 60)
+        catalog = load_catalog()
+        result = probe_all_depts(catalog, anounce_type="W1", force_all=True)
+        log(f"\nสรุป W1: found={result['found']}, target_area={result['target_area']}, "
             f"probed={result['total_probed']}")
         sys.exit(0)
 

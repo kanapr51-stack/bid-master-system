@@ -57,7 +57,7 @@ HEADERS = {
 # 2026-05-20: 4 → 8 workers — server เริ่มช้า ทำให้ poll 2111 depts ใช้ 10+ นาที
 # ครึ่งหนึ่งของ workflow timeout (25 min) → ต้องเพิ่ม parallelism
 POLL_WORKERS = 8
-POLL_TIMEOUT = 10  # 15s → 10s — fail-fast เมื่อ server stuck (กัน workflow timeout)
+POLL_TIMEOUT = 8   # connect + read timeout — fail-fast เมื่อ server stuck
 # Probe sample size per run (incremental discovery)
 # 2026-05-19: ลด 50 → 20 + serial (workers=1) เพราะ probe หลัง poll → 429 rate limit
 # 2026-05-20: เพิ่ม 20 → 100 — GitHub Actions ใช้ IP ใหม่ทุกรัน ไม่สะสม rate limit
@@ -70,12 +70,17 @@ _LOG_FILE = None
 
 
 def _init_log_file():
-    """เปิดไฟล์ log + redirect stdout/stderr
+    """เปิดไฟล์ log + redirect stdout/stderr (เฉพาะตอนรันบน local cron — ไม่ใช่ CI)
     Fallback chain (resilient to missing env after PC sleep):
       1. env BMS_RSS_LOG_DIR
       2. project_root/logs/rss (default)
       3. stderr only (if all fails)
+
+    Skip redirect ใน CI (GitHub Actions etc.) เพื่อให้ console log แสดงสด
+    — debug ง่ายขึ้นมาก
     """
+    if os.environ.get("CI", "").lower() in ("true", "1"):
+        return  # CI/GHA — keep stdout/stderr on console
     global _LOG_FILE
     log_dir = os.environ.get("BMS_RSS_LOG_DIR", "").strip()
     if not log_dir:
@@ -147,7 +152,10 @@ def fetch_dept(dept_id: str, anounce_type: str | None = None) -> tuple[int, list
     if anounce_type:
         params["anounceType"] = anounce_type
     try:
-        r = requests.get(RSS_URL, params=params, headers=HEADERS, timeout=POLL_TIMEOUT)
+        # (connect_timeout, read_timeout) — connect needs to fail-fast too,
+        # otherwise hanging TLS handshakes don't trigger the read timeout
+        r = requests.get(RSS_URL, params=params, headers=HEADERS,
+                         timeout=(5, POLL_TIMEOUT))
         if r.status_code != 200:
             return r.status_code, []
         text = decode_thai(r.content)
@@ -183,8 +191,18 @@ def save_catalog(catalog: dict):
     )
 
 
-def load_target_depts(catalog: dict) -> list[str]:
-    """1) target_deptids.json (curated)  2) catalog (all known active)"""
+def load_target_depts(catalog: dict, active_only: bool = True) -> list[str]:
+    """Pick which depts to poll.
+
+    Args:
+        catalog: full catalog dict
+        active_only: if True (default), return only depts with item_count > 0.
+            ~41 active vs ~2111 total → 50x faster poll. Probe still discovers new ones.
+
+    Resolution order:
+        1) target_deptids.json (curated, overrides active_only)
+        2) catalog filtered by active_only
+    """
     if TARGET_FILE.exists():
         try:
             data = json.loads(TARGET_FILE.read_text(encoding="utf-8"))
@@ -194,6 +212,11 @@ def load_target_depts(catalog: dict) -> list[str]:
                 return sorted(data.keys())
         except json.JSONDecodeError:
             pass
+    if active_only:
+        return sorted(
+            d for d, v in catalog.items()
+            if isinstance(v, dict) and v.get("item_count", 0) > 0
+        )
     return sorted(catalog.keys())
 
 
@@ -305,12 +328,13 @@ def probe_unknown_depts(catalog: dict) -> int:
 # ================================================================
 
 def run(queue_new: bool = False, skip_probe: bool = False,
-        anounce_type: str | None = None) -> dict:
+        anounce_type: str | None = None, full_poll: bool = False) -> dict:
     """anounce_type: P0/B0/D0/W0/D1 (None = D0 default).
+    full_poll: poll ALL depts (default False = active-only, 50x faster).
     Multi-stage support discovered 2026-05-18.
     """
     catalog = load_catalog()
-    targets = load_target_depts(catalog)
+    targets = load_target_depts(catalog, active_only=not full_poll)
 
     if not targets:
         log("⚠️ ไม่มี target depts — initialize catalog with seed data")
@@ -464,6 +488,11 @@ if __name__ == "__main__":
         default="rotate",
         help="anounceType: P0/B0/D0/W0/D1 หรือ all (sequential), rotate (1 stage per run จาก state file)",
     )
+    parser.add_argument(
+        "--full-poll", action="store_true",
+        help="Poll ALL depts in catalog (default: active-only, 50x faster). "
+             "Use this 1-2x per day for periodic re-check of empty depts.",
+    )
     args = parser.parse_args()
     _init_log_file()
 
@@ -472,7 +501,8 @@ if __name__ == "__main__":
         any_error = False
         for code in STAGE_CODES.keys():
             log(f"\n┌─── STAGE {code} ({STAGE_CODES[code]}) ───")
-            result = run(queue_new=args.queue, skip_probe=True, anounce_type=code)
+            result = run(queue_new=args.queue, skip_probe=True,
+                         anounce_type=code, full_poll=args.full_poll)
             if result.get("error"):
                 any_error = True
         sys.exit(1 if any_error else 0)
@@ -481,9 +511,11 @@ if __name__ == "__main__":
         next_stage = get_next_stage()
         log(f"\n🔄 ROTATE → stage={next_stage}")
         # probe ทุก rotate รอบ (catalog growth) — ยกเว้นถ้าสั่ง --no-probe
-        result = run(queue_new=args.queue, skip_probe=args.no_probe, anounce_type=next_stage)
+        result = run(queue_new=args.queue, skip_probe=args.no_probe,
+                     anounce_type=next_stage, full_poll=args.full_poll)
 
         sys.exit(0 if not result.get("error") else 1)
     else:
-        result = run(queue_new=args.queue, skip_probe=args.no_probe, anounce_type=args.stage)
+        result = run(queue_new=args.queue, skip_probe=args.no_probe,
+                     anounce_type=args.stage, full_poll=args.full_poll)
         sys.exit(0 if not result.get("error") else 1)

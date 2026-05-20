@@ -1,0 +1,44 @@
+name: BMS Catalog Discovery (Full Probe)
+
+# รันมือเท่านั้น — ทำครั้งเดียวเพื่อ probe dept IDs 0001-9999 ทั้งหมด
+# ใช้เวลา ~1-2 นาที (20 workers, cffi_requests)
+# ผลลัพธ์: egp_deptid_catalog.json ครบ + target_deptids.json (ถ้าเจอพื้นที่เป้าหมาย)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe-all:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Probe all dept IDs (0001-9999)
+        run: |
+          python scripts/Sebastian_RSS_Scraper.py --probe-all
+
+      - name: Commit expanded catalog
+        if: always()
+        run: |
+          git config user.name  "Sebastian Bot"
+          git config user.email "bot@bidmaster.local"
+          git add data/egp_deptid_catalog.json \
+                  data/target_deptids.json || true
+          git diff --staged --quiet || \
+            git commit -m "chore: full catalog probe $(date -u '+%Y-%m-%d %H:%M') [skip ci]"
+          git push || true

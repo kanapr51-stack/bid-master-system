@@ -149,20 +149,23 @@ STAGE_CODES = {
 }
 
 
-def fetch_dept(dept_id: str, anounce_type: str | None = None) -> tuple[int, list[dict]]:
+def fetch_dept(dept_id: str, anounce_type: str | None = None,
+               timeout: int | None = None) -> tuple[int, list[dict]]:
     """Return (http_status, items)
     anounce_type: P0/B0/D0/W0/D1 (None = D0 default behavior)
+    timeout: override POLL_TIMEOUT (ใช้ PROBE_ALL_TIMEOUT สำหรับ bulk probe)
     Note: param name is 'anounceType' (typo by government)
     """
     params: dict[str, str] = {"deptId": dept_id}
     if anounce_type:
         params["anounceType"] = anounce_type
+    _timeout = timeout if timeout is not None else POLL_TIMEOUT
     try:
         # ใช้ curl_cffi เลียนแบบ Chrome 120 TLS fingerprint
         # — process.gprocurement.go.th block python-requests' JA3 fingerprint
         r = cffi_requests.get(
             RSS_URL, params=params, headers=HEADERS,
-            timeout=POLL_TIMEOUT, impersonate="chrome120",
+            timeout=_timeout, impersonate="chrome120",
         )
         if r.status_code != 200:
             return r.status_code, []
@@ -337,6 +340,15 @@ def queue_for_lookup(items_to_queue: list[dict]):
 # Incremental probe (catalog growth)
 # ================================================================
 
+PROBE_ALL_WORKERS    = 20  # concurrent workers สำหรับ --probe-all
+PROBE_ALL_TIMEOUT    = 3   # seconds — สั้นกว่า POLL_TIMEOUT (8s) เพราะ probe แค่ว่ามี/ไม่มี
+PROBE_ALL_SAVE_EVERY = 500 # save catalog ทุก N depts กัน crash
+
+TARGET_KEYWORDS = ["นครพนม", "บึงกาฬ", "บ้านแพง", "บึงโขงหลง",
+                   "ศรีสงคราม", "นาแก", "ท่าอุเทน", "ธาตุพนม"]
+TARGET_FILE = DATA_DIR / "target_deptids.json"
+
+
 def pick_probe_candidates(catalog: dict, n: int) -> list[str]:
     """เลือก deptId ที่ยังไม่มีใน catalog (random sample)"""
     known = set(catalog.keys())
@@ -347,6 +359,97 @@ def pick_probe_candidates(catalog: dict, n: int) -> list[str]:
     if not pool:
         return []
     return random.sample(pool, min(n, len(pool)))
+
+
+def probe_all_depts(catalog: dict) -> dict:
+    """
+    Probe ALL dept IDs 0001-9999 ที่ยังไม่อยู่ใน catalog ด้วย cffi_requests
+    (ไม่ใช้ Playwright — เร็วกว่า 10x, ไม่ต้องการ browser)
+
+    Returns: {"found": int, "target_area": list[str], "total_probed": int}
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    known = set(catalog.keys())
+    candidates = sorted(
+        f"{i:04d}" for i in range(DEPT_ID_RANGE[0], DEPT_ID_RANGE[1] + 1)
+        if f"{i:04d}" not in known
+    )
+    total = len(candidates)
+    if not total:
+        log("✅ probe-all: catalog ครบแล้ว (ไม่มี ID ที่ยังไม่ได้ probe)")
+        return {"found": 0, "target_area": [], "total_probed": 0}
+
+    log(f"🔍 probe-all: {total} dept IDs remaining (workers={PROBE_ALL_WORKERS})")
+    t0 = time.time()
+    found_active = 0
+    target_depts: list[str] = []
+    done = 0
+
+    def _probe_one(dept_id: str):
+        status, items = fetch_dept(dept_id, "D0", timeout=PROBE_ALL_TIMEOUT)
+        return dept_id, status, items
+
+    with ThreadPoolExecutor(max_workers=PROBE_ALL_WORKERS) as ex:
+        futs = {ex.submit(_probe_one, did): did for did in candidates}
+        for fut in as_completed(futs):
+            dept_id, status, items = fut.result()
+            done += 1
+
+            if status == 200:
+                entry = {
+                    "item_count": len(items),
+                    "projectIds": [it.get("projectId") for it in items if it.get("projectId")][:15],
+                    "titles":    [it.get("title", "")[:120] for it in items[:5]],
+                    "pubDates":  [it.get("pubDate", "") for it in items[:3]],
+                    "scanned_at": datetime.now().isoformat(timespec="seconds"),
+                    "note": "probe_all",
+                }
+                catalog[dept_id] = entry
+
+                if items:
+                    found_active += 1
+                    title_blob = " ".join(it.get("title", "") for it in items)
+                    is_target = any(kw in title_blob for kw in TARGET_KEYWORDS)
+                    if is_target:
+                        target_depts.append(dept_id)
+                        log(f"  🎯 TARGET {dept_id}: {items[0].get('title','')[:70]}")
+                    else:
+                        log(f"  📦 {dept_id}: {len(items)} items · {items[0].get('title','')[:50]}")
+            else:
+                # timeout/error → mark as scanned (empty) so we don't retry
+                catalog[dept_id] = {
+                    "item_count": 0, "projectIds": [], "titles": [],
+                    "scanned_at": datetime.now().isoformat(timespec="seconds"),
+                    "note": f"probe_all_err_{status}",
+                }
+
+            # save progress ทุก N entries กัน crash
+            if done % PROBE_ALL_SAVE_EVERY == 0:
+                save_catalog(catalog)
+                elapsed = time.time() - t0
+                log(f"  ↳ progress {done}/{total} ({elapsed:.0f}s) active={found_active}")
+
+    save_catalog(catalog)
+    elapsed = time.time() - t0
+    log(f"\n✅ probe-all เสร็จ: {done}/{total} probed, {found_active} active, "
+        f"{len(target_depts)} target-area depts ({elapsed:.0f}s)")
+
+    # อัปเดต target_deptids.json ถ้าเจอ target area depts
+    if target_depts:
+        existing: list[str] = []
+        if TARGET_FILE.exists():
+            try:
+                existing = json.loads(TARGET_FILE.read_text(encoding="utf-8"))
+                if not isinstance(existing, list):
+                    existing = []
+            except Exception:
+                existing = []
+        merged = sorted(set(existing) | set(target_depts))
+        TARGET_FILE.write_text(json.dumps(merged, ensure_ascii=False, indent=2), encoding="utf-8")
+        log(f"🎯 target_deptids.json: {len(merged)} depts saved")
+
+    return {"found": found_active, "target_area": target_depts, "total_probed": done}
 
 
 def probe_unknown_depts(catalog: dict) -> int:
@@ -536,8 +639,25 @@ if __name__ == "__main__":
         help="Poll ALL depts in catalog (default: active-only, 50x faster). "
              "Use this 1-2x per day for periodic re-check of empty depts.",
     )
+    parser.add_argument(
+        "--probe-all", action="store_true",
+        help="Probe ALL unchecked dept IDs 0001-9999 ด้วย 20 workers (cffi, ไม่ใช้ Playwright) "
+             "→ ขยาย catalog ให้ครบในครั้งเดียว (~1-2 นาที). "
+             "รัน workflow_dispatch จาก GHA หรือ manual เท่านั้น",
+    )
     args = parser.parse_args()
     _init_log_file()
+
+    # ── probe-all mode (ทำก่อน แล้วออก — ไม่รัน normal pipeline) ──
+    if args.probe_all:
+        log("=" * 60)
+        log("PROBE-ALL MODE: ขยาย catalog 0001-9999 ด้วย cffi_requests")
+        log("=" * 60)
+        catalog = load_catalog()
+        result = probe_all_depts(catalog)
+        log(f"\nสรุป: found={result['found']}, target_area={result['target_area']}, "
+            f"probed={result['total_probed']}")
+        sys.exit(0)
 
     if args.stage == "all":
         # Sequential through all stages

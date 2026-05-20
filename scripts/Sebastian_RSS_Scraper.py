@@ -344,6 +344,11 @@ PROBE_ALL_WORKERS    = 20  # concurrent workers สำหรับ --probe-all
 PROBE_ALL_TIMEOUT    = 3   # seconds — สั้นกว่า POLL_TIMEOUT (8s) เพราะ probe แค่ว่ามี/ไม่มี
 PROBE_ALL_SAVE_EVERY = 500 # save catalog ทุก N depts กัน crash
 
+PROBE_429_WORKERS    = 8   # ลดลงมากเพื่อหลีกเลี่ยง rate limit
+PROBE_429_TIMEOUT    = 5   # timeout นานขึ้นเพื่อรองรับ server ช้า
+PROBE_429_DELAY      = 0.3 # seconds หน่วงระหว่าง submit tasks
+PROBE_429_SAVE_EVERY = 200
+
 TARGET_KEYWORDS = ["นครพนม", "บึงกาฬ", "บ้านแพง", "บึงโขงหลง",
                    "ศรีสงคราม", "นาแก", "ท่าอุเทน", "ธาตุพนม"]
 TARGET_FILE = DATA_DIR / "target_deptids.json"
@@ -484,6 +489,74 @@ def probe_all_depts(catalog: dict, anounce_type: str = "D0",
         log(f"🎯 target_deptids.json: {len(merged)} depts saved")
 
     return {"found": found_active, "target_area": target_depts, "total_probed": done}
+
+
+def probe_429_depts(catalog: dict) -> dict:
+    """Re-probe deptIds ที่เคยโดน 429 (rate limit) ด้วย workers น้อยลง + delay
+    Returns: {"found": int, "total_probed": int}
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    candidates = sorted(
+        d for d, v in catalog.items()
+        if "err_429" in str(v.get("note", ""))
+    )
+    total = len(candidates)
+    if not total:
+        log("✅ probe-429: ไม่มี dept ที่โดน 429")
+        return {"found": 0, "total_probed": 0}
+
+    log(f"🔄 probe-429: {total} depts (workers={PROBE_429_WORKERS}, delay={PROBE_429_DELAY}s)")
+    t0 = time.time()
+    found_active = 0
+    done = 0
+
+    def _probe_one(dept_id: str):
+        status, items = fetch_dept(dept_id, "D0", timeout=PROBE_429_TIMEOUT)
+        return dept_id, status, items
+
+    with ThreadPoolExecutor(max_workers=PROBE_429_WORKERS) as ex:
+        futs = {}
+        for did in candidates:
+            futs[ex.submit(_probe_one, did)] = did
+            time.sleep(PROBE_429_DELAY)  # หน่วงก่อน submit task ถัดไป
+
+        for fut in as_completed(futs):
+            dept_id, status, items = fut.result()
+            done += 1
+
+            if status == 200:
+                entry = {
+                    "item_count": len(items),
+                    "projectIds": [it.get("projectId") for it in items if it.get("projectId")][:15],
+                    "titles":    [it.get("title", "")[:120] for it in items[:5]],
+                    "pubDates":  [it.get("pubDate", "") for it in items[:3]],
+                    "scanned_at": datetime.now().isoformat(timespec="seconds"),
+                    "note": "probe_429_retry",
+                }
+                catalog[dept_id] = entry
+                if items:
+                    found_active += 1
+                    log(f"  ✅ {dept_id}: {len(items)} items · {items[0].get('title','')[:60]}")
+            elif status == 429:
+                catalog[dept_id]["note"] = "probe_429_still_limited"
+                log(f"  ⚠️ {dept_id}: ยังโดน 429")
+            else:
+                catalog[dept_id] = {
+                    "item_count": 0, "projectIds": [], "titles": [],
+                    "scanned_at": datetime.now().isoformat(timespec="seconds"),
+                    "note": f"probe_429_retry_err_{status}",
+                }
+
+            if done % PROBE_429_SAVE_EVERY == 0:
+                save_catalog(catalog)
+                elapsed = time.time() - t0
+                log(f"  ↳ {done}/{total} ({elapsed:.0f}s) active={found_active}")
+
+    save_catalog(catalog)
+    elapsed = time.time() - t0
+    log(f"\n✅ probe-429 เสร็จ: {done}/{total} probed, {found_active} newly active ({elapsed:.0f}s)")
+    return {"found": found_active, "total_probed": done}
 
 
 def probe_unknown_depts(catalog: dict) -> int:
@@ -687,6 +760,11 @@ if __name__ == "__main__":
              "รัน workflow_dispatch จาก GHA หรือ manual เท่านั้น",
     )
     parser.add_argument(
+        "--probe-429", action="store_true",
+        help="Re-probe deptIds ที่เคยโดน 429 rate limit ด้วย workers น้อยลง + delay "
+             "→ อัปเดต catalog ให้ครบ. รัน GHA mode=d0_repair",
+    )
+    parser.add_argument(
         "--probe-w0-full", action="store_true",
         help="Probe ทุก dept ID 0001-9999 ด้วย W0 → บันทึก egp_w0_catalog.json "
              "(ทุก dept ที่มี items, ไม่กรอง keyword) เพื่อ post-process "
@@ -705,6 +783,16 @@ if __name__ == "__main__":
         result = probe_all_depts(catalog)
         log(f"\nสรุป: found={result['found']}, target_area={result['target_area']}, "
             f"probed={result['total_probed']}")
+        sys.exit(0)
+
+    # ── probe-429 mode: re-probe depts ที่โดน rate limit ──
+    if args.probe_429:
+        log("=" * 60)
+        log("PROBE-429 MODE: re-probe depts ที่โดน 429 ด้วย workers น้อยลง")
+        log("=" * 60)
+        catalog = load_catalog()
+        result = probe_429_depts(catalog)
+        log(f"\nสรุป: found={result['found']}, probed={result['total_probed']}")
         sys.exit(0)
 
     # ── probe-w1 mode: หา target-area depts จาก W0 ย้อนหลัง (keyword filter) ──

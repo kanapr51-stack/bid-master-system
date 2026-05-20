@@ -53,8 +53,11 @@ HEADERS = {
     "Accept-Language": "th-TH,th;q=0.9,en;q=0.8",
 }
 
-# Poll all known depts in parallel (conservative)
-POLL_WORKERS = 4
+# Poll all known depts in parallel
+# 2026-05-20: 4 → 8 workers — server เริ่มช้า ทำให้ poll 2111 depts ใช้ 10+ นาที
+# ครึ่งหนึ่งของ workflow timeout (25 min) → ต้องเพิ่ม parallelism
+POLL_WORKERS = 8
+POLL_TIMEOUT = 10  # 15s → 10s — fail-fast เมื่อ server stuck (กัน workflow timeout)
 # Probe sample size per run (incremental discovery)
 # 2026-05-19: ลด 50 → 20 + serial (workers=1) เพราะ probe หลัง poll → 429 rate limit
 # 2026-05-20: เพิ่ม 20 → 100 — GitHub Actions ใช้ IP ใหม่ทุกรัน ไม่สะสม rate limit
@@ -144,7 +147,7 @@ def fetch_dept(dept_id: str, anounce_type: str | None = None) -> tuple[int, list
     if anounce_type:
         params["anounceType"] = anounce_type
     try:
-        r = requests.get(RSS_URL, params=params, headers=HEADERS, timeout=15)
+        r = requests.get(RSS_URL, params=params, headers=HEADERS, timeout=POLL_TIMEOUT)
         if r.status_code != 200:
             return r.status_code, []
         text = decode_thai(r.content)

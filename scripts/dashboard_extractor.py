@@ -257,10 +257,9 @@ def rss_catalog_stats() -> dict:
         except Exception:
             continue
 
-    # Use last run's catalog_size as the authoritative total_depts
-    # (catalog file may lag behind if git pull reset it; run file reflects scraper's actual state)
-    last_catalog_size = last_run.get('catalog_size', total)
-    scraper_total = max(total, last_catalog_size)
+    # Catalog file is the source of truth (now properly committed by GHA workflow).
+    # `scraper_total` reflects what's actually on disk — stale run-file numbers must not lie.
+    scraper_total = total
     scraper_seen = last_run.get('scraper_seen_size', 0)
 
     # Queue size

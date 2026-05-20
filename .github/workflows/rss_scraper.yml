@@ -12,7 +12,9 @@ permissions:
 jobs:
   rss:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # 35 min — ครอบคลุม poll (2111 depts × 10s timeout / 8 workers ≈ 7-12 min)
+    # + probe (100 × 1s = 2 min) + queue refresh (~15 min) + buffer
+    timeout-minutes: 35
 
     steps:
       - uses: actions/checkout@v4
@@ -28,6 +30,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run RSS Scraper
+        timeout-minutes: 15  # step-level — ถ้า server stuck ก็ไม่กิน slot queue refresh
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           DATABASE_URL:                ${{ secrets.DATABASE_URL }}
@@ -36,7 +39,22 @@ jobs:
         run: |
           python scripts/Sebastian_RSS_Scraper.py --stage rotate --queue || true
 
+      # Commit catalog EARLY (กัน catalog หายถ้า step ถัดไป cancelled)
+      - name: Commit catalog + RSS state (early checkpoint)
+        if: always()  # commit แม้ step ก่อนหน้า fail/timeout
+        run: |
+          git config user.name  "Sebastian Bot"
+          git config user.email "bot@bidmaster.local"
+          git add data/rss_queue.json \
+                  data/rss_seen_ids.json \
+                  data/rss_stage_rotation.json \
+                  data/egp_deptid_catalog.json || true
+          git diff --staged --quiet || \
+            git commit -m "chore: rss catalog $(date -u '+%Y-%m-%d %H:%M') [skip ci]"
+          git push || true
+
       - name: Process RSS queue (refresh from-queue)
+        timeout-minutes: 15
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           DATABASE_URL:                ${{ secrets.DATABASE_URL }}
@@ -45,15 +63,12 @@ jobs:
         run: |
           python scripts/refresh_active_jobs.py --from-queue --workers 5 || true
 
-      - name: Commit RSS state files
+      - name: Commit winner cache
+        if: always()
         run: |
           git config user.name  "Sebastian Bot"
           git config user.email "bot@bidmaster.local"
-          git add data/rss_queue.json \
-                  data/rss_seen_ids.json \
-                  data/rss_stage_rotation.json \
-                  data/winner_cache_bootstrap.json \
-                  data/egp_deptid_catalog.json || true
+          git add data/winner_cache_bootstrap.json || true
           git diff --staged --quiet || \
-            git commit -m "chore: rss state $(date -u '+%Y-%m-%d %H:%M') [skip ci]"
+            git commit -m "chore: winner cache $(date -u '+%Y-%m-%d %H:%M') [skip ci]"
           git push || true

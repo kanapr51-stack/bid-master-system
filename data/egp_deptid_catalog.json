@@ -10,9 +10,9 @@
     "pubDates": [
       "2026-05-11"
     ],
-    "scanned_at": "2026-05-18T03:41:36",
+    "scanned_at": "2026-05-18T23:58:40",
     "dept_name": "สำนักงานปลัดสำนักนายกรัฐมนตรี กรุงเทพฯ",
-    "enriched_at": "2026-05-18T05:27:54"
+    "enriched_at": "2026-05-19T02:17:46"
   },
   "0102": {
     "item_count": 2,
@@ -28,12 +28,12 @@
       "2026-05-11",
       "2026-05-11"
     ],
-    "scanned_at": "2026-05-18T03:41:36",
+    "scanned_at": "2026-05-18T23:58:40",
     "dept_name": "ส่วนบริหารกิจการโทรทัศน์ ภาคใต้ จังหวัดสุราษฎร์ธานี",
-    "enriched_at": "2026-05-18T05:27:55"
+    "enriched_at": "2026-05-19T02:17:47"
   },
   "0117": {
-    "item_count": 1,
+    "item_count": 5,
     "projectIds": [
       "69059140816"
     ],
@@ -85,12 +85,12 @@
     "pubDates": [
       "2026-05-12"
     ],
-    "scanned_at": "2026-05-18T03:41:37",
+    "scanned_at": "2026-05-18T23:58:43",
     "dept_name": "สำนักงานคณะกรรมการส่งเสริมการลงทุน กรุงเทพฯ",
-    "enriched_at": "2026-05-18T05:27:59"
+    "enriched_at": "2026-05-19T02:17:51"
   },
   "0137": {
-    "item_count": 4,
+    "item_count": 6,
     "projectIds": [
       "69049291291",
       "69049286940",
@@ -154,9 +154,9 @@
     "pubDates": [
       "2026-05-11"
     ],
-    "scanned_at": "2026-05-18T03:41:39",
+    "scanned_at": "2026-05-18T23:58:51",
     "dept_name": "กรมการขนส่งทหารเรือ กรุงเทพฯ",
-    "enriched_at": "2026-05-18T05:28:03"
+    "enriched_at": "2026-05-20T02:15:25"
   },
   "0206": {
     "item_count": 5,
@@ -2904,12 +2904,17 @@
     "source": "batch_scan"
   },
   "0106": {
-    "item_count": 0,
-    "projectIds": [],
-    "titles": [],
-    "pubDates": [],
-    "scanned_at": "2026-05-18T04:36:34",
-    "source": "batch_scan"
+    "item_count": 1,
+    "projectIds": [
+      "69059130042"
+    ],
+    "titles": [
+      "ประกวดราคาซื้อเครื่องคอมพิวเตอร์ พร้อมชุดโปรแกรม แขวงพญาไท เขตพญาไท กรุงเทพมหานคร จำนวน 212 ชุด ด้วยวิธีประกวดราคาอิเล็ก"
+    ],
+    "pubDates": [
+      "2026-05-18"
+    ],
+    "scanned_at": "2026-05-20T02:46:26"
   },
   "0109": {
     "item_count": 0,
@@ -3114,12 +3119,17 @@
     "source": "batch_scan"
   },
   "0141": {
-    "item_count": 0,
-    "projectIds": [],
-    "titles": [],
-    "pubDates": [],
-    "scanned_at": "2026-05-18T04:36:47",
-    "source": "batch_scan"
+    "item_count": 1,
+    "projectIds": [
+      "69059042242"
+    ],
+    "titles": [
+      "ประกวดราคาจ้างเหมาดำเนินโครงการขับเคลื่อนเพื่อสร้างสรรค์เศรษฐกิจด้วยทุนทางวัฒนธรรม ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-b"
+    ],
+    "pubDates": [
+      "2026-05-14"
+    ],
+    "scanned_at": "2026-05-20T02:46:33"
   },
   "0142": {
     "item_count": 0,
@@ -4040,5 +4050,8555 @@
     "pubDates": [],
     "scanned_at": "2026-05-18T04:37:45",
     "source": "batch_scan"
+  },
+  "8456": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:20:48",
+    "source": "gentle_scan"
+  },
+  "9485": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:20:51",
+    "source": "gentle_scan"
+  },
+  "1821": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:20:53",
+    "source": "gentle_scan"
+  },
+  "0642": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:20:55",
+    "source": "gentle_scan"
+  },
+  "7203": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:20:57",
+    "source": "gentle_scan"
+  },
+  "2603": {
+    "item_count": 1,
+    "projectIds": [
+      "69029515234"
+    ],
+    "titles": [
+      "ประกวดราคาซื้อเครื่องคอมพิวเตอร์โน้ตบุ๊กพร้อมชุดโปรแกรมระบบปฏิบัติการ และชุดโปรแกรมจัดการสำนักงาน ด้วยวิธีประกวดราคาอิเล"
+    ],
+    "pubDates": [
+      "2026-05-11"
+    ],
+    "scanned_at": "2026-05-18T20:20:59",
+    "source": "gentle_scan",
+    "dept_name": "สำนักงานผู้ตรวจการแผ่นดิน",
+    "enriched_at": "2026-05-20T02:15:28"
+  },
+  "6068": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:01",
+    "source": "gentle_scan"
+  },
+  "4371": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:03",
+    "source": "gentle_scan"
+  },
+  "6433": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:05",
+    "source": "gentle_scan"
+  },
+  "9246": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:07",
+    "source": "gentle_scan"
+  },
+  "8512": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:09",
+    "source": "gentle_scan"
+  },
+  "3516": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:11",
+    "source": "gentle_scan"
+  },
+  "8120": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:13",
+    "source": "gentle_scan"
+  },
+  "0858": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:15",
+    "source": "gentle_scan"
+  },
+  "8940": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:17",
+    "source": "gentle_scan"
+  },
+  "1620": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:19",
+    "source": "gentle_scan"
+  },
+  "4944": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:21",
+    "source": "gentle_scan"
+  },
+  "0817": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:23",
+    "source": "gentle_scan"
+  },
+  "2771": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:24",
+    "source": "gentle_scan"
+  },
+  "9804": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:26",
+    "source": "gentle_scan"
+  },
+  "6757": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:29",
+    "source": "gentle_scan"
+  },
+  "2011": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:31",
+    "source": "gentle_scan"
+  },
+  "3153": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:32",
+    "source": "gentle_scan"
+  },
+  "9460": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:34",
+    "source": "gentle_scan"
+  },
+  "9035": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:36",
+    "source": "gentle_scan"
+  },
+  "5447": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:38",
+    "source": "gentle_scan"
+  },
+  "5324": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:40",
+    "source": "gentle_scan"
+  },
+  "4374": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:42",
+    "source": "gentle_scan"
+  },
+  "9463": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:44",
+    "source": "gentle_scan"
+  },
+  "9793": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:46",
+    "source": "gentle_scan"
+  },
+  "4661": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:48",
+    "source": "gentle_scan"
+  },
+  "7174": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:49",
+    "source": "gentle_scan"
+  },
+  "5876": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:52",
+    "source": "gentle_scan"
+  },
+  "4787": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:54",
+    "source": "gentle_scan"
+  },
+  "5743": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:56",
+    "source": "gentle_scan"
+  },
+  "6231": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:21:58",
+    "source": "gentle_scan"
+  },
+  "1755": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:01",
+    "source": "gentle_scan"
+  },
+  "0536": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:03",
+    "source": "gentle_scan"
+  },
+  "9343": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:05",
+    "source": "gentle_scan"
+  },
+  "8749": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:08",
+    "source": "gentle_scan"
+  },
+  "9861": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:10",
+    "source": "gentle_scan"
+  },
+  "0455": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:11",
+    "source": "gentle_scan"
+  },
+  "7835": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:14",
+    "source": "gentle_scan"
+  },
+  "9873": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:16",
+    "source": "gentle_scan"
+  },
+  "8314": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:18",
+    "source": "gentle_scan"
+  },
+  "1345": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:20",
+    "source": "gentle_scan"
+  },
+  "4085": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:22",
+    "source": "gentle_scan"
+  },
+  "3042": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:24",
+    "source": "gentle_scan"
+  },
+  "2335": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:25",
+    "source": "gentle_scan"
+  },
+  "6503": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:28",
+    "source": "gentle_scan"
+  },
+  "8739": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:30",
+    "source": "gentle_scan"
+  },
+  "5818": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:32",
+    "source": "gentle_scan"
+  },
+  "0743": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:34",
+    "source": "gentle_scan"
+  },
+  "3607": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:36",
+    "source": "gentle_scan"
+  },
+  "3002": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:38",
+    "source": "gentle_scan"
+  },
+  "6711": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:40",
+    "source": "gentle_scan"
+  },
+  "5139": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:43",
+    "source": "gentle_scan"
+  },
+  "2529": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:45",
+    "source": "gentle_scan"
+  },
+  "8838": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:47",
+    "source": "gentle_scan"
+  },
+  "4174": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:49",
+    "source": "gentle_scan"
+  },
+  "9841": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:52",
+    "source": "gentle_scan"
+  },
+  "8231": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:53",
+    "source": "gentle_scan"
+  },
+  "5044": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:55",
+    "source": "gentle_scan"
+  },
+  "5750": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:22:58",
+    "source": "gentle_scan"
+  },
+  "6315": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:00",
+    "source": "gentle_scan"
+  },
+  "7006": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:02",
+    "source": "gentle_scan"
+  },
+  "9259": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:04",
+    "source": "gentle_scan"
+  },
+  "2372": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:06",
+    "source": "gentle_scan"
+  },
+  "5794": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:08",
+    "source": "gentle_scan"
+  },
+  "7610": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:10",
+    "source": "gentle_scan"
+  },
+  "1425": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:12",
+    "source": "gentle_scan"
+  },
+  "1479": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:14",
+    "source": "gentle_scan"
+  },
+  "1368": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:16",
+    "source": "gentle_scan"
+  },
+  "6841": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:18",
+    "source": "gentle_scan"
+  },
+  "7996": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:21",
+    "source": "gentle_scan"
+  },
+  "1221": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:22",
+    "source": "gentle_scan"
+  },
+  "1551": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:24",
+    "source": "gentle_scan"
+  },
+  "1713": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:26",
+    "source": "gentle_scan"
+  },
+  "1759": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:28",
+    "source": "gentle_scan"
+  },
+  "6122": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:30",
+    "source": "gentle_scan"
+  },
+  "2742": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:32",
+    "source": "gentle_scan"
+  },
+  "7212": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:34",
+    "source": "gentle_scan"
+  },
+  "9959": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:36",
+    "source": "gentle_scan"
+  },
+  "9499": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:38",
+    "source": "gentle_scan"
+  },
+  "6233": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:40",
+    "source": "gentle_scan"
+  },
+  "2155": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:43",
+    "source": "gentle_scan"
+  },
+  "4527": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:45",
+    "source": "gentle_scan"
+  },
+  "0597": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:47",
+    "source": "gentle_scan"
+  },
+  "7731": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:49",
+    "source": "gentle_scan"
+  },
+  "9883": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:52",
+    "source": "gentle_scan"
+  },
+  "4854": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:54",
+    "source": "gentle_scan"
+  },
+  "3423": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:56",
+    "source": "gentle_scan"
+  },
+  "0983": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:23:58",
+    "source": "gentle_scan"
+  },
+  "7468": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:01",
+    "source": "gentle_scan"
+  },
+  "7825": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:03",
+    "source": "gentle_scan"
+  },
+  "0945": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:04",
+    "source": "gentle_scan"
+  },
+  "1994": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:07",
+    "source": "gentle_scan"
+  },
+  "1776": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:09",
+    "source": "gentle_scan"
+  },
+  "2660": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:11",
+    "source": "gentle_scan"
+  },
+  "5929": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:13",
+    "source": "gentle_scan"
+  },
+  "6838": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:15",
+    "source": "gentle_scan"
+  },
+  "2647": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:17",
+    "source": "gentle_scan"
+  },
+  "6987": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:19",
+    "source": "gentle_scan"
+  },
+  "3739": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:21",
+    "source": "gentle_scan"
+  },
+  "1727": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:24",
+    "source": "gentle_scan"
+  },
+  "2693": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:26",
+    "source": "gentle_scan"
+  },
+  "1150": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:28",
+    "source": "gentle_scan"
+  },
+  "0660": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:30",
+    "source": "gentle_scan"
+  },
+  "7365": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:32",
+    "source": "gentle_scan"
+  },
+  "1592": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:34",
+    "source": "gentle_scan"
+  },
+  "9667": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:37",
+    "source": "gentle_scan"
+  },
+  "3626": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:39",
+    "source": "gentle_scan"
+  },
+  "2981": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:41",
+    "source": "gentle_scan"
+  },
+  "9802": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:43",
+    "source": "gentle_scan"
+  },
+  "4040": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:45",
+    "source": "gentle_scan"
+  },
+  "6693": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:48",
+    "source": "gentle_scan"
+  },
+  "8926": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:50",
+    "source": "gentle_scan"
+  },
+  "1166": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:52",
+    "source": "gentle_scan"
+  },
+  "5739": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:54",
+    "source": "gentle_scan"
+  },
+  "1025": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:56",
+    "source": "gentle_scan"
+  },
+  "2417": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:24:59",
+    "source": "gentle_scan"
+  },
+  "5776": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:01",
+    "source": "gentle_scan"
+  },
+  "9849": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:03",
+    "source": "gentle_scan"
+  },
+  "9739": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:05",
+    "source": "gentle_scan"
+  },
+  "3426": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:08",
+    "source": "gentle_scan"
+  },
+  "6395": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:10",
+    "source": "gentle_scan"
+  },
+  "4637": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:12",
+    "source": "gentle_scan"
+  },
+  "3378": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:15",
+    "source": "gentle_scan"
+  },
+  "8513": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:17",
+    "source": "gentle_scan"
+  },
+  "4715": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:19",
+    "source": "gentle_scan"
+  },
+  "8240": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:22",
+    "source": "gentle_scan"
+  },
+  "6496": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:25",
+    "source": "gentle_scan"
+  },
+  "4168": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:27",
+    "source": "gentle_scan"
+  },
+  "0558": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:29",
+    "source": "gentle_scan"
+  },
+  "7732": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:31",
+    "source": "gentle_scan"
+  },
+  "9301": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:34",
+    "source": "gentle_scan"
+  },
+  "9657": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:36",
+    "source": "gentle_scan"
+  },
+  "0882": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:37",
+    "source": "gentle_scan"
+  },
+  "5862": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:39",
+    "source": "gentle_scan"
+  },
+  "5744": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:41",
+    "source": "gentle_scan"
+  },
+  "6677": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:43",
+    "source": "gentle_scan"
+  },
+  "5470": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:45",
+    "source": "gentle_scan"
+  },
+  "5560": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:47",
+    "source": "gentle_scan"
+  },
+  "0714": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:49",
+    "source": "gentle_scan"
+  },
+  "4251": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:51",
+    "source": "gentle_scan"
+  },
+  "8230": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:53",
+    "source": "gentle_scan"
+  },
+  "0292": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:56",
+    "source": "gentle_scan"
+  },
+  "4906": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:58",
+    "source": "gentle_scan"
+  },
+  "6873": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:25:59",
+    "source": "gentle_scan"
+  },
+  "7527": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:02",
+    "source": "gentle_scan"
+  },
+  "9148": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:04",
+    "source": "gentle_scan"
+  },
+  "6728": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:06",
+    "source": "gentle_scan"
+  },
+  "4545": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:08",
+    "source": "gentle_scan"
+  },
+  "1044": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:10",
+    "source": "gentle_scan"
+  },
+  "2179": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:13",
+    "source": "gentle_scan"
+  },
+  "5393": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:14",
+    "source": "gentle_scan"
+  },
+  "7981": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:17",
+    "source": "gentle_scan"
+  },
+  "4437": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:19",
+    "source": "gentle_scan"
+  },
+  "2141": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:21",
+    "source": "gentle_scan"
+  },
+  "2770": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:23",
+    "source": "gentle_scan"
+  },
+  "1404": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:24",
+    "source": "gentle_scan"
+  },
+  "4803": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:26",
+    "source": "gentle_scan"
+  },
+  "6661": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:28",
+    "source": "gentle_scan"
+  },
+  "6807": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:30",
+    "source": "gentle_scan"
+  },
+  "2464": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:32",
+    "source": "gentle_scan"
+  },
+  "5158": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:34",
+    "source": "gentle_scan"
+  },
+  "9901": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:36",
+    "source": "gentle_scan"
+  },
+  "7049": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:39",
+    "source": "gentle_scan"
+  },
+  "4605": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:40",
+    "source": "gentle_scan"
+  },
+  "7241": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:42",
+    "source": "gentle_scan"
+  },
+  "2477": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:44",
+    "source": "gentle_scan"
+  },
+  "2932": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:46",
+    "source": "gentle_scan"
+  },
+  "8822": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:48",
+    "source": "gentle_scan"
+  },
+  "7223": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:50",
+    "source": "gentle_scan"
+  },
+  "5984": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:52",
+    "source": "gentle_scan"
+  },
+  "0619": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:54",
+    "source": "gentle_scan"
+  },
+  "2793": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:56",
+    "source": "gentle_scan"
+  },
+  "9157": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:26:58",
+    "source": "gentle_scan"
+  },
+  "6396": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:00",
+    "source": "gentle_scan"
+  },
+  "9899": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:03",
+    "source": "gentle_scan"
+  },
+  "7342": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:05",
+    "source": "gentle_scan"
+  },
+  "7634": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:07",
+    "source": "gentle_scan"
+  },
+  "9533": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:09",
+    "source": "gentle_scan"
+  },
+  "5462": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:11",
+    "source": "gentle_scan"
+  },
+  "3725": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:14",
+    "source": "gentle_scan"
+  },
+  "8404": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:17",
+    "source": "gentle_scan"
+  },
+  "0989": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:19",
+    "source": "gentle_scan"
+  },
+  "3669": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:21",
+    "source": "gentle_scan"
+  },
+  "3755": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:23",
+    "source": "gentle_scan"
+  },
+  "0695": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:25",
+    "source": "gentle_scan"
+  },
+  "4789": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:28",
+    "source": "gentle_scan"
+  },
+  "2714": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:30",
+    "source": "gentle_scan"
+  },
+  "8249": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:32",
+    "source": "gentle_scan"
+  },
+  "9768": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:33",
+    "source": "gentle_scan"
+  },
+  "7410": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:35",
+    "source": "gentle_scan"
+  },
+  "2645": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:38",
+    "source": "gentle_scan"
+  },
+  "2365": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:39",
+    "source": "gentle_scan"
+  },
+  "8889": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:41",
+    "source": "gentle_scan"
+  },
+  "9990": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:43",
+    "source": "gentle_scan"
+  },
+  "4194": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:45",
+    "source": "gentle_scan"
+  },
+  "4612": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:46",
+    "source": "gentle_scan"
+  },
+  "9498": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:48",
+    "source": "gentle_scan"
+  },
+  "8721": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:51",
+    "source": "gentle_scan"
+  },
+  "4541": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:52",
+    "source": "gentle_scan"
+  },
+  "0268": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:54",
+    "source": "gentle_scan"
+  },
+  "6822": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:56",
+    "source": "gentle_scan"
+  },
+  "3902": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:27:58",
+    "source": "gentle_scan"
+  },
+  "5754": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:28:00",
+    "source": "gentle_scan"
+  },
+  "1587": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:28:02",
+    "source": "gentle_scan"
+  },
+  "3960": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:28:03",
+    "source": "gentle_scan"
+  },
+  "7556": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:28:05",
+    "source": "gentle_scan"
+  },
+  "5374": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:28:08",
+    "source": "gentle_scan"
+  },
+  "7200": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:28:09",
+    "source": "gentle_scan"
+  },
+  "8073": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:28:12",
+    "source": "gentle_scan"
+  },
+  "1983": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:28:14",
+    "source": "gentle_scan"
+  },
+  "6180": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:28:15",
+    "source": "gentle_scan"
+  },
+  "8849": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:28:18",
+    "source": "gentle_scan"
+  },
+  "2658": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:28:19",
+    "source": "gentle_scan"
+  },
+  "4888": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:28:22",
+    "source": "gentle_scan"
+  },
+  "8302": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:28:24",
+    "source": "gentle_scan"
+  },
+  "1660": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:28:26",
+    "source": "gentle_scan"
+  },
+  "9940": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:28:28",
+    "source": "gentle_scan"
+  },
+  "1344": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:28:30",
+    "source": "gentle_scan"
+  },
+  "4254": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:28:32",
+    "source": "gentle_scan"
+  },
+  "8169": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:28:34",
+    "source": "gentle_scan"
+  },
+  "6954": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:28:37",
+    "source": "gentle_scan"
+  },
+  "4354": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:28:38",
+    "source": "gentle_scan"
+  },
+  "8492": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:28:40",
+    "source": "gentle_scan"
+  },
+  "0833": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:28:42",
+    "source": "gentle_scan"
+  },
+  "6943": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:28:44",
+    "source": "gentle_scan"
+  },
+  "3287": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:32:19",
+    "source": "gentle_scan"
+  },
+  "6542": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:32:21",
+    "source": "gentle_scan"
+  },
+  "5894": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:32:23",
+    "source": "gentle_scan"
+  },
+  "4008": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:32:25",
+    "source": "gentle_scan"
+  },
+  "1342": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:32:28",
+    "source": "gentle_scan"
+  },
+  "7348": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:32:29",
+    "source": "gentle_scan"
+  },
+  "2781": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:32:31",
+    "source": "gentle_scan"
+  },
+  "5159": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:32:33",
+    "source": "gentle_scan"
+  },
+  "5634": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:32:35",
+    "source": "gentle_scan"
+  },
+  "7091": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:32:37",
+    "source": "gentle_scan"
+  },
+  "3143": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:32:39",
+    "source": "gentle_scan"
+  },
+  "5966": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:32:41",
+    "source": "gentle_scan"
+  },
+  "4506": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:32:44",
+    "source": "gentle_scan"
+  },
+  "7109": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:32:46",
+    "source": "gentle_scan"
+  },
+  "9888": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:32:48",
+    "source": "gentle_scan"
+  },
+  "9629": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:32:50",
+    "source": "gentle_scan"
+  },
+  "2986": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:32:52",
+    "source": "gentle_scan"
+  },
+  "0364": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:32:54",
+    "source": "gentle_scan"
+  },
+  "1196": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:33:07",
+    "source": "gentle_scan"
+  },
+  "6790": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:33:09",
+    "source": "gentle_scan"
+  },
+  "5615": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:33:11",
+    "source": "gentle_scan"
+  },
+  "4424": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:33:13",
+    "source": "gentle_scan"
+  },
+  "1798": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:33:15",
+    "source": "gentle_scan"
+  },
+  "5195": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:33:17",
+    "source": "gentle_scan"
+  },
+  "5301": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:35:19",
+    "source": "gentle_scan"
+  },
+  "3913": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:35:21",
+    "source": "gentle_scan"
+  },
+  "8725": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:35:23",
+    "source": "gentle_scan"
+  },
+  "2696": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:35:26",
+    "source": "gentle_scan"
+  },
+  "2399": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:35:28",
+    "source": "gentle_scan"
+  },
+  "6072": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:35:30",
+    "source": "gentle_scan"
+  },
+  "3033": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:35:32",
+    "source": "gentle_scan"
+  },
+  "6055": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:35:34",
+    "source": "gentle_scan"
+  },
+  "6694": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:35:36",
+    "source": "gentle_scan"
+  },
+  "2708": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:35:38",
+    "source": "gentle_scan"
+  },
+  "2738": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:35:40",
+    "source": "gentle_scan"
+  },
+  "0783": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:35:42",
+    "source": "gentle_scan"
+  },
+  "2115": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:35:44",
+    "source": "gentle_scan"
+  },
+  "6634": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:35:45",
+    "source": "gentle_scan"
+  },
+  "4494": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:35:48",
+    "source": "gentle_scan"
+  },
+  "5905": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:35:50",
+    "source": "gentle_scan"
+  },
+  "1400": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:35:52",
+    "source": "gentle_scan"
+  },
+  "7214": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:35:54",
+    "source": "gentle_scan"
+  },
+  "2224": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:35:56",
+    "source": "gentle_scan"
+  },
+  "2258": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:35:59",
+    "source": "gentle_scan"
+  },
+  "2131": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:36:01",
+    "source": "gentle_scan"
+  },
+  "4945": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:36:03",
+    "source": "gentle_scan"
+  },
+  "7821": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:36:04",
+    "source": "gentle_scan"
+  },
+  "9091": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:36:06",
+    "source": "gentle_scan"
+  },
+  "5630": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:36:08",
+    "source": "gentle_scan"
+  },
+  "7803": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:38:10",
+    "source": "gentle_scan"
+  },
+  "9791": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:38:12",
+    "source": "gentle_scan"
+  },
+  "7058": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:38:14",
+    "source": "gentle_scan"
+  },
+  "2652": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:38:16",
+    "source": "gentle_scan"
+  },
+  "2656": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:38:18",
+    "source": "gentle_scan"
+  },
+  "3615": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:38:21",
+    "source": "gentle_scan"
+  },
+  "8468": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:38:23",
+    "source": "gentle_scan"
+  },
+  "1866": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:38:24",
+    "source": "gentle_scan"
+  },
+  "2260": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:38:26",
+    "source": "gentle_scan"
+  },
+  "3894": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:38:28",
+    "source": "gentle_scan"
+  },
+  "1213": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:38:30",
+    "source": "gentle_scan"
+  },
+  "6005": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:38:32",
+    "source": "gentle_scan"
+  },
+  "1691": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:38:34",
+    "source": "gentle_scan"
+  },
+  "8461": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:38:36",
+    "source": "gentle_scan"
+  },
+  "2102": {
+    "item_count": 17,
+    "projectIds": [
+      "69049260469",
+      "69049156661",
+      "69049253964",
+      "69049455336",
+      "69049455263",
+      "69039370353",
+      "69049251924",
+      "69049353186",
+      "69049159698",
+      "69039156246",
+      "68129333068",
+      "69029257508",
+      "69059020578",
+      "69049155897",
+      "69059020098"
+    ],
+    "titles": [
+      "ประกวดราคาซื้อเครื่องช่วยนวดหัวใจและฟื้นคืนชีพผู้ป่วยอัตโนมัติ จำนวน ๑ เครื่อง ให้กับโรงพยาบาลหนองบัว อำเภอหนองบัว จังหว",
+      "ประกวดราคาซื้อยูนิตทำฟัน จำนวน ๒ ชุด ให้กับโรงพยาบาลท่าตะโก อำเภอท่าตะโก จังหวัดนครสวรรค์ ๑ ชุด และโรงพยาบาลตากฟ้า อำเภอ",
+      "ประกวดราคาซื้อเครื่องวัดความดันโลหิตชนิดอัตโนมัติแบบสอดแขน จำนวน ๑๐ เครื่อง ให้กับหน่วยงานในสังกัดสำนักงานสาธารณสุขจังหว",
+      "ประกวดราคาซื้อครุภัณฑ์วิทยาศาสตร์และการแพทย์ จำนวน ๑ รายการ คือ ชุดแปลงสัญญาเอกซเรย์เป็นภาพดิจิตอลแบบไร้สาย สำหรับโรงพยา",
+      "ประกวดราคาซื้อครุภัณฑ์วิทยาศาสตร์และการแพทย์ จำนวน ๑ รายการ คือเครื่องแปลงสัญญาณภาพเอกซเรย์เป็นดิจิตอลในช่องปาก สำหรับโร"
+    ],
+    "pubDates": [
+      "2026-05-18",
+      "2026-05-18",
+      "2026-05-18"
+    ],
+    "scanned_at": "2026-05-18T20:38:40",
+    "source": "gentle_scan",
+    "dept_name": "สำนักงานสาธารณสุข นครสวรรค์",
+    "enriched_at": "2026-05-20T02:15:29"
+  },
+  "4342": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:38:42",
+    "source": "gentle_scan"
+  },
+  "8559": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:38:44",
+    "source": "gentle_scan"
+  },
+  "5606": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:38:46",
+    "source": "gentle_scan"
+  },
+  "4387": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:38:49",
+    "source": "gentle_scan"
+  },
+  "4294": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:38:51",
+    "source": "gentle_scan"
+  },
+  "5186": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:38:53",
+    "source": "gentle_scan"
+  },
+  "2461": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:38:54",
+    "source": "gentle_scan"
+  },
+  "6883": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:38:57",
+    "source": "gentle_scan"
+  },
+  "4487": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:38:59",
+    "source": "gentle_scan"
+  },
+  "2029": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:00",
+    "source": "gentle_scan"
+  },
+  "3229": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:02",
+    "source": "gentle_scan"
+  },
+  "1115": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:05",
+    "source": "gentle_scan"
+  },
+  "0284": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:06",
+    "source": "gentle_scan"
+  },
+  "2874": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:08",
+    "source": "gentle_scan"
+  },
+  "2948": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:10",
+    "source": "gentle_scan"
+  },
+  "6567": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:13",
+    "source": "gentle_scan"
+  },
+  "2543": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:15",
+    "source": "gentle_scan"
+  },
+  "9209": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:18",
+    "source": "gentle_scan"
+  },
+  "1107": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:20",
+    "source": "gentle_scan"
+  },
+  "9331": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:21",
+    "source": "gentle_scan"
+  },
+  "4120": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:24",
+    "source": "gentle_scan"
+  },
+  "5250": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:26",
+    "source": "gentle_scan"
+  },
+  "8995": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:28",
+    "source": "gentle_scan"
+  },
+  "8276": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:30",
+    "source": "gentle_scan"
+  },
+  "7498": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:32",
+    "source": "gentle_scan"
+  },
+  "1306": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:34",
+    "source": "gentle_scan"
+  },
+  "3975": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:36",
+    "source": "gentle_scan"
+  },
+  "7781": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:38",
+    "source": "gentle_scan"
+  },
+  "4697": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:40",
+    "source": "gentle_scan"
+  },
+  "3022": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:42",
+    "source": "gentle_scan"
+  },
+  "9584": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:45",
+    "source": "gentle_scan"
+  },
+  "3255": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:47",
+    "source": "gentle_scan"
+  },
+  "4288": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:48",
+    "source": "gentle_scan"
+  },
+  "5899": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:50",
+    "source": "gentle_scan"
+  },
+  "3587": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:53",
+    "source": "gentle_scan"
+  },
+  "8819": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:54",
+    "source": "gentle_scan"
+  },
+  "1912": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:56",
+    "source": "gentle_scan"
+  },
+  "0531": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:39:57",
+    "source": "gentle_scan"
+  },
+  "3685": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:00",
+    "source": "gentle_scan"
+  },
+  "2468": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:02",
+    "source": "gentle_scan"
+  },
+  "7261": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:03",
+    "source": "gentle_scan"
+  },
+  "8605": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:05",
+    "source": "gentle_scan"
+  },
+  "1198": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:08",
+    "source": "gentle_scan"
+  },
+  "9464": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:11",
+    "source": "gentle_scan"
+  },
+  "8852": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:12",
+    "source": "gentle_scan"
+  },
+  "3513": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:14",
+    "source": "gentle_scan"
+  },
+  "3502": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:16",
+    "source": "gentle_scan"
+  },
+  "5933": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:18",
+    "source": "gentle_scan"
+  },
+  "3049": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:20",
+    "source": "gentle_scan"
+  },
+  "5563": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:22",
+    "source": "gentle_scan"
+  },
+  "6891": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:24",
+    "source": "gentle_scan"
+  },
+  "3218": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:27",
+    "source": "gentle_scan"
+  },
+  "9518": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:29",
+    "source": "gentle_scan"
+  },
+  "5005": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:31",
+    "source": "gentle_scan"
+  },
+  "5575": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:34",
+    "source": "gentle_scan"
+  },
+  "4041": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:36",
+    "source": "gentle_scan"
+  },
+  "6730": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:38",
+    "source": "gentle_scan"
+  },
+  "5838": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:40",
+    "source": "gentle_scan"
+  },
+  "2653": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:42",
+    "source": "gentle_scan"
+  },
+  "0479": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:44",
+    "source": "gentle_scan"
+  },
+  "0397": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:46",
+    "source": "gentle_scan"
+  },
+  "7841": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:48",
+    "source": "gentle_scan"
+  },
+  "4575": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:50",
+    "source": "gentle_scan"
+  },
+  "1599": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:51",
+    "source": "gentle_scan"
+  },
+  "7851": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:53",
+    "source": "gentle_scan"
+  },
+  "3334": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:56",
+    "source": "gentle_scan"
+  },
+  "5196": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:40:58",
+    "source": "gentle_scan"
+  },
+  "2023": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:01",
+    "source": "gentle_scan"
+  },
+  "9229": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:03",
+    "source": "gentle_scan"
+  },
+  "5700": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:05",
+    "source": "gentle_scan"
+  },
+  "7213": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:07",
+    "source": "gentle_scan"
+  },
+  "4310": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:09",
+    "source": "gentle_scan"
+  },
+  "7099": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:11",
+    "source": "gentle_scan"
+  },
+  "6034": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:14",
+    "source": "gentle_scan"
+  },
+  "2783": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:16",
+    "source": "gentle_scan"
+  },
+  "3791": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:18",
+    "source": "gentle_scan"
+  },
+  "8087": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:20",
+    "source": "gentle_scan"
+  },
+  "6768": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:22",
+    "source": "gentle_scan"
+  },
+  "2069": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:24",
+    "source": "gentle_scan"
+  },
+  "1751": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:26",
+    "source": "gentle_scan"
+  },
+  "5273": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:29",
+    "source": "gentle_scan"
+  },
+  "2490": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:31",
+    "source": "gentle_scan"
+  },
+  "1473": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:33",
+    "source": "gentle_scan"
+  },
+  "4861": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:35",
+    "source": "gentle_scan"
+  },
+  "8870": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:36",
+    "source": "gentle_scan"
+  },
+  "3275": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:39",
+    "source": "gentle_scan"
+  },
+  "1553": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:41",
+    "source": "gentle_scan"
+  },
+  "9471": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:43",
+    "source": "gentle_scan"
+  },
+  "0626": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:45",
+    "source": "gentle_scan"
+  },
+  "7619": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:47",
+    "source": "gentle_scan"
+  },
+  "7735": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:48",
+    "source": "gentle_scan"
+  },
+  "1903": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:50",
+    "source": "gentle_scan"
+  },
+  "6595": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:52",
+    "source": "gentle_scan"
+  },
+  "4433": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:54",
+    "source": "gentle_scan"
+  },
+  "1409": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:56",
+    "source": "gentle_scan"
+  },
+  "3570": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:41:58",
+    "source": "gentle_scan"
+  },
+  "5032": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:00",
+    "source": "gentle_scan"
+  },
+  "3266": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:02",
+    "source": "gentle_scan"
+  },
+  "1565": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:05",
+    "source": "gentle_scan"
+  },
+  "4151": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:07",
+    "source": "gentle_scan"
+  },
+  "7044": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:09",
+    "source": "gentle_scan"
+  },
+  "2623": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:11",
+    "source": "gentle_scan"
+  },
+  "7333": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:13",
+    "source": "gentle_scan"
+  },
+  "2588": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:15",
+    "source": "gentle_scan"
+  },
+  "0950": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:18",
+    "source": "gentle_scan"
+  },
+  "1269": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:19",
+    "source": "gentle_scan"
+  },
+  "9199": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:21",
+    "source": "gentle_scan"
+  },
+  "4879": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:23",
+    "source": "gentle_scan"
+  },
+  "0655": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:25",
+    "source": "gentle_scan"
+  },
+  "7744": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:27",
+    "source": "gentle_scan"
+  },
+  "3460": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:30",
+    "source": "gentle_scan"
+  },
+  "1537": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:32",
+    "source": "gentle_scan"
+  },
+  "9512": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:33",
+    "source": "gentle_scan"
+  },
+  "5448": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:35",
+    "source": "gentle_scan"
+  },
+  "9858": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:37",
+    "source": "gentle_scan"
+  },
+  "7555": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:39",
+    "source": "gentle_scan"
+  },
+  "0293": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:41",
+    "source": "gentle_scan"
+  },
+  "1427": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:44",
+    "source": "gentle_scan"
+  },
+  "7564": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:46",
+    "source": "gentle_scan"
+  },
+  "6887": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:48",
+    "source": "gentle_scan"
+  },
+  "0347": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:50",
+    "source": "gentle_scan"
+  },
+  "9572": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:52",
+    "source": "gentle_scan"
+  },
+  "8482": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:54",
+    "source": "gentle_scan"
+  },
+  "8102": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:56",
+    "source": "gentle_scan"
+  },
+  "2661": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:42:58",
+    "source": "gentle_scan"
+  },
+  "9678": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:00",
+    "source": "gentle_scan"
+  },
+  "2955": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:03",
+    "source": "gentle_scan"
+  },
+  "9926": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:05",
+    "source": "gentle_scan"
+  },
+  "7260": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:07",
+    "source": "gentle_scan"
+  },
+  "9290": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:10",
+    "source": "gentle_scan"
+  },
+  "2219": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:12",
+    "source": "gentle_scan"
+  },
+  "9871": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:14",
+    "source": "gentle_scan"
+  },
+  "9072": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:16",
+    "source": "gentle_scan"
+  },
+  "3982": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:19",
+    "source": "gentle_scan"
+  },
+  "0416": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:20",
+    "source": "gentle_scan"
+  },
+  "3402": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:23",
+    "source": "gentle_scan"
+  },
+  "6631": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:25",
+    "source": "gentle_scan"
+  },
+  "4246": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:28",
+    "source": "gentle_scan"
+  },
+  "6735": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:30",
+    "source": "gentle_scan"
+  },
+  "5568": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:32",
+    "source": "gentle_scan"
+  },
+  "1569": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:33",
+    "source": "gentle_scan"
+  },
+  "5244": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:36",
+    "source": "gentle_scan"
+  },
+  "0566": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:38",
+    "source": "gentle_scan"
+  },
+  "6979": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:40",
+    "source": "gentle_scan"
+  },
+  "1373": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:42",
+    "source": "gentle_scan"
+  },
+  "4595": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:44",
+    "source": "gentle_scan"
+  },
+  "1963": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:45",
+    "source": "gentle_scan"
+  },
+  "2356": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:47",
+    "source": "gentle_scan"
+  },
+  "1991": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:49",
+    "source": "gentle_scan"
+  },
+  "2279": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:51",
+    "source": "gentle_scan"
+  },
+  "0409": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:53",
+    "source": "gentle_scan"
+  },
+  "7910": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:56",
+    "source": "gentle_scan"
+  },
+  "4467": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:43:58",
+    "source": "gentle_scan"
+  },
+  "1079": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:00",
+    "source": "gentle_scan"
+  },
+  "5175": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:02",
+    "source": "gentle_scan"
+  },
+  "7642": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:04",
+    "source": "gentle_scan"
+  },
+  "4897": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:06",
+    "source": "gentle_scan"
+  },
+  "9387": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:08",
+    "source": "gentle_scan"
+  },
+  "6761": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:11",
+    "source": "gentle_scan"
+  },
+  "8204": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:12",
+    "source": "gentle_scan"
+  },
+  "1294": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:14",
+    "source": "gentle_scan"
+  },
+  "6896": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:16",
+    "source": "gentle_scan"
+  },
+  "6572": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:19",
+    "source": "gentle_scan"
+  },
+  "4607": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:20",
+    "source": "gentle_scan"
+  },
+  "7636": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:22",
+    "source": "gentle_scan"
+  },
+  "6465": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:24",
+    "source": "gentle_scan"
+  },
+  "6167": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:26",
+    "source": "gentle_scan"
+  },
+  "0301": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:28",
+    "source": "gentle_scan"
+  },
+  "6151": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:31",
+    "source": "gentle_scan"
+  },
+  "7842": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:32",
+    "source": "gentle_scan"
+  },
+  "3001": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:34",
+    "source": "gentle_scan"
+  },
+  "7393": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:36",
+    "source": "gentle_scan"
+  },
+  "3579": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:38",
+    "source": "gentle_scan"
+  },
+  "4049": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:40",
+    "source": "gentle_scan"
+  },
+  "3785": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:42",
+    "source": "gentle_scan"
+  },
+  "0760": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:44",
+    "source": "gentle_scan"
+  },
+  "8734": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:46",
+    "source": "gentle_scan"
+  },
+  "9127": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:49",
+    "source": "gentle_scan"
+  },
+  "2667": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:50",
+    "source": "gentle_scan"
+  },
+  "6146": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:53",
+    "source": "gentle_scan"
+  },
+  "2210": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:55",
+    "source": "gentle_scan"
+  },
+  "1570": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:44:57",
+    "source": "gentle_scan"
+  },
+  "1880": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:00",
+    "source": "gentle_scan"
+  },
+  "7828": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:01",
+    "source": "gentle_scan"
+  },
+  "3795": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:04",
+    "source": "gentle_scan"
+  },
+  "7964": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:06",
+    "source": "gentle_scan"
+  },
+  "5093": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:09",
+    "source": "gentle_scan"
+  },
+  "1361": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:10",
+    "source": "gentle_scan"
+  },
+  "2132": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:13",
+    "source": "gentle_scan"
+  },
+  "5995": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:14",
+    "source": "gentle_scan"
+  },
+  "8224": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:17",
+    "source": "gentle_scan"
+  },
+  "6067": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:19",
+    "source": "gentle_scan"
+  },
+  "3546": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:21",
+    "source": "gentle_scan"
+  },
+  "6176": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:23",
+    "source": "gentle_scan"
+  },
+  "8976": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:25",
+    "source": "gentle_scan"
+  },
+  "2925": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:27",
+    "source": "gentle_scan"
+  },
+  "5510": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:29",
+    "source": "gentle_scan"
+  },
+  "1621": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:31",
+    "source": "gentle_scan"
+  },
+  "3318": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:33",
+    "source": "gentle_scan"
+  },
+  "4468": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:35",
+    "source": "gentle_scan"
+  },
+  "5487": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:37",
+    "source": "gentle_scan"
+  },
+  "0981": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:40",
+    "source": "gentle_scan"
+  },
+  "5417": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:42",
+    "source": "gentle_scan"
+  },
+  "3282": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:44",
+    "source": "gentle_scan"
+  },
+  "8011": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:46",
+    "source": "gentle_scan"
+  },
+  "5760": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:47",
+    "source": "gentle_scan"
+  },
+  "5458": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:49",
+    "source": "gentle_scan"
+  },
+  "1816": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:52",
+    "source": "gentle_scan"
+  },
+  "6994": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:54",
+    "source": "gentle_scan"
+  },
+  "9759": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:57",
+    "source": "gentle_scan"
+  },
+  "9123": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:45:58",
+    "source": "gentle_scan"
+  },
+  "1545": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:46:01",
+    "source": "gentle_scan"
+  },
+  "4643": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:46:03",
+    "source": "gentle_scan"
+  },
+  "5463": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:46:06",
+    "source": "gentle_scan"
+  },
+  "9030": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:46:08",
+    "source": "gentle_scan"
+  },
+  "5889": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:46:10",
+    "source": "gentle_scan"
+  },
+  "8610": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:46:12",
+    "source": "gentle_scan"
+  },
+  "4209": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:46:15",
+    "source": "gentle_scan"
+  },
+  "9379": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:46:17",
+    "source": "gentle_scan"
+  },
+  "6959": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:46:19",
+    "source": "gentle_scan"
+  },
+  "6628": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:46:21",
+    "source": "gentle_scan"
+  },
+  "3627": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:46:23",
+    "source": "gentle_scan"
+  },
+  "5052": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:46:25",
+    "source": "gentle_scan"
+  },
+  "4156": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:46:27",
+    "source": "gentle_scan"
+  },
+  "7147": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:46:29",
+    "source": "gentle_scan"
+  },
+  "3015": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:49:40",
+    "source": "gentle_scan"
+  },
+  "4743": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:49:42",
+    "source": "gentle_scan"
+  },
+  "3451": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:49:45",
+    "source": "gentle_scan"
+  },
+  "1898": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:49:47",
+    "source": "gentle_scan"
+  },
+  "3643": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:49:49",
+    "source": "gentle_scan"
+  },
+  "8464": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:49:52",
+    "source": "gentle_scan"
+  },
+  "8673": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:49:54",
+    "source": "gentle_scan"
+  },
+  "0946": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:49:56",
+    "source": "gentle_scan"
+  },
+  "7666": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:49:58",
+    "source": "gentle_scan"
+  },
+  "0635": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:50:00",
+    "source": "gentle_scan"
+  },
+  "6403": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:50:02",
+    "source": "gentle_scan"
+  },
+  "7269": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:50:04",
+    "source": "gentle_scan"
+  },
+  "8650": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:50:06",
+    "source": "gentle_scan"
+  },
+  "2322": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:50:08",
+    "source": "gentle_scan"
+  },
+  "3324": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:50:10",
+    "source": "gentle_scan"
+  },
+  "1495": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:50:13",
+    "source": "gentle_scan"
+  },
+  "3031": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:50:15",
+    "source": "gentle_scan"
+  },
+  "5209": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:50:17",
+    "source": "gentle_scan"
+  },
+  "4976": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:50:19",
+    "source": "gentle_scan"
+  },
+  "1875": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:50:21",
+    "source": "gentle_scan"
+  },
+  "4570": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:50:23",
+    "source": "gentle_scan"
+  },
+  "4479": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:50:25",
+    "source": "gentle_scan"
+  },
+  "5174": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:50:27",
+    "source": "gentle_scan"
+  },
+  "3797": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:50:28",
+    "source": "gentle_scan"
+  },
+  "2921": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:50:30",
+    "source": "gentle_scan"
+  },
+  "2792": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:52:32",
+    "source": "gentle_scan"
+  },
+  "3431": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:52:35",
+    "source": "gentle_scan"
+  },
+  "3320": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:52:37",
+    "source": "gentle_scan"
+  },
+  "6550": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:52:39",
+    "source": "gentle_scan"
+  },
+  "5182": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:52:40",
+    "source": "gentle_scan"
+  },
+  "6640": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:52:43",
+    "source": "gentle_scan"
+  },
+  "9980": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:52:45",
+    "source": "gentle_scan"
+  },
+  "0392": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:52:47",
+    "source": "gentle_scan"
+  },
+  "3363": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:52:49",
+    "source": "gentle_scan"
+  },
+  "3512": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:52:51",
+    "source": "gentle_scan"
+  },
+  "6350": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:52:52",
+    "source": "gentle_scan"
+  },
+  "8592": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:52:54",
+    "source": "gentle_scan"
+  },
+  "6046": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:52:56",
+    "source": "gentle_scan"
+  },
+  "5879": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:52:58",
+    "source": "gentle_scan"
+  },
+  "2269": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:53:00",
+    "source": "gentle_scan"
+  },
+  "8628": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:53:03",
+    "source": "gentle_scan"
+  },
+  "7131": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:53:05",
+    "source": "gentle_scan"
+  },
+  "6127": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:53:07",
+    "source": "gentle_scan"
+  },
+  "8978": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:53:09",
+    "source": "gentle_scan"
+  },
+  "9995": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:53:11",
+    "source": "gentle_scan"
+  },
+  "9745": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:53:19",
+    "source": "gentle_scan"
+  },
+  "9304": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:53:22",
+    "source": "gentle_scan"
+  },
+  "1785": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:53:24",
+    "source": "gentle_scan"
+  },
+  "2507": {
+    "item_count": 9,
+    "projectIds": [
+      "69059269489",
+      "69059233527",
+      "69059207760",
+      "69059123092",
+      "69049469464",
+      "69019550502",
+      "69049184688",
+      "69049371979",
+      "69059041620"
+    ],
+    "titles": [
+      "ประกวดราคาจ้างก่อสร้างโครงการปรับปรุงพื้นที่พิพิธภัณฑ์ รร.นรต. ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+      "ประกวดราคาจ้างโครงการบูรณาการระบบบริการรับแจ้งเหตุนักท่องเที่ยว 1155 และศูนย์ประสานงานแก้ไขปัญหานักท่องเที่ยวแบบรวมศูนย์",
+      "ประกวดราคาซื้อจัดซื้อวัสดุและอุปกรณ์สำหรับตรวจทางชีววิทยาและสารพันธุกรรม (DNA) จำนวน 11  รายการ ด้วยวิธีประกวดราคาอิเล็ก",
+      "ประกวดราคาจ้างก่อสร้างอาคารที่พักอาศัยแฟลต 5 ชั้น 30 ครอบครัว (ไต้ถุนโล่ง) สภ.เมืองบึงกาฬ จำนวน 1 หลัง พร้อมส่วนประกอบ ด",
+      "ประกวดราคาซื้อวัสดุวิทยาศาสตร์ (วัสดุ DNA) จำนวน ๘ รายการ ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)"
+    ],
+    "pubDates": [
+      "2026-05-18",
+      "2026-05-18",
+      "2026-05-18"
+    ],
+    "scanned_at": "2026-05-18T20:53:28",
+    "source": "gentle_scan",
+    "dept_name": "ฝ่ายโยธาธิการ 1 กองโยธาธิการ",
+    "enriched_at": "2026-05-20T02:15:30"
+  },
+  "6803": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:53:30",
+    "source": "gentle_scan"
+  },
+  "6601": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:55:32",
+    "source": "gentle_scan"
+  },
+  "5418": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:55:35",
+    "source": "gentle_scan"
+  },
+  "5757": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:55:37",
+    "source": "gentle_scan"
+  },
+  "7094": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:55:39",
+    "source": "gentle_scan"
+  },
+  "5073": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:55:41",
+    "source": "gentle_scan"
+  },
+  "1301": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:55:44",
+    "source": "gentle_scan"
+  },
+  "6876": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:55:45",
+    "source": "gentle_scan"
+  },
+  "2865": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:55:48",
+    "source": "gentle_scan"
+  },
+  "8266": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:55:50",
+    "source": "gentle_scan"
+  },
+  "1087": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:55:52",
+    "source": "gentle_scan"
+  },
+  "8527": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:55:54",
+    "source": "gentle_scan"
+  },
+  "5631": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:55:56",
+    "source": "gentle_scan"
+  },
+  "7896": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:55:59",
+    "source": "gentle_scan"
+  },
+  "4529": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:01",
+    "source": "gentle_scan"
+  },
+  "2985": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:03",
+    "source": "gentle_scan"
+  },
+  "7547": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:04",
+    "source": "gentle_scan"
+  },
+  "6856": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:06",
+    "source": "gentle_scan"
+  },
+  "4805": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:08",
+    "source": "gentle_scan"
+  },
+  "0765": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:10",
+    "source": "gentle_scan"
+  },
+  "0367": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:12",
+    "source": "gentle_scan"
+  },
+  "0680": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:14",
+    "source": "gentle_scan"
+  },
+  "3527": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:16",
+    "source": "gentle_scan"
+  },
+  "8635": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:18",
+    "source": "gentle_scan"
+  },
+  "4725": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:20",
+    "source": "gentle_scan"
+  },
+  "6050": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:22",
+    "source": "gentle_scan"
+  },
+  "5444": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:24",
+    "source": "gentle_scan"
+  },
+  "7840": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:26",
+    "source": "gentle_scan"
+  },
+  "3301": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:28",
+    "source": "gentle_scan"
+  },
+  "1484": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:30",
+    "source": "gentle_scan"
+  },
+  "1329": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:32",
+    "source": "gentle_scan"
+  },
+  "6370": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:34",
+    "source": "gentle_scan"
+  },
+  "7421": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:36",
+    "source": "gentle_scan"
+  },
+  "4563": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:38",
+    "source": "gentle_scan"
+  },
+  "5003": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:40",
+    "source": "gentle_scan"
+  },
+  "0452": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:42",
+    "source": "gentle_scan"
+  },
+  "9581": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:44",
+    "source": "gentle_scan"
+  },
+  "8245": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:46",
+    "source": "gentle_scan"
+  },
+  "8580": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:49",
+    "source": "gentle_scan"
+  },
+  "9682": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:50",
+    "source": "gentle_scan"
+  },
+  "9074": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:53",
+    "source": "gentle_scan"
+  },
+  "3366": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:55",
+    "source": "gentle_scan"
+  },
+  "6686": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:56",
+    "source": "gentle_scan"
+  },
+  "0450": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:56:58",
+    "source": "gentle_scan"
+  },
+  "7995": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:00",
+    "source": "gentle_scan"
+  },
+  "4206": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:02",
+    "source": "gentle_scan"
+  },
+  "5345": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:04",
+    "source": "gentle_scan"
+  },
+  "4350": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:06",
+    "source": "gentle_scan"
+  },
+  "4908": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:08",
+    "source": "gentle_scan"
+  },
+  "3601": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:10",
+    "source": "gentle_scan"
+  },
+  "9653": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:12",
+    "source": "gentle_scan"
+  },
+  "0686": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:14",
+    "source": "gentle_scan"
+  },
+  "2562": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:16",
+    "source": "gentle_scan"
+  },
+  "1151": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:18",
+    "source": "gentle_scan"
+  },
+  "6227": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:21",
+    "source": "gentle_scan"
+  },
+  "9057": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:23",
+    "source": "gentle_scan"
+  },
+  "4860": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:26",
+    "source": "gentle_scan"
+  },
+  "4521": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:27",
+    "source": "gentle_scan"
+  },
+  "8455": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:29",
+    "source": "gentle_scan"
+  },
+  "6048": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:31",
+    "source": "gentle_scan"
+  },
+  "8757": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:33",
+    "source": "gentle_scan"
+  },
+  "0796": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:35",
+    "source": "gentle_scan"
+  },
+  "7127": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:37",
+    "source": "gentle_scan"
+  },
+  "1573": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:40",
+    "source": "gentle_scan"
+  },
+  "6111": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:41",
+    "source": "gentle_scan"
+  },
+  "4549": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:43",
+    "source": "gentle_scan"
+  },
+  "5959": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:45",
+    "source": "gentle_scan"
+  },
+  "8525": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:48",
+    "source": "gentle_scan"
+  },
+  "9474": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:49",
+    "source": "gentle_scan"
+  },
+  "6471": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:51",
+    "source": "gentle_scan"
+  },
+  "3503": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:53",
+    "source": "gentle_scan"
+  },
+  "9783": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:55",
+    "source": "gentle_scan"
+  },
+  "5316": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:57",
+    "source": "gentle_scan"
+  },
+  "9865": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:57:59",
+    "source": "gentle_scan"
+  },
+  "2460": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:01",
+    "source": "gentle_scan"
+  },
+  "1539": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:03",
+    "source": "gentle_scan"
+  },
+  "8440": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:05",
+    "source": "gentle_scan"
+  },
+  "5729": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:08",
+    "source": "gentle_scan"
+  },
+  "9065": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:10",
+    "source": "gentle_scan"
+  },
+  "6858": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:12",
+    "source": "gentle_scan"
+  },
+  "4378": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:13",
+    "source": "gentle_scan"
+  },
+  "5485": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:15",
+    "source": "gentle_scan"
+  },
+  "8568": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:17",
+    "source": "gentle_scan"
+  },
+  "3514": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:19",
+    "source": "gentle_scan"
+  },
+  "3277": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:21",
+    "source": "gentle_scan"
+  },
+  "3114": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:22",
+    "source": "gentle_scan"
+  },
+  "1586": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:24",
+    "source": "gentle_scan"
+  },
+  "5870": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:26",
+    "source": "gentle_scan"
+  },
+  "8648": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:28",
+    "source": "gentle_scan"
+  },
+  "5411": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:30",
+    "source": "gentle_scan"
+  },
+  "0278": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:32",
+    "source": "gentle_scan"
+  },
+  "4098": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:34",
+    "source": "gentle_scan"
+  },
+  "9197": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:36",
+    "source": "gentle_scan"
+  },
+  "9117": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:38",
+    "source": "gentle_scan"
+  },
+  "4064": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:41",
+    "source": "gentle_scan"
+  },
+  "9843": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:43",
+    "source": "gentle_scan"
+  },
+  "1486": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:44",
+    "source": "gentle_scan"
+  },
+  "8604": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:46",
+    "source": "gentle_scan"
+  },
+  "3178": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:48",
+    "source": "gentle_scan"
+  },
+  "4883": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:50",
+    "source": "gentle_scan"
+  },
+  "0735": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:53",
+    "source": "gentle_scan"
+  },
+  "4442": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:54",
+    "source": "gentle_scan"
+  },
+  "5010": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:56",
+    "source": "gentle_scan"
+  },
+  "3207": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:58:58",
+    "source": "gentle_scan"
+  },
+  "0734": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:01",
+    "source": "gentle_scan"
+  },
+  "8206": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:03",
+    "source": "gentle_scan"
+  },
+  "0810": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:05",
+    "source": "gentle_scan"
+  },
+  "0824": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:07",
+    "source": "gentle_scan"
+  },
+  "8730": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:09",
+    "source": "gentle_scan"
+  },
+  "5684": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:12",
+    "source": "gentle_scan"
+  },
+  "8666": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:14",
+    "source": "gentle_scan"
+  },
+  "2920": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:16",
+    "source": "gentle_scan"
+  },
+  "9558": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:18",
+    "source": "gentle_scan"
+  },
+  "8392": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:21",
+    "source": "gentle_scan"
+  },
+  "4465": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:23",
+    "source": "gentle_scan"
+  },
+  "3829": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:24",
+    "source": "gentle_scan"
+  },
+  "8654": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:27",
+    "source": "gentle_scan"
+  },
+  "8005": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:29",
+    "source": "gentle_scan"
+  },
+  "7026": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:31",
+    "source": "gentle_scan"
+  },
+  "2229": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:33",
+    "source": "gentle_scan"
+  },
+  "2954": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:35",
+    "source": "gentle_scan"
+  },
+  "2214": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:38",
+    "source": "gentle_scan"
+  },
+  "3955": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:40",
+    "source": "gentle_scan"
+  },
+  "3136": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:42",
+    "source": "gentle_scan"
+  },
+  "3703": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:43",
+    "source": "gentle_scan"
+  },
+  "6585": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:45",
+    "source": "gentle_scan"
+  },
+  "7687": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:47",
+    "source": "gentle_scan"
+  },
+  "3919": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:50",
+    "source": "gentle_scan"
+  },
+  "4983": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:52",
+    "source": "gentle_scan"
+  },
+  "1491": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:53",
+    "source": "gentle_scan"
+  },
+  "5204": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:55",
+    "source": "gentle_scan"
+  },
+  "7629": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:57",
+    "source": "gentle_scan"
+  },
+  "0460": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T20:59:59",
+    "source": "gentle_scan"
+  },
+  "5711": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:01",
+    "source": "gentle_scan"
+  },
+  "1904": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:03",
+    "source": "gentle_scan"
+  },
+  "8972": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:05",
+    "source": "gentle_scan"
+  },
+  "2503": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:07",
+    "source": "gentle_scan"
+  },
+  "2057": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:09",
+    "source": "gentle_scan"
+  },
+  "4698": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:11",
+    "source": "gentle_scan"
+  },
+  "5156": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:13",
+    "source": "gentle_scan"
+  },
+  "1446": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:15",
+    "source": "gentle_scan"
+  },
+  "5824": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:17",
+    "source": "gentle_scan"
+  },
+  "3974": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:19",
+    "source": "gentle_scan"
+  },
+  "7240": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:21",
+    "source": "gentle_scan"
+  },
+  "8717": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:23",
+    "source": "gentle_scan"
+  },
+  "1960": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:25",
+    "source": "gentle_scan"
+  },
+  "7335": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:27",
+    "source": "gentle_scan"
+  },
+  "9862": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:29",
+    "source": "gentle_scan"
+  },
+  "4669": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:31",
+    "source": "gentle_scan"
+  },
+  "6069": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:34",
+    "source": "gentle_scan"
+  },
+  "1958": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:36",
+    "source": "gentle_scan"
+  },
+  "5732": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:38",
+    "source": "gentle_scan"
+  },
+  "8598": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:40",
+    "source": "gentle_scan"
+  },
+  "3267": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:41",
+    "source": "gentle_scan"
+  },
+  "4535": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:44",
+    "source": "gentle_scan"
+  },
+  "8943": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:46",
+    "source": "gentle_scan"
+  },
+  "1967": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:48",
+    "source": "gentle_scan"
+  },
+  "3258": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:50",
+    "source": "gentle_scan"
+  },
+  "2111": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:52",
+    "source": "gentle_scan"
+  },
+  "3163": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:53",
+    "source": "gentle_scan"
+  },
+  "8131": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:56",
+    "source": "gentle_scan"
+  },
+  "3812": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:00:58",
+    "source": "gentle_scan"
+  },
+  "8100": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:01:00",
+    "source": "gentle_scan"
+  },
+  "4089": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:01:01",
+    "source": "gentle_scan"
+  },
+  "2400": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:01:03",
+    "source": "gentle_scan"
+  },
+  "9955": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:01:05",
+    "source": "gentle_scan"
+  },
+  "3021": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:01:07",
+    "source": "gentle_scan"
+  },
+  "1272": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:04:18",
+    "source": "gentle_scan"
+  },
+  "4621": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:04:21",
+    "source": "gentle_scan"
+  },
+  "3176": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:04:24",
+    "source": "gentle_scan"
+  },
+  "4622": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:04:25",
+    "source": "gentle_scan"
+  },
+  "2217": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:04:27",
+    "source": "gentle_scan"
+  },
+  "3729": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:04:30",
+    "source": "gentle_scan"
+  },
+  "2912": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:04:32",
+    "source": "gentle_scan"
+  },
+  "5096": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:04:33",
+    "source": "gentle_scan"
+  },
+  "1810": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:04:36",
+    "source": "gentle_scan"
+  },
+  "7449": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:04:37",
+    "source": "gentle_scan"
+  },
+  "6827": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:04:40",
+    "source": "gentle_scan"
+  },
+  "2648": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:04:41",
+    "source": "gentle_scan"
+  },
+  "5074": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:04:43",
+    "source": "gentle_scan"
+  },
+  "2746": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:04:44",
+    "source": "gentle_scan"
+  },
+  "4160": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:04:47",
+    "source": "gentle_scan"
+  },
+  "2248": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:04:49",
+    "source": "gentle_scan"
+  },
+  "9864": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:04:52",
+    "source": "gentle_scan"
+  },
+  "1430": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:04:54",
+    "source": "gentle_scan"
+  },
+  "6149": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:04:56",
+    "source": "gentle_scan"
+  },
+  "7807": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:04:58",
+    "source": "gentle_scan"
+  },
+  "4079": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:05:00",
+    "source": "gentle_scan"
+  },
+  "0445": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:05:02",
+    "source": "gentle_scan"
+  },
+  "5406": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:05:04",
+    "source": "gentle_scan"
+  },
+  "1832": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:05:06",
+    "source": "gentle_scan"
+  },
+  "6049": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:05:08",
+    "source": "gentle_scan"
+  },
+  "7961": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:07:11",
+    "source": "gentle_scan"
+  },
+  "0274": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:07:12",
+    "source": "gentle_scan"
+  },
+  "3169": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:07:14",
+    "source": "gentle_scan"
+  },
+  "4606": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:07:16",
+    "source": "gentle_scan"
+  },
+  "3048": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:07:18",
+    "source": "gentle_scan"
+  },
+  "2630": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:07:20",
+    "source": "gentle_scan"
+  },
+  "6190": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:07:22",
+    "source": "gentle_scan"
+  },
+  "6423": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:07:24",
+    "source": "gentle_scan"
+  },
+  "3307": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:07:26",
+    "source": "gentle_scan"
+  },
+  "0441": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:07:29",
+    "source": "gentle_scan"
+  },
+  "8752": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:07:31",
+    "source": "gentle_scan"
+  },
+  "2554": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:07:33",
+    "source": "gentle_scan"
+  },
+  "3925": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:07:35",
+    "source": "gentle_scan"
+  },
+  "4340": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:07:37",
+    "source": "gentle_scan"
+  },
+  "8909": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:07:40",
+    "source": "gentle_scan"
+  },
+  "9720": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:07:41",
+    "source": "gentle_scan"
+  },
+  "7560": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:07:43",
+    "source": "gentle_scan"
+  },
+  "9442": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:07:45",
+    "source": "gentle_scan"
+  },
+  "5683": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:07:47",
+    "source": "gentle_scan"
+  },
+  "5119": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:07:49",
+    "source": "gentle_scan"
+  },
+  "8834": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:07:51",
+    "source": "gentle_scan"
+  },
+  "9218": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:07:53",
+    "source": "gentle_scan"
+  },
+  "4249": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:07:55",
+    "source": "gentle_scan"
+  },
+  "9038": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:07:57",
+    "source": "gentle_scan"
+  },
+  "6648": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:07:59",
+    "source": "gentle_scan"
+  },
+  "2722": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:01",
+    "source": "gentle_scan"
+  },
+  "9004": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:04",
+    "source": "gentle_scan"
+  },
+  "7467": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:05",
+    "source": "gentle_scan"
+  },
+  "0282": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:08",
+    "source": "gentle_scan"
+  },
+  "2871": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:10",
+    "source": "gentle_scan"
+  },
+  "7972": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:12",
+    "source": "gentle_scan"
+  },
+  "1255": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:14",
+    "source": "gentle_scan"
+  },
+  "8480": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:16",
+    "source": "gentle_scan"
+  },
+  "7608": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:17",
+    "source": "gentle_scan"
+  },
+  "7908": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:20",
+    "source": "gentle_scan"
+  },
+  "8770": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:22",
+    "source": "gentle_scan"
+  },
+  "1662": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:24",
+    "source": "gentle_scan"
+  },
+  "2707": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:26",
+    "source": "gentle_scan"
+  },
+  "4357": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:28",
+    "source": "gentle_scan"
+  },
+  "5659": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:30",
+    "source": "gentle_scan"
+  },
+  "7648": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:32",
+    "source": "gentle_scan"
+  },
+  "2689": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:34",
+    "source": "gentle_scan"
+  },
+  "2496": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:36",
+    "source": "gentle_scan"
+  },
+  "9115": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:38",
+    "source": "gentle_scan"
+  },
+  "9894": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:40",
+    "source": "gentle_scan"
+  },
+  "6993": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:42",
+    "source": "gentle_scan"
+  },
+  "3821": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:44",
+    "source": "gentle_scan"
+  },
+  "8124": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:46",
+    "source": "gentle_scan"
+  },
+  "3948": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:48",
+    "source": "gentle_scan"
+  },
+  "1320": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:50",
+    "source": "gentle_scan"
+  },
+  "1007": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:52",
+    "source": "gentle_scan"
+  },
+  "3166": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:54",
+    "source": "gentle_scan"
+  },
+  "6429": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:56",
+    "source": "gentle_scan"
+  },
+  "3089": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:10:58",
+    "source": "gentle_scan"
+  },
+  "3801": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:00",
+    "source": "gentle_scan"
+  },
+  "8785": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:02",
+    "source": "gentle_scan"
+  },
+  "7577": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:04",
+    "source": "gentle_scan"
+  },
+  "1433": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:06",
+    "source": "gentle_scan"
+  },
+  "1969": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:08",
+    "source": "gentle_scan"
+  },
+  "9421": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:10",
+    "source": "gentle_scan"
+  },
+  "2443": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:13",
+    "source": "gentle_scan"
+  },
+  "1018": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:15",
+    "source": "gentle_scan"
+  },
+  "6045": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:17",
+    "source": "gentle_scan"
+  },
+  "7268": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:19",
+    "source": "gentle_scan"
+  },
+  "4164": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:22",
+    "source": "gentle_scan"
+  },
+  "6017": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:24",
+    "source": "gentle_scan"
+  },
+  "2328": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:25",
+    "source": "gentle_scan"
+  },
+  "1615": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:27",
+    "source": "gentle_scan"
+  },
+  "1594": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:29",
+    "source": "gentle_scan"
+  },
+  "0653": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:31",
+    "source": "gentle_scan"
+  },
+  "7985": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:33",
+    "source": "gentle_scan"
+  },
+  "5152": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:36",
+    "source": "gentle_scan"
+  },
+  "2486": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:38",
+    "source": "gentle_scan"
+  },
+  "4603": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:41",
+    "source": "gentle_scan"
+  },
+  "8340": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:43",
+    "source": "gentle_scan"
+  },
+  "4077": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:45",
+    "source": "gentle_scan"
+  },
+  "4488": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:47",
+    "source": "gentle_scan"
+  },
+  "8041": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:49",
+    "source": "gentle_scan"
+  },
+  "9230": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:52",
+    "source": "gentle_scan"
+  },
+  "5235": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:54",
+    "source": "gentle_scan"
+  },
+  "5382": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:55",
+    "source": "gentle_scan"
+  },
+  "3754": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:11:57",
+    "source": "gentle_scan"
+  },
+  "0807": {
+    "item_count": 20,
+    "projectIds": [
+      "69049435551",
+      "69059099238",
+      "69049351497",
+      "69049351890",
+      "69059127600",
+      "69059102487",
+      "69049469086",
+      "69049470195",
+      "69059102883",
+      "69049461387",
+      "69049348896",
+      "69049462148",
+      "69059065027",
+      "69049464475",
+      "69059069565"
+    ],
+    "titles": [
+      "ประกวดราคาจ้างก่อสร้างโครงการปรับปรุงถนน งานบำรุงถนนสาย สข.4022 แยกทางหลวงหมายเลข 4083 - บ้านคลองแดน อำเภอระโนด จังหวัดส",
+      "ประกวดราคาจ้างก่อสร้างปรับปรุงคุณภาพชั้นทาง  ปริมาณงาน  6,280  ตร.ม. ในงานซ่อมสร้างผิวทางแอสฟัลต์คอนกรีต (ดำเนินการเอง) ",
+      "ประกวดราคาจ้างก่อสร้างโครงการซ่อมสร้างผิวทางแอสฟัลต์คอนกรีต (โดยวิธี Pavement In - Place Recycling และปรับปรุงผิวทางโดยว",
+      "ประกวดราคาจ้างก่อสร้างโครงการซ่อมสร้างผิวทางแอสฟัลต์คอนกรีต (โดยวิธี Pavement In - Place Recycling และปรับปรุงผิวทางโดยว",
+      "ประกวดราคาจ้างโครงการเพิ่มค่าสัมประสิทธิ์ความเสียดทานของผิวทางบนถนนสาย นบ.๑๐๐๑ แยกทางหลวงหมายเลข ๙ - แยกนนทกิจ อำเภอบางใ"
+    ],
+    "pubDates": [
+      "2026-05-18",
+      "2026-05-18",
+      "2026-05-18"
+    ],
+    "scanned_at": "2026-05-18T21:12:03",
+    "source": "gentle_scan",
+    "dept_name": "แขวงทางหลวงชนบทสงขลา",
+    "enriched_at": "2026-05-20T02:15:32"
+  },
+  "4502": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:05",
+    "source": "gentle_scan"
+  },
+  "9469": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:06",
+    "source": "gentle_scan"
+  },
+  "4967": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:09",
+    "source": "gentle_scan"
+  },
+  "3314": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:10",
+    "source": "gentle_scan"
+  },
+  "4211": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:12",
+    "source": "gentle_scan"
+  },
+  "1374": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:14",
+    "source": "gentle_scan"
+  },
+  "7274": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:16",
+    "source": "gentle_scan"
+  },
+  "2494": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:18",
+    "source": "gentle_scan"
+  },
+  "3722": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:20",
+    "source": "gentle_scan"
+  },
+  "6206": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:22",
+    "source": "gentle_scan"
+  },
+  "9636": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:24",
+    "source": "gentle_scan"
+  },
+  "0417": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:26",
+    "source": "gentle_scan"
+  },
+  "4113": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:27",
+    "source": "gentle_scan"
+  },
+  "8602": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:29",
+    "source": "gentle_scan"
+  },
+  "5747": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:31",
+    "source": "gentle_scan"
+  },
+  "5171": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:33",
+    "source": "gentle_scan"
+  },
+  "8937": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:35",
+    "source": "gentle_scan"
+  },
+  "2801": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:38",
+    "source": "gentle_scan"
+  },
+  "7435": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:40",
+    "source": "gentle_scan"
+  },
+  "5130": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:41",
+    "source": "gentle_scan"
+  },
+  "9663": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:43",
+    "source": "gentle_scan"
+  },
+  "3092": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:45",
+    "source": "gentle_scan"
+  },
+  "8062": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:47",
+    "source": "gentle_scan"
+  },
+  "7480": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:50",
+    "source": "gentle_scan"
+  },
+  "1579": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:51",
+    "source": "gentle_scan"
+  },
+  "2668": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:53",
+    "source": "gentle_scan"
+  },
+  "8784": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:55",
+    "source": "gentle_scan"
+  },
+  "2684": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:57",
+    "source": "gentle_scan"
+  },
+  "6534": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:12:58",
+    "source": "gentle_scan"
+  },
+  "1653": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:13:00",
+    "source": "gentle_scan"
+  },
+  "2879": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:13:02",
+    "source": "gentle_scan"
+  },
+  "1982": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:13:04",
+    "source": "gentle_scan"
+  },
+  "2096": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:13:06",
+    "source": "gentle_scan"
+  },
+  "6218": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:13:08",
+    "source": "gentle_scan"
+  },
+  "1902": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:13:10",
+    "source": "gentle_scan"
+  },
+  "7002": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:13:13",
+    "source": "gentle_scan"
+  },
+  "9801": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:13:15",
+    "source": "gentle_scan"
+  },
+  "1470": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:13:17",
+    "source": "gentle_scan"
+  },
+  "2616": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:13:19",
+    "source": "gentle_scan"
+  },
+  "3523": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:13:21",
+    "source": "gentle_scan"
+  },
+  "3586": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:13:23",
+    "source": "gentle_scan"
+  },
+  "7101": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:13:25",
+    "source": "gentle_scan"
+  },
+  "3963": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:13:28",
+    "source": "gentle_scan"
+  },
+  "4540": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:13:30",
+    "source": "gentle_scan"
+  },
+  "5290": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:13:31",
+    "source": "gentle_scan"
+  },
+  "8554": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:13:34",
+    "source": "gentle_scan"
+  },
+  "5709": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:13:46",
+    "source": "gentle_scan"
+  },
+  "5812": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:13:48",
+    "source": "gentle_scan"
+  },
+  "1088": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:13:49",
+    "source": "gentle_scan"
+  },
+  "9790": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:13:52",
+    "source": "gentle_scan"
+  },
+  "1581": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:13:54",
+    "source": "gentle_scan"
+  },
+  "9086": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:13:56",
+    "source": "gentle_scan"
+  },
+  "1742": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:13:58",
+    "source": "gentle_scan"
+  },
+  "9053": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:00",
+    "source": "gentle_scan"
+  },
+  "6533": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:02",
+    "source": "gentle_scan"
+  },
+  "6737": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:04",
+    "source": "gentle_scan"
+  },
+  "8906": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:06",
+    "source": "gentle_scan"
+  },
+  "2502": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:08",
+    "source": "gentle_scan"
+  },
+  "9772": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:09",
+    "source": "gentle_scan"
+  },
+  "2291": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:11",
+    "source": "gentle_scan"
+  },
+  "6294": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:13",
+    "source": "gentle_scan"
+  },
+  "2558": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:15",
+    "source": "gentle_scan"
+  },
+  "7105": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:17",
+    "source": "gentle_scan"
+  },
+  "5443": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:18",
+    "source": "gentle_scan"
+  },
+  "2139": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:21",
+    "source": "gentle_scan"
+  },
+  "6277": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:23",
+    "source": "gentle_scan"
+  },
+  "7255": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:25",
+    "source": "gentle_scan"
+  },
+  "6675": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:27",
+    "source": "gentle_scan"
+  },
+  "7572": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:29",
+    "source": "gentle_scan"
+  },
+  "0951": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:31",
+    "source": "gentle_scan"
+  },
+  "9699": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:33",
+    "source": "gentle_scan"
+  },
+  "1507": {
+    "item_count": 11,
+    "projectIds": [
+      "69059172648",
+      "69059206409",
+      "69049315274",
+      "69049423941",
+      "69059016632",
+      "69059150973",
+      "69059149648",
+      "69059146726",
+      "69049220091",
+      "69059141702",
+      "69039366104"
+    ],
+    "titles": [
+      "ประกวดราคาจ้างก่อสร้างโครงการติดตั้งระบบผลิตไฟฟ้าแสงอาทิตย์อาคารสำนักงานโยธาธิการและผังเมืองจังหวัดหนองคาย ตำบลหนองกอมเก",
+      "ประกวดราคาจ้างก่อสร้างค่าปรับปรุงและก่อสร้างอาคารสำนักงาน และโรงเก็บพัสดุ บ้านพักข้าราชการ โรงจอดรถ ก่อสร้างรั้ว คสล.และ",
+      "ประกวดราคาจ้างก่อสร้างโครงการปรับปรุงซ่อมแซมอาคารสถานที่ศูนย์บริการและพัฒนาที่สูงปางตอง ตามพระราชดำริ (ปางอุ๋ง) ตำบลหมอก",
+      "ประกวดราคาจ้างก่อสร้างโครงการปรับปรุงและก่อสร้างอาคารสำนักงาน และโรงเก็บพัสดุ บ้านพักข้าราชการ โรงจอดรถ ก่อสร้างรั้ว คสล",
+      "ประกวดราคาจ้างก่อสร้างซ่อมแซมความชำรุดบกพร่องของโครงการเขื่อนป้องกันตลิ่งริมแม่น้ำเจ้าพระยา หน้าที่ว่าการอำเภอสามโคก (หล"
+    ],
+    "pubDates": [
+      "2026-05-18",
+      "2026-05-15",
+      "2026-05-12"
+    ],
+    "scanned_at": "2026-05-18T21:14:37",
+    "source": "gentle_scan",
+    "dept_name": "สำนักโยธาธิการและผังเมืองจังหวัดหนองคาย",
+    "enriched_at": "2026-05-20T02:15:33"
+  },
+  "4082": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:39",
+    "source": "gentle_scan"
+  },
+  "5909": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:41",
+    "source": "gentle_scan"
+  },
+  "2880": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:42",
+    "source": "gentle_scan"
+  },
+  "3784": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:44",
+    "source": "gentle_scan"
+  },
+  "0690": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:46",
+    "source": "gentle_scan"
+  },
+  "2071": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:48",
+    "source": "gentle_scan"
+  },
+  "5542": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:50",
+    "source": "gentle_scan"
+  },
+  "3105": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:52",
+    "source": "gentle_scan"
+  },
+  "3741": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:54",
+    "source": "gentle_scan"
+  },
+  "8723": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:56",
+    "source": "gentle_scan"
+  },
+  "1493": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:58",
+    "source": "gentle_scan"
+  },
+  "9325": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:14:59",
+    "source": "gentle_scan"
+  },
+  "7224": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:01",
+    "source": "gentle_scan"
+  },
+  "4932": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:03",
+    "source": "gentle_scan"
+  },
+  "3035": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:05",
+    "source": "gentle_scan"
+  },
+  "5440": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:07",
+    "source": "gentle_scan"
+  },
+  "3819": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:09",
+    "source": "gentle_scan"
+  },
+  "2913": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:11",
+    "source": "gentle_scan"
+  },
+  "1075": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:13",
+    "source": "gentle_scan"
+  },
+  "6485": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:15",
+    "source": "gentle_scan"
+  },
+  "8535": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:17",
+    "source": "gentle_scan"
+  },
+  "5297": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:18",
+    "source": "gentle_scan"
+  },
+  "2027": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:20",
+    "source": "gentle_scan"
+  },
+  "5612": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:22",
+    "source": "gentle_scan"
+  },
+  "3019": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:24",
+    "source": "gentle_scan"
+  },
+  "8172": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:25",
+    "source": "gentle_scan"
+  },
+  "8063": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:27",
+    "source": "gentle_scan"
+  },
+  "1417": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:29",
+    "source": "gentle_scan"
+  },
+  "4751": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:32",
+    "source": "gentle_scan"
+  },
+  "6754": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:34",
+    "source": "gentle_scan"
+  },
+  "4380": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:36",
+    "source": "gentle_scan"
+  },
+  "4092": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:38",
+    "source": "gentle_scan"
+  },
+  "5719": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:40",
+    "source": "gentle_scan"
+  },
+  "6526": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:41",
+    "source": "gentle_scan"
+  },
+  "6552": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:43",
+    "source": "gentle_scan"
+  },
+  "3029": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:45",
+    "source": "gentle_scan"
+  },
+  "9242": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:47",
+    "source": "gentle_scan"
+  },
+  "5679": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:49",
+    "source": "gentle_scan"
+  },
+  "5450": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:51",
+    "source": "gentle_scan"
+  },
+  "2649": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:53",
+    "source": "gentle_scan"
+  },
+  "8111": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:55",
+    "source": "gentle_scan"
+  },
+  "8484": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:57",
+    "source": "gentle_scan"
+  },
+  "2467": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:15:59",
+    "source": "gentle_scan"
+  },
+  "8355": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:02",
+    "source": "gentle_scan"
+  },
+  "2873": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:03",
+    "source": "gentle_scan"
+  },
+  "4451": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:05",
+    "source": "gentle_scan"
+  },
+  "6104": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:07",
+    "source": "gentle_scan"
+  },
+  "4560": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:09",
+    "source": "gentle_scan"
+  },
+  "9503": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:11",
+    "source": "gentle_scan"
+  },
+  "3090": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:13",
+    "source": "gentle_scan"
+  },
+  "2602": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:15",
+    "source": "gentle_scan"
+  },
+  "2173": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:17",
+    "source": "gentle_scan"
+  },
+  "4326": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:19",
+    "source": "gentle_scan"
+  },
+  "1381": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:21",
+    "source": "gentle_scan"
+  },
+  "4425": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:24",
+    "source": "gentle_scan"
+  },
+  "9359": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:26",
+    "source": "gentle_scan"
+  },
+  "4013": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:28",
+    "source": "gentle_scan"
+  },
+  "1804": {
+    "item_count": 2,
+    "projectIds": [
+      "69059158006",
+      "69059114940"
+    ],
+    "titles": [
+      "ประกวดราคาจ้างก่อสร้างโครงการบูรณะโบราณสถานเร่งด่วนฉุกเฉินจากเหตุฝนตกหนักและวาตภัย ภายในอุทยานประวัติาสตร์กำแพงเพชร ด้วย",
+      "ประกวดราคาจ้างงานจ้างเหมากำจัดวัชพืชและสิ่งกีดขวางในเขตโบราณสถานดงละคร ตำบลดงละคร อำเภอเมืองนครนายก จังหวัดนครนายก ครั้ง"
+    ],
+    "pubDates": [
+      "2026-05-14",
+      "2026-05-14"
+    ],
+    "scanned_at": "2026-05-18T21:16:31",
+    "source": "gentle_scan",
+    "dept_name": "อุทยานประวัติศาสตร์ กำแพงเพชร กรมศิลปากร กำแพงเพชร",
+    "enriched_at": "2026-05-20T02:15:34"
+  },
+  "8091": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:33",
+    "source": "gentle_scan"
+  },
+  "3262": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:35",
+    "source": "gentle_scan"
+  },
+  "3374": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:37",
+    "source": "gentle_scan"
+  },
+  "6249": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:39",
+    "source": "gentle_scan"
+  },
+  "1133": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:41",
+    "source": "gentle_scan"
+  },
+  "9556": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:43",
+    "source": "gentle_scan"
+  },
+  "6897": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:45",
+    "source": "gentle_scan"
+  },
+  "1348": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:47",
+    "source": "gentle_scan"
+  },
+  "3550": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:49",
+    "source": "gentle_scan"
+  },
+  "8017": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:51",
+    "source": "gentle_scan"
+  },
+  "2024": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:54",
+    "source": "gentle_scan"
+  },
+  "4090": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:56",
+    "source": "gentle_scan"
+  },
+  "7008": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:16:58",
+    "source": "gentle_scan"
+  },
+  "6869": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:17:00",
+    "source": "gentle_scan"
+  },
+  "6448": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:17:02",
+    "source": "gentle_scan"
+  },
+  "4230": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:17:14",
+    "source": "gentle_scan"
+  },
+  "5725": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:17:16",
+    "source": "gentle_scan"
+  },
+  "2325": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:17:18",
+    "source": "gentle_scan"
+  },
+  "1947": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:17:20",
+    "source": "gentle_scan"
+  },
+  "8459": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:17:21",
+    "source": "gentle_scan"
+  },
+  "8126": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:17:23",
+    "source": "gentle_scan"
+  },
+  "6398": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:17:25",
+    "source": "gentle_scan"
+  },
+  "9186": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:17:28",
+    "source": "gentle_scan"
+  },
+  "2348": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:17:30",
+    "source": "gentle_scan"
+  },
+  "3510": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:17:32",
+    "source": "gentle_scan"
+  },
+  "1595": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:17:34",
+    "source": "gentle_scan"
+  },
+  "8792": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:17:36",
+    "source": "gentle_scan"
+  },
+  "3398": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:17:38",
+    "source": "gentle_scan"
+  },
+  "6859": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:17:40",
+    "source": "gentle_scan"
+  },
+  "4510": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:17:42",
+    "source": "gentle_scan"
+  },
+  "2223": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:17:44",
+    "source": "gentle_scan"
+  },
+  "9641": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:17:46",
+    "source": "gentle_scan"
+  },
+  "2655": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:17:48",
+    "source": "gentle_scan"
+  },
+  "1298": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:17:50",
+    "source": "gentle_scan"
+  },
+  "8083": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:17:52",
+    "source": "gentle_scan"
+  },
+  "1754": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:17:54",
+    "source": "gentle_scan"
+  },
+  "9953": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:17:56",
+    "source": "gentle_scan"
+  },
+  "9493": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:17:58",
+    "source": "gentle_scan"
+  },
+  "8653": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:18:01",
+    "source": "gentle_scan"
+  },
+  "7454": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:18:03",
+    "source": "gentle_scan"
+  },
+  "4796": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:18:04",
+    "source": "gentle_scan"
+  },
+  "8304": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:18:06",
+    "source": "gentle_scan"
+  },
+  "7737": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:18:09",
+    "source": "gentle_scan"
+  },
+  "2978": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:18:10",
+    "source": "gentle_scan"
+  },
+  "8297": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:18:12",
+    "source": "gentle_scan"
+  },
+  "7495": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:18:15",
+    "source": "gentle_scan"
+  },
+  "3655": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:18:16",
+    "source": "gentle_scan"
+  },
+  "9786": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:18:19",
+    "source": "gentle_scan"
+  },
+  "3109": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:18:20",
+    "source": "gentle_scan"
+  },
+  "6018": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:18:23",
+    "source": "gentle_scan"
+  },
+  "4731": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:18:25",
+    "source": "gentle_scan"
+  },
+  "5590": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:18:26",
+    "source": "gentle_scan"
+  },
+  "7724": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:21:36",
+    "source": "gentle_scan"
+  },
+  "1235": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:21:38",
+    "source": "gentle_scan"
+  },
+  "7000": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:21:40",
+    "source": "gentle_scan"
+  },
+  "6205": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:21:42",
+    "source": "gentle_scan"
+  },
+  "8491": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:21:44",
+    "source": "gentle_scan"
+  },
+  "6626": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:21:45",
+    "source": "gentle_scan"
+  },
+  "8499": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:21:48",
+    "source": "gentle_scan"
+  },
+  "7096": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:21:50",
+    "source": "gentle_scan"
+  },
+  "0345": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:21:52",
+    "source": "gentle_scan"
+  },
+  "2680": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:21:54",
+    "source": "gentle_scan"
+  },
+  "6378": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:21:56",
+    "source": "gentle_scan"
+  },
+  "8783": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:21:59",
+    "source": "gentle_scan"
+  },
+  "3068": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:22:01",
+    "source": "gentle_scan"
+  },
+  "1780": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:22:03",
+    "source": "gentle_scan"
+  },
+  "7671": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:22:06",
+    "source": "gentle_scan"
+  },
+  "3845": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:22:08",
+    "source": "gentle_scan"
+  },
+  "7150": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:22:10",
+    "source": "gentle_scan"
+  },
+  "2799": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:22:12",
+    "source": "gentle_scan"
+  },
+  "8472": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:22:15",
+    "source": "gentle_scan"
+  },
+  "1890": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:22:16",
+    "source": "gentle_scan"
+  },
+  "1340": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:22:19",
+    "source": "gentle_scan"
+  },
+  "6160": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:22:21",
+    "source": "gentle_scan"
+  },
+  "5522": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:22:23",
+    "source": "gentle_scan"
+  },
+  "2644": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:22:25",
+    "source": "gentle_scan"
+  },
+  "5609": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:22:27",
+    "source": "gentle_scan"
+  },
+  "7581": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:24:29",
+    "source": "gentle_scan"
+  },
+  "2098": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:24:32",
+    "source": "gentle_scan"
+  },
+  "8881": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:24:34",
+    "source": "gentle_scan"
+  },
+  "8376": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:24:36",
+    "source": "gentle_scan"
+  },
+  "5788": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:24:39",
+    "source": "gentle_scan"
+  },
+  "4091": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:24:41",
+    "source": "gentle_scan"
+  },
+  "6714": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:24:43",
+    "source": "gentle_scan"
+  },
+  "5939": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:24:45",
+    "source": "gentle_scan"
+  },
+  "9819": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:24:47",
+    "source": "gentle_scan"
+  },
+  "0778": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:24:49",
+    "source": "gentle_scan"
+  },
+  "9601": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:24:51",
+    "source": "gentle_scan"
+  },
+  "7600": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:24:54",
+    "source": "gentle_scan"
+  },
+  "9696": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:24:56",
+    "source": "gentle_scan"
+  },
+  "3748": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:24:58",
+    "source": "gentle_scan"
+  },
+  "9747": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:25:00",
+    "source": "gentle_scan"
+  },
+  "4679": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:25:02",
+    "source": "gentle_scan"
+  },
+  "6756": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:25:04",
+    "source": "gentle_scan"
+  },
+  "4429": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:25:06",
+    "source": "gentle_scan"
+  },
+  "6872": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:25:08",
+    "source": "gentle_scan"
+  },
+  "9528": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:25:10",
+    "source": "gentle_scan"
+  },
+  "3283": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:25:13",
+    "source": "gentle_scan"
+  },
+  "2785": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:25:15",
+    "source": "gentle_scan"
+  },
+  "9797": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:25:17",
+    "source": "gentle_scan"
+  },
+  "2861": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:25:19",
+    "source": "gentle_scan"
+  },
+  "0296": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:25:21",
+    "source": "gentle_scan"
+  },
+  "1317": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:27:23",
+    "source": "gentle_scan"
+  },
+  "7114": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:27:25",
+    "source": "gentle_scan"
+  },
+  "2189": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:27:27",
+    "source": "gentle_scan"
+  },
+  "8741": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:27:29",
+    "source": "gentle_scan"
+  },
+  "4824": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:27:31",
+    "source": "gentle_scan"
+  },
+  "0900": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:27:33",
+    "source": "gentle_scan"
+  },
+  "3835": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:27:35",
+    "source": "gentle_scan"
+  },
+  "8939": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:27:37",
+    "source": "gentle_scan"
+  },
+  "1379": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:27:38",
+    "source": "gentle_scan"
+  },
+  "4857": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:27:41",
+    "source": "gentle_scan"
+  },
+  "4096": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:27:43",
+    "source": "gentle_scan"
+  },
+  "2415": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:27:44",
+    "source": "gentle_scan"
+  },
+  "0520": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:27:46",
+    "source": "gentle_scan"
+  },
+  "3468": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:27:48",
+    "source": "gentle_scan"
+  },
+  "1380": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:27:51",
+    "source": "gentle_scan"
+  },
+  "1264": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:27:52",
+    "source": "gentle_scan"
+  },
+  "7586": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:27:54",
+    "source": "gentle_scan"
+  },
+  "0644": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:27:57",
+    "source": "gentle_scan"
+  },
+  "2575": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:27:59",
+    "source": "gentle_scan"
+  },
+  "6101": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:00",
+    "source": "gentle_scan"
+  },
+  "1739": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:03",
+    "source": "gentle_scan"
+  },
+  "6256": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:04",
+    "source": "gentle_scan"
+  },
+  "7265": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:06",
+    "source": "gentle_scan"
+  },
+  "0423": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:08",
+    "source": "gentle_scan"
+  },
+  "7658": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:10",
+    "source": "gentle_scan"
+  },
+  "0363": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:12",
+    "source": "gentle_scan"
+  },
+  "0473": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:15",
+    "source": "gentle_scan"
+  },
+  "4635": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:17",
+    "source": "gentle_scan"
+  },
+  "4276": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:19",
+    "source": "gentle_scan"
+  },
+  "5519": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:21",
+    "source": "gentle_scan"
+  },
+  "5582": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:23",
+    "source": "gentle_scan"
+  },
+  "0568": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:24",
+    "source": "gentle_scan"
+  },
+  "2305": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:26",
+    "source": "gentle_scan"
+  },
+  "8298": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:28",
+    "source": "gentle_scan"
+  },
+  "1867": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:30",
+    "source": "gentle_scan"
+  },
+  "3952": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:32",
+    "source": "gentle_scan"
+  },
+  "9977": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:34",
+    "source": "gentle_scan"
+  },
+  "1218": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:37",
+    "source": "gentle_scan"
+  },
+  "8192": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:38",
+    "source": "gentle_scan"
+  },
+  "8922": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:40",
+    "source": "gentle_scan"
+  },
+  "1837": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:42",
+    "source": "gentle_scan"
+  },
+  "4782": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:44",
+    "source": "gentle_scan"
+  },
+  "4362": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:46",
+    "source": "gentle_scan"
+  },
+  "9603": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:48",
+    "source": "gentle_scan"
+  },
+  "6470": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:50",
+    "source": "gentle_scan"
+  },
+  "5234": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:51",
+    "source": "gentle_scan"
+  },
+  "1399": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:53",
+    "source": "gentle_scan"
+  },
+  "3254": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:55",
+    "source": "gentle_scan"
+  },
+  "4448": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:57",
+    "source": "gentle_scan"
+  },
+  "2253": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:28:59",
+    "source": "gentle_scan"
+  },
+  "1588": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:29:01",
+    "source": "gentle_scan"
+  },
+  "1827": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:29:03",
+    "source": "gentle_scan"
+  },
+  "8821": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:29:05",
+    "source": "gentle_scan"
+  },
+  "8185": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:29:07",
+    "source": "gentle_scan"
+  },
+  "9402": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:29:09",
+    "source": "gentle_scan"
+  },
+  "5101": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:29:12",
+    "source": "gentle_scan"
+  },
+  "2310": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:29:13",
+    "source": "gentle_scan"
+  },
+  "1384": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:29:26",
+    "source": "gentle_scan"
+  },
+  "9309": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:29:28",
+    "source": "gentle_scan"
+  },
+  "8645": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:29:30",
+    "source": "gentle_scan"
+  },
+  "7343": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:29:32",
+    "source": "gentle_scan"
+  },
+  "1870": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:29:34",
+    "source": "gentle_scan"
+  },
+  "9008": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:29:37",
+    "source": "gentle_scan"
+  },
+  "9931": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:29:39",
+    "source": "gentle_scan"
+  },
+  "7237": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:29:41",
+    "source": "gentle_scan"
+  },
+  "9617": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:29:44",
+    "source": "gentle_scan"
+  },
+  "9022": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:29:46",
+    "source": "gentle_scan"
+  },
+  "6804": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:29:48",
+    "source": "gentle_scan"
+  },
+  "3548": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:29:50",
+    "source": "gentle_scan"
+  },
+  "6679": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:29:52",
+    "source": "gentle_scan"
+  },
+  "4315": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:29:53",
+    "source": "gentle_scan"
+  },
+  "0337": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:29:56",
+    "source": "gentle_scan"
+  },
+  "4112": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:29:57",
+    "source": "gentle_scan"
+  },
+  "9327": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:29:59",
+    "source": "gentle_scan"
+  },
+  "1954": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:02",
+    "source": "gentle_scan"
+  },
+  "7865": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:03",
+    "source": "gentle_scan"
+  },
+  "0580": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:05",
+    "source": "gentle_scan"
+  },
+  "3273": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:08",
+    "source": "gentle_scan"
+  },
+  "9114": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:11",
+    "source": "gentle_scan"
+  },
+  "4382": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:13",
+    "source": "gentle_scan"
+  },
+  "8147": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:15",
+    "source": "gentle_scan"
+  },
+  "0841": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:17",
+    "source": "gentle_scan"
+  },
+  "8396": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:20",
+    "source": "gentle_scan"
+  },
+  "3120": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:22",
+    "source": "gentle_scan"
+  },
+  "1918": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:23",
+    "source": "gentle_scan"
+  },
+  "7478": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:25",
+    "source": "gentle_scan"
+  },
+  "0819": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:27",
+    "source": "gentle_scan"
+  },
+  "1893": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:29",
+    "source": "gentle_scan"
+  },
+  "4486": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:30",
+    "source": "gentle_scan"
+  },
+  "6957": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:33",
+    "source": "gentle_scan"
+  },
+  "1503": {
+    "item_count": 4,
+    "projectIds": [
+      "69059111812",
+      "69059199179",
+      "69059204754",
+      "69049163704"
+    ],
+    "titles": [
+      "ประกวดราคาจ้างก่อสร้างอาคารที่ว่าการอำเภอเมืองนครปฐม จังหวัดนครปฐม ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+      "ประกวดราคาจ้างก่อสร้างปรับปรุงศาลาประชาคมอำเภอระโนด ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+      "ประกวดราคาจ้างการจ้างเหมาบริการในการดูแลรักษาระบบ (Maintenance Service Agreement) การออกหนังสือผ่านแดนด้วยระบบอิเล็กทรอน",
+      "ประกวดราคาซื้อบัตรประจำตัวประชาชนที่ออกด้วยระบบคอมพิวเตอร์แบบอเนกประสงค์ (Smart Card)  จำนวน 10,800,000 บัตร  ด้วยวิธีปร"
+    ],
+    "pubDates": [
+      "2026-05-18",
+      "2026-05-14",
+      "2026-05-14"
+    ],
+    "scanned_at": "2026-05-18T21:30:36",
+    "source": "gentle_scan",
+    "dept_name": "ที่ทำการปกครองอำเภอเมืองนครปฐม",
+    "enriched_at": "2026-05-20T02:15:35"
+  },
+  "7689": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:39",
+    "source": "gentle_scan"
+  },
+  "5785": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:41",
+    "source": "gentle_scan"
+  },
+  "9939": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:43",
+    "source": "gentle_scan"
+  },
+  "0771": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:45",
+    "source": "gentle_scan"
+  },
+  "6818": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:47",
+    "source": "gentle_scan"
+  },
+  "5988": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:49",
+    "source": "gentle_scan"
+  },
+  "7947": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:50",
+    "source": "gentle_scan"
+  },
+  "5220": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:53",
+    "source": "gentle_scan"
+  },
+  "8360": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:54",
+    "source": "gentle_scan"
+  },
+  "3055": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:57",
+    "source": "gentle_scan"
+  },
+  "7665": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:30:59",
+    "source": "gentle_scan"
+  },
+  "8118": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:00",
+    "source": "gentle_scan"
+  },
+  "4495": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:03",
+    "source": "gentle_scan"
+  },
+  "7553": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:04",
+    "source": "gentle_scan"
+  },
+  "8944": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:06",
+    "source": "gentle_scan"
+  },
+  "2147": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:09",
+    "source": "gentle_scan"
+  },
+  "4898": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:11",
+    "source": "gentle_scan"
+  },
+  "6720": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:13",
+    "source": "gentle_scan"
+  },
+  "2706": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:15",
+    "source": "gentle_scan"
+  },
+  "9145": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:18",
+    "source": "gentle_scan"
+  },
+  "1467": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:20",
+    "source": "gentle_scan"
+  },
+  "9904": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:22",
+    "source": "gentle_scan"
+  },
+  "2234": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:24",
+    "source": "gentle_scan"
+  },
+  "1485": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:26",
+    "source": "gentle_scan"
+  },
+  "9846": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:29",
+    "source": "gentle_scan"
+  },
+  "5957": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:30",
+    "source": "gentle_scan"
+  },
+  "2482": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:33",
+    "source": "gentle_scan"
+  },
+  "3891": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:34",
+    "source": "gentle_scan"
+  },
+  "9102": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:36",
+    "source": "gentle_scan"
+  },
+  "1468": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:38",
+    "source": "gentle_scan"
+  },
+  "7567": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:40",
+    "source": "gentle_scan"
+  },
+  "8066": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:42",
+    "source": "gentle_scan"
+  },
+  "4783": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:44",
+    "source": "gentle_scan"
+  },
+  "8451": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:46",
+    "source": "gentle_scan"
+  },
+  "6983": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:48",
+    "source": "gentle_scan"
+  },
+  "9116": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:50",
+    "source": "gentle_scan"
+  },
+  "3928": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:52",
+    "source": "gentle_scan"
+  },
+  "3644": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:54",
+    "source": "gentle_scan"
+  },
+  "0480": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:56",
+    "source": "gentle_scan"
+  },
+  "0978": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:31:58",
+    "source": "gentle_scan"
+  },
+  "8716": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:32:00",
+    "source": "gentle_scan"
+  },
+  "3912": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:32:02",
+    "source": "gentle_scan"
+  },
+  "6847": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:32:05",
+    "source": "gentle_scan"
+  },
+  "5789": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:32:06",
+    "source": "gentle_scan"
+  },
+  "4700": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:32:18",
+    "source": "gentle_scan"
+  },
+  "1403": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:32:20",
+    "source": "gentle_scan"
+  },
+  "8452": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:32:23",
+    "source": "gentle_scan"
+  },
+  "8425": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:32:24",
+    "source": "gentle_scan"
+  },
+  "4520": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:32:27",
+    "source": "gentle_scan"
+  },
+  "2698": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:32:29",
+    "source": "gentle_scan"
+  },
+  "7643": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:32:31",
+    "source": "gentle_scan"
+  },
+  "2003": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:32:33",
+    "source": "gentle_scan"
+  },
+  "3357": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:32:35",
+    "source": "gentle_scan"
+  },
+  "3735": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:32:37",
+    "source": "gentle_scan"
+  },
+  "3465": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:32:39",
+    "source": "gentle_scan"
+  },
+  "3410": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:32:41",
+    "source": "gentle_scan"
+  },
+  "1022": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:32:43",
+    "source": "gentle_scan"
+  },
+  "1682": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:32:45",
+    "source": "gentle_scan"
+  },
+  "2968": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:32:47",
+    "source": "gentle_scan"
+  },
+  "7234": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:32:49",
+    "source": "gentle_scan"
+  },
+  "1039": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:32:51",
+    "source": "gentle_scan"
+  },
+  "8386": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:32:53",
+    "source": "gentle_scan"
+  },
+  "9296": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:32:55",
+    "source": "gentle_scan"
+  },
+  "0390": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:32:58",
+    "source": "gentle_scan"
+  },
+  "7116": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:00",
+    "source": "gentle_scan"
+  },
+  "3444": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:02",
+    "source": "gentle_scan"
+  },
+  "9383": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:04",
+    "source": "gentle_scan"
+  },
+  "9632": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:07",
+    "source": "gentle_scan"
+  },
+  "1997": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:09",
+    "source": "gentle_scan"
+  },
+  "7363": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:10",
+    "source": "gentle_scan"
+  },
+  "8751": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:12",
+    "source": "gentle_scan"
+  },
+  "9616": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:14",
+    "source": "gentle_scan"
+  },
+  "7700": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:17",
+    "source": "gentle_scan"
+  },
+  "6836": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:18",
+    "source": "gentle_scan"
+  },
+  "1583": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:21",
+    "source": "gentle_scan"
+  },
+  "9088": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:22",
+    "source": "gentle_scan"
+  },
+  "3951": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:25",
+    "source": "gentle_scan"
+  },
+  "4817": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:27",
+    "source": "gentle_scan"
+  },
+  "7018": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:29",
+    "source": "gentle_scan"
+  },
+  "0720": {
+    "item_count": 1,
+    "projectIds": [
+      "69059169135"
+    ],
+    "titles": [
+      "ประกวดราคาซื้อซื้อวัสดุทางการเกษตร สำหรับโครงการฟื้นฟูเกษตรกรผู้ปลูกหม่อนเลี้ยงไหมที่ประสบภัยพิบัติ ประจำปีงบประมาณ พ.ศ."
+    ],
+    "pubDates": [
+      "2026-05-14"
+    ],
+    "scanned_at": "2026-05-18T21:33:31",
+    "source": "gentle_scan",
+    "dept_name": "สำนักพัฒนาและถ่ายทอดเทคโนโลยีหม่อนไหม  กรมหม่อนไหม",
+    "enriched_at": "2026-05-20T02:15:36"
+  },
+  "2440": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:34",
+    "source": "gentle_scan"
+  },
+  "4943": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:36",
+    "source": "gentle_scan"
+  },
+  "2747": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:38",
+    "source": "gentle_scan"
+  },
+  "2172": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:40",
+    "source": "gentle_scan"
+  },
+  "9549": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:42",
+    "source": "gentle_scan"
+  },
+  "4109": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:44",
+    "source": "gentle_scan"
+  },
+  "3872": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:46",
+    "source": "gentle_scan"
+  },
+  "7208": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:48",
+    "source": "gentle_scan"
+  },
+  "4446": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:50",
+    "source": "gentle_scan"
+  },
+  "2317": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:52",
+    "source": "gentle_scan"
+  },
+  "0751": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:54",
+    "source": "gentle_scan"
+  },
+  "3494": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:56",
+    "source": "gentle_scan"
+  },
+  "3119": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:33:59",
+    "source": "gentle_scan"
+  },
+  "7054": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:34:01",
+    "source": "gentle_scan"
+  },
+  "1606": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:34:03",
+    "source": "gentle_scan"
+  },
+  "8166": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:34:05",
+    "source": "gentle_scan"
+  },
+  "2766": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:34:07",
+    "source": "gentle_scan"
+  },
+  "5992": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:34:09",
+    "source": "gentle_scan"
+  },
+  "7298": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:34:12",
+    "source": "gentle_scan"
+  },
+  "7020": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:34:13",
+    "source": "gentle_scan"
+  },
+  "1126": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:34:16",
+    "source": "gentle_scan"
+  },
+  "7740": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:34:17",
+    "source": "gentle_scan"
+  },
+  "4023": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:34:19",
+    "source": "gentle_scan"
+  },
+  "0758": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:34:21",
+    "source": "gentle_scan"
+  },
+  "1767": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:34:24",
+    "source": "gentle_scan"
+  },
+  "4686": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:34:26",
+    "source": "gentle_scan"
+  },
+  "6575": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:34:28",
+    "source": "gentle_scan"
+  },
+  "3518": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:34:31",
+    "source": "gentle_scan"
+  },
+  "2124": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:34:33",
+    "source": "gentle_scan"
+  },
+  "3270": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:34:45",
+    "source": "gentle_scan"
+  },
+  "2256": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:34:47",
+    "source": "gentle_scan"
+  },
+  "4343": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:34:49",
+    "source": "gentle_scan"
+  },
+  "9354": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:34:52",
+    "source": "gentle_scan"
+  },
+  "1084": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:34:53",
+    "source": "gentle_scan"
+  },
+  "6022": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:34:55",
+    "source": "gentle_scan"
+  },
+  "5574": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:34:58",
+    "source": "gentle_scan"
+  },
+  "7540": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:34:59",
+    "source": "gentle_scan"
+  },
+  "3497": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:02",
+    "source": "gentle_scan"
+  },
+  "5552": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:04",
+    "source": "gentle_scan"
+  },
+  "4409": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:06",
+    "source": "gentle_scan"
+  },
+  "7673": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:08",
+    "source": "gentle_scan"
+  },
+  "0706": {
+    "item_count": 5,
+    "projectIds": [
+      "69059197886",
+      "69059037676",
+      "69049262738",
+      "69059132541",
+      "69049446355"
+    ],
+    "titles": [
+      "ประกวดราคาซื้อโครงการฟื้นฟูระบบนิเวศต้นน้ำและพัฒนาอาชีพในพื้นที่โครงการอ่างเก็บน้ำนฤบดินทรจินดา ตำบลแก่งดินสอ อำเภอนาดี ",
+      "ประกวดราคาซื้อวัสดุวิทยาศาสตร์ จำนวน 6 รายการ ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+      "ประกวดราคาจ้างผลิตและประชาสัมพันธ์ตราสัญลักษณ์ GOOD FOOD GREEN CHOICE ผลิตภัณฑ์ปศุสัตว์ใส่ใจสิ่งแวดล้อม จำนวน 1 งาน ด้วย",
+      "ประกวดราคาซื้อจัดซื้อวัสดุการเกษตร จำนวน 5 รายการ ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+      "ประกวดราคาจ้างจ้างเหมาจัดงานส่งเสริมและพัฒนาอาชีพการเลี้ยงโคเนื้อ โคขุน  มหกรรมโคเนื้อชุมพร ครั้งที่ 1 ปีงบประมาณ พ.ศ. 2"
+    ],
+    "pubDates": [
+      "2026-05-14",
+      "2026-05-12",
+      "2026-05-12"
+    ],
+    "scanned_at": "2026-05-18T21:35:11",
+    "source": "gentle_scan",
+    "dept_name": "สำนักงานปศุสัตว์จังหวัดปราจีนบุรี",
+    "enriched_at": "2026-05-20T02:15:37"
+  },
+  "5702": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:13",
+    "source": "gentle_scan"
+  },
+  "4072": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:15",
+    "source": "gentle_scan"
+  },
+  "9886": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:17",
+    "source": "gentle_scan"
+  },
+  "8242": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:20",
+    "source": "gentle_scan"
+  },
+  "4696": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:22",
+    "source": "gentle_scan"
+  },
+  "7358": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:24",
+    "source": "gentle_scan"
+  },
+  "8353": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:26",
+    "source": "gentle_scan"
+  },
+  "4578": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:28",
+    "source": "gentle_scan"
+  },
+  "7894": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:31",
+    "source": "gentle_scan"
+  },
+  "7416": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:33",
+    "source": "gentle_scan"
+  },
+  "8032": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:34",
+    "source": "gentle_scan"
+  },
+  "4346": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:37",
+    "source": "gentle_scan"
+  },
+  "1943": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:39",
+    "source": "gentle_scan"
+  },
+  "1179": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:42",
+    "source": "gentle_scan"
+  },
+  "5009": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:43",
+    "source": "gentle_scan"
+  },
+  "1273": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:46",
+    "source": "gentle_scan"
+  },
+  "3805": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:47",
+    "source": "gentle_scan"
+  },
+  "1838": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:49",
+    "source": "gentle_scan"
+  },
+  "4152": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:51",
+    "source": "gentle_scan"
+  },
+  "4170": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:53",
+    "source": "gentle_scan"
+  },
+  "0918": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:55",
+    "source": "gentle_scan"
+  },
+  "7402": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:56",
+    "source": "gentle_scan"
+  },
+  "7831": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:35:59",
+    "source": "gentle_scan"
+  },
+  "0323": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:36:00",
+    "source": "gentle_scan"
+  },
+  "9488": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:36:03",
+    "source": "gentle_scan"
+  },
+  "9297": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:36:05",
+    "source": "gentle_scan"
+  },
+  "7650": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:36:07",
+    "source": "gentle_scan"
+  },
+  "6581": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:39:15",
+    "source": "gentle_scan"
+  },
+  "6296": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:39:17",
+    "source": "gentle_scan"
+  },
+  "4512": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:39:19",
+    "source": "gentle_scan"
+  },
+  "3108": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:39:20",
+    "source": "gentle_scan"
+  },
+  "5416": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:39:23",
+    "source": "gentle_scan"
+  },
+  "5449": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:39:25",
+    "source": "gentle_scan"
+  },
+  "1050": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:39:27",
+    "source": "gentle_scan"
+  },
+  "9111": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:39:29",
+    "source": "gentle_scan"
+  },
+  "3040": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:39:32",
+    "source": "gentle_scan"
+  },
+  "7669": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:39:34",
+    "source": "gentle_scan"
+  },
+  "0420": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:39:36",
+    "source": "gentle_scan"
+  },
+  "3349": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:39:38",
+    "source": "gentle_scan"
+  },
+  "9994": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:39:40",
+    "source": "gentle_scan"
+  },
+  "8679": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:39:42",
+    "source": "gentle_scan"
+  },
+  "4137": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:39:43",
+    "source": "gentle_scan"
+  },
+  "0279": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:39:45",
+    "source": "gentle_scan"
+  },
+  "1004": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:39:47",
+    "source": "gentle_scan"
+  },
+  "2606": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:39:49",
+    "source": "gentle_scan"
+  },
+  "2198": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:39:52",
+    "source": "gentle_scan"
+  },
+  "7873": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:39:54",
+    "source": "gentle_scan"
+  },
+  "9664": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:39:56",
+    "source": "gentle_scan"
+  },
+  "0968": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:39:59",
+    "source": "gentle_scan"
+  },
+  "7050": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:40:00",
+    "source": "gentle_scan"
+  },
+  "4179": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:40:03",
+    "source": "gentle_scan"
+  },
+  "8644": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:40:05",
+    "source": "gentle_scan"
+  },
+  "1445": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:42:07",
+    "source": "gentle_scan"
+  },
+  "7738": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:42:09",
+    "source": "gentle_scan"
+  },
+  "1629": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:42:11",
+    "source": "gentle_scan"
+  },
+  "3532": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:42:12",
+    "source": "gentle_scan"
+  },
+  "1693": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:42:15",
+    "source": "gentle_scan"
+  },
+  "3097": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:42:17",
+    "source": "gentle_scan"
+  },
+  "2528": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:42:19",
+    "source": "gentle_scan"
+  },
+  "5701": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:42:21",
+    "source": "gentle_scan"
+  },
+  "5368": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:42:23",
+    "source": "gentle_scan"
+  },
+  "1907": {
+    "item_count": 3,
+    "projectIds": [
+      "69059096734",
+      "69059064377",
+      "69059053218"
+    ],
+    "titles": [
+      "ประกวดราคาจ้างระบบ WEB PORTAL และระบบรายงานเพื่อรองรับการพัฒนาระบบมาตรวิทยาดิจิทัล ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-b",
+      "ประกวดราคาซื้อเครื่องมือวัดความดัน Pressure Indicator ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+      "ประกวดราคาซื้อชุดทดลองทางไฟฟ้า ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)"
+    ],
+    "pubDates": [
+      "2026-05-15",
+      "2026-05-12",
+      "2026-05-12"
+    ],
+    "scanned_at": "2026-05-18T21:42:25",
+    "source": "gentle_scan",
+    "dept_name": "สถาบันมาตรวิทยาแห่งชาติ ปทุมธานี",
+    "enriched_at": "2026-05-20T02:15:39"
+  },
+  "9640": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:42:28",
+    "source": "gentle_scan"
+  },
+  "5880": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:42:30",
+    "source": "gentle_scan"
+  },
+  "5222": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:42:33",
+    "source": "gentle_scan"
+  },
+  "2957": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:42:35",
+    "source": "gentle_scan"
+  },
+  "6074": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:42:37",
+    "source": "gentle_scan"
+  },
+  "2845": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:42:40",
+    "source": "gentle_scan"
+  },
+  "0377": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:42:42",
+    "source": "gentle_scan"
+  },
+  "9863": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:42:44",
+    "source": "gentle_scan"
+  },
+  "7420": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:42:46",
+    "source": "gentle_scan"
+  },
+  "6512": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:42:48",
+    "source": "gentle_scan"
+  },
+  "5728": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:42:50",
+    "source": "gentle_scan"
+  },
+  "3567": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:42:52",
+    "source": "gentle_scan"
+  },
+  "4781": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:42:54",
+    "source": "gentle_scan"
+  },
+  "5329": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:42:56",
+    "source": "gentle_scan"
+  },
+  "4173": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:42:58",
+    "source": "gentle_scan"
+  },
+  "2327": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:01",
+    "source": "gentle_scan"
+  },
+  "1093": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:03",
+    "source": "gentle_scan"
+  },
+  "0313": {
+    "item_count": 4,
+    "projectIds": [
+      "69059106672",
+      "69049459989",
+      "69049331103",
+      "69059126660"
+    ],
+    "titles": [
+      "ประกวดราคาจ้างผู้ดำเนินการโครงการ ขับเคลื่อนการพัฒนาองค์กรอย่างยั่งยืน (ESG)   ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-biddi",
+      "ประกวดราคาจ้างผลิตและเผยแพร่ข่าว สกู๊ปข่าวด้านประกันภัย ตลอดจนการประชาสัมพันธ์  โลโก้ ตราสัญลักษณ์ของสำนักงาน คปภ. ผ่านส",
+      "ประกวดราคาจ้างโครงการจ้างพัฒนาระบบงานด้วยปัญญาประดิษฐ์ ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+      "ประกวดราคาจ้างโครงการการจัดการความรู้ขององค์กร (Media Content for Learning) ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)"
+    ],
+    "pubDates": [
+      "2026-05-15",
+      "2026-05-14",
+      "2026-05-14"
+    ],
+    "scanned_at": "2026-05-18T21:45:05",
+    "source": "gentle_scan",
+    "dept_name": "สำนักงานคณะกรรมการกำกับและส่งเสริมการประกอบธุรกิจประกันภัย (คปภ.)",
+    "enriched_at": "2026-05-20T02:15:40"
+  },
+  "1726": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:07",
+    "source": "gentle_scan"
+  },
+  "0529": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:09",
+    "source": "gentle_scan"
+  },
+  "6845": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:11",
+    "source": "gentle_scan"
+  },
+  "2331": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:13",
+    "source": "gentle_scan"
+  },
+  "5619": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:15",
+    "source": "gentle_scan"
+  },
+  "8263": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:17",
+    "source": "gentle_scan"
+  },
+  "9060": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:19",
+    "source": "gentle_scan"
+  },
+  "6189": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:21",
+    "source": "gentle_scan"
+  },
+  "7606": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:23",
+    "source": "gentle_scan"
+  },
+  "4571": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:25",
+    "source": "gentle_scan"
+  },
+  "5676": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:27",
+    "source": "gentle_scan"
+  },
+  "5471": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:29",
+    "source": "gentle_scan"
+  },
+  "3028": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:32",
+    "source": "gentle_scan"
+  },
+  "5541": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:34",
+    "source": "gentle_scan"
+  },
+  "9760": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:36",
+    "source": "gentle_scan"
+  },
+  "3530": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:38",
+    "source": "gentle_scan"
+  },
+  "1719": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:40",
+    "source": "gentle_scan"
+  },
+  "7983": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:42",
+    "source": "gentle_scan"
+  },
+  "2454": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:45",
+    "source": "gentle_scan"
+  },
+  "6955": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:46",
+    "source": "gentle_scan"
+  },
+  "4057": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:48",
+    "source": "gentle_scan"
+  },
+  "8409": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:51",
+    "source": "gentle_scan"
+  },
+  "9109": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:53",
+    "source": "gentle_scan"
+  },
+  "0804": {
+    "item_count": 1,
+    "projectIds": [
+      "69049463245"
+    ],
+    "titles": [
+      "ประกวดราคาจ้างโครงการพัฒนาแอปพลิเคชันของกรมการขนส่งทางบก เพื่อให้บริการประชาชนเพียงแอปพลิเคชันเดียว (DLT One App) ครั้งท"
+    ],
+    "pubDates": [
+      "2026-05-15"
+    ],
+    "scanned_at": "2026-05-18T21:45:55",
+    "source": "gentle_scan",
+    "dept_name": "กรมการขนส่งทางบก กรุงเทพฯ",
+    "enriched_at": "2026-05-20T02:15:41"
+  },
+  "0399": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:57",
+    "source": "gentle_scan"
+  },
+  "6409": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:45:59",
+    "source": "gentle_scan"
+  },
+  "1770": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:02",
+    "source": "gentle_scan"
+  },
+  "0385": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:04",
+    "source": "gentle_scan"
+  },
+  "3596": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:06",
+    "source": "gentle_scan"
+  },
+  "6362": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:08",
+    "source": "gentle_scan"
+  },
+  "7055": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:10",
+    "source": "gentle_scan"
+  },
+  "0991": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:12",
+    "source": "gentle_scan"
+  },
+  "7898": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:15",
+    "source": "gentle_scan"
+  },
+  "0402": {
+    "item_count": 1,
+    "projectIds": [
+      "69049408587"
+    ],
+    "titles": [
+      "ประกวดราคาจ้างโครงการปรับปรุงสำนักบริหารการคลัง ชั้น G อาคารกระทรวงการต่างประเทศ ถนนศรีอยุธยา ด้วยวิธีประกวดราคาอิเล็กทร"
+    ],
+    "pubDates": [
+      "2026-05-11"
+    ],
+    "scanned_at": "2026-05-18T21:46:16",
+    "source": "gentle_scan",
+    "dept_name": "สำนักงานปลัดกระทรวงการต่างประเทศ กรุงเทพฯ",
+    "enriched_at": "2026-05-20T02:15:42"
+  },
+  "2810": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:19",
+    "source": "gentle_scan"
+  },
+  "6263": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:21",
+    "source": "gentle_scan"
+  },
+  "8151": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:23",
+    "source": "gentle_scan"
+  },
+  "9002": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:25",
+    "source": "gentle_scan"
+  },
+  "9659": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:28",
+    "source": "gentle_scan"
+  },
+  "3943": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:30",
+    "source": "gentle_scan"
+  },
+  "3391": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:32",
+    "source": "gentle_scan"
+  },
+  "8516": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:34",
+    "source": "gentle_scan"
+  },
+  "7136": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:36",
+    "source": "gentle_scan"
+  },
+  "9963": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:38",
+    "source": "gentle_scan"
+  },
+  "2447": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:40",
+    "source": "gentle_scan"
+  },
+  "6750": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:42",
+    "source": "gentle_scan"
+  },
+  "2082": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:44",
+    "source": "gentle_scan"
+  },
+  "3276": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:46",
+    "source": "gentle_scan"
+  },
+  "4942": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:49",
+    "source": "gentle_scan"
+  },
+  "6729": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:50",
+    "source": "gentle_scan"
+  },
+  "1195": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:52",
+    "source": "gentle_scan"
+  },
+  "5109": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:54",
+    "source": "gentle_scan"
+  },
+  "4665": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:57",
+    "source": "gentle_scan"
+  },
+  "7411": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:46:59",
+    "source": "gentle_scan"
+  },
+  "7895": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:47:11",
+    "source": "gentle_scan"
+  },
+  "4555": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:47:14",
+    "source": "gentle_scan"
+  },
+  "2580": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:47:16",
+    "source": "gentle_scan"
+  },
+  "9215": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:47:18",
+    "source": "gentle_scan"
+  },
+  "4181": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:47:20",
+    "source": "gentle_scan"
+  },
+  "6837": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:47:22",
+    "source": "gentle_scan"
+  },
+  "5428": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:47:24",
+    "source": "gentle_scan"
+  },
+  "4492": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:47:26",
+    "source": "gentle_scan"
+  },
+  "1672": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:47:28",
+    "source": "gentle_scan"
+  },
+  "2347": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:47:31",
+    "source": "gentle_scan"
+  },
+  "1052": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:47:33",
+    "source": "gentle_scan"
+  },
+  "7598": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:47:35",
+    "source": "gentle_scan"
+  },
+  "3354": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:47:37",
+    "source": "gentle_scan"
+  },
+  "1519": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:47:39",
+    "source": "gentle_scan"
+  },
+  "8335": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:47:41",
+    "source": "gentle_scan"
+  },
+  "3149": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:47:44",
+    "source": "gentle_scan"
+  },
+  "3464": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:47:46",
+    "source": "gentle_scan"
+  },
+  "3506": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:47:48",
+    "source": "gentle_scan"
+  },
+  "1538": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:47:51",
+    "source": "gentle_scan"
+  },
+  "3594": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:47:53",
+    "source": "gentle_scan"
+  },
+  "8989": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:47:55",
+    "source": "gentle_scan"
+  },
+  "4873": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:47:57",
+    "source": "gentle_scan"
+  },
+  "4363": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:47:59",
+    "source": "gentle_scan"
+  },
+  "9438": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:01",
+    "source": "gentle_scan"
+  },
+  "8558": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:03",
+    "source": "gentle_scan"
+  },
+  "3977": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:06",
+    "source": "gentle_scan"
+  },
+  "2033": {
+    "item_count": 5,
+    "projectIds": [
+      "69059058189",
+      "69059067163",
+      "69049404726",
+      "69049463166",
+      "69049458192"
+    ],
+    "titles": [
+      "ประกวดราคาจ้างจ้างปรับปรุงซ่อมแซม ศูนย์การเรียนชุมชนชาวไทยภูเขา แม่ฟ้าหลวง ศูนย์ส่งเสริมการเรียนรู้ระดับอำเภอแม่สรวย จำน",
+      "ประกวดราคาจ้างก่อสร้างจ้างปรับปรุงซ่อมแซม ศูนย์การเรียนชุมชนชาวไทยภูเขา แม่ฟ้าหลวง ศูนย์ส่งเสริมการเรียนรู้ระดับอำเภอแม่",
+      "ประกวดราคาจ้างก่อสร้างจ้างปรับปรุงซ่อมแซม ศูนย์การเรียนชุมชนชาวไทยภูเขา แม่ฟ้าหลวง ศูนย์ส่งเสริมการเรียนรู้ระดับอำเภอเมื",
+      "ประกวดราคาจ้างก่อสร้างก่อสร้างอาคารห้องน้ำ สำนักงานส่งเสริมการเรียนรู้ประจำจังหวัดนครศรีธรรมราช ตำบลนาสาร อำเภอพระพรหม จ",
+      "ประกวดราคาจ้างก่อสร้างปรับปรุงอาคาร ศูนย์ส่งเสริมการเรียนรู้ระดับอำเภอปากพนัง ตำบลปากพนัง อำเภอปากพนัง จังหวัดนครศรีธรรม"
+    ],
+    "pubDates": [
+      "2026-05-18",
+      "2026-05-18",
+      "2026-05-18"
+    ],
+    "scanned_at": "2026-05-18T21:48:10",
+    "source": "gentle_scan",
+    "dept_name": "สำนักงานส่งเสริมการเรียนรู้จังหวัดเชียงราย",
+    "enriched_at": "2026-05-20T02:15:43"
+  },
+  "9869": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:11",
+    "source": "gentle_scan"
+  },
+  "7914": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:13",
+    "source": "gentle_scan"
+  },
+  "2867": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:16",
+    "source": "gentle_scan"
+  },
+  "7138": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:17",
+    "source": "gentle_scan"
+  },
+  "1764": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:19",
+    "source": "gentle_scan"
+  },
+  "2822": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:22",
+    "source": "gentle_scan"
+  },
+  "8736": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:23",
+    "source": "gentle_scan"
+  },
+  "3743": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:26",
+    "source": "gentle_scan"
+  },
+  "1435": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:27",
+    "source": "gentle_scan"
+  },
+  "6004": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:30",
+    "source": "gentle_scan"
+  },
+  "5464": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:32",
+    "source": "gentle_scan"
+  },
+  "7484": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:34",
+    "source": "gentle_scan"
+  },
+  "5927": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:36",
+    "source": "gentle_scan"
+  },
+  "8968": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:38",
+    "source": "gentle_scan"
+  },
+  "8690": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:40",
+    "source": "gentle_scan"
+  },
+  "8024": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:42",
+    "source": "gentle_scan"
+  },
+  "9362": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:44",
+    "source": "gentle_scan"
+  },
+  "6235": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:46",
+    "source": "gentle_scan"
+  },
+  "0915": {
+    "item_count": 1,
+    "projectIds": [
+      "69059059733"
+    ],
+    "titles": [
+      "ประกวดราคาจ้างเช่าระบบไฟและระบบจอLED พร้อมเจ้าหน้าที่ ผลิตรายการสารพันลั่นทุ่ง (บางเขน) ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์"
+    ],
+    "pubDates": [
+      "2026-05-18"
+    ],
+    "scanned_at": "2026-05-18T21:48:48",
+    "source": "gentle_scan",
+    "dept_name": "องค์การกระจายเสียงและแพร่ภาพสาธารณะแห่งประเทศไทย(ส.ส.ท.)",
+    "enriched_at": "2026-05-20T02:15:44"
+  },
+  "4532": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:50",
+    "source": "gentle_scan"
+  },
+  "3125": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:52",
+    "source": "gentle_scan"
+  },
+  "3454": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:53",
+    "source": "gentle_scan"
+  },
+  "0288": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:56",
+    "source": "gentle_scan"
+  },
+  "9068": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:58",
+    "source": "gentle_scan"
+  },
+  "9854": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:48:59",
+    "source": "gentle_scan"
+  },
+  "2040": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:49:02",
+    "source": "gentle_scan"
+  },
+  "4027": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:49:03",
+    "source": "gentle_scan"
+  },
+  "5650": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:49:05",
+    "source": "gentle_scan"
+  },
+  "9263": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:49:07",
+    "source": "gentle_scan"
+  },
+  "1385": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:49:09",
+    "source": "gentle_scan"
+  },
+  "7077": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:49:11",
+    "source": "gentle_scan"
+  },
+  "6238": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:49:12",
+    "source": "gentle_scan"
+  },
+  "2455": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:49:14",
+    "source": "gentle_scan"
+  },
+  "2640": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:49:16",
+    "source": "gentle_scan"
+  },
+  "5765": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:49:18",
+    "source": "gentle_scan"
+  },
+  "9324": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:49:21",
+    "source": "gentle_scan"
+  },
+  "2153": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:49:22",
+    "source": "gentle_scan"
+  },
+  "6250": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:49:24",
+    "source": "gentle_scan"
+  },
+  "2664": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:49:26",
+    "source": "gentle_scan"
+  },
+  "2148": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:49:28",
+    "source": "gentle_scan"
+  },
+  "3792": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:49:30",
+    "source": "gentle_scan"
+  },
+  "2926": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:49:33",
+    "source": "gentle_scan"
+  },
+  "0413": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:49:35",
+    "source": "gentle_scan"
+  },
+  "9426": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:49:37",
+    "source": "gentle_scan"
+  },
+  "4253": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:49:39",
+    "source": "gentle_scan"
+  },
+  "0391": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:49:51",
+    "source": "gentle_scan"
+  },
+  "1678": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:49:53",
+    "source": "gentle_scan"
+  },
+  "7924": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:49:55",
+    "source": "gentle_scan"
+  },
+  "0573": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:49:58",
+    "source": "gentle_scan"
+  },
+  "1334": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:00",
+    "source": "gentle_scan"
+  },
+  "2813": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:02",
+    "source": "gentle_scan"
+  },
+  "3753": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:04",
+    "source": "gentle_scan"
+  },
+  "1869": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:06",
+    "source": "gentle_scan"
+  },
+  "5671": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:07",
+    "source": "gentle_scan"
+  },
+  "7548": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:09",
+    "source": "gentle_scan"
+  },
+  "3577": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:11",
+    "source": "gentle_scan"
+  },
+  "2329": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:13",
+    "source": "gentle_scan"
+  },
+  "8106": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:15",
+    "source": "gentle_scan"
+  },
+  "7782": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:17",
+    "source": "gentle_scan"
+  },
+  "4226": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:19",
+    "source": "gentle_scan"
+  },
+  "7434": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:21",
+    "source": "gentle_scan"
+  },
+  "7477": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:24",
+    "source": "gentle_scan"
+  },
+  "4840": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:26",
+    "source": "gentle_scan"
+  },
+  "8107": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:28",
+    "source": "gentle_scan"
+  },
+  "2361": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:31",
+    "source": "gentle_scan"
+  },
+  "3945": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:33",
+    "source": "gentle_scan"
+  },
+  "4577": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:35",
+    "source": "gentle_scan"
+  },
+  "7280": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:37",
+    "source": "gentle_scan"
+  },
+  "4438": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:39",
+    "source": "gentle_scan"
+  },
+  "2178": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:41",
+    "source": "gentle_scan"
+  },
+  "5343": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:43",
+    "source": "gentle_scan"
+  },
+  "2110": {
+    "item_count": 4,
+    "projectIds": [
+      "69059067741",
+      "69019538828",
+      "69039339204",
+      "69039152956"
+    ],
+    "titles": [
+      "ประกวดราคาซื้อจัดซื้อชุดทดสอบเบื้องต้น (Test kit) เพื่อสนับสนุนงานคุ้มครองผู้บริโภค ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-",
+      "ประกวดราคาจ้างก่อสร้างปรับปรุงซ่อมแซมห้องเลขาธิการคณะกรรมการอาหารและยา และพื้นที่ส่วนกลาง และซื้อครุภัณฑ์สำหรับห้องเลขาธ",
+      "ประกวดราคาจ้างโครงการพัฒนาแพลตฟอร์มข้อมูลสถานประกอบการด้านยา และผลิตภัณฑ์สุขภาพ (ศูนย์ข้อมูลและสารสนเทศ) ด้วยวิธีประกวดร",
+      "ประกวดราคาซื้อยาเสพติดให้โทษในประเภท 2 Codeine phosphate powder ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)"
+    ],
+    "pubDates": [
+      "2026-05-12",
+      "2026-05-12",
+      "2026-05-11"
+    ],
+    "scanned_at": "2026-05-18T21:50:46",
+    "source": "gentle_scan",
+    "dept_name": "กองอาหาร",
+    "enriched_at": "2026-05-20T02:15:45"
+  },
+  "3576": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:48",
+    "source": "gentle_scan"
+  },
+  "1901": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:50",
+    "source": "gentle_scan"
+  },
+  "8281": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:51",
+    "source": "gentle_scan"
+  },
+  "0866": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:53",
+    "source": "gentle_scan"
+  },
+  "4005": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:55",
+    "source": "gentle_scan"
+  },
+  "2508": {
+    "item_count": 1,
+    "projectIds": [
+      "68119219612"
+    ],
+    "titles": [
+      "ประกวดราคาจ้างทำระบบเว็บไซต์ของสำนักงานป้องกันและปราบปรามการฟอกเงินสู่ช่องทางอิเล็กทรอนิกส์อัจฉริยะ 1 ระบบ ด้วยวิธีประกว"
+    ],
+    "pubDates": [
+      "2026-05-18"
+    ],
+    "scanned_at": "2026-05-18T21:50:57",
+    "source": "gentle_scan",
+    "dept_name": "สำนักงานป้องกันและปราบปรามการฟอกเงิน กรุงเทพฯ",
+    "enriched_at": "2026-05-20T02:15:47"
+  },
+  "6226": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:50:59",
+    "source": "gentle_scan"
+  },
+  "8060": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:51:02",
+    "source": "gentle_scan"
+  },
+  "1876": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:51:03",
+    "source": "gentle_scan"
+  },
+  "8272": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:51:05",
+    "source": "gentle_scan"
+  },
+  "9974": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:51:08",
+    "source": "gentle_scan"
+  },
+  "6202": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:51:10",
+    "source": "gentle_scan"
+  },
+  "5482": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:51:12",
+    "source": "gentle_scan"
+  },
+  "3771": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:51:14",
+    "source": "gentle_scan"
+  },
+  "1454": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:51:16",
+    "source": "gentle_scan"
+  },
+  "9924": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:51:18",
+    "source": "gentle_scan"
+  },
+  "5045": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:51:21",
+    "source": "gentle_scan"
+  },
+  "9007": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:51:23",
+    "source": "gentle_scan"
+  },
+  "4768": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:51:25",
+    "source": "gentle_scan"
+  },
+  "7855": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:51:27",
+    "source": "gentle_scan"
+  },
+  "8996": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:51:29",
+    "source": "gentle_scan"
+  },
+  "9582": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:51:31",
+    "source": "gentle_scan"
+  },
+  "8119": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:51:33",
+    "source": "gentle_scan"
+  },
+  "5398": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:51:35",
+    "source": "gentle_scan"
+  },
+  "9737": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:51:37",
+    "source": "gentle_scan"
+  },
+  "8948": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:51:38",
+    "source": "gentle_scan"
+  },
+  "1790": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:51:40",
+    "source": "gentle_scan"
+  },
+  "6360": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:51:43",
+    "source": "gentle_scan"
+  },
+  "2996": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:51:45",
+    "source": "gentle_scan"
+  },
+  "3139": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:51:47",
+    "source": "gentle_scan"
+  },
+  "6525": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:51:59",
+    "source": "gentle_scan"
+  },
+  "9541": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:02",
+    "source": "gentle_scan"
+  },
+  "3681": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:04",
+    "source": "gentle_scan"
+  },
+  "8357": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:06",
+    "source": "gentle_scan"
+  },
+  "3938": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:08",
+    "source": "gentle_scan"
+  },
+  "9738": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:11",
+    "source": "gentle_scan"
+  },
+  "6752": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:13",
+    "source": "gentle_scan"
+  },
+  "1980": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:15",
+    "source": "gentle_scan"
+  },
+  "3553": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:17",
+    "source": "gentle_scan"
+  },
+  "1735": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:18",
+    "source": "gentle_scan"
+  },
+  "9623": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:20",
+    "source": "gentle_scan"
+  },
+  "6848": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:22",
+    "source": "gentle_scan"
+  },
+  "5779": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:25",
+    "source": "gentle_scan"
+  },
+  "6131": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:27",
+    "source": "gentle_scan"
+  },
+  "7580": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:28",
+    "source": "gentle_scan"
+  },
+  "0809": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:31",
+    "source": "gentle_scan"
+  },
+  "4299": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:33",
+    "source": "gentle_scan"
+  },
+  "2078": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:35",
+    "source": "gentle_scan"
+  },
+  "9875": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:38",
+    "source": "gentle_scan"
+  },
+  "5738": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:40",
+    "source": "gentle_scan"
+  },
+  "5885": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:42",
+    "source": "gentle_scan"
+  },
+  "9598": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:44",
+    "source": "gentle_scan"
+  },
+  "8682": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:46",
+    "source": "gentle_scan"
+  },
+  "2355": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:48",
+    "source": "gentle_scan"
+  },
+  "5386": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:50",
+    "source": "gentle_scan"
+  },
+  "6671": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:52",
+    "source": "gentle_scan"
+  },
+  "7153": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:54",
+    "source": "gentle_scan"
+  },
+  "7994": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:56",
+    "source": "gentle_scan"
+  },
+  "0304": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:52:57",
+    "source": "gentle_scan"
+  },
+  "9544": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:53:00",
+    "source": "gentle_scan"
+  },
+  "7070": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:53:01",
+    "source": "gentle_scan"
+  },
+  "4108": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:53:03",
+    "source": "gentle_scan"
+  },
+  "9592": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:53:05",
+    "source": "gentle_scan"
+  },
+  "8637": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:53:06",
+    "source": "gentle_scan"
+  },
+  "7497": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:53:08",
+    "source": "gentle_scan"
+  },
+  "1702": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:53:10",
+    "source": "gentle_scan"
+  },
+  "4660": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:53:12",
+    "source": "gentle_scan"
+  },
+  "7784": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:53:14",
+    "source": "gentle_scan"
+  },
+  "5172": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:53:16",
+    "source": "gentle_scan"
+  },
+  "7355": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:53:19",
+    "source": "gentle_scan"
+  },
+  "1090": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:53:21",
+    "source": "gentle_scan"
+  },
+  "1482": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:53:23",
+    "source": "gentle_scan"
+  },
+  "4016": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:53:26",
+    "source": "gentle_scan"
+  },
+  "9508": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:53:28",
+    "source": "gentle_scan"
+  },
+  "3263": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:53:29",
+    "source": "gentle_scan"
+  },
+  "4863": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:53:31",
+    "source": "gentle_scan"
+  },
+  "5600": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:53:33",
+    "source": "gentle_scan"
+  },
+  "0865": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:53:35",
+    "source": "gentle_scan"
+  },
+  "5674": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:53:38",
+    "source": "gentle_scan"
+  },
+  "3302": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:53:39",
+    "source": "gentle_scan"
+  },
+  "9725": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:53:41",
+    "source": "gentle_scan"
+  },
+  "0552": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:53:44",
+    "source": "gentle_scan"
+  },
+  "9744": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:53:46",
+    "source": "gentle_scan"
+  },
+  "0555": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:53:48",
+    "source": "gentle_scan"
+  },
+  "6076": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:56:57",
+    "source": "gentle_scan"
+  },
+  "8123": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:56:59",
+    "source": "gentle_scan"
+  },
+  "0265": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:57:01",
+    "source": "gentle_scan"
+  },
+  "8015": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:57:03",
+    "source": "gentle_scan"
+  },
+  "3856": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:57:06",
+    "source": "gentle_scan"
+  },
+  "6808": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:57:08",
+    "source": "gentle_scan"
+  },
+  "2894": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:57:10",
+    "source": "gentle_scan"
+  },
+  "5366": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:57:12",
+    "source": "gentle_scan"
+  },
+  "7976": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:57:13",
+    "source": "gentle_scan"
+  },
+  "5332": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:57:16",
+    "source": "gentle_scan"
+  },
+  "2174": {
+    "item_count": 0,
+    "scanned_at": "2026-05-18T21:57:18",
+    "source": "gentle_scan"
+  },
+  "0838": {
+    "item_count": 0,
+    "projectIds": [],
+    "titles": [],
+    "pubDates": [],
+    "scanned_at": "2026-05-19T05:05:55",
+    "note": "incremental_probe"
+  },
+  "9031": {
+    "item_count": 0,
+    "projectIds": [],
+    "titles": [],
+    "pubDates": [],
+    "scanned_at": "2026-05-19T05:05:56",
+    "note": "incremental_probe"
+  },
+  "2591": {
+    "item_count": 0,
+    "projectIds": [],
+    "titles": [],
+    "pubDates": [],
+    "scanned_at": "2026-05-19T05:05:57",
+    "note": "incremental_probe"
+  },
+  "9983": {
+    "item_count": 0,
+    "projectIds": [],
+    "titles": [],
+    "pubDates": [],
+    "scanned_at": "2026-05-19T05:05:58",
+    "note": "incremental_probe"
+  },
+  "4328": {
+    "item_count": 0,
+    "projectIds": [],
+    "titles": [],
+    "pubDates": [],
+    "scanned_at": "2026-05-19T05:05:59",
+    "note": "incremental_probe"
+  },
+  "8233": {
+    "item_count": 0,
+    "projectIds": [],
+    "titles": [],
+    "pubDates": [],
+    "scanned_at": "2026-05-19T05:06:00",
+    "note": "incremental_probe"
+  },
+  "4067": {
+    "item_count": 0,
+    "projectIds": [],
+    "titles": [],
+    "pubDates": [],
+    "scanned_at": "2026-05-19T05:06:01",
+    "note": "incremental_probe"
+  },
+  "6660": {
+    "item_count": 0,
+    "projectIds": [],
+    "titles": [],
+    "pubDates": [],
+    "scanned_at": "2026-05-19T05:06:02",
+    "note": "incremental_probe"
+  },
+  "7076": {
+    "item_count": 0,
+    "projectIds": [],
+    "titles": [],
+    "pubDates": [],
+    "scanned_at": "2026-05-19T05:06:03",
+    "note": "incremental_probe"
+  },
+  "0325": {
+    "item_count": 0,
+    "projectIds": [],
+    "titles": [],
+    "pubDates": [],
+    "scanned_at": "2026-05-19T05:06:04",
+    "note": "incremental_probe"
+  },
+  "2557": {
+    "item_count": 0,
+    "projectIds": [],
+    "titles": [],
+    "pubDates": [],
+    "scanned_at": "2026-05-19T05:06:05",
+    "note": "incremental_probe"
+  },
+  "1769": {
+    "item_count": 0,
+    "projectIds": [],
+    "titles": [],
+    "pubDates": [],
+    "scanned_at": "2026-05-19T05:06:06",
+    "note": "incremental_probe"
+  },
+  "8010": {
+    "item_count": 0,
+    "projectIds": [],
+    "titles": [],
+    "pubDates": [],
+    "scanned_at": "2026-05-19T05:06:07",
+    "note": "incremental_probe"
+  },
+  "2579": {
+    "item_count": 0,
+    "projectIds": [],
+    "titles": [],
+    "pubDates": [],
+    "scanned_at": "2026-05-19T05:06:08",
+    "note": "incremental_probe"
+  },
+  "7843": {
+    "item_count": 0,
+    "projectIds": [],
+    "titles": [],
+    "pubDates": [],
+    "scanned_at": "2026-05-19T05:06:09",
+    "note": "incremental_probe"
+  },
+  "2075": {
+    "item_count": 0,
+    "projectIds": [],
+    "titles": [],
+    "pubDates": [],
+    "scanned_at": "2026-05-19T05:06:10",
+    "note": "incremental_probe"
+  },
+  "5259": {
+    "item_count": 0,
+    "projectIds": [],
+    "titles": [],
+    "pubDates": [],
+    "scanned_at": "2026-05-19T05:06:11",
+    "note": "incremental_probe"
+  },
+  "4036": {
+    "item_count": 0,
+    "projectIds": [],
+    "titles": [],
+    "pubDates": [],
+    "scanned_at": "2026-05-19T05:06:12",
+    "note": "incremental_probe"
+  },
+  "7392": {
+    "item_count": 0,
+    "projectIds": [],
+    "titles": [],
+    "pubDates": [],
+    "scanned_at": "2026-05-19T05:06:13",
+    "note": "incremental_probe"
+  },
+  "1089": {
+    "item_count": 0,
+    "projectIds": [],
+    "titles": [],
+    "pubDates": [],
+    "scanned_at": "2026-05-19T05:06:14",
+    "note": "incremental_probe"
   }
 }

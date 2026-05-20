@@ -32,6 +32,10 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
+# curl_cffi: HTTP client ที่เลียนแบบ TLS fingerprint ของ Chrome จริง
+# จำเป็นเพราะ process.gprocurement.go.th block TLS fingerprint ของ python-requests
+# (TCP open ได้ แต่ HTTPS handshake ไม่ตอบ) — 2026-05-20
+from curl_cffi import requests as cffi_requests
 
 sys.stdout.reconfigure(encoding="utf-8")
 sys.path.insert(0, str(Path(__file__).parent))
@@ -152,10 +156,12 @@ def fetch_dept(dept_id: str, anounce_type: str | None = None) -> tuple[int, list
     if anounce_type:
         params["anounceType"] = anounce_type
     try:
-        # (connect_timeout, read_timeout) — connect needs to fail-fast too,
-        # otherwise hanging TLS handshakes don't trigger the read timeout
-        r = requests.get(RSS_URL, params=params, headers=HEADERS,
-                         timeout=(5, POLL_TIMEOUT))
+        # ใช้ curl_cffi เลียนแบบ Chrome 120 TLS fingerprint
+        # — process.gprocurement.go.th block python-requests' JA3 fingerprint
+        r = cffi_requests.get(
+            RSS_URL, params=params, headers=HEADERS,
+            timeout=POLL_TIMEOUT, impersonate="chrome120",
+        )
         if r.status_code != 200:
             return r.status_code, []
         text = decode_thai(r.content)

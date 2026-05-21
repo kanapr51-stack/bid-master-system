@@ -63,6 +63,8 @@ POLL_TIMEOUT = 8   # connect + read timeout — fail-fast เมื่อ server
 PROBE_SAMPLE_SIZE = 100
 PROBE_WORKERS = 1
 DEPT_ID_RANGE = (1, 9999)
+# Negative cache: skip depts confirmed empty within this many days
+NEGATIVE_CACHE_DAYS = 3
 
 
 
@@ -205,17 +207,14 @@ def save_catalog(catalog: dict):
     )
 
 
-def load_target_depts(catalog: dict, active_only: bool = True) -> list[str]:
+def load_target_depts(catalog: dict, active_only: bool = True,
+                      use_negative_cache: bool = False) -> list[str]:
     """Pick which depts to poll.
 
-    Args:
-        catalog: full catalog dict
-        active_only: if True (default), return only depts with item_count > 0.
-            ~41 active vs ~2111 total → 50x faster poll. Probe still discovers new ones.
-
-    Resolution order:
-        1) target_deptids.json (curated, overrides active_only)
-        2) catalog filtered by active_only
+    active_only=True  → only depts with item_count > 0 (rotate mode)
+    active_only=False + use_negative_cache=True → full_poll แต่ข้าม depts ที่
+        scan ไปแล้วว่าว่าง ภายใน NEGATIVE_CACHE_DAYS วัน
+        (active depts + never-scanned + stale-empty เท่านั้น)
     """
     if TARGET_FILE.exists():
         try:
@@ -226,11 +225,36 @@ def load_target_depts(catalog: dict, active_only: bool = True) -> list[str]:
                 return sorted(data.keys())
         except json.JSONDecodeError:
             pass
+
     if active_only:
         return sorted(
             d for d, v in catalog.items()
             if isinstance(v, dict) and v.get("item_count", 0) > 0
         )
+
+    if use_negative_cache:
+        from datetime import timezone
+        cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - __import__('datetime').timedelta(days=NEGATIVE_CACHE_DAYS)
+        result = []
+        for d, v in catalog.items():
+            if not isinstance(v, dict):
+                result.append(d)
+                continue
+            if v.get("item_count", 0) > 0:
+                result.append(d)  # active — always re-check
+                continue
+            scanned = v.get("scanned_at")
+            if not scanned:
+                result.append(d)  # never scanned — include
+                continue
+            try:
+                scanned_dt = datetime.fromisoformat(scanned)
+                if scanned_dt < cutoff:
+                    result.append(d)  # stale cache — re-check
+            except ValueError:
+                result.append(d)
+        return sorted(result)
+
     return sorted(catalog.keys())
 
 
@@ -545,7 +569,8 @@ def run(queue_new: bool = False, skip_probe: bool = False,
     Multi-stage support discovered 2026-05-18.
     """
     catalog = load_catalog()
-    targets = load_target_depts(catalog, active_only=not full_poll)
+    targets = load_target_depts(catalog, active_only=not full_poll,
+                                use_negative_cache=full_poll)
 
     if not targets:
         log("⚠️ ไม่มี target depts — initialize catalog with seed data")

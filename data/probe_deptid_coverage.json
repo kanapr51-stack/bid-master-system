@@ -1,0 +1,21 @@
+{
+  "h1_no_deptid": {
+    "status": 200,
+    "items": 10
+  },
+  "h1b_no_deptid_d0": {
+    "status": 200,
+    "items": 20
+  },
+  "h2_five_digit": {
+    "tested": 15,
+    "active": []
+  },
+  "h3_multitype": {
+    "P0": [],
+    "B0": [],
+    "D0": [],
+    "W0": [],
+    "D1": []
+  }
+}

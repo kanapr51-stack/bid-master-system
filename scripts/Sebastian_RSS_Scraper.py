@@ -153,7 +153,9 @@ def fetch_dept(dept_id: str, anounce_type: str | None = None,
     timeout: override POLL_TIMEOUT (ใช้ PROBE_ALL_TIMEOUT สำหรับ bulk probe)
     Note: param name is 'anounceType' (typo by government)
     """
-    params: dict[str, str] = {"deptId": dept_id}
+    params: dict[str, str] = {}
+    if dept_id:  # global poll: dept_id='' → no deptId param
+        params["deptId"] = dept_id
     if anounce_type:
         params["anounceType"] = anounce_type
     _timeout = timeout if timeout is not None else POLL_TIMEOUT
@@ -685,6 +687,56 @@ def run(queue_new: bool = False, skip_probe: bool = False,
     return run_data
 
 
+def poll_global_rss(anounce_types: list[str] | None = None,
+                    queue_new: bool = False) -> dict:
+    """Poll global RSS (no deptId) สำหรับ anounceTypes ที่ระบุ.
+
+    ครอบคลุม dept ใหม่ที่ถูก negative-cache skip อยู่ —
+    ทุก dept ที่ post วันนี้จะปรากฏในfeed นี้อัตโนมัติ.
+
+    Returns: {"total_items": int, "new_to_rss": int, "types_polled": list}
+    """
+    if anounce_types is None:
+        anounce_types = ["D0", "P0", "W0"]
+
+    rss_seen = load_seen(RSS_SEEN_FILE)
+    all_items: list[dict] = []
+    types_ok: list[str] = []
+
+    for atype in anounce_types:
+        status, items = fetch_dept("", anounce_type=atype, timeout=12, retries=1)
+        if status == 200 and items:
+            for it in items:
+                it["deptId"] = ""
+                it["anounceType"] = atype
+                it["stage"] = STAGE_CODES.get(atype, "active_bidding")
+            all_items.extend(items)
+            types_ok.append(atype)
+            log(f"  🌐 global {atype}: {len(items)} items")
+        else:
+            log(f"  ⚠️ global {atype}: status={status} (skip)")
+        time.sleep(1)
+
+    all_pids = {it["projectId"] for it in all_items if it.get("projectId")}
+    new_to_rss = all_pids - rss_seen
+    rss_seen.update(all_pids)
+    save_seen(RSS_SEEN_FILE, rss_seen)
+
+    if queue_new and new_to_rss:
+        items_for_queue = [
+            it for it in all_items
+            if it.get("projectId") and it["projectId"] in new_to_rss
+        ]
+        queue_for_lookup(items_for_queue)
+
+    log(f"🌐 Global RSS: {len(all_items)} items · {len(new_to_rss)} new")
+    return {
+        "total_items": len(all_items),
+        "new_to_rss": len(new_to_rss),
+        "types_polled": types_ok,
+    }
+
+
 STAGE_ROTATION = list(STAGE_CODES.keys())  # ['P0', 'B0', 'D0', 'D1', 'W0']
 ROTATION_STATE_FILE = DATA_DIR / "rss_stage_rotation.json"
 
@@ -758,8 +810,24 @@ if __name__ == "__main__":
              "→ map deptSubName → จังหวัด ทีหลัง. "
              "รัน workflow_dispatch จาก GHA หรือ manual เท่านั้น",
     )
+    parser.add_argument(
+        "--global", dest="global_poll", action="store_true",
+        help="Poll global RSS (ไม่ระบุ deptId) สำหรับ D0+P0+W0 "
+             "→ ครอบคลุม dept ใหม่ที่ถูก negative-cache skip "
+             "→ ดีสำหรับ real-time monitoring ทุก dept ในประเทศไทย",
+    )
     args = parser.parse_args()
     _init_log_file()
+
+    # ── global mode: poll global RSS (no deptId) สำหรับ real-time monitoring ──
+    if args.global_poll:
+        log("=" * 60)
+        log("GLOBAL RSS MODE: poll ไม่ระบุ deptId → ครอบคลุมทุก dept อัตโนมัติ")
+        log("=" * 60)
+        result = poll_global_rss(anounce_types=["D0", "P0", "W0"], queue_new=args.queue)
+        log(f"\nสรุป: items={result['total_items']}, new={result['new_to_rss']}, "
+            f"types={result['types_polled']}")
+        sys.exit(0)
 
     # ── probe-all mode (ทำก่อน แล้วออก — ไม่รัน normal pipeline) ──
     if args.probe_all:

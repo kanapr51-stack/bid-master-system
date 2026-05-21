@@ -27,8 +27,18 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run RSS Scraper
-        timeout-minutes: 10
+      - name: Global RSS poll (real-time all-Thailand coverage)
+        timeout-minutes: 2
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          DATABASE_URL:                ${{ secrets.DATABASE_URL }}
+          DISCORD_BOT_TOKEN:           ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID:          ${{ secrets.DISCORD_CHANNEL_ID }}
+        run: |
+          python scripts/Sebastian_RSS_Scraper.py --global --queue || true
+
+      - name: Per-dept RSS poll (known active depts)
+        timeout-minutes: 8
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           DATABASE_URL:                ${{ secrets.DATABASE_URL }}

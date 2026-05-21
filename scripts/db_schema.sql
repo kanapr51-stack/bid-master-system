@@ -178,3 +178,44 @@ CREATE TRIGGER trg_dept_catalog_updated BEFORE UPDATE ON dept_catalog
 DROP TRIGGER IF EXISTS trg_customers_updated ON customers;
 CREATE TRIGGER trg_customers_updated BEFORE UPDATE ON customers
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- ============================================================
+-- competitor_profiles -- aggregated bidder stats per TIN
+-- (Materialized view, refresh after ETL or nightly)
+-- ============================================================
+CREATE MATERIALIZED VIEW IF NOT EXISTS competitor_profiles AS
+SELECT
+    bh.bidder_tin,
+    MAX(bh.bidder_name)                                     AS company_name,
+    COUNT(DISTINCT bh.job_id)                               AS total_bids,
+    COUNT(DISTINCT CASE WHEN bh.is_winner THEN bh.job_id END) AS total_wins,
+    ROUND(
+        100.0 * COUNT(DISTINCT CASE WHEN bh.is_winner THEN bh.job_id END)
+        / NULLIF(COUNT(DISTINCT bh.job_id), 0), 1
+    )                                                       AS win_rate_pct,
+    BOOL_OR(bh.is_sme)                                      AS is_sme,
+    BOOL_OR(bh.is_joint_venture)                            AS has_jv,
+    MIN(aj.publish_date)                                    AS first_seen,
+    MAX(aj.publish_date)                                    AS last_seen,
+    ARRAY_AGG(DISTINCT aj.province ORDER BY aj.province)    AS provinces,
+    ARRAY_AGG(DISTINCT aj.procurement_type
+              ORDER BY aj.procurement_type)                 AS proc_types,
+    AVG(
+        CASE
+            WHEN bh.price_proposal ~ '^[0-9]+(\.[0-9]+)?$'
+             AND bh.price_agree    ~ '^[0-9]+(\.[0-9]+)?$'
+             AND bh.price_agree::NUMERIC > 0
+            THEN 100.0 * (bh.price_proposal::NUMERIC - bh.price_agree::NUMERIC)
+                 / bh.price_proposal::NUMERIC
+        END
+    )                                                       AS avg_discount_pct
+FROM bid_history bh
+JOIN all_jobs aj ON aj.job_id = bh.job_id
+WHERE bh.bidder_tin <> ''
+GROUP BY bh.bidder_tin
+WITH DATA;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_competitor_profiles_tin
+    ON competitor_profiles(bidder_tin);
+CREATE INDEX IF NOT EXISTS idx_competitor_profiles_wins
+    ON competitor_profiles(total_wins DESC);

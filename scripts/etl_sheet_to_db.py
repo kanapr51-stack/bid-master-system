@@ -295,9 +295,73 @@ def etl_winners():
     log(f"  ✅ DB now has {res['cnt']} rows (matched with all_jobs)")
 
 
+# ============================================================
+# bid_history (from bid_history sheet)
+# ============================================================
+def etl_bid_history():
+    log("=== ETL bid_history ===")
+    try:
+        ws = open_sheet(SPREADSHEET_ID, "bid_history")
+    except Exception as e:
+        log(f"  bid_history sheet not found: {e}")
+        return
+    rows = ws.get_all_values()
+    if len(rows) < 2:
+        log("  (sheet empty)")
+        return
+    headers = rows[0]
+    h = {name: i for i, name in enumerate(headers)}
+    log(f"  Sheet rows: {len(rows) - 1}")
+
+    sql = """
+        INSERT INTO bid_history (
+            job_id, bidder_name, bidder_tin, price_proposal, price_agree,
+            result_flag, is_winner, is_sme, is_joint_venture,
+            jv_partners, consider_desc, fetched_at
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT DO NOTHING
+    """
+
+    batch = []
+    for r in rows[1:]:
+        if not r or not r[0]:
+            continue
+        def g(name: str, default: str = "", _r=r) -> str:
+            idx = h.get(name, -1)
+            return _r[idx] if 0 <= idx < len(_r) else default
+
+        batch.append((
+            g("job_id"),
+            g("bidder_name"),
+            g("bidder_tin"),
+            g("price_proposal"),
+            g("price_agree"),
+            g("result_flag"),
+            g("is_winner").upper() in ("TRUE", "1", "YES"),
+            g("is_sme").upper() in ("TRUE", "1", "YES"),
+            g("is_joint_venture").upper() in ("TRUE", "1", "YES"),
+            g("jv_partners"),
+            g("consider_desc"),
+            parse_ts(g("fetched_at")) or datetime.now(),
+        ))
+
+    # Skip rows where job_id not in all_jobs (FK constraint)
+    known_jobs = {r["job_id"] for r in db_client.fetch_all("SELECT job_id FROM all_jobs")}
+    valid = [b for b in batch if b[0] in known_jobs]
+    skipped = len(batch) - len(valid)
+    if skipped:
+        log(f"  Skipping {skipped} rows (job_id not in all_jobs)")
+
+    log(f"  Inserting {len(valid)} rows…")
+    db_client.execute_many(sql, valid)
+
+    res = db_client.fetch_one("SELECT COUNT(*) as cnt FROM bid_history")
+    log(f"  ✅ DB now has {res['cnt']} rows")
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--table", choices=["all_jobs", "customers", "dept_catalog", "winners"])
+    parser.add_argument("--table", choices=["all_jobs", "customers", "dept_catalog", "winners", "bid_history"])
     parser.add_argument("--all", action="store_true", help="ETL all tables")
     args = parser.parse_args()
 
@@ -307,6 +371,7 @@ def main():
         etl_winners()
         etl_customers()
         etl_dept_catalog()
+        etl_bid_history()
     elif args.table == "all_jobs":
         etl_all_jobs()
     elif args.table == "customers":
@@ -315,6 +380,8 @@ def main():
         etl_dept_catalog()
     elif args.table == "winners":
         etl_winners()
+    elif args.table == "bid_history":
+        etl_bid_history()
 
     elapsed = (datetime.now() - started).total_seconds()
     log(f"\n✅ ETL DONE — {elapsed:.1f}s")

@@ -393,6 +393,11 @@ def main():
         ps_raw      = g(r, "project_status_raw")
         announce    = g(r, "announce_type")
 
+        # ── Path A0: announce_type=P0 → pre_tor โดยตรง (planning stage) ──
+        if announce == "P0" and ps_raw != "R":
+            pre_tor.append(base + ["ขั้นวางแผน (P0)"])
+            continue
+
         # ── Path A: stepId available → use new stepId-driven classification ──
         if step_id:
             used_stepid_path += 1

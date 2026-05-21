@@ -351,11 +351,26 @@ def main():
         log(f"\nProcessing {len(new_jids)} new jobs from RSS queue...")
         for jid in new_jids:
             q_item = queue_by_pid[jid]
+            q_atype = q_item.get("anounce_type", "")
+
             detail = get_project_detail(jid)
             if not detail.get("valid"):
-                log(f"  ⚠️ {jid}: detail ไม่ valid — ข้าม (retry รอบหน้า)")
-                time.sleep(1)
-                continue
+                # P0 (planning) items fail getProjectDetail — save from RSS data directly
+                if q_atype == "P0":
+                    detail = {
+                        "valid": True,
+                        "dept_sub_name": "",
+                        "step_id": "",
+                        "project_status": "",
+                        "project_status_raw": "",
+                        "announce_type": "P0",
+                    }
+                    log(f"  📋 {jid}: P0 planning — save from RSS (no getProjectDetail)")
+                else:
+                    log(f"  ⚠️ {jid}: detail ไม่ valid — ข้าม (retry รอบหน้า)")
+                    time.sleep(1)
+                    continue
+
             sparse_row = _build_sparse_row(jid, q_item, detail)
             appended_rows.append(sparse_row)
             processed_pids.add(jid)

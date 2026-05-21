@@ -16,6 +16,7 @@ on:
         options:
           - d0
           - d0_repair
+          - gentle_scan
           - w1
           - w0_full
   schedule:
@@ -48,6 +49,8 @@ jobs:
           MODE="${{ github.event.inputs.mode || 'd0' }}"
           if [ "$MODE" = "d0_repair" ]; then
             python scripts/Sebastian_RSS_Scraper.py --probe-429
+          elif [ "$MODE" = "gentle_scan" ]; then
+            python scripts/gentle_scan_egp.py --max-minutes 75
           elif [ "$MODE" = "w1" ]; then
             python scripts/Sebastian_RSS_Scraper.py --probe-w1
           elif [ "$MODE" = "w0_full" ]; then

@@ -1,4 +1,11 @@
 {
-  "computed_at": "2026-05-20T15:46:01",
-  "transitions": {}
+  "computed_at": "2026-05-21T00:00:01",
+  "transitions": {
+    "69049281122": {
+      "from": "active_bidding",
+      "to": "pending_award",
+      "type": "moved",
+      "arrow": "⬆️"
+    }
+  }
 }

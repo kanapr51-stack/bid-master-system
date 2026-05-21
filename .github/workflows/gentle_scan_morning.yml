@@ -1,0 +1,43 @@
+name: BMS Gentle Scan (Morning)
+
+# รันทุกเช้า 03:00 ICT (20:00 UTC) — ช่วง eGP server เสถียรที่สุด
+# หยุดเองเมื่อ catalog ครบ (pending=0)
+
+on:
+  schedule:
+    - cron: '0 20 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  gentle-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Gentle scan (75 min, curl_cffi Chrome)
+        run: python scripts/gentle_scan_egp.py --max-minutes 75
+
+      - name: Commit results
+        if: always()
+        run: |
+          git config user.name  "Sebastian Bot"
+          git config user.email "bot@bidmaster.local"
+          git add data/egp_deptid_catalog.json || true
+          git diff --staged --quiet || \
+            git commit -m "chore: gentle_scan $(date -u '+%Y-%m-%d %H:%M') [skip ci]"
+          git push || true

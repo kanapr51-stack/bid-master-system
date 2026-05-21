@@ -52,8 +52,8 @@ jobs:
           echo "=== Step 3: Classify (rebuild derived sheets) ==="
           python scripts/Sebastian_Classifier.py
 
-          echo "=== Step 4: LINE Notify ==="
-          python scripts/Sebastian_LINE_Notify.py || true
+          echo "=== Step 4: LINE Notify (ปิดชั่วคราว — รอ province filter สำหรับ SaaS) ==="
+          # python scripts/Sebastian_LINE_Notify.py || true
 
           echo "=== Step 5: Dashboard snapshot ==="
           python scripts/dashboard_extractor.py || true

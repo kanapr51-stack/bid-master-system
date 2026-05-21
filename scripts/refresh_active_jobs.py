@@ -25,8 +25,25 @@ sys.path.insert(0, str(Path(__file__).parent))
 from sheets_client import open_sheet
 from process5_http_client import get_project_detail, get_procure_result
 
-SPREADSHEET_ID = "1gz7qLDIWphDhqxLf8Pxm08_cPmNb_IXTDvyxm6uThps"
-WINNER_CACHE   = Path(__file__).parent.parent / "data" / "winner_cache_bootstrap.json"
+SPREADSHEET_ID   = "1gz7qLDIWphDhqxLf8Pxm08_cPmNb_IXTDvyxm6uThps"
+WINNER_CACHE     = Path(__file__).parent.parent / "data" / "winner_cache_bootstrap.json"
+DEPT_PROV_MAP    = Path(__file__).parent.parent / "data" / "deptid_province_map.json"
+
+
+def _load_dept_prov_map() -> dict:
+    if not DEPT_PROV_MAP.exists():
+        return {}
+    try:
+        return json.loads(DEPT_PROV_MAP.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _save_dept_prov_map(m: dict):
+    DEPT_PROV_MAP.write_text(json.dumps(m, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+_dept_prov: dict = _load_dept_prov_map()
 
 # ── Province extraction ──────────────────────────────────────────
 _PROVINCES = [
@@ -168,6 +185,16 @@ def _build_sparse_row(jid: str, q_item: dict, detail: dict) -> list:
     # Extract province จาก dept_sub_name + title (longest match first)
     search_text = f"{dept_name} {title}"
     province = extract_province(search_text)
+
+    # ถ้า province ว่าง → lookup จาก deptId map
+    dept_id = str(q_item.get("deptId", "")).strip()
+    if not province and dept_id:
+        province = _dept_prov.get(dept_id, "")
+
+    # ถ้าเจอ province ใหม่จาก dept_sub_name → บันทึกลง map เพื่อใช้กับงานอื่นจาก dept เดียวกัน
+    if province and dept_id and dept_id not in _dept_prov:
+        _dept_prov[dept_id] = province
+        _save_dept_prov_map(_dept_prov)
 
     row_dict = {
         "title": title,

@@ -5,6 +5,11 @@ on:
     - cron: '22 * * * *'   # ทุกชั่วโมงที่ :22 (stagger จาก dashboard :07)
     - cron: '52 * * * *'   # ทุกชั่วโมงที่ :52
   workflow_dispatch:
+    inputs:
+      full_poll:
+        description: 'Poll ทุก 9999 หน่วยงาน (ทั้งประเทศ)'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -12,9 +17,9 @@ permissions:
 jobs:
   rss:
     runs-on: ubuntu-latest
-    # 35 min — ครอบคลุม poll (2111 depts × 10s timeout / 8 workers ≈ 7-12 min)
-    # + probe (100 × 1s = 2 min) + queue refresh (~15 min) + buffer
-    timeout-minutes: 35
+    # full-poll: 9999 depts × ~3s avg / 8 workers ≈ 60 min → ขยาย timeout
+    # rotate: 35 min เหมือนเดิม
+    timeout-minutes: ${{ inputs.full_poll && 90 || 35 }}
 
     steps:
       - uses: actions/checkout@v6
@@ -33,14 +38,18 @@ jobs:
         run: playwright install chromium --with-deps
 
       - name: Run RSS Scraper
-        timeout-minutes: 15  # step-level — ถ้า server stuck ก็ไม่กิน slot queue refresh
+        timeout-minutes: ${{ inputs.full_poll && 75 || 15 }}
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           DATABASE_URL:                ${{ secrets.DATABASE_URL }}
           DISCORD_BOT_TOKEN:           ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_CHANNEL_ID:          ${{ secrets.DISCORD_CHANNEL_ID }}
         run: |
-          python scripts/Sebastian_RSS_Scraper.py --stage rotate --queue || true
+          if [ "${{ inputs.full_poll }}" = "true" ]; then
+            python scripts/Sebastian_RSS_Scraper.py --stage D0 --full-poll --no-probe --queue || true
+          else
+            python scripts/Sebastian_RSS_Scraper.py --stage rotate --queue || true
+          fi
 
       # Commit catalog EARLY (กัน catalog หายถ้า step ถัดไป cancelled)
       - name: Commit catalog + RSS state (early checkpoint)

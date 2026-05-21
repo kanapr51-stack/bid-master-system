@@ -19,7 +19,7 @@ from pathlib import Path
 from datetime import datetime
 from collections import deque
 
-import requests
+from curl_cffi import requests
 
 sys.stdout.reconfigure(encoding="utf-8")
 
@@ -28,12 +28,7 @@ DATA_DIR = Path(__file__).parent.parent / "data"
 CATALOG_FILE = DATA_DIR / "egp_deptid_catalog.json"
 PROGRESS_FILE = DATA_DIR / "gentle_scan_progress.json"
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                  "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Accept": "application/rss+xml, application/xml, text/xml, */*",
-    "Accept-Language": "th-TH,th;q=0.9,en;q=0.8",
-}
+IMPERSONATE = "chrome120"
 
 SCAN_END = 9999
 BASE_SLEEP = 2.0           # baseline between requests (sec)
@@ -84,11 +79,12 @@ def fetch_one(session: requests.Session, dept_id: str) -> tuple[str, list[dict] 
             return f"http_{r.status_code}", None
         text = decode_thai(r.content)
         return "ok", parse_items(text)
-    except requests.exceptions.Timeout:
-        return "timeout", None
-    except requests.exceptions.ConnectionError:
-        return "timeout", None
     except Exception as e:
+        msg = str(e).lower()
+        if "timeout" in msg or "timed out" in msg:
+            return "timeout", None
+        if "connection" in msg:
+            return "timeout", None
         return f"error_{type(e).__name__}", None
 
 
@@ -132,8 +128,7 @@ def main():
     # Shuffle to spread load (don't hammer sequential ranges)
     random.shuffle(pending)
 
-    session = requests.Session()
-    session.headers.update(HEADERS)
+    session = requests.Session(impersonate=IMPERSONATE)
 
     # Rolling stats
     recent_results: deque = deque(maxlen=WINDOW_SIZE)

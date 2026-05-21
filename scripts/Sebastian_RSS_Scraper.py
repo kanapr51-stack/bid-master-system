@@ -288,7 +288,7 @@ def queue_for_lookup(items_to_queue: list[dict]):
 # ================================================================
 
 PROBE_ALL_WORKERS    = 20  # concurrent workers สำหรับ --probe-all
-PROBE_ALL_TIMEOUT    = 10  # seconds — server ไทยตอบช้า 5-8s ปกติ
+PROBE_ALL_TIMEOUT    = 5   # seconds — full_poll แค่เช็คมี/ไม่มี, 9942 inactive จะ timeout ทิ้ง
 PROBE_ALL_SAVE_EVERY = 500 # save catalog ทุก N depts กัน crash
 
 PROBE_429_WORKERS    = 8   # ลดลงมากเพื่อหลีกเลี่ยง rate limit
@@ -560,12 +560,14 @@ def run(queue_new: bool = False, skip_probe: bool = False,
     poll_started = time.time()
     poll_errors = 0
 
-    # full_poll (9999 depts): more workers + shorter timeout (just checking existence)
+    # full_poll (9999 depts): more workers, short timeout, NO retry — move on ทันที
+    # rotate (57 active depts): fewer workers, longer timeout, retry 2x
     _workers = PROBE_ALL_WORKERS if full_poll else POLL_WORKERS
     _timeout = PROBE_ALL_TIMEOUT if full_poll else POLL_TIMEOUT
+    _retries = 0 if full_poll else 2
     _done = 0
     with ThreadPoolExecutor(max_workers=_workers) as ex:
-        futs = {ex.submit(fetch_dept, d, anounce_type, _timeout): d for d in targets}
+        futs = {ex.submit(fetch_dept, d, anounce_type, _timeout, _retries): d for d in targets}
         for fut in as_completed(futs):
             dept_id = futs[fut]
             status, items = fut.result()

@@ -1573,5 +1573,14 @@
     "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=69059220491&amp;templateType=W2&amp;temp_Announ=A&amp;temp_itemNo=0&amp;seqNo=1",
     "queued_at": "2026-05-21T17:11:01",
     "source": "rss"
+  },
+  {
+    "projectId": "P69050015009",
+    "title": "ค่าวัสดุคอมพิวเตอร์(กองคลัง)เทศบาลตำบลสระว่านพระยา",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050014239&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
+    "queued_at": "2026-05-21T23:32:12",
+    "source": "rss"
   }
 ]

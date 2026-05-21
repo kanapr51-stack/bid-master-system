@@ -200,7 +200,7 @@ SELECT
     ARRAY_AGG(DISTINCT aj.province ORDER BY aj.province)    AS provinces,
     ARRAY_AGG(DISTINCT aj.procurement_type
               ORDER BY aj.procurement_type)                 AS proc_types,
-    AVG(
+    ROUND(AVG(
         CASE
             WHEN bh.price_proposal ~ '^[0-9]+(\.[0-9]+)?$'
              AND bh.price_agree    ~ '^[0-9]+(\.[0-9]+)?$'
@@ -208,7 +208,30 @@ SELECT
             THEN 100.0 * (bh.price_proposal::NUMERIC - bh.price_agree::NUMERIC)
                  / bh.price_proposal::NUMERIC
         END
-    )                                                       AS avg_discount_pct
+    )::NUMERIC, 1)                                          AS avg_discount_pct,
+    -- Discount from budget = (budget - price_agree) / budget * 100
+    ROUND(AVG(
+        CASE
+            WHEN aj.budget != ''
+             AND bh.price_agree ~ '^[0-9]+(\.[0-9]+)?$'
+             AND REPLACE(aj.budget, ',', '') ~ '^[0-9]+(\.[0-9]+)?$'
+             AND REPLACE(aj.budget, ',', '')::NUMERIC > 0
+             AND bh.price_agree::NUMERIC > 0
+            THEN 100.0 * (REPLACE(aj.budget, ',', '')::NUMERIC - bh.price_agree::NUMERIC)
+                 / REPLACE(aj.budget, ',', '')::NUMERIC
+        END
+    )::NUMERIC, 1)                                          AS avg_discount_from_budget_pct,
+    ROUND(STDDEV(
+        CASE
+            WHEN aj.budget != ''
+             AND bh.price_agree ~ '^[0-9]+(\.[0-9]+)?$'
+             AND REPLACE(aj.budget, ',', '') ~ '^[0-9]+(\.[0-9]+)?$'
+             AND REPLACE(aj.budget, ',', '')::NUMERIC > 0
+             AND bh.price_agree::NUMERIC > 0
+            THEN 100.0 * (REPLACE(aj.budget, ',', '')::NUMERIC - bh.price_agree::NUMERIC)
+                 / REPLACE(aj.budget, ',', '')::NUMERIC
+        END
+    )::NUMERIC, 1)                                          AS stddev_discount_pct
 FROM bid_history bh
 JOIN all_jobs aj ON aj.job_id = bh.job_id
 WHERE bh.bidder_tin <> ''

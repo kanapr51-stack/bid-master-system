@@ -53,6 +53,8 @@ export interface CompetitorProfile {
   provinces: string[];
   proc_types: string[];
   avg_discount_pct: number | null;
+  avg_discount_from_budget_pct: number | null;
+  stddev_discount_pct: number | null;
 }
 
 export interface RecentJobRow {
@@ -97,7 +99,8 @@ export async function queryCompetitorProfile(tin: string): Promise<CompetitorPro
   const db = getDb();
   const [profileRows, recentRows] = await Promise.all([
     db`SELECT bidder_tin, company_name, total_bids, total_wins, win_rate_pct,
-              is_sme, has_jv, first_seen, last_seen, provinces, proc_types, avg_discount_pct
+              is_sme, has_jv, first_seen, last_seen, provinces, proc_types,
+              avg_discount_pct, avg_discount_from_budget_pct, stddev_discount_pct
        FROM competitor_profiles WHERE bidder_tin = ${tin}`,
     db`SELECT bh.job_id, aj.title, aj.department, aj.province, aj.publish_date,
               bh.is_winner, bh.price_proposal, bh.price_agree
@@ -135,4 +138,19 @@ export async function searchCompetitors(query: string): Promise<CompetitorProfil
     d.proc_types = Array.isArray(d.proc_types) ? d.proc_types : [];
     return d;
   });
+}
+
+export async function searchOwnBids(companyName: string): Promise<{ jobs: RecentJobRow[]; total: number }> {
+  const db = getDb();
+  const like = '%' + companyName.replace(/%/g, '\\%') + '%';
+  const rows = await db`
+    SELECT bh.job_id, aj.title, aj.department, aj.province, aj.publish_date,
+           bh.is_winner, bh.price_proposal, bh.price_agree
+    FROM bid_history bh
+    JOIN all_jobs aj ON aj.job_id = bh.job_id
+    WHERE bh.bidder_name ILIKE ${like}
+    ORDER BY aj.publish_date DESC
+    LIMIT 50
+  `;
+  return { jobs: rows as RecentJobRow[], total: rows.length };
 }

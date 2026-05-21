@@ -50,16 +50,24 @@ function SumCard({ icon, label, value, unit, sub, accent, href }: { icon: React.
 
 // ── Job Card ──────────────────────────────────────────────────────────────────
 
-function JobCard({ job, cls }: { job: PortalJob; cls?: BusinessClass }) {
+function JobCard({ job, cls, starred, onStar }: { job: PortalJob; cls?: BusinessClass; starred?: boolean; onStar?: () => void }) {
   const urgency = (job.daysLeft ?? 99) <= 5 ? 'wine' : (job.daysLeft ?? 99) <= 10 ? 'gold' : 'outline';
   return (
-    <div className="p-card" style={{ padding: 14, borderColor: 'var(--border)' }}>
+    <div className="p-card" style={{ padding: 14, borderColor: starred ? 'var(--accent-deep)' : 'var(--border)', background: starred ? 'var(--gold-glow)' : 'var(--surface)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
         <div style={{ minWidth: 0, flex: 1 }}>
           <div className="p-mono p-fg-mute" style={{ fontSize: 11, letterSpacing: '0.04em', marginBottom: 4 }}>{job.agency}</div>
           <div className="p-display" style={{ fontSize: 15, lineHeight: 1.3 }}>{job.title}</div>
         </div>
-        <Chip tone={urgency} icon={<Icons.Clock size={11} />}>{job.daysLeft} วัน</Chip>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+          {onStar && (
+            <button onClick={e => { e.stopPropagation(); onStar(); }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: starred ? 'var(--accent)' : 'var(--fg-dim)', fontSize: 18, padding: '0 2px', lineHeight: 1 }}>
+              {starred ? '★' : '☆'}
+            </button>
+          )}
+          <Chip tone={urgency} icon={<Icons.Clock size={11} />}>{job.daysLeft} วัน</Chip>
+        </div>
       </div>
       <div style={{ display: 'flex', gap: 16, marginTop: 10, alignItems: 'center', flexWrap: 'wrap' }}>
         <div>
@@ -173,10 +181,25 @@ interface WorldClientProps {
   expiryLabel: string;
   classes: BusinessClass[];
   jobs: PortalJob[];
+  initialStarred?: string[];
 }
 
-export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, expiryLabel, classes, jobs }: WorldClientProps) {
+export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, expiryLabel, classes, jobs, initialStarred = [] }: WorldClientProps) {
   const [feedTab, setFeedTab] = useState<'bidding' | 'pretor'>('bidding');
+  const [starred, setStarred] = useState<Set<string>>(new Set(initialStarred));
+
+  const toggleStar = async (jobId: string) => {
+    const next = new Set(starred);
+    if (next.has(jobId)) next.delete(jobId); else next.add(jobId);
+    setStarred(next);
+    try {
+      await fetch('/api/portal/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ starred: Array.from(next) }),
+      });
+    } catch { /* non-critical */ }
+  };
 
   const tier = TIERS.find(t => t.id === tierId) || TIERS[0];
   const biddingJobs = jobs.filter(j => j.stage === 'bidding');
@@ -251,7 +274,7 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
 
         {/* Summary grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          <SumCard icon={<Icons.Layers size={16} />} label="Business Class" value={classes.length} unit="ประเภท" href="/portal/classes" />
+          <SumCard icon={<Icons.Layers size={16} />} label="บริษัทของฉัน" value={classes.length} unit="บริษัท" href="/portal/classes" />
           <SumCard icon={<Icons.Map size={16} />} label="พื้นที่ครอบคลุม" value={provincesSet.size} unit="จังหวัด" href="/portal/classes" />
           <SumCard icon={<Icons.Tag size={16} />} label="Keywords" value={totalKeywords} unit="คำค้น" href="/portal/classes" />
           <SumCard icon={<Icons.Bell size={16} />} label="งานวันนี้" value={jobs.length} unit="ที่ตรงเงื่อนไข" accent />
@@ -273,13 +296,30 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
           </div>
         </div>
 
+        {/* งานที่สนใจ */}
+        {starred.size > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <span style={{ color: 'var(--accent)', fontSize: 16 }}>★</span>
+              <div className="p-label" style={{ margin: 0 }}>งานที่สนใจ ({starred.size})</div>
+            </div>
+            {jobs.filter(j => starred.has(j.id)).map(job => (
+              <JobCard key={job.id} job={job}
+                cls={classes.find(c => c.id === job.matchedClassId)}
+                starred={true} onStar={() => toggleStar(job.id)} />
+            ))}
+          </div>
+        )}
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {recentJobs.length === 0 ? (
             <div className="p-card" style={{ textAlign: 'center', padding: 28 }}>
               <div className="p-serif p-fg-mute" style={{ fontStyle: 'italic', fontSize: 14 }}>ยังไม่พบงานในประเภทนี้ ผมจะแจ้งให้ทราบทันทีที่พบครับท่าน</div>
             </div>
           ) : feedTab === 'bidding' ? (
-            recentJobs.map(job => <JobCard key={job.id} job={job} cls={classes.find(c => c.id === job.matchedClassId)} />)
+            recentJobs.map(job => <JobCard key={job.id} job={job}
+              cls={classes.find(c => c.id === job.matchedClassId)}
+              starred={starred.has(job.id)} onStar={() => toggleStar(job.id)} />)
           ) : (
             recentJobs.map(job => <PretorCard key={job.id} job={job} cls={classes.find(c => c.id === job.matchedClassId)} />)
           )}

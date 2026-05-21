@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { TopBar, ButlerNote } from '../_ui';
-import type { BidderRow, JobBiddersResult, CompetitorProfile, CompetitorProfileResult } from '@/lib/bid-history';
+import type { BidderRow, JobBiddersResult, CompetitorProfile, CompetitorProfileResult, RecentJobRow } from '@/lib/bid-history';
 
 function fmt(n: string | number | null | undefined): string {
   if (n == null || n === '') return '—';
@@ -13,7 +13,17 @@ function fmt(n: string | number | null | undefined): string {
 
 // ── Bidder card ───────────────────────────────────────────────────────────────
 
-function BidderCard({ b, onProfileClick }: { b: BidderRow; onProfileClick: (tin: string) => void }) {
+function BidderCard({ b, onProfileClick, jobBudget }: {
+  b: BidderRow;
+  onProfileClick: (tin: string) => void;
+  jobBudget?: string;
+}) {
+  const budgetNum = jobBudget ? parseFloat(jobBudget.replace(/,/g, '')) : null;
+  const agreeNum = b.price_agree ? parseFloat(b.price_agree) : null;
+  const discPct = budgetNum && agreeNum && budgetNum > 0
+    ? ((budgetNum - agreeNum) / budgetNum * 100)
+    : null;
+
   return (
     <div className="p-card" style={{
       marginBottom: 8,
@@ -42,6 +52,7 @@ function BidderCard({ b, onProfileClick }: { b: BidderRow; onProfileClick: (tin:
       <div className="p-fg-mute" style={{ fontSize: 11, marginTop: 4 }}>
         TIN: {b.bidder_tin || '—'} · เสนอ {fmt(b.price_proposal)} บาท
         {b.price_agree ? ` · ตกลง ${fmt(b.price_agree)} บาท` : ''}
+        {discPct != null ? ` · ส่วนลดจากงบ ${discPct.toFixed(1)}%` : ''}
       </div>
       {b.is_joint_venture && b.jv_partners && (
         <div style={{ fontSize: 11, color: 'var(--accent)', marginTop: 2 }}>JV: {b.jv_partners}</div>
@@ -75,12 +86,14 @@ function ProfileView({
             ['งานทั้งหมด', Number(p.total_bids), ''],
             ['ชนะ', Number(p.total_wins), ''],
             ['อัตราชนะ', Number(p.win_rate_pct), '%'],
-            ['Avg Discount', p.avg_discount_pct != null ? Number(p.avg_discount_pct).toFixed(1) : '—', p.avg_discount_pct != null ? '%' : ''],
+            ['Avg Discount (จากราคาเสนอ)', p.avg_discount_pct != null ? Number(p.avg_discount_pct).toFixed(1) : '—', p.avg_discount_pct != null ? '%' : ''],
+            ['Avg Discount (จากงบ)', p.avg_discount_from_budget_pct != null ? Number(p.avg_discount_from_budget_pct).toFixed(1) : '—', p.avg_discount_from_budget_pct != null ? '%' : ''],
+            ['Stddev Discount', p.stddev_discount_pct != null ? Number(p.stddev_discount_pct).toFixed(1) : '—', p.stddev_discount_pct != null ? '%' : ''],
           ] as [string, string | number, string][]).map(([label, value, unit]) => (
             <div key={label} className="p-card" style={{ textAlign: 'center', padding: '8px 4px' }}>
               <div className="p-fg-mute" style={{ fontSize: 10 }}>{label}</div>
-              <div className="p-display" style={{ fontSize: 22 }}>
-                {value}<span style={{ fontSize: 12 }}>{unit}</span>
+              <div className="p-display" style={{ fontSize: 20 }}>
+                {value}<span style={{ fontSize: 11 }}>{unit}</span>
               </div>
             </div>
           ))}
@@ -130,16 +143,40 @@ function ProfileView({
   );
 }
 
+// ── Mine job card ─────────────────────────────────────────────────────────────
+
+function MineJobCard({ j, onJobClick }: { j: RecentJobRow; onJobClick: (id: string) => void }) {
+  return (
+    <div className="p-card" style={{ marginBottom: 6, cursor: 'pointer',
+      borderColor: j.is_winner ? 'var(--accent-deep)' : 'var(--border)' }}
+      onClick={() => onJobClick(j.job_id)}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <span style={{ fontSize: 13, flex: 1 }}>
+          {j.title.length > 65 ? j.title.slice(0, 65) + '…' : j.title}
+        </span>
+        {j.is_winner && (
+          <span className="p-chip" style={{ background: 'var(--accent)', color: '#000', fontSize: 10, marginLeft: 6, flexShrink: 0 }}>ชนะ</span>
+        )}
+      </div>
+      <div className="p-fg-mute" style={{ fontSize: 11, marginTop: 2 }}>
+        {j.department} · {j.province} · {j.publish_date} · เสนอ {fmt(j.price_proposal)} บาท
+        {j.price_agree ? ` · ตกลง ${fmt(j.price_agree)} บาท` : ''}
+      </div>
+    </div>
+  );
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 export default function HistoryClient() {
-  const [tab, setTab] = useState<'job' | 'company'>('job');
+  const [tab, setTab] = useState<'job' | 'company' | 'mine'>('job');
   const [jobId, setJobId] = useState('');
   const [companyQ, setCompanyQ] = useState('');
   const [loading, setLoading] = useState(false);
   const [jobResult, setJobResult] = useState<JobBiddersResult | null>(null);
   const [profileResult, setProfileResult] = useState<CompetitorProfileResult | null>(null);
   const [searchResults, setSearchResults] = useState<CompetitorProfile[]>([]);
+  const [mineResult, setMineResult] = useState<{ jobs: RecentJobRow[]; total: number } | null>(null);
   const [error, setError] = useState('');
 
   function resetState() {
@@ -161,7 +198,6 @@ export default function HistoryClient() {
   async function searchCompany() {
     const q = companyQ.trim();
     if (!q) return;
-    // TIN = all digits — route directly to profile lookup
     if (/^\d{9,13}$/.test(q)) {
       await loadProfile(q);
       return;
@@ -187,10 +223,27 @@ export default function HistoryClient() {
     finally { setLoading(false); }
   }
 
+  async function loadMine() {
+    setLoading(true); setError('');
+    try {
+      const res = await fetch('/api/portal/history/mine');
+      if (!res.ok) { setError('ไม่พบข้อมูล'); return; }
+      const data = await res.json();
+      setMineResult(data);
+    } catch { setError('เกิดข้อผิดพลาด'); }
+    finally { setLoading(false); }
+  }
+
   function handleJobClick(id: string) {
     setTab('job'); setJobId(id); setProfileResult(null);
     searchJob(id);
   }
+
+  const TAB_LABELS: Record<typeof tab, string> = {
+    job: 'ค้นหางาน',
+    company: 'ค้นหาบริษัท',
+    mine: 'บริษัทฉัน',
+  };
 
   return (
     <div className="p-page">
@@ -198,18 +251,24 @@ export default function HistoryClient() {
       <ButlerNote>ค้นหาว่าใครเคยเสนอราคาในงานนี้ หรือบริษัทนี้เคยชนะงานไหนบ้าง · ฐานข้อมูล 469 บริษัท จาก 300 งานประมูลในพื้นที่นครพนม–บึงกาฬ</ButlerNote>
 
       {/* Tab switcher */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        {(['job', 'company'] as const).map(t => (
+      <div style={{ display: 'flex', gap: 6, marginBottom: 16, marginTop: 12 }}>
+        {(['job', 'company', 'mine'] as const).map(t => (
           <button
             key={t}
-            onClick={() => { setTab(t); resetState(); }}
+            onClick={() => {
+              setTab(t);
+              if (t !== 'mine') resetState();
+              if (t === 'mine' && !mineResult) loadMine();
+            }}
             style={{
-              padding: '6px 14px', fontSize: 13, borderRadius: 6, border: '1px solid var(--border)',
+              flex: 1, padding: '7px 4px', fontSize: 12, borderRadius: 8,
+              border: '1px solid var(--border)',
               background: tab === t ? 'var(--accent)' : 'var(--surface)',
-              color: tab === t ? '#000' : 'inherit', cursor: 'pointer', fontWeight: tab === t ? 600 : 400,
+              color: tab === t ? '#000' : 'inherit',
+              cursor: 'pointer', fontWeight: tab === t ? 600 : 400,
             }}
           >
-            {t === 'job' ? 'ค้นหางาน' : 'ค้นหาบริษัท'}
+            {TAB_LABELS[t]}
           </button>
         ))}
       </div>
@@ -255,7 +314,7 @@ export default function HistoryClient() {
       )}
 
       {/* Job bidders result */}
-      {jobResult && (
+      {tab === 'job' && jobResult && (
         <div>
           <div className="p-card" style={{ marginBottom: 12 }}>
             <div className="p-label" style={{ marginBottom: 4 }}>รายละเอียดงาน</div>
@@ -272,13 +331,13 @@ export default function HistoryClient() {
           </div>
 
           {jobResult.bidders.map((b, i) => (
-            <BidderCard key={i} b={b} onProfileClick={loadProfile} />
+            <BidderCard key={i} b={b} onProfileClick={loadProfile} jobBudget={jobResult.job.budget} />
           ))}
         </div>
       )}
 
       {/* Company search results list */}
-      {searchResults.length > 0 && !profileResult && (
+      {tab === 'company' && searchResults.length > 0 && !profileResult && (
         <div>
           <div className="p-label" style={{ marginBottom: 8 }}>พบ {searchResults.length} บริษัท</div>
           {searchResults.map((p, i) => (
@@ -300,12 +359,32 @@ export default function HistoryClient() {
       )}
 
       {/* Full competitor profile */}
-      {profileResult && (
+      {(tab === 'company' || tab === 'job') && profileResult && (
         <ProfileView
           result={profileResult}
           onBack={() => setProfileResult(null)}
           onJobClick={handleJobClick}
         />
+      )}
+
+      {/* Own company bids tab */}
+      {tab === 'mine' && (
+        <div>
+          {loading && <div className="p-fg-mute" style={{ fontSize: 13, textAlign: 'center', padding: 20 }}>กำลังโหลด…</div>}
+          {!loading && mineResult && (
+            <>
+              <div className="p-label" style={{ marginBottom: 8 }}>พบ {mineResult.total} งานที่บริษัทเคยเสนอราคา</div>
+              {mineResult.total === 0 && (
+                <div className="p-card" style={{ fontSize: 13, color: 'var(--fg-mute)' }}>
+                  ไม่พบประวัติ — Sebastian ค้นหาด้วยชื่อบริษัทจากโปรไฟล์ ถ้าต้องการค้นหาชื่ออื่นให้ใช้แท็บ &quot;ค้นหาบริษัท&quot;
+                </div>
+              )}
+              {mineResult.jobs.map((j, i) => (
+                <MineJobCard key={i} j={j} onJobClick={handleJobClick} />
+              ))}
+            </>
+          )}
+        </div>
       )}
     </div>
   );

@@ -13,16 +13,19 @@ function fmt(n: string | number | null | undefined): string {
 
 // ── Bidder card ───────────────────────────────────────────────────────────────
 
+function discFromBudget(budget: string | undefined, proposal: string | undefined): number | null {
+  const b = budget ? parseFloat(budget.replace(/,/g, '')) : null;
+  const p = proposal ? parseFloat(proposal) : null;
+  if (!b || !p || b <= 0) return null;
+  return (b - p) / b * 100;
+}
+
 function BidderCard({ b, onProfileClick, jobBudget }: {
   b: BidderRow;
   onProfileClick: (tin: string) => void;
   jobBudget?: string;
 }) {
-  const budgetNum = jobBudget ? parseFloat(jobBudget.replace(/,/g, '')) : null;
-  const agreeNum = b.price_agree ? parseFloat(b.price_agree) : null;
-  const discPct = budgetNum && agreeNum && budgetNum > 0
-    ? ((budgetNum - agreeNum) / budgetNum * 100)
-    : null;
+  const discPct = discFromBudget(jobBudget, b.price_proposal);
 
   return (
     <div className="p-card" style={{
@@ -51,8 +54,12 @@ function BidderCard({ b, onProfileClick, jobBudget }: {
       </div>
       <div className="p-fg-mute" style={{ fontSize: 11, marginTop: 4 }}>
         TIN: {b.bidder_tin || '—'} · เสนอ {fmt(b.price_proposal)} บาท
-        {b.price_agree ? ` · ตกลง ${fmt(b.price_agree)} บาท` : ''}
-        {discPct != null ? ` · ส่วนลดจากงบ ${discPct.toFixed(1)}%` : ''}
+        {b.is_winner && b.price_agree ? ` · ตกลง ${fmt(b.price_agree)} บาท` : ''}
+        {discPct != null && (
+          <span style={{ color: discPct > 0 ? 'var(--accent)' : 'var(--fg-mute)', fontWeight: 600 }}>
+            {' '}· ลดจากงบ {discPct.toFixed(1)}%
+          </span>
+        )}
       </div>
       {b.is_joint_venture && b.jv_partners && (
         <div style={{ fontSize: 11, color: 'var(--accent)', marginTop: 2 }}>JV: {b.jv_partners}</div>
@@ -85,15 +92,17 @@ function ProfileView({
           {([
             ['งานทั้งหมด', Number(p.total_bids), ''],
             ['ชนะ', Number(p.total_wins), ''],
-            ['อัตราชนะ', Number(p.win_rate_pct), '%'],
-            ['Avg Discount (จากราคาเสนอ)', p.avg_discount_pct != null ? Number(p.avg_discount_pct).toFixed(1) : '—', p.avg_discount_pct != null ? '%' : ''],
-            ['Avg Discount (จากงบ)', p.avg_discount_from_budget_pct != null ? Number(p.avg_discount_from_budget_pct).toFixed(1) : '—', p.avg_discount_from_budget_pct != null ? '%' : ''],
-            ['Stddev Discount', p.stddev_discount_pct != null ? Number(p.stddev_discount_pct).toFixed(1) : '—', p.stddev_discount_pct != null ? '%' : ''],
+            ['อัตราชนะ', Number(p.win_rate_pct).toFixed(1), '%'],
+            ['ลดจากงบ (เฉลี่ย)', p.avg_discount_from_budget_pct != null ? Number(p.avg_discount_from_budget_pct).toFixed(1) : '—', p.avg_discount_from_budget_pct != null ? '%' : ''],
+            ['ส่วนเบี่ยงเบน (σ)', p.stddev_discount_pct != null ? Number(p.stddev_discount_pct).toFixed(1) : '—', p.stddev_discount_pct != null ? '%' : ''],
+            ['ความน่าเชื่อถือ',
+              Number(p.total_bids) >= 20 ? 'สูง' : Number(p.total_bids) >= 10 ? 'ปานกลาง' : Number(p.total_bids) >= 3 ? 'น้อย' : 'น้อยมาก',
+              `(${p.total_bids} งาน)`],
           ] as [string, string | number, string][]).map(([label, value, unit]) => (
             <div key={label} className="p-card" style={{ textAlign: 'center', padding: '8px 4px' }}>
               <div className="p-fg-mute" style={{ fontSize: 10 }}>{label}</div>
-              <div className="p-display" style={{ fontSize: 20 }}>
-                {value}<span style={{ fontSize: 11 }}>{unit}</span>
+              <div className="p-display" style={{ fontSize: 18 }}>
+                {value}<span style={{ fontSize: 10, marginLeft: 2 }}>{unit}</span>
               </div>
             </div>
           ))}
@@ -114,31 +123,37 @@ function ProfileView({
         )}
       </div>
 
-      <div className="p-label" style={{ marginBottom: 8 }}>20 งานล่าสุด</div>
-      {result.recent_jobs.map((j, i) => (
-        <div
-          key={i}
-          className="p-card"
-          style={{
-            marginBottom: 6,
-            cursor: 'pointer',
-            borderColor: j.is_winner ? 'var(--accent-deep)' : 'var(--border)',
-          }}
-          onClick={() => onJobClick(j.job_id)}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: 13, flex: 1 }}>
-              {j.title.length > 65 ? j.title.slice(0, 65) + '…' : j.title}
-            </span>
-            {j.is_winner && (
-              <span className="p-chip" style={{ background: 'var(--accent)', color: '#000', fontSize: 10, marginLeft: 6, flexShrink: 0 }}>ชนะ</span>
-            )}
+      <div className="p-label" style={{ marginBottom: 8 }}>ประวัติทั้งหมด {result.recent_jobs.length} งาน</div>
+      {result.recent_jobs.map((j, i) => {
+        const disc = discFromBudget(j.budget, j.price_proposal);
+        return (
+          <div
+            key={i}
+            className="p-card"
+            style={{
+              marginBottom: 6,
+              cursor: 'pointer',
+              borderColor: j.is_winner ? 'var(--accent-deep)' : 'var(--border)',
+            }}
+            onClick={() => onJobClick(j.job_id)}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <span style={{ fontSize: 13, flex: 1 }}>
+                {j.title.length > 65 ? j.title.slice(0, 65) + '…' : j.title}
+              </span>
+              {j.is_winner && (
+                <span className="p-chip" style={{ background: 'var(--accent)', color: '#000', fontSize: 10, marginLeft: 6, flexShrink: 0 }}>ชนะ</span>
+              )}
+            </div>
+            <div className="p-fg-mute" style={{ fontSize: 11, marginTop: 2 }}>
+              {j.province} · {j.publish_date} · เสนอ {fmt(j.price_proposal)} บาท
+              {disc != null && (
+                <span style={{ color: 'var(--accent)', fontWeight: 600 }}> · ลด {disc.toFixed(1)}% จากงบ</span>
+              )}
+            </div>
           </div>
-          <div className="p-fg-mute" style={{ fontSize: 11, marginTop: 2 }}>
-            {j.department} · {j.province} · {j.publish_date} · เสนอ {fmt(j.price_proposal)} บาท
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

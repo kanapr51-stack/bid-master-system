@@ -63,6 +63,7 @@ export interface RecentJobRow {
   department: string;
   province: string;
   publish_date: string;
+  budget: string;
   is_winner: boolean;
   price_proposal: string;
   price_agree: string;
@@ -103,12 +104,11 @@ export async function queryCompetitorProfile(tin: string): Promise<CompetitorPro
               avg_discount_pct, avg_discount_from_budget_pct, stddev_discount_pct
        FROM competitor_profiles WHERE bidder_tin = ${tin}`,
     db`SELECT bh.job_id, aj.title, aj.department, aj.province, aj.publish_date,
-              bh.is_winner, bh.price_proposal, bh.price_agree
+              aj.budget, bh.is_winner, bh.price_proposal, bh.price_agree
        FROM bid_history bh
        JOIN all_jobs aj ON aj.job_id = bh.job_id
        WHERE bh.bidder_tin = ${tin}
-       ORDER BY aj.publish_date DESC
-       LIMIT 20`,
+       ORDER BY aj.publish_date DESC`,
   ]);
 
   if (!profileRows.length) return { error: 'not_found' };
@@ -145,12 +145,11 @@ export async function searchOwnBids(companyName: string): Promise<{ jobs: Recent
   const like = '%' + companyName.replace(/%/g, '\\%') + '%';
   const rows = await db`
     SELECT bh.job_id, aj.title, aj.department, aj.province, aj.publish_date,
-           bh.is_winner, bh.price_proposal, bh.price_agree
+           aj.budget, bh.is_winner, bh.price_proposal, bh.price_agree
     FROM bid_history bh
     JOIN all_jobs aj ON aj.job_id = bh.job_id
     WHERE bh.bidder_name ILIKE ${like}
     ORDER BY aj.publish_date DESC
-    LIMIT 50
   `;
   return { jobs: rows as RecentJobRow[], total: rows.length };
 }

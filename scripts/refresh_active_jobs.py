@@ -28,6 +28,50 @@ from process5_http_client import get_project_detail, get_procure_result
 SPREADSHEET_ID = "1gz7qLDIWphDhqxLf8Pxm08_cPmNb_IXTDvyxm6uThps"
 WINNER_CACHE   = Path(__file__).parent.parent / "data" / "winner_cache_bootstrap.json"
 
+# ── Province extraction ──────────────────────────────────────────
+_PROVINCES = [
+    'กระบี่','กรุงเทพมหานคร','กาญจนบุรี','กาฬสินธุ์','กำแพงเพชร',
+    'ขอนแก่น','จันทบุรี','ฉะเชิงเทรา','ชลบุรี','ชัยนาท','ชัยภูมิ',
+    'ชุมพร','ตรัง','ตราด','ตาก','นครนายก','นครปฐม','นครพนม',
+    'นครราชสีมา','นครศรีธรรมราช','นครสวรรค์','นนทบุรี','นราธิวาส',
+    'น่าน','บึงกาฬ','บุรีรัมย์','ปทุมธานี','ประจวบคีรีขันธ์',
+    'ปราจีนบุรี','ปัตตานี','พระนครศรีอยุธยา','พะเยา','พังงา',
+    'พัทลุง','พิจิตร','พิษณุโลก','ภูเก็ต','มหาสารคาม','มุกดาหาร',
+    'ยะลา','ยโสธร','ระนอง','ระยอง','ราชบุรี','ร้อยเอ็ด','ลพบุรี',
+    'ลำปาง','ลำพูน','ศรีสะเกษ','สกลนคร','สงขลา','สตูล',
+    'สมุทรปราการ','สมุทรสงคราม','สมุทรสาคร','สระบุรี','สระแก้ว',
+    'สิงห์บุรี','สุพรรณบุรี','สุราษฎร์ธานี','สุรินทร์','สุโขทัย',
+    'หนองคาย','หนองบัวลำภู','อำนาจเจริญ','อุดรธานี','อุตรดิตถ์',
+    'อุทัยธานี','อุบลราชธานี','อ่างทอง','เชียงราย','เชียงใหม่',
+    'เพชรบุรี','เพชรบูรณ์','เลย','แพร่','แม่ฮ่องสอน',
+]
+# เรียงยาวก่อน กัน partial match (เช่น "นคร" match "นครพนม" ก่อน)
+_PROVINCES_SORTED = sorted(_PROVINCES, key=len, reverse=True)
+_PROVINCE_ALIASES = {
+    'กรุงเทพฯ': 'กรุงเทพมหานคร',
+    'กทม': 'กรุงเทพมหานคร',
+    'กทม.': 'กรุงเทพมหานคร',
+    'Bangkok': 'กรุงเทพมหานคร',
+    'ปทุมฯ': 'ปทุมธานี',
+    'โคราช': 'นครราชสีมา',
+    'อยุธยา': 'พระนครศรีอยุธยา',
+}
+
+
+def extract_province(text: str) -> str:
+    """หา province จาก dept_sub_name หรือ title — คืนชื่อจังหวัด หรือ '' ถ้าไม่พบ"""
+    if not text:
+        return ""
+    # Alias ก่อน
+    for alias, full in _PROVINCE_ALIASES.items():
+        if alias in text:
+            return full
+    # ค้น province name ยาวก่อน
+    for prov in _PROVINCES_SORTED:
+        if prov in text:
+            return prov
+    return ""
+
 
 def log(msg: str):
     print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
@@ -118,24 +162,31 @@ def _build_sparse_row(jid: str, q_item: dict, detail: dict) -> list:
     from classifier_tags import classify_all, TAG_COLUMNS
 
     now_iso = datetime.now().isoformat(timespec="seconds")
-    title   = q_item.get("title", "")
+    title      = q_item.get("title", "")
+    dept_name  = detail.get("dept_sub_name", "")
+
+    # Extract province จาก dept_sub_name + title (longest match first)
+    search_text = f"{dept_name} {title}"
+    province = extract_province(search_text)
+
     row_dict = {
         "title": title,
         "procurement_type": "",
         "budget": "",
         "deadline": "",
-        "province": "",
+        "province": province,
         "district": "",
         "subdistrict": "",
         "announce_type": detail.get("announce_type", ""),
     }
     tags = classify_all(row_dict)
 
+    dept_note = f"keyword:rss | dept:{q_item.get('deptId', '')}"
     base = [
         jid,
         title,
-        "",                                              # department
-        "",                                              # province
+        dept_name,                                       # department (จาก dept_sub_name)
+        province,                                        # province (extracted)
         "",                                              # district
         "",                                              # subdistrict
         "",                                              # procurement_type
@@ -143,7 +194,7 @@ def _build_sparse_row(jid: str, q_item: dict, detail: dict) -> list:
         q_item.get("pubDate", ""),                       # publish_date
         "",                                              # deadline
         detail.get("project_status", ""),
-        f"keyword:rss | dept:{q_item.get('deptId', '')}",
+        dept_note,
         q_item.get("link", ""),                          # tor_url
         now_iso,                                         # first_seen_at
         now_iso,                                         # last_seen_at

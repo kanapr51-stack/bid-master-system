@@ -2,6 +2,28 @@
 
 ---
 
+## งานที่ N+23: Dept ID Coverage Research + Global RSS Mode (2026-05-21)
+
+### สถานะ: ✅ เสร็จ (commit ec190bf)
+
+### สิ่งที่ค้นพบ
+1. เราสแกน deptId 0001-9999 ครบแล้ว → พบ 57 active D0 (max ID=2603)
+2. ไทยมี 8,500+ หน่วยงาน แต่ส่วนใหญ่ไม่มี D0 ตอนนั้น (เป็น W0/P0 หรือไม่มีโครงการ)
+3. **Breakthrough: Global RSS (ไม่ระบุ deptId) → คืน 20 items จากทุก dept ทั่วประเทศ!**
+4. 5-digit deptId (10000+) ไม่มีงาน → confirmed 4-digit only
+5. P0/B0/W0 ใน range 0001-0300 ไม่ได้ depts เพิ่ม
+
+### Fix ที่ทำ
+- เพิ่ม `--global` mode ใน Sebastian_RSS_Scraper.py
+  - poll D0+P0+W0 โดยไม่ระบุ deptId → ครอบคลุม อบต./เทศบาล/รัฐวิสาหกิจทุกแห่ง
+  - ทดสอบ: 60 items, 59 new queued ในครั้งแรก ✅
+- อัปเดต GHA workflow: global step (2 min) + per-dept full-poll (8 min) ทุกชั่วโมง
+
+### Followup
+- กลับมาทำ Portal ข้อ 2-10
+
+---
+
 ## งานที่ N+22: Portal Redesign v3 — ทำใหม่ตาม brief จริง (2026-05-21)
 
 ### สถานะ: 🚧 กำลังทำ — ⏸ pause (ไปทำ RSS ก่อน)

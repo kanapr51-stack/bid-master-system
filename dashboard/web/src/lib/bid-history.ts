@@ -120,11 +120,12 @@ export async function queryCompetitorProfile(tin: string): Promise<CompetitorPro
 
 export async function searchCompetitors(query: string): Promise<CompetitorProfile[]> {
   const db = getDb();
+  const like = '%' + query + '%';
   const rows = await db`
     SELECT bidder_tin, company_name, total_bids, total_wins, win_rate_pct,
            is_sme, provinces, first_seen, last_seen
     FROM competitor_profiles
-    WHERE company_name ILIKE ${'%' + query + '%'}
+    WHERE company_name ILIKE ${like} OR bidder_tin ILIKE ${like}
     ORDER BY total_bids DESC
     LIMIT 20
   `;

@@ -47,7 +47,14 @@ function getSheetsClient() {
   if (!credsJson) {
     throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON env var not set");
   }
-  const creds = JSON.parse(credsJson);
+  // dotenv strips outer quotes and converts \n → actual newlines.
+  // JSON.parse rejects literal newlines inside string literals, so restore them.
+  let creds;
+  try {
+    creds = JSON.parse(credsJson);
+  } catch {
+    creds = JSON.parse(credsJson.replace(/\n/g, '\\n'));
+  }
   const auth = new google.auth.GoogleAuth({
     credentials: creds,
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],

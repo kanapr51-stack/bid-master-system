@@ -72,10 +72,10 @@ function ProfileView({
         <div className="p-fg-mute" style={{ fontSize: 11, marginBottom: 10 }}>TIN: {p.bidder_tin}</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
           {([
-            ['งานทั้งหมด', p.total_bids, ''],
-            ['ชนะ', p.total_wins, ''],
-            ['อัตราชนะ', p.win_rate_pct, '%'],
-            ['Avg Discount', p.avg_discount_pct != null ? p.avg_discount_pct.toFixed(1) : '—', p.avg_discount_pct != null ? '%' : ''],
+            ['งานทั้งหมด', Number(p.total_bids), ''],
+            ['ชนะ', Number(p.total_wins), ''],
+            ['อัตราชนะ', Number(p.win_rate_pct), '%'],
+            ['Avg Discount', p.avg_discount_pct != null ? Number(p.avg_discount_pct).toFixed(1) : '—', p.avg_discount_pct != null ? '%' : ''],
           ] as [string, string | number, string][]).map(([label, value, unit]) => (
             <div key={label} className="p-card" style={{ textAlign: 'center', padding: '8px 4px' }}>
               <div className="p-fg-mute" style={{ fontSize: 10 }}>{label}</div>
@@ -159,10 +159,16 @@ export default function HistoryClient() {
   }
 
   async function searchCompany() {
-    if (!companyQ.trim()) return;
+    const q = companyQ.trim();
+    if (!q) return;
+    // TIN = all digits — route directly to profile lookup
+    if (/^\d{9,13}$/.test(q)) {
+      await loadProfile(q);
+      return;
+    }
     setLoading(true); resetState();
     try {
-      const res = await fetch(`/api/portal/history/company?q=${encodeURIComponent(companyQ.trim())}`);
+      const res = await fetch(`/api/portal/history/company?q=${encodeURIComponent(q)}`);
       if (!res.ok) { setError('เกิดข้อผิดพลาด'); return; }
       const data = await res.json();
       setSearchResults(data.results ?? []);
@@ -229,7 +235,7 @@ export default function HistoryClient() {
         <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
           <input
             className="p-input"
-            placeholder="ชื่อบริษัท (พิมพ์อย่างน้อย 2 ตัวอักษร)"
+            placeholder="ชื่อบริษัท หรือ เลขประจำตัวผู้เสียภาษี (TIN)"
             value={companyQ}
             onChange={e => setCompanyQ(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && searchCompany()}
@@ -284,7 +290,7 @@ export default function HistoryClient() {
             >
               <div style={{ fontWeight: 600, fontSize: 14 }}>{p.company_name}</div>
               <div className="p-fg-mute" style={{ fontSize: 11, marginTop: 2 }}>
-                TIN: {p.bidder_tin} · {p.total_bids} งาน · ชนะ {p.total_wins} ({p.win_rate_pct}%)
+                TIN: {p.bidder_tin} · {p.total_bids} งาน · ชนะ {p.total_wins} ({Number(p.win_rate_pct)}%)
                 {p.is_sme && ' · SME'}
                 {p.provinces?.length ? ` · ${p.provinces.slice(0, 2).join(', ')}` : ''}
               </div>

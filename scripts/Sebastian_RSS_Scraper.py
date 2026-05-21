@@ -145,8 +145,8 @@ STAGE_CODES = {
 
 
 def fetch_dept(dept_id: str, anounce_type: str | None = None,
-               timeout: int | None = None) -> tuple[int, list[dict]]:
-    """Return (http_status, items)
+               timeout: int | None = None, retries: int = 2) -> tuple[int, list[dict]]:
+    """Return (http_status, items). Retries on timeout with backoff.
     anounce_type: P0/B0/D0/W0/D1 (None = D0 default behavior)
     timeout: override POLL_TIMEOUT (ใช้ PROBE_ALL_TIMEOUT สำหรับ bulk probe)
     Note: param name is 'anounceType' (typo by government)
@@ -155,27 +155,33 @@ def fetch_dept(dept_id: str, anounce_type: str | None = None,
     if anounce_type:
         params["anounceType"] = anounce_type
     _timeout = timeout if timeout is not None else POLL_TIMEOUT
-    try:
-        # ใช้ curl_cffi เลียนแบบ Chrome 120 TLS fingerprint
-        # — process.gprocurement.go.th block python-requests' JA3 fingerprint
-        r = cffi_requests.get(
-            RSS_URL, params=params, headers=HEADERS,
-            timeout=_timeout, impersonate="chrome120",
-        )
-        if r.status_code != 200:
-            return r.status_code, []
-        text = decode_thai(r.content)
-        items = parse_items(text)
-        # Annotate stage in items
-        stage_tag = STAGE_CODES.get(anounce_type or "D0", "active_bidding")
-        for it in items:
-            it["deptId"] = dept_id
-            it["anounceType"] = anounce_type or "D0"
-            it["stage"] = stage_tag
-        return 200, items
-    except Exception as e:
-        log(f"  ⚠️ {dept_id} ({anounce_type or 'D0'}): {e}")
-        return -1, []
+
+    for attempt in range(retries + 1):
+        try:
+            # curl_cffi เลียนแบบ Chrome 120 TLS fingerprint
+            # — process.gprocurement.go.th block python-requests' JA3 fingerprint
+            r = cffi_requests.get(
+                RSS_URL, params=params, headers=HEADERS,
+                timeout=_timeout, impersonate="chrome120",
+            )
+            if r.status_code != 200:
+                return r.status_code, []
+            text = decode_thai(r.content)
+            items = parse_items(text)
+            stage_tag = STAGE_CODES.get(anounce_type or "D0", "active_bidding")
+            for it in items:
+                it["deptId"] = dept_id
+                it["anounceType"] = anounce_type or "D0"
+                it["stage"] = stage_tag
+            return 200, items
+        except Exception as e:
+            is_timeout = "timed out" in str(e).lower() or "timeout" in str(e).lower()
+            if attempt < retries and is_timeout:
+                time.sleep(1 + attempt)  # 1s, 2s backoff
+                continue
+            log(f"  ⚠️ {dept_id} ({anounce_type or 'D0'}): {e}")
+            return -1, []
+    return -1, []
 
 
 
@@ -282,7 +288,7 @@ def queue_for_lookup(items_to_queue: list[dict]):
 # ================================================================
 
 PROBE_ALL_WORKERS    = 20  # concurrent workers สำหรับ --probe-all
-PROBE_ALL_TIMEOUT    = 3   # seconds — สั้นกว่า POLL_TIMEOUT (8s) เพราะ probe แค่ว่ามี/ไม่มี
+PROBE_ALL_TIMEOUT    = 10  # seconds — server ไทยตอบช้า 5-8s ปกติ
 PROBE_ALL_SAVE_EVERY = 500 # save catalog ทุก N depts กัน crash
 
 PROBE_429_WORKERS    = 8   # ลดลงมากเพื่อหลีกเลี่ยง rate limit

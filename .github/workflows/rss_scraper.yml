@@ -27,8 +27,8 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Global RSS poll (real-time all-Thailand coverage)
-        timeout-minutes: 2
+      - name: Global RSS poll (D0+P0+W0+B0 all-Thailand)
+        timeout-minutes: 3
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           DATABASE_URL:                ${{ secrets.DATABASE_URL }}
@@ -36,9 +36,10 @@ jobs:
           DISCORD_CHANNEL_ID:          ${{ secrets.DISCORD_CHANNEL_ID }}
         run: |
           python scripts/Sebastian_RSS_Scraper.py --global --queue || true
+          python scripts/Sebastian_RSS_Scraper.py --stage B0 --global --queue || true
 
-      - name: Per-dept RSS poll (known active depts)
-        timeout-minutes: 8
+      - name: Per-dept RSS poll (D0+B0+P0 known active depts)
+        timeout-minutes: 10
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           DATABASE_URL:                ${{ secrets.DATABASE_URL }}
@@ -46,6 +47,8 @@ jobs:
           DISCORD_CHANNEL_ID:          ${{ secrets.DISCORD_CHANNEL_ID }}
         run: |
           python scripts/Sebastian_RSS_Scraper.py --stage D0 --full-poll --no-probe --queue || true
+          python scripts/Sebastian_RSS_Scraper.py --stage B0 --full-poll --no-probe --queue || true
+          python scripts/Sebastian_RSS_Scraper.py --stage P0 --full-poll --no-probe --queue || true
 
       - name: Commit catalog + RSS state
         if: always()

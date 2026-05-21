@@ -25,5 +25,509 @@
     "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050011443&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
     "queued_at": "2026-05-20T13:27:58",
     "source": "rss"
+  },
+  {
+    "projectId": "69059326208",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¼ÅÔµÅÐ¤ÃËÃÃÉÒ«Ô·¤ÍÁ à¹×éÍËÒ¤ÇÒÁÃÙéàÃ×èÍ§¡ÒÃÊÃéÒ§àÊÃÔÁÊØ¢ÀÒ¾ à¼Âá¾Ãè¼èÒ¹Ê×èÍËÅÑ¡·Ò§â·Ã·ÑÈ¹ì »ÃÐ¨Ó»Õ 2569 ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0117",
+    "pubDate": "2026-05-21",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=ade6e61eac7447a69c4eb8cbcc55fe65",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059337785",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¼ÅÔµÃÒÂ¡ÒÃÇÒäÃµÕé à¹×éÍËÒ¡ÒÃ·ÓÍÒËÒÃÊè§àÊÃÔÁÊØ¢ÀÒ¾ à¼Âá¾Ãè¼èÒ¹Ê×èÍËÅÑ¡·Ò§â·Ã·ÑÈ¹ì »ÃÐ¨Ó»Õ 2569 ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0117",
+    "pubDate": "2026-05-21",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=63a100b2c6f04e6ea9ebb3203a3d00f4",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059348548",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¼ÅÔµÃÒÂ¡ÒÃÇÒäÃµÕé à¹×éÍËÒ¤ÇÒÁÃÙéàÃ×èÍ§ÊÃéÒ§àÊÃÔÁÊØ¢ÀÒ¾ à¼Âá¾Ãè¼èÒ¹Ê×èÍËÅÑ¡·Ò§â·Ã·ÑÈ¹ì »ÃÐ¨Ó»Õ 2569 ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0117",
+    "pubDate": "2026-05-21",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=37dc17748211481d944c330e165136f7",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059352580",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¼ÅÔµÃÒÂ¡ÒÃÇÒäÃµÕé à¹×éÍËÒÊè§àÊÃÔÁ¡ÒÃ¢Ñºà¤Å×èÍ¹§Ò¹ÊÃéÒ§àÊÃÔÁÊØ¢ÀÒ¾¢Í§ÀÒ¤Õà¤Ã×Í¢èÒÂ à¼Âá¾Ãè¼èÒ¹Ê×èÍËÅÑ¡·Ò§â·Ã·ÑÈ¹ì »ÃÐ¨Ó»Õ 2569 ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0117",
+    "pubDate": "2026-05-21",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=8f165e69bd1a497ebb4859f48887de9c",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059354221",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¼ÅÔµÃÒÂ¡ÒÃ¢èÒÇÊÑé¹Êè§àÊÃÔÁÊØ¢ÀÒ¾ à¼Âá¾Ãè¼èÒ¹Ê×èÍËÅÑ¡·Ò§â·Ã·ÑÈ¹ì »ÃÐ¨Ó»Õ 2569 ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0117",
+    "pubDate": "2026-05-21",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=8f7821b679ff43e5850f12c7f4e4ddcd",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059355007",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¼ÅÔµÃÒÂ¡ÒÃ¢èÒÇàªÔ§ÇÔà¤ÃÒÐËì à¹×éÍËÒÊè§àÊÃÔÁ¡ÒÃ¢Ñºà¤Å×èÍ¹§Ò¹ÊÃéÒ§àÊÃÔÁÊØ¢ÀÒ¾¢Í§ÀÒ¤Õà¤Ã×Í¢èÒÂ à¼Âá¾Ãè¼èÒ¹Ê×èÍËÅÑ¡·Ò§â·Ã·ÑÈ¹ì »ÃÐ¨Ó»Õ 2569 ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0117",
+    "pubDate": "2026-05-21",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=9b2959cb27aa44cc9f2f6cfb54231ee1",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059308371",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¼ÅÔµÅÐ¤ÃÊÑé¹ à¹×éÍËÒ¤ÇÒÁÃÙéàÃ×èÍ§¡ÒÃÊÃéÒ§àÊÃÔÁÊØ¢ÀÒ¾ à¼Âá¾Ãè¼èÒ¹Ê×èÍËÅÑ¡·Ò§â·Ã·ÑÈ¹ì »ÃÐ¨Ó»Õ 2569 ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0117",
+    "pubDate": "2026-05-21",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=a04b38cf9b4144979f73e20437a2367f",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059321097",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¼ÅÔµÅÐ¤ÃÂÒÇËÃ×Í«ÕÃÕÊì à¹×éÍËÒ¤ÇÒÁÃÙéàÃ×èÍ§¡ÒÃÊÃéÒ§àÊÃÔÁÊØ¢ÀÒ¾ à¼Âá¾Ãè¼èÒ¹Ê×èÍËÅÑ¡·Ò§â·Ã·ÑÈ¹ì »ÃÐ¨Ó»Õ 2569 ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0117",
+    "pubDate": "2026-05-21",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=b8471a93858c49eda634f33da6845194",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69039364428",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò«×éÍ¨Ñ´«×éÍªÔé¹ÊèÇ¹«èÍÁºÓÃØ§, à¤Ã×èÍ§Á×ÍÊÓÃÍ§·´á·¹, à¤Ã×èÍ§Á×Í«èÍÁºÓÃØ§áÅÐÊÔè§ÍÓ¹ÇÂ¤ÇÒÁÊÐ´Ç¡ÃÐºº¤ÍÁ¾ÔÇàµÍÃìáÅÐà¤Ã×Í¢èÒÂ µÒÁâ¤Ã§¡ÒÃÊè§¡ÓÅÑ§áÅÐ«èÍÁºÓÃØ§ ¡ÃÁ¡ÒÃÊ×èÍÊÒÃ·ËÒÃ ¡Í§ºÑ­ªÒ¡ÒÃ¡Í§·Ñ¾ä·Â  ÃÐÂÐ·Õè 2 »ÃÐ¨Ó»Õ§º»ÃÐÁÒ³ ¾.È. 2569 ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0208",
+    "pubDate": "2026-05-20",
+    "link": "",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059095460",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§§Ò¹¨éÒ§»ÃÑº»ÃØ§ËéÍ§¾Ñ¡ÍÒÈÑÂ ÍÒ¤ÒÃÊÇÑÊ´Ô¡ÒÃ º¡.··. ¾×é¹·Õè ÅÒ´¡ÃÐºÑ§ µÒÁâ¤Ã§¡ÒÃ«èÍÁºÓÃØ§ÍÒ¤ÒÃÊÇÑÊ´Ô¡ÒÃÊèÇ¹¡ÅÒ§ áÅÐºéÒ¹¾Ñ¡»ÃÐ¨ÓËË¹èÇÂ º¡.··. »ÃÐ¨Ó»Õ§º»ÃÐÁÒ³ ¾.È. òõöù ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0208",
+    "pubDate": "2026-05-14",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=816092634abc47688d4da21bc42fd671",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059108683",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò«×éÍÂÒ§Ã¶Â¹µì »ÃÐ¨Ó»Õ§º»ÃÐÁÒ³ ¾.È. 2569 ¤ÃÑé§·Õè 2 ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0208",
+    "pubDate": "2026-05-14",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=47232f84044b4652a281729e23edc093",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059196074",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò«×éÍâ¤Ã§¡ÒÃà¾ÔèÁ»ÃÐÊÔ·¸ÔÀÒ¾ÃÐºººÃÔËÒÃ¨Ñ´¡ÒÃáÅÐ¤Çº¤ØÁÊÔ·¸Ô¡ÒÃà¢éÒ¶Ö§ÃÐººÊÒÃÊ¹à·È¢Í§¡ÃÁÊÃÃ¾Ò¡Ã·ÕèÁÕ¤ÇÒÁÊÓ¤Ñ­ÊÙ§ã¹ÃÙ»áºº¡ÒÃàª×èÍÁµèÍ¨Ò¡ÃÐÂÐä¡Å (VDI for Remote Workspace) ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0307",
+    "pubDate": "2026-05-14",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=fc62342d333b49b58776bdc6b8f83b0a",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059250608",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò«×éÍ¤ÃØÀÑ³±ì§Ò¹ºéÒ¹§Ò¹¤ÃÑÇ ( à¤Ã×èÍ§«Ñ¡¼éÒ áººÍØµÊÒË¡ÃÃÁ ¢¹Ò´ 50 »Í¹´ì áÅÐà¤Ã×èÍ§Íº¼éÒ ¢¹Ò´ 50 »Í¹´ì ) ¨Ó¹Ç¹ 2 ÃÒÂ¡ÒÃ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0506",
+    "pubDate": "2026-05-20",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=06ae15829de1439f983dc394feb459e9",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059291437",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§¡ÒÃ¡èÍÊÃéÒ§ÍÒ¤ÒÃºéÒ¹¾Ñ¡¢éÒÃÒª¡ÒÃ ó ªÑé¹  ¨Ó¹Ç¹ ø ÂÙ¹Ôµ ¾ÃéÍÁÊÔè§»ÅÙ¡ÊÃéÒ§»ÃÐ¡Íº µÓºÅµÒ´·Í§ ÍÓàÀÍàÁ×Í§ÂâÊ¸Ã ¨Ñ§ËÇÑ´ÂâÊ¸Ã »ÃÐ¨Ó»Õ§º»ÃÐÁÒ³ ¾.È. òõöù ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0602",
+    "pubDate": "2026-05-19",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=37352b970bd74d78a1e7e8f74cbc0360",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059067803",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§»ÃÑº»ÃØ§«èÍÁá«ÁÍÒ¤ÒÃÊ¶Ò¹·ÕèáÅÐÍØ»¡Ã³ìÊÓ¹Ñ¡§Ò¹Ê¶Ò¹¤ØéÁ¤ÃÍ§áÅÐ¾Ñ²¹Ò¤¹¾Ô¡ÒÃáÅÐÈÙ¹Âì¾Ñ²¹ÒÈÑ¡ÂÀÒ¾ºØ¤¤ÅÍÍ·ÔÊµÔ¡ ¨Ó¹Ç¹ õ ÃÒÂ¡ÒÃ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0607",
+    "pubDate": "2026-05-20",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=ea5043915c3b475db40667d40e19c49b",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059215720",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§ÃÐºº¹éÓáººÇ§¡ÅÁ (Central Pivot Irrigation System) µÓºÅË¹Í§ÃÕ ÍÓàÀÍÅÓÊ¹¸Ô ¨Ñ§ËÇÑ´Å¾ºØÃÕ ¨Ó¹Ç¹ 2 ªØ´  ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0706",
+    "pubDate": "2026-05-21",
+    "link": "",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059203058",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò«×éÍÇÑÊ´ØàÇªÀÑ³±ìáÅÐÇÑÊ´ØÇÔ·ÂÒÈÒÊµÃì¡ÒÃá¾·Âì ¨Ó¹Ç¹ 6 ÃÒÂ¡ÒÃ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0706",
+    "pubDate": "2026-05-20",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=47a37dc4d2794338bdc57dc1981f93f4",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059246707",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò«×éÍÇÑÊ´Øà¤ÁÕÀÑ³±ì ¨Ó¹Ç¹ 13 ÃÒÂ¡ÒÃ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0706",
+    "pubDate": "2026-05-19",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=f7dedc742c064df58237868163ffcd60",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059015042",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò«×éÍÇÑÊ´ØàÇªÀÑ³±ìáÅÐÇÑÊ´ØÇÔ·ÂÒÈÒÊµÃìËÃ×Í¡ÒÃá¾·Âì 5 ¡ÅØèÁ (¨Ó¹Ç¹ 11 ÃÒÂ¡ÒÃ) ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0706",
+    "pubDate": "2026-05-18",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=5290ddc4053b4f74bff9b11ea8904a71",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059218064",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò«×éÍÇÑÊ´Ø¡ÒÃà¡ÉµÃ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0706",
+    "pubDate": "2026-05-15",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=14c858ac161247979db9dd8065218422",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059214941",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò«×éÍÇÑÊ´Ø¡ÒÃà¡ÉµÃ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0706",
+    "pubDate": "2026-05-15",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=eb1648b886804798b000114fc7bc65b9",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059218097",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§ÃÐººÍ¹ØÃÑ¡Éì´Ô¹áÅÐºÃÔËÒÃ¨Ñ´¡ÒÃ¹éÓà¾×èÍ¤ÇÒÁÁÑè¹¤§ÀÒ¤¡ÒÃà¡ÉµÃ¾×é¹·Õèà¡ÉµÃ¹éÓ½¹ ºéÒ¹ÍÕâ¡èÁ ËÁÙè 9 µÓºÅà·Í´ä·Â ÍÓàÀÍ·Øè§à¢ÒËÅÇ§ ¨Ñ§ËÇÑ´ÃéÍÂàÍç´ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0708",
+    "pubDate": "2026-05-15",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=e9acd59a8b7645e3905f513c61c9985f",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69049471123",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò«×éÍÃ¶ËéÍ§»¯ÔºÑµÔ¡ÒÃ¤ÅÔ¹Ô¤à¡ÉµÃà¤Å×èÍ¹·Õè (Mobile Unit) ¾ÃéÍÁµÔ´µÑé§à¤Ã×èÍ§Á×ÍÍØ»¡Ã³ìÀÒ¤Ê¹ÒÁ á¢Ç§ÅÒ´ÂÒÇ à¢µ¨µØ¨Ñ¡Ã ¡ÃØ§à·¾ÁËÒ¹¤Ã ¨Ó¹Ç¹ 12 ªØ´ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0718",
+    "pubDate": "2026-05-21",
+    "link": "",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059094397",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§¡èÍÊÃéÒ§ËÅÑ§¤Òâ´Á ¨Ó¹Ç¹ 1 ËÅÑ§ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0718",
+    "pubDate": "2026-05-20",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=c00790fd848347189e9486e7c2bd4e9b",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059272033",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò«×éÍÃ¶Â¹µìµÃÇ¨¡ÒÃ³ì »ÃÔÁÒµÃ¡ÃÐºÍ¡ÊÙºäÁèµèÓ¡ÇèÒ 2,000 «Õ«Õ ËÃ×Íà¤Ã×èÍ§Â¹µìÊÙ§ÊØ´äÁèµèÓ¡ÇèÒ 100 ¡ÔâÅÇÑµµì à¤Ã×èÍ§Â¹µìàº¹«Ô¹ áºº¢Ñºà¤Å×èÍ¹ 4 ÅéÍ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0718",
+    "pubDate": "2026-05-19",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=bccaca5c16944f928184c4350eb3d49a",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059341149",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§â¤Ã§¡ÒÃ¼ÅÔµáÅÐà¼Âá¾ÃèÀÒ¾Â¹µÃìâ¦É³ÒÊ×èÍâ·Ã·ÑÈ¹ìáÅÐÊ×èÍ´Ô¨Ô·ÑÅ à¾×èÍÃ³Ã§¤ì»éÍ§¡Ñ¹¡ÒÃàÊÕÂªÕÇÔµáÅÐºÒ´à¨çº¨Ò¡ÍØºÑµÔàËµØ·Ò§¶¹¹ »Õ§º»ÃÐÁÒ³ ¾.È. 2569 ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0804",
+    "pubDate": "2026-05-21",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=f65069d2a5ea47eaa46b8255ac66b2ce",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059220968",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò«×éÍµÒÁâ¤Ã§¡ÒÃ¨Ñ´ËÒÃÐºººÃÔËÒÃ¨Ñ´¡ÒÃàÍ¡ÊÒÃ¡ÅÒ§ ¢Í§¡ÃÁ¡ÒÃ¢¹Êè§·Ò§º¡ (e-Document Center)  1 ÃÐºº ¤ÃÑé§·Õè 3 ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0804",
+    "pubDate": "2026-05-15",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=e501618360bb4c6ea3c88bfee0b99c05",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059338661",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¾Ñ²¹ÒÃÐºº¡ÒÃºÃÔËÒÃ¨Ñ´¡ÒÃ·ÃÑ¾ÂÒ¡Ã¹éÓºÒ´ÒÅáÅÐ¡ÒÃ¨Ñ´à¡çºÃÒÂä´é ¨Ó¹Ç¹ ñ §Ò¹ â¤Ã§¡ÒÃà¾ÔèÁ»ÃÐÊÔ·¸ÔÀÒ¾¡ÒÃºÃÔËÒÃ¨Ñ´¡ÒÃ·ÃÑ¾ÂÒ¡Ã¹éÓºÒ´ÒÅáÅÐ¡ÒÃ¨Ñ´à¡çºÃÒÂä´é à¾×èÍ¡ÒÃÍ¹ØÃÑ¡Éì·ÃÑ¾ÂÒ¡Ã¹éÓºÒ´ÒÅ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0907",
+    "pubDate": "2026-05-21",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=69aa958c5d32438294bdc0a5afa345e1",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059129052",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò«×éÍÍØ»¡Ã³ìà¾×èÍ«èÍÁá«ÁÃÐºº»ÃÑº»ÃØ§¤Ø³ÀÒ¾¹éÓ´×èÁÊÐÍÒ´ ¨Ó¹Ç¹ òùù ªØ´ â¤Ã§¡ÒÃÈÖ¡ÉÒ »ÃÐàÁÔ¹¤ÇÒÁàÊÕÂËÒÂáÅÐ¿×é¹¿Ùà¾×èÍ¡ÒÃ¾Ñ²¹ÒáÅÐÍ¹ØÃÑ¡Éì·ÃÑ¾ÂÒ¡Ã¹éÓºÒ´ÒÅã¹¾×é¹·Õè»ÃÐÊºÁËÒÍØ·¡ÀÑÂÀÒ¤ãµé ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0907",
+    "pubDate": "2026-05-15",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=cbba2f911f5a4a639b01613b990a5b80",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059222465",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§â¤Ã§¡ÒÃ»ÅÙ¡»èÒ 3 ÍÂèÒ§ »ÃÐâÂª¹ì 4 ÍÂèÒ§ µÒÁá¹Ç¾ÃÐÃÒª´ÓÃÔ à¾×èÍ¡ÒÃÍ¹ØÃÑ¡Éì´Ô¹áÅÐ¹éÓ  áÅÐ¡ÒÃÍÂÙèÍÒÈÑÂ·Ó¡Ô¹ÍÂèÒ§ÂÑè§Â×¹º¹¾×é¹·ÕèÅØèÁ¹éÓªÑé¹·Õè 1 áÅÐ 2 ¨Ñ§ËÇÑ´á¾Ãè à¹×éÍ·Õè 1,000 äÃè  ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0912",
+    "pubDate": "2026-05-21",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=fbe4bbbeee3f4bdb8dbca7a834fbc87c",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059108167",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò«×éÍà¤Ã×èÍ§ CG ÊµÙ´ÔâÍ 1, 2 áÅÐ MCR ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0915",
+    "pubDate": "2026-05-20",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=a4aa4428bdc24d67877c284f8072487d",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059269179",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§ºÃÔ¡ÒÃâ¤Ã§¢èÒÂÍÔ¹à·ÍÃìà¹çµ ³ ÍÒ¤ÒÃÊÓ¹Ñ¡§Ò¹ãË­è Ê.Ê.·. (ÃÐÂÐàÇÅÒ 36 à´×Í¹)  ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "0915",
+    "pubDate": "2026-05-19",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=4a376d448b0e43efa4ad6d9148a10c07",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059260826",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§â¤Ã§¡ÒÃ¡èÍÊÃéÒ§ à¢×èÍ¹»éÍ§¡Ñ¹µÅÔè§ÃÔÁáÁè¹éÓàË×Í§ ¾ÃéÍÁ»ÃÑºÀÙÁÔ·ÑÈ¹ì ºéÒ¹Ë¹Í§¼×Í (ºÃÔàÇ³ËÒ´á´§) µÓºÅË¹Í§¼×Í ÍÓàÀÍ·èÒÅÕè ¨Ñ§ËÇÑ´àÅÂ ¤ÇÒÁÂÒÇ 780 àÁµÃ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "1507",
+    "pubDate": "2026-05-21",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=12328ae0e7b146648852e67a29d94994",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69049390915",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§â¤Ã§¡ÒÃ¡èÍÊÃéÒ§ÃÐºº»éÍ§¡Ñ¹¹éÓ·èÇÁ¾×é¹·Õèà·ÈºÒÅàÁ×Í§¡ÒÌÊÔ¹¸Øì ¨Ñ§ËÇÑ´¡ÒÌÊÔ¹¸Øì (ÊèÇ¹·ÕèàËÅ×Í ÃÐÂÐ·Õè 2) ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "1507",
+    "pubDate": "2026-05-21",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=ff8f3922e3dd46b58e66505170e69be4",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059285895",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§â¤Ã§¡ÒÃ¡èÍÊÃéÒ§à¢×èÍ¹»éÍ§¡Ñ¹µÅÔè§ÃÔÁáÁè¹éÓÊ§¤ÃÒÁ ËÁÙè·Õè 8 µÓºÅ·èÒ¡éÍ¹ ÍÓàÀÍÍÒ¡ÒÈÍÓ¹ÇÂ ¨Ñ§ËÇÑ´Ê¡Å¹¤Ã ¤ÇÒÁÂÒÇäÁè¹éÍÂ¡ÇèÒ 425 àÁµÃ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "1507",
+    "pubDate": "2026-05-21",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=a6f7709c5495440c8ff81d8273d7e1ca",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059279420",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§â¤Ã§¡ÒÃ¡èÍÊÃéÒ§à¢×èÍ¹»éÍ§¡Ñ¹µÅÔè§ÃÔÁÅÓ¹éÓºÑ§ ¾ÃéÍÁ»ÃÑº»ÃØ§ÀÙÁÔ·ÑÈ¹ì ºÃÔàÇ³âÊ¡ªéÒ§µÒÂ ËÁÙè·Õè 9 ºéÒ¹Ë¹Í§ÂÍ µÓºÅ¾ÃÐ«Í§ ÍÓàÀÍ¹Òá¡ ¨Ñ§ËÇÑ´¹¤Ã¾¹Á ¤ÇÒÁÂÒÇäÁè¹éÍÂ¡ÇèÒ 800 àÁµÃ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "1507",
+    "pubDate": "2026-05-21",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=22fcc54f1cc34dd7a1c1263cfaa2a59d",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059030893",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§â¤Ã§¡ÒÃ»ÃÑº»ÃØ§«èÍÁá«Á»ÃÐµÙÃÐºÒÂ¹éÓ¤ÅÍ§ÃÒ§¹éÍÂ ËÁÙè 1 áÅÐ¤ÅÍ§ÂÒÂâÅêÐ ËÁÙè 2 µÓºÅºéÒ¹¤ÅÍ§ÊÇ¹ ÍÓàÀÍ¾ÃÐÊÁØ·Ãà¨´ÕÂì ¨Ñ§ËÇÑ´ÊÁØ·Ã»ÃÒ¡ÒÃ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "1507",
+    "pubDate": "2026-05-21",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=1aa8565e3a5947a4884ec81f319adc4b",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059314271",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§â¤Ã§¡ÒÃ»ÃÑº»ÃØ§ÀÙÁÔ·ÑÈ¹ìºÃÔàÇ³ÍèÒ§ËéÇÂ·ÃÒÂãµé ÍÓàÀÍªÐÍÓ ¨Ñ§ËÇÑ´à¾ªÃºØÃÕ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "1507",
+    "pubDate": "2026-05-20",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=1d91bf5269b5403bb7825799bdac7099",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059305476",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§â¤Ã§¡ÒÃ¾Ñ²¹ÒµÒÁ¼Ñ§àÁ×Í§ÃÇÁàÁ×Í§ºÖ§¡ÒÌ (landmark) ÃÐÂÐ·Õè 5 ÍÓàÀÍàÁ×Í§ºÖ§¡ÒÌ ¨Ñ§ËÇÑ´ºÖ§¡ÒÌ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "1507",
+    "pubDate": "2026-05-20",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=54a0746ae5074f61bc4c6fca50cca8e3",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69049119720",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§â¤Ã§¡ÒÃ¡èÍÊÃéÒ§à¢×èÍ¹»éÍ§¡Ñ¹µÅÔè§ÃÔÁáÁè¹éÓªÕ ËÁÙè·Õè ö,ËÁÙè·Õè ø µÓºÅÁèÇ§ÅÒ´ ÍÓàÀÍ¨Ñ§ËÒÃ ¨Ñ§ËÇÑ´ÃéÍÂàÍç´ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "1507",
+    "pubDate": "2026-05-20",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=7d253017ac1d451fa40d7079b615f309",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69049404009",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§â¤Ã§¡ÒÃ¤èÒ»ÃÑº»ÃØ§áÅÐ¡èÍÊÃéÒ§ÍÒ¤ÒÃÊÓ¹Ñ¡§Ò¹ áÅÐâÃ§à¡çº¾ÑÊ´Ø ºéÒ¹¾Ñ¡¢éÒÃÒª¡ÒÃ âÃ§¨Í´Ã¶ ¡èÍÊÃéÒ§ÃÑéÇ ¤ÊÅ. áÅÐ¶Á´Ô¹ ÏÅÏ ¢Í§ÊÓ¹Ñ¡§Ò¹âÂ¸Ò¸Ô¡ÒÃáÅÐ¼Ñ§àÁ×Í§¨Ñ§ËÇÑ´µÃÑ§ µÓºÅºéÒ¹¤Ç¹ ÍÓàÀÍàÁ×Í§µÃÑ§ ¨Ñ§ËÇÑ´µÃÑ§ ñ áËè§ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "1507",
+    "pubDate": "2026-05-20",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=d0e9909f91f043e9915a5f75e99ae8f9",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059233537",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§â¤Ã§¡ÒÃ«èÍÁá«Áà¢×èÍ¹»éÍ§¡Ñ¹µÅÔè§ÃÔÁ¤ÅÍ§ÁÐÃ×Íâº ËÁÙè·Õè 1 µÓºÅÁÐÃ×ÍâºÍÍ¡ ÍÓàÀÍà¨ÒÐäÍÃéÍ§ ¨Ñ§ËÇÑ´¹ÃÒ¸ÔÇÒÊ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "1507",
+    "pubDate": "2026-05-19",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=0e6c09df8b5247d39a9cddb2a6a2874b",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059171857",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§â¤Ã§¡ÒÃ¡èÍÊÃéÒ§à¢×èÍ¹»éÍ§¡Ñ¹µÅÔè§ÃÔÁÅÓËéÇÂà¢×èÍ¹ºÖ§ËÅèÁ ËÁÙè·Õè 12 ºéÒ¹»ÃÐªÒ¾Ñ²¹Ò µÓºÅË¹Í§»ÅÔ§ ÍÓàÀÍàÅÒ¢ÇÑ­ ¨Ñ§ËÇÑ´¡Ò­¨¹ºØÃÕ ¤ÇÒÁÂÒÇäÁè¹éÍÂ¡ÇèÒ 1,100 àÁµÃ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "1507",
+    "pubDate": "2026-05-19",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=086a84e323264d63ba24c6395eb4a63a",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059152179",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§â¤Ã§¡ÒÃ¡èÍÊÃéÒ§ÃÐººÃÐºÒÂ¹éÓËÅÑ¡à¾×èÍºÃÃà·Ò»Ñ­ËÒ¹éÓ·èÇÁ¾×é¹·ÕèªØÁª¹¾Ò¹·Í§ ÍíÒàÀÍ¾Ò¹·Í§ ¨Ñ§ËÇÑ´ªÅºØÃÕ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "1507",
+    "pubDate": "2026-05-19",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=ffdc9ac0d0bf440fa80b135b078297cc",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059205144",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§â¤Ã§¡ÒÃ¡èÍÊÃéÒ§à¢×èÍ¹»éÍ§¡Ñ¹µÅÔè§ÃÔÁáÁè¹éÓà¨éÒ¾ÃÐÂÒ (µèÍà¹×èÍ§à¢×èÍ¹à´ÔÁ) ºéÒ¹¸ÃÃÁÒÁÙÅãµéÇÑ´ ËÁÙè·Õè 1 µÓºÅ¸ÃÃÁÒÁÙÅ ÍÓàÀÍàÁ×Í§ªÑÂ¹Ò· ¨Ñ§ËÇÑ´ªÑÂ¹Ò· ¤ÇÒÁÂÒÇ 385 àÁµÃ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "1507",
+    "pubDate": "2026-05-19",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=6ccde7d6c19549d89c397ac16335aa3d",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059235073",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§â¤Ã§¡ÒÃ»ÃÑº»ÃØ§áÅÐ¡èÍÊÃéÒ§ÍÒ¤ÒÃÊÓ¹Ñ¡§Ò¹ áÅÐâÃ§à¡çº¾ÑÊ´Ø ºéÒ¹¾Ñ¡¢éÒÃÒª¡ÒÃ âÃ§¨Í´Ã¶ ¡èÍÊÃéÒ§ÃÑéÇ ¤ÊÅ. áÅÐ¶Á´Ô¹ ÏÅÏ ¢Í§¡ÃÁâÂ¸Ò¸Ô¡ÒÃáÅÐ¼Ñ§àÁ×Í§ á¢Ç§¾­Òä· à¢µ¾­Òä· ¡ÃØ§à·¾ÁËÒ¹¤Ã (â¤Ã§¡ÒÃ»ÃÑº»ÃØ§«èÍÁá«Á·Õè·Ó¡ÒÃ»¯ÔºÑµÔ§Ò¹ÊÓ¹Ñ¡§Ò¹ ªÑé¹ 16, 17 áÅÐ 18 ÍÒ¤ÒÃ 21 ªÑé¹ ÊÓ¹Ñ¡ÇÔÈÇ¡ÃÃÁâ¤Ã§ÊÃéÒ§áÅÐ§Ò¹ÃÐºº ¡ÃÁâÂ¸Ò¸Ô¡ÒÃáÅÐ¼Ñ§àÁ×Í§ ¶¹¹¾ÃÐÃÒÁ·Õè 6 ÃÐÂÐ·Õè 2) ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "1507",
+    "pubDate": "2026-05-18",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=4923e292b5b34ccfb3b8eac2575fae24",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059146980",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§â¤Ã§¡ÒÃ¡èÍÊÃéÒ§à¢×èÍ¹»éÍ§¡Ñ¹µÅÔè§ÃÔÁÅÓËéÇÂ·Ñº·Ñ¹ ËÁÙè·Õè 16 - ËÁÙè·Õè 20 µÓºÅàÁ×Í§¨Ñ¹·Ãì ÍÓàÀÍàÁ×Í§¨Ñ¹·Ãì ¨Ñ§ËÇÑ´ÈÃÕÊÐà¡É ¤ÇÒÁÂÒÇ 1,328 àÁµÃ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "1507",
+    "pubDate": "2026-05-18",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=1289b86ae3d847e3969ebbcac0b40558",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059150788",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§â¤Ã§¡ÒÃ¡èÍÊÃéÒ§à¢×èÍ¹»éÍ§¡Ñ¹µÅÔè§ÃÔÁ¤ÅÍ§ÍÙèµÐàÀÒ ËÁÙè·Õè 8 µÓºÅºéÒ¹¾ÃØ ÍÓàÀÍËÒ´ãË­è ¨Ñ§ËÇÑ´Ê§¢ÅÒ ¤ÇÒÁÂÒÇ 1,100 àÁµÃ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "1507",
+    "pubDate": "2026-05-18",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=6e95012061d4472ba960b4daca84510b",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059145141",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§â¤Ã§¡ÒÃ¡èÍÊÃéÒ§à¢×èÍ¹»éÍ§¡Ñ¹µÅÔè§ÃÔÁáÁè¹éÓ»Ô§ ËÁÙè·Õè 1,8 µÓºÅÇÑ§ÂÒ§ ÍÓàÀÍ¤ÅÍ§¢ÅØ§ ¨Ñ§ËÇÑ´¡Óá¾§à¾ªÃ ¤ÇÒÁÂÒÇäÁè¹éÍÂ¡ÇèÒ 1,000 àÁµÃ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "1507",
+    "pubDate": "2026-05-18",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=315542a6a867495ba13809a7829d577e",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059144059",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§â¤Ã§¡ÒÃ¡èÍÊÃéÒ§à¢×èÍ¹»éÍ§¡Ñ¹µÅÔè§ÃÔÁáÁè¹éÓªÕ ËÁÙè·Õè 10 ºéÒ¹â¹¹â¡ µÓºÅºéÒ¹à¢ÇéÒ ÍÓàÀÍºéÒ¹à¢ÇéÒ ¨Ñ§ËÇÑ´ªÑÂÀÙÁÔ (ªèÇ§·Õè 1) ¤ÇÒÁÂÒÇ 705 àÁµÃ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "1507",
+    "pubDate": "2026-05-18",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=4f53af73d6214ce2a7b5f4d44ebee773",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059138240",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§â¤Ã§¡ÒÃ¡èÍÊÃéÒ§à¢×èÍ¹»éÍ§¡Ñ¹µÅÔè§ÃÔÁ¤ÅÍ§ÍÙèµÐàÀÒ ËÁÙè·Õè 1 µÓºÅ·Øè§ÅÒ¹ ÍÓàÀÍ¤ÅÍ§ËÍÂâ¢è§ ¨Ñ§ËÇÑ´Ê§¢ÅÒ ¤ÇÒÁÂÒÇäÁè¹éÍÂ¡ÇèÒ 420 àÁµÃ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "1507",
+    "pubDate": "2026-05-18",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=be6e3458e4c74b24bb2afaa013faa288",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059150798",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¡èÍÊÃéÒ§â¤Ã§¡ÒÃ¡èÍÊÃéÒ§à¢×èÍ¹»éÍ§¡Ñ¹µÅÔè§ÃÔÁáÁè¹éÓà¨éÒ¾ÃÐÂÒ (µèÍà¹×èÍ§à¢×èÍ¹à´ÔÁ) ËÁÙè·Õè 2 µÓºÅ¾ÂØËÐ ÍÓàÀÍ¾ÂØËÐ¤ÕÃÕ ¨Ñ§ËÇÑ´¹¤ÃÊÇÃÃ¤ì ¤ÇÒÁÂÒÇ 239 àÁµÃ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "1507",
+    "pubDate": "2026-05-18",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=ab6b44b2a4a14eae8e31e1fe24edad63",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059306455",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò«×éÍªØ´à¤Ã×èÍ§Á×ÍÁÒµÃ°Ò¹ÊÓËÃÑºÂ×´ÍÒÂØ¡ÒÃãªé§Ò¹ÍØ»¡Ã³ìà¤Ã×èÍ§Á×Íá¾·Âì ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "1907",
+    "pubDate": "2026-05-20",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=8b85ee59bd6d4d6e942533fa819fb95a",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "68109423232",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò«×éÍâ¤Ã§¡ÒÃ¨Ñ´ËÒ«Í¿µìáÇÃìÅÔ¢ÊÔ·¸ÔìÊÓËÃÑºÃÍ§ÃÑº¡ÒÃ»¯ÔºÑµÔ§Ò¹¢Í§Ë¹èÇÂ§Ò¹Ê¹ÑºÊ¹Ø¹¡ÃÐºÇ¹¡ÒÃ¹ÔµÔºÑ­­ÑµÔ ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "2511",
+    "pubDate": "2026-05-21",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=f83bc4868e034485bbcb7709852ee910",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "69029113757",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§àËÁÒâÃÂµÑÇ·Ó¤ÇÒÁÊÐÍÒ´áÅÐàªç´¡ÃÐ¨¡ã¹·ÕèÊÙ§ÀÒÂã¹áÅÐÀÒÂ¹Í¡ÍÒ¤ÒÃÃÑ°ÊÀÒ ¾ÃéÍÁÍÒ¤ÒÃ»ÃÐ¡Íº ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "2511",
+    "pubDate": "2026-05-14",
+    "link": "https://process5.gprocurement.go.th/egp-upload-service/v1/downloadFileTest?fileId=9ec9a5e0151b4e3d9b7a5eb409d0a5bd",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
+  },
+  {
+    "projectId": "68119323017",
+    "title": "»ÃÐ¡Ç´ÃÒ¤Ò¨éÒ§¾Ñ²¹ÒÃÐººÃÒÂ§Ò¹áÅÐµÔ´µÒÁ¡ÒÃ´Óà¹Ô¹¡ÒÃµÒÁË¹éÒ·Õè¢Í§ÃÑ° µÒÁÃÑ°¸ÃÃÁ¹Ù­ ËÁÇ´ 5 Ë¹éÒ·Õè¢Í§ÃÑ° ´éÇÂÇÔ¸Õ»ÃÐ¡Ç´ÃÒ¤ÒÍÔàÅç¡·ÃÍ¹Ô¡Êì (e-bidding)",
+    "deptId": "2603",
+    "pubDate": "2026-05-14",
+    "link": "",
+    "queued_at": "2026-05-21T14:23:16",
+    "source": "rss"
   }
 ]

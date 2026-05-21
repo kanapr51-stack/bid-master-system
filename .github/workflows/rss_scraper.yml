@@ -2,8 +2,9 @@ name: BMS RSS Scraper
 
 on:
   schedule:
-    - cron: '22 * * * *'   # ทุกชั่วโมงที่ :22 (stagger จาก dashboard :07)
-    - cron: '52 * * * *'   # ทุกชั่วโมงที่ :52
+    - cron: '22 * * * *'   # ทุกชั่วโมงที่ :22 — rotate poll (57 active depts)
+    - cron: '52 * * * *'   # ทุกชั่วโมงที่ :52 — rotate poll
+    - cron: '0 20 * * *'   # ทุกวัน 03:00 ICT — full_poll (negative cache ~2 min)
   workflow_dispatch:
     inputs:
       full_poll:
@@ -42,7 +43,12 @@ jobs:
           DISCORD_BOT_TOKEN:           ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_CHANNEL_ID:          ${{ secrets.DISCORD_CHANNEL_ID }}
         run: |
-          if [ "${{ inputs.full_poll }}" = "true" ]; then
+          IS_FULL_POLL="${{ inputs.full_poll }}"
+          # cron ตี 3 ICT (20:00 UTC) = full_poll อัตโนมัติ
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "${{ github.event.schedule }}" = "0 20 * * *" ]; then
+            IS_FULL_POLL="true"
+          fi
+          if [ "$IS_FULL_POLL" = "true" ]; then
             python scripts/Sebastian_RSS_Scraper.py --stage D0 --full-poll --no-probe --queue || true
           else
             python scripts/Sebastian_RSS_Scraper.py --stage rotate --queue || true

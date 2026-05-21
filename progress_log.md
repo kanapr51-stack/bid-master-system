@@ -2,6 +2,55 @@
 
 ---
 
+## งานที่ N+22: Portal Redesign v3 — ทำใหม่ตาม brief จริง (2026-05-21)
+
+### สถานะ: 🚧 กำลังทำ — ⏸ pause (ไปทำ RSS ก่อน)
+
+### ความคืบหน้า
+- ✅ ข้อ 1: discount ทุก bidder จาก price_proposal, per-job %, reliability score, ไม่จำกัดจำนวน (commit 96fec3e, deployed)
+- 🔲 ข้อ 2: History 2 tab (ค้นหาคู่แข่ง / บริษัทฉัน), layout column ไม่ใช่การ์ด
+- 🔲 ข้อ 3: Classes → บริษัท, เพิ่มบริษัท, ประเภทธุรกิจ checkbox
+- 🔲 ข้อ 4: พื้นที่ครอบคลุม — slider ตรง, Haversine แม่น, Leaflet map จริง
+- 🔲 ข้อ 5: Keywords defaults จาก deep research + fix ปุ่มบันทึก
+- 🔲 ข้อ 6: Budget (บาท) + SME/MIT/เวลาแจ้งเตือน per company หลัง keyword
+- 🔲 ข้อ 7: Profile — ข้อมูลคน (ชื่อ/gmail/โทร/LINE) + บริษัทแต่ละการ์ด
+- 🔲 ข้อ 8: Star per company (popup ถามบริษัท) + งานที่สนใจแยกบริษัท
+- 🔲 ข้อ 9: ประวัติประมูลตัวเองแยกรายบริษัท
+- 🔲 ข้อ 10: Upload ไฟล์แยกรายบริษัท
+
+### Followup
+- กลับมาทำ Portal ข้อ 2-10 หลังจัดการ RSS เสร็จ
+
+---
+
+## งานที่ N+21: Portal Redesign v2 — 10 items (2026-05-21)
+
+### สถานะ: ⚠️ ไม่ตรง brief — ทำใหม่ใน N+22 (commit 047f010)
+
+### สิ่งที่ทำ
+ทำ Portal Redesign ครบ 10 ข้อในรอบเดียว:
+
+1. **DB**: `competitor_profiles` materialized view เพิ่ม `avg_discount_from_budget_pct` + `stddev_discount_pct` — budget column มี comma จึงต้องใช้ `REPLACE(budget, ',', '')` ก่อน cast
+2. **History**: discount% per bidder จาก budget, 3-tab layout (งาน/บริษัท/บริษัทฉัน), `ProfileView` stats 6 ช่อง, own-company bid history tab
+3. **Nav**: เพิ่ม "ประวัติ" tab ใน bottom nav → 5 items, font-size 9px
+4. **Classes**: rename "Business Class" → "บริษัท", keywords เป็น checkboxes per type (12 ประเภท), Leaflet+OSM map preview, per-company filter tab (budget/SME/MIT/notifyTime), file upload tab
+5. **Profile**: เพิ่ม LINE USER ID, account status grid, expiry + days left (แดงถ้า ≤7 วัน)
+6. **World**: star/favorite system, "งานที่สนใจ" section ด้านบน, toggle persist ลง DB
+7. **APIs**: `/api/portal/history/mine` (own bids by company name) + `/api/portal/upload` (Vercel Blob + graceful fallback)
+8. **Deps**: leaflet, @types/leaflet, @vercel/blob
+
+### Fixes ระหว่างทาง
+- Budget มี comma format `'24,600,000.00'` → REPLACE before NUMERIC cast
+- Python Windows CP1252 UnicodeEncodeError → ลบ emoji จาก print statements
+- Leaflet SSR error → `dynamic(() => import(...), { ssr: false })`
+- KeywordEditor `onSave` → `onClose` (กด บันทึก แล้วไม่ย้อน)
+
+### Followup
+- Push to Vercel (ต้อง confirm)
+- ตั้ง `BLOB_READ_WRITE_TOKEN` ใน Vercel env vars สำหรับ file upload
+
+---
+
 ## งานที่ N+20: ซ่อม RSS Catalog — กู้ 475→2111 + harden workflow (2026-05-20 13:30)
 
 ### สถานะ: ✅ เสร็จแล้ว (commit b7e6044)

@@ -109,12 +109,13 @@ def log(msg: str):
 
 
 def decode_thai(raw: bytes) -> str:
-    for enc in ["tis-620", "cp874", "windows-874", "utf-8"]:
+    # "windows-874" is unknown on Linux — use cp874 (same codec) instead
+    for enc in ["tis-620", "cp874", "utf-8"]:
         try:
             text = raw.decode(enc)
             if any("฀" <= c <= "๿" for c in text):
                 return text
-        except UnicodeDecodeError:
+        except (UnicodeDecodeError, LookupError):
             continue
     return raw.decode("utf-8", errors="replace")
 

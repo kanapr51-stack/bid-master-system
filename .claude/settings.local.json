@@ -109,7 +109,8 @@
       "PowerShell(Disable-ScheduledTask *)",
       "Bash(python -c ' *)",
       "WebFetch(domain:www.dss.go.th)",
-      "WebFetch(domain:developers.cloudflare.com)"
+      "WebFetch(domain:developers.cloudflare.com)",
+      "Bash(gh run *)"
     ]
   }
 }

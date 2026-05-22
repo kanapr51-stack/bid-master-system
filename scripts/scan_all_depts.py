@@ -41,9 +41,10 @@ QUEUE_FILE  = DATA_DIR / "rss_queue.json"
 SEEN_FILE   = DATA_DIR / "rss_seen_ids.json"
 PROGRESS    = DATA_DIR / "scan_all_depts_progress.json"
 
-SLEEP_SEC   = 1.5
+SLEEP_SEC   = 1.5   # sequential mode: 1 scan × 0.67 req/s = 80 req/120s, under eGP 100/120s
 COOLDOWN_N  = 50    # cooldown ทุก N depts
 COOLDOWN_S  = 30    # วินาที
+RATE_LIMIT_COOLDOWN = 120  # เจอ 429 → wait นานขึ้น
 
 
 def log(msg: str):
@@ -76,7 +77,7 @@ def fetch_rss(dept_id: str, anounce_type: str = "D0", timeout: int = 10):
         return -1, str(e)
 
 
-def parse_items(xml_text: str) -> list[dict]:
+def parse_items(xml_text: str, dept_id: str = "") -> list[dict]:
     items = []
     for block in re.findall(r"<item>(.*?)</item>", xml_text, re.DOTALL):
         def tag(t):
@@ -86,16 +87,15 @@ def parse_items(xml_text: str) -> list[dict]:
         title = tag("title")
         link  = tag("link")
         pub   = tag("pubDate")
+        desc  = tag("description")
 
-        # extract projectId จาก link
-        pid_m = re.search(r"projectId=([A-Z]?\d+)", link)
+        # projectId อยู่ใน description (format ใหม่ 2026-05) — เคยอยู่ใน link
+        # Pre-TOR (P0) prefixed "P" e.g., P69050012229; อื่น ๆ เป็น 11-12 หลัก
+        pid_m = re.search(r"(P?\d{11,12})", desc)
         if not pid_m:
             continue
         raw_pid = pid_m.group(1)
         norm_pid = raw_pid.lstrip("P")
-
-        dept_m = re.search(r"deptId=(\d+)", link)
-        dept_id = dept_m.group(1) if dept_m else ""
 
         items.append({
             "projectId": norm_pid,
@@ -131,8 +131,9 @@ def main():
     args = parser.parse_args()
 
     atype = args.anounce_type.upper()
-    # progress file แยกตาม anounceType
+    # progress + queue file แยกตาม anounceType (เลี่ยง race condition เมื่อรัน 4 ตัวพร้อมกัน)
     progress_file = DATA_DIR / f"scan_all_depts_{atype}_progress.json"
+    queue_file    = DATA_DIR / f"scan_queue_{atype}.json"
 
     log("=" * 60)
     log(f"Scan All Depts [{atype}] — deptId {args.min_id:04d} → {args.max_id:04d}")
@@ -148,7 +149,7 @@ def main():
     known_ids = load_known_ids()
     log(f"Known IDs: {len(known_ids)}")
 
-    queue = _load_json(QUEUE_FILE, [])
+    queue = _load_json(queue_file, [])
     if not isinstance(queue, list):
         queue = []
 
@@ -166,7 +167,17 @@ def main():
             time.sleep(SLEEP_SEC)
             continue
 
-        items = parse_items(xml)
+        # 429 = rate limit → cooldown แล้ว retry
+        if status == 429:
+            log(f"  🚦 deptId={dept_id}: HTTP 429 rate limit — cooldown {RATE_LIMIT_COOLDOWN}s")
+            time.sleep(RATE_LIMIT_COOLDOWN)
+            status, xml = fetch_rss(dept_id, atype)
+            if status == 429:
+                log(f"  🚦 deptId={dept_id}: ยัง 429 หลัง cooldown — skip")
+                time.sleep(SLEEP_SEC)
+                continue
+
+        items = parse_items(xml, dept_id=dept_id)
         new_items = [i for i in items if i["projectId"] not in known_ids]
 
         if new_items:
@@ -182,7 +193,7 @@ def main():
 
         # บันทึก progress + queue ทุก 50 depts
         if total_depts % COOLDOWN_N == 0:
-            _save_json(QUEUE_FILE, queue)
+            _save_json(queue_file, queue)
             _save_json(progress_file, {
                 "anounce_type": atype,
                 "last_id": n,
@@ -197,7 +208,7 @@ def main():
             time.sleep(SLEEP_SEC)
 
     # บันทึกสุดท้าย
-    _save_json(QUEUE_FILE, queue)
+    _save_json(queue_file, queue)
     _save_json(progress_file, {
         "anounce_type": atype,
         "last_id": args.max_id,

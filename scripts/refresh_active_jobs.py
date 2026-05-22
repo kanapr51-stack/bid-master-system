@@ -27,23 +27,9 @@ from process5_http_client import get_project_detail, get_procure_result
 
 SPREADSHEET_ID   = "1gz7qLDIWphDhqxLf8Pxm08_cPmNb_IXTDvyxm6uThps"
 WINNER_CACHE     = Path(__file__).parent.parent / "data" / "winner_cache_bootstrap.json"
-DEPT_PROV_MAP    = Path(__file__).parent.parent / "data" / "deptid_province_map.json"
 
-
-def _load_dept_prov_map() -> dict:
-    if not DEPT_PROV_MAP.exists():
-        return {}
-    try:
-        return json.loads(DEPT_PROV_MAP.read_text(encoding="utf-8"))
-    except Exception:
-        return {}
-
-
-def _save_dept_prov_map(m: dict):
-    DEPT_PROV_MAP.write_text(json.dumps(m, ensure_ascii=False, indent=2), encoding="utf-8")
-
-
-_dept_prov: dict = _load_dept_prov_map()
+# Note: เคยมี deptid_province_map.json — ลบ design ทิ้ง เพราะ dept ใหญ่มีหลายสาขา
+# การเก็บ province ของ project แรกเป็น HQ ของ dept ทั้งหมดทำให้ routing ลูกค้าผิด
 
 # ── Province extraction ──────────────────────────────────────────
 _PROVINCES = [
@@ -183,18 +169,12 @@ def _build_sparse_row(jid: str, q_item: dict, detail: dict) -> list:
     dept_name  = detail.get("dept_sub_name", "")
 
     # Extract province จาก dept_sub_name + title (longest match first)
+    # ── ไม่ fallback ไป deptId map เพราะ dept ใหญ่มีหลายสาขาทั่วประเทศ ──
+    # การเก็บ "province ของ project แรก" เป็น HQ ของ dept ผิด design
+    # ถ้าหา province ไม่เจอ → ปล่อยว่าง (ลูกค้า filter จังหวัดจะไม่ได้รับ — safe กว่า)
+    dept_id = str(q_item.get("deptId", "")).strip()
     search_text = f"{dept_name} {title}"
     province = extract_province(search_text)
-
-    # ถ้า province ว่าง → lookup จาก deptId map
-    dept_id = str(q_item.get("deptId", "")).strip()
-    if not province and dept_id:
-        province = _dept_prov.get(dept_id, "")
-
-    # ถ้าเจอ province ใหม่จาก dept_sub_name → บันทึกลง map เพื่อใช้กับงานอื่นจาก dept เดียวกัน
-    if province and dept_id and dept_id not in _dept_prov:
-        _dept_prov[dept_id] = province
-        _save_dept_prov_map(_dept_prov)
 
     row_dict = {
         "title": title,

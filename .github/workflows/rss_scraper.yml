@@ -12,7 +12,7 @@ permissions:
 jobs:
   rss:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30   # เดิม 15 → 30: รวม global+per-dept+commit+queue process (budget 23 min + buffer)
 
     steps:
       - uses: actions/checkout@v6

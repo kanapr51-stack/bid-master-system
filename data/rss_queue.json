@@ -1582,5 +1582,626 @@
     "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050014239&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
     "queued_at": "2026-05-21T23:32:12",
     "source": "rss"
+  },
+  {
+    "projectId": "69039523400",
+    "title": "ประกวดราคาจ้างก่อสร้างโครงการปรับปรุงถนน คสล.พร้อมวางท่อระบายน้ำและบ่อพัก(ซอยข้างศาลาประชาคม) บ้านโคกหัวช้าง หมู่ที่ 3 ตำบลอิสาณ อำเภอเมืองบุรีรัมย์ จังหวัดบุรีรัมย์ ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=dcaa87e9-edad-4704-b909-3d66a253fa3a",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69019228391",
+    "title": "ประกวดราคาจ้างก่อสร้างโครงการก่อสร้างถนน คสล.บ้านยาง หมู่ที่ 9 (ซอยทางลัดรีสอร์ท 2) ตำบลอิสาณ อำเภอเมืองบุรีรัมย์ จังหวัดบุรีรัมย์ ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=c90e8528-a89d-4f34-82ca-96ddc499dab8",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69049373749",
+    "title": "ประกวดราคาซื้อครุภัณฑ์การแพทย์ จำนวน 4 รายการ (งบค่าบริการทางการแพทย์ ที่เบิกจ่ายในลักษณะงบลงทุน ปีงบประมาณ 2569) ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=353a786a-f105-4547-ba4f-35199a018152",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059144915",
+    "title": "ประกวดราคาจ้างก่อสร้างปรับปรุงภูมิทัศน์และพัฒนาจุดเชื่อมต่อการเดินทางบริเวณอนุสาวรีย์ชัยสมรภูมิ จำนวน 2 เกาะ (เกาะพญาไท และเกาะดินแดง) ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=fcbfa316-6e2b-4190-b288-655509c82f27",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "68129269724",
+    "title": "ประกวดราคาจ้างก่อสร้างโครงการปรับปรุงผิวจราจรแอสฟัลท์ติกคอนกรีตทิศใต้ถนนจิระ (ซอยมณีวรรณ) (ชุมชนต้นสัก) ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=7908912f-3352-4217-8de8-3c0d0f9ffd7c",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "68109367234",
+    "title": "ประกวดราคาจ้างก่อสร้างปรับปรุงโรงเรียนวัดสีสุก ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=71ef4ede-497b-4463-9b69-d5a368e65a15",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059372901",
+    "title": "ประกวดราคาจ้างก่อสร้างงานปรับปรุงเส้นท่อจ่ายน้ำบ้านนางัวถึงคอสะพานที่ 1 หมู่ 4 ตำบลนางัว อำเภอบ้านแพง จังหวัดนครพนม การประปาส่วนภูมิภาคสาขาบ้านแพง ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=97f0946d-1e72-4d8e-9788-4afab12718d0",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059343747",
+    "title": "ประกวดราคาจ้างโครงการจัดงาน  มหกรรม ดนตรี ชายหาดระยอง ครั้งที่ 12  (Rayong long beach festival 2026Laemmaephim) ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=fa0887d7-e365-4504-87f2-4ebc1251f4c5",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059301901",
+    "title": "ประกวดราคาจ้างงานจ้างจัดกิจกรรมส่งเสริมรัฐบาลดิจิทัลในรูปแบบแถลงข่าวทิศทางและนโยบายของสำนักงานพัฒนารัฐบาลดิจิทัล (องค์การมหาชน) ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=e03e442c-31f3-4b36-8c8f-05315ab5de58",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059334944",
+    "title": "ประกวดราคาจ้างก่อสร้างซ่อมแซมเรือนแถวนายทหารชั้นประทวน หมายเลข ๑๕๙/๓๓ ของ มณฑลทหารบกที่ ๓๔ ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=d7893dfe-0a85-41c9-b899-d3ae862af1e5",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059372023",
+    "title": "ประกวดราคาจ้างโครงการพัฒนาระบบอินเทอร์เน็ตภายในโรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย บุรีรัมย์ ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=0b8c4f78-8a1b-4a5c-b18a-5def50dd336d",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059126601",
+    "title": "ประกวดราคาจ้างเหมาโครงการมหกรรมท่องเที่ยววัฒนธรรม ประเพณี ชาติพันธุ์ กลุ่มจังหวัดภาคกลางตอนล่าง 2 กิจกรรมมหกรรมชาติพันธุ์เพชรสมุทรคีรี ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=eb9a9917-df54-486c-adee-004607b53309",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059329831",
+    "title": "ประกวดราคาจ้างก่อสร้างปรับปรุงซ่อมแซมอาคารบ้านพักอธิบดีผู้พิพากษาศาลแรงงานภาค 8 (เพิ่มเติม) ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=52f1245f-aa00-417e-b174-1ecc9196ec66",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059174484",
+    "title": "ประกวดราคาจ้างก่อสร้างโครงการเทลาน คสล. ลานอเนกประสงค์อำเภอท่าปลา ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=0958c305-0c46-4ce6-8565-859e0ab4af15",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059209809",
+    "title": "ประกวดราคาจ้างก่อสร้างงานก่อสร้างอาคารเรียนระดับมัธยมศึกษา โรงเรียนสาธิต มศว องครักษ์ อำเภอองครักษ์ ตำบลองครักษ์ อำเภอองครักษ์ จังหวัดนครนายก จำนวน 1 งาน ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=922c149b-5ad5-4f8a-8461-0953863a3735",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059234038",
+    "title": "ประกวดราคาจ้างเหมาดำเนินการจัดงานแสดงและจำหน่ายสินค้า ผลิตภัณฑ์ของดีจังหวัดพะเยา ประจำปีงบประมาณ พ.ศ. 2569 ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=e3c4823c-ce8f-40bb-8a0b-e01e924c3004",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059378544",
+    "title": "ประกวดราคาจ้างก่อสร้างจ้างก่อสร้างอาคารหอพักนิสิต คสล. 3 ชั้น วิทยาลัยสงฆ์ ตำบลรูสะมิแล อำเภอเมืองปัตตานี จังหวัดปัตตานี จำนวน 1 หลัง ประจำปีงบประมาณ พ.ศ. 2569 ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=42459c2f-7b1a-4026-a605-9f5184443a4b",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69029388015",
+    "title": "ประกวดราคาซื้อยา 6 รายการ ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=ba9f25f2-dbc7-4753-9fda-e2423be7f364",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69049318756",
+    "title": "ประกวดราคาจ้างก่อสร้างก่อสร้างท่อขนส่งน้ำคอนกรีตเสริมเหล็ก รหัสทางหลวงท้องถิ่น สข.ถ. 4-0027 ถนนประถมศึกษา ขนาดกว้าง 1.20 เมตร สูง 1.20 เมตร ความยาวรวมบ่อตรวจไม่น้อยกว่า 421.00 เมตร พร้อมก่อสร้างคูระบายน้ำ คอนกรีตเสริมเหล็ก ขนาดกว้าง 0.60 เมตร พร้อมฝาปิดคอนกรีตเสริมเหล็ก ความยาวรวมบ่อพักไม่น้อยกว่า 445.00 เมตร หมู่ที่ 2 ชุมชนหนองบัว ตำบลคลองแห อำเภอหาดใหญ่ จังหวัดสงขลา ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=37e07b51-28cd-4a8c-8435-f2ae7289582b",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059187113",
+    "title": "ประกวดราคาเช่ารถยนต์ส่วนกลางใช้ในราชการ จำนวน ๑ คัน ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=6d26026b-d2ce-4f04-a5b5-0a53d4ecbdce",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "P69050017595",
+    "title": "ปรับปรุงซ่อมแซมระบบไฟฟ้าภายในอาคารเรียน",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050015191&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "P69050017589",
+    "title": "จ้างทำความสะอาดอาคารและสถานที่ราชการ โรงพยาบาลอานันทมหิดล",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050015185&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "P69050017592",
+    "title": "โครงการก่อสร้างถนนคอนกรีตเสริมเหล็ก สายซอยกลุ่มบ้านคลองใหญ่ รหัสสายทาง กพ.ถ.๘๙-๐๖๕ หมู่ที่ ๕ บ้านใหม่เชียงราย ตำบลหินดาต อำเภอปางศิลาทอง จังหวัดกำแพงเพชร",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050015188&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "P69050017586",
+    "title": "ซื้อปัจจัยการผลิตโครงการส่งเสริมและพัฒนาอาชีพประมงในพื้นที่จังหวัดชายแดนภาคใต้",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050015181&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "P69050006855",
+    "title": "วัสดุการแพทย์ ลิ้นหัวใจเทียมชนิดเนื้อเยื่อที่ทำจากเยื่อบุหัวใจวัวชนิดพิเศษ บรรจุแบบแห้ง  จำนวน ๕ ชิ้น",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050006016&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "P69050017587",
+    "title": "จ้างเหมาตัดเย็บชุดพละ ชุดลูกเสือ-ยุวกาชาด เเละเนตรนารี จำนวน 1,170 ชุด",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050015182&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "P69050017584",
+    "title": "อาหารเสริม (นม) สำหรับเด็กอนุบาลและประถมศึกษา",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050015180&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "P69050017582",
+    "title": "โครงการซ่อมแซมถนนริมอ่างเก็บน้ำบ้านเขาตาง้อก",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050015178&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "P69050008162",
+    "title": "จ้างบำรุงรักษาครุภัณฑ์การแพทย์ จำนวน ๖ เครื่อง ของหน่วยตรวจหัวใจ กลุ่มงานอายุรกรรม ด้วยเงินบำรุงโรงพยาบาล ประจำปีงบประมาณ 2569 ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050007183&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "P69050017562",
+    "title": "รื้อถอนกระเบื้องและปูพื้นใหม่ห้องเคมี",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050015170&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "P69050017556",
+    "title": "จัดซื้อครุภัณฑ์โฆษณาและเผยแพร่ (โทรทัศน์ แอล อี ดี (LED TV) แบบ Smart TV) ประจำปีงบประมาณ พ.ศ. 2569",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050015154&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "P69050017552",
+    "title": "จัดซื้ออาหารเสริม (นม) โรงเรียน สำหรับเด็กนักเรียนในสังกัด สพฐ. ในเขตเทศบาลตำบลบ้านตาด จำนวน 8 แห่ง",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050015152&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "P69050017576",
+    "title": "จัดซื้ออาหารเสริม (นม) สำหรับศูนย์พัฒนาเด็กเล็กในสังกัดเทศบาลตำบลบ้านตาด จำนวน 7 แห่ง",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050015172&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "P69050017574",
+    "title": "จัดซื้อครุภัณฑ์โฆษณาและเผยแพร่ (โทรทัศน์ แอล อี ดี (LED TV) แบบ Smart TV) กองการศึกษา ประจำปีงบประมาณ พ.ศ. 2569",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050015168&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "P69050017545",
+    "title": "จัดซื้ออาหารเสริม (นม) โรงเรียน ภาคเรียนที่ ๑ ปีการศึกษา ๒๕๖๙",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050015143&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "P69050010871",
+    "title": "วัสดุวิทยาศาสตร์การแพทย์ จำนวน ๒ รายการ",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050009397&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "P69050010870",
+    "title": "แก๊ส LPG จำนวน ๒ รายการ",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050009397&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "P69050010869",
+    "title": "ออกซิเจนเหลวทางการแพทย์ จำนวนประมาณการจัดซื้อ ๘๐๐,๐๐๐ ลูกบาศก์เมตร",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050009397&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "P69050017284",
+    "title": "จัดซื้อพัสดุกลุ่มสายไฟ งานก่อสร้างใต้ไลน์สายส่ง 115 เควี รองรับ สฟฟ.อมตะสมาร์ทซิตี้ (ลานไก) ตามแผนงานก่อสร้างระบบไฟฟ้ารองรับการจ่ายไฟลูกค้ารายใหญ่พิเศษ ในพื้นที่ EEC ระยะที่1",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050014879&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "P69050012488",
+    "title": "ระบบ IP Telephony พร้อมอุปกรณ์และค่าติดตั้ง จำนวน 1 ระบบ",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050010800&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69049295130",
+    "title": "จ้างก่อสร้างถนนแอสฟัลท์ติกคอนกรีตพร้อมวางท่อระบายน้ำ ซอยโรงเรียนวัดคุณหญิงส้มจีน หมู่ 14 ต.คลองหนึ่ง โดยวิธีคัดเลือก",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=69049295130&amp;templateType=W2&amp;temp_Announ=A&amp;temp_itemNo=0&amp;seqNo=1",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059112148",
+    "title": "เช่ารถยนต์ โดยวิธีคัดเลือก",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=69059112148&amp;templateType=W2&amp;temp_Announ=A&amp;temp_itemNo=0&amp;seqNo=1",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059370330",
+    "title": "จ้างเหมาทำอาหารกลางวันสำหรับนักเรียนมัธยมศึกษาตอนต้น จำนวน 262 คน คนละ 22 บาท จำนวน 50 คน โดยวิธีคัดเลือก",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=69059370330&amp;templateType=W2&amp;temp_Announ=A&amp;temp_itemNo=0&amp;seqNo=1",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059328187",
+    "title": "จ้างเหมางานติดตั้งวางท่อประปา สำหรับ สำนักงานเทศบาลตำบลดอนไก่ดี บริเวณหมู่บ้าน 100 ห้อง หมู่ที่ 2 ตำบลดอนไก่ดี อำเภอกระทุ่มแบน จังหวัดสมุทรสาคร โดยวิธีคัดเลือก",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=69059328187&amp;templateType=W2&amp;temp_Announ=A&amp;temp_itemNo=0&amp;seqNo=1",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059328425",
+    "title": "จ้างเหมางานติดตั้งวางท่อประปา สำหรับ สำนักงานเทศบาลตำบลดอนไก่ดี บริเวณบ้านหนองรี ซอย 1 และซอย 1/1 หมู่ที่ 2 ตำบลดอนไก่ดี อำเภอกระทุ่มแบน จังหวัดสมุทรสาคร โดยวิธีคัดเลือก",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=69059328425&amp;templateType=W2&amp;temp_Announ=A&amp;temp_itemNo=0&amp;seqNo=1",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059327441",
+    "title": "จ้างเหมางานติดตั้งวางท่อประปา สำหรับ สำนักงานเทศบาลตำบลดอนไก่ดี บริเวณซอยสุคนธวิท 5 (ซอยมงคล) หมู่ที่ 2 ตำบลดอนไก่ดี อำเภอกระทุ่มแบน จังหวัดสมุทรสาคร โดยวิธีคัดเลือก",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=69059327441&amp;templateType=W2&amp;temp_Announ=A&amp;temp_itemNo=0&amp;seqNo=1",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "68109378817",
+    "title": "จ้างปรับพื้นที่และถมดินลูกรังบริเวณที่ดิน อบต. หมู่ที่ 3 โดยวิธีคัดเลือก",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=68109378817&amp;templateType=W2&amp;temp_Announ=A&amp;temp_itemNo=0&amp;seqNo=1",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69039067889",
+    "title": "จ้างปรับปรุงระบบประปาหมู่บ้าน บ้านแม่ออกฮู หมู่ที่ ๔ ตำบลวาเล่ย์ อำเภอพบพระ จังหวัดตาก โดยวิธีคัดเลือก",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=69039067889&amp;templateType=W2&amp;temp_Announ=A&amp;temp_itemNo=0&amp;seqNo=1",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69049173820",
+    "title": "จ้างบำรุงรักษาระบบดับเพลิงด้วยน้ำชนิดท่อแห้ง แบบชะลอน้ำเข้า Pre-Action จำนวน 1 งาน โดยวิธีคัดเลือก",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=69049173820&amp;templateType=W2&amp;temp_Announ=A&amp;temp_itemNo=0&amp;seqNo=1",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059129004",
+    "title": "จ้างจ้างเหมาขนและกำจัดขยะมูลฝอยของเทศบาลตำบลบ้านเกาะ โดยวิธีคัดเลือก",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=69059129004&amp;templateType=W2&amp;temp_Announ=A&amp;temp_itemNo=0&amp;seqNo=1",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "68109404452",
+    "title": "จ้างงานวางท่อขยายเขตจำหน่ายน้ำให้กับกองพันทหารม้าที่ 10 กรมทหารม้าที่ 2  โครงการย้าย ม.2 พัน 10 เข้าที่ตั้งปกติถาวรแห่งใหม่ (ระยะที่ 4) ต.ฝายแก้ว อ.ภูเพียง จ.น่าน  โดยวิธีคัดเลือก",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=68109404452&amp;templateType=W2&amp;temp_Announ=A&amp;temp_itemNo=0&amp;seqNo=1",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69049287483",
+    "title": "จ้างงานย้ายแนวท่อหลบการก่อสร้างบริเวณถนนรักษ์นรกิจ ตำบลตลาดไชยา อำเภอไชยา จังหวัดสุราษฎร์ธานี การประปาส่วนภูมิภาคสาขาไชยา โดยวิธีคัดเลือก",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=69049287483&amp;templateType=W2&amp;temp_Announ=A&amp;temp_itemNo=0&amp;seqNo=1",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69049425571",
+    "title": "จ้างงานย้ายแนวท่อเนื่องจากงานก่อสร้างทางหลวงผ่านย่านชุมชน ทางหลวงหมายเลข 4287 ตอนควบคุม 0101 ตอน ท่าชะมวง-ควนลัง ระหว่าง กม.27+665-กม.28+250 ด้านซ้ายทางและขวาทาง ตำบลควนลัง อำเภอหาดใหญ่ จังหวัดสงขลา โดยวิธีคัดเลือก",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=69049425571&amp;templateType=W2&amp;temp_Announ=A&amp;temp_itemNo=0&amp;seqNo=1",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "68029145386",
+    "title": "จ้างงานย้ายแนวท่อโครงการก่อสร้างสะพาน คสล. ทางหลวงหมายเลข 1097 ตอนเชียงกลาง-หางทุ่ง ที่ กม.1+925 ตำบลเชียงกลาง อำเภอเชียงกลาง จังหวัดน่าน การประปาส่วนภูมิภาคสาขาท่าวังผา (หน่วยบริการเชียงกลาง)   โดยวิธีคัดเลือก",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=68029145386&amp;templateType=W2&amp;temp_Announ=A&amp;temp_itemNo=0&amp;seqNo=1",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059258404",
+    "title": "จ้างงานปรับปรุงแพสูบน้ำดิบ สถานีผลิตน้ำหน่วยบริการเชียงแสน ตำบลเวียง อำเภอเชียงแสน จังหวัดเชียงราย การประปาส่วนภูมิภาคสาขาแม่สาย  โดยวิธีคัดเลือก",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=69059258404&amp;templateType=W2&amp;temp_Announ=A&amp;temp_itemNo=0&amp;seqNo=1",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69049422608",
+    "title": "จ้างงานจ้างก่อสร้างจุดถ่ายภาพที่ระลึก The First Valve of Thailand Transmission Pipeline โดยวิธีคัดเลือก",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=69049422608&amp;templateType=W2&amp;temp_Announ=A&amp;temp_itemNo=0&amp;seqNo=1",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69039161020",
+    "title": "จ้างโครงการปรับปรุงอาคารสโมสรข้าราชการองค์การบริหารส่วนจังหวัดลำปาง ตำบลศาลา อำเภอเกาะคา จังหวัดลำปาง โดยวิธีคัดเลือก",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=69039161020&amp;templateType=W2&amp;temp_Announ=A&amp;temp_itemNo=0&amp;seqNo=1",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69039600923",
+    "title": "จ้างก่อสร้างและปรับปรุงระบบระบายน้ำ ถนนเอเซีย 18 ซอยสรรพสามิต โดยวิธีคัดเลือก",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=69039600923&amp;templateType=W2&amp;temp_Announ=A&amp;temp_itemNo=0&amp;seqNo=1",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69039600727",
+    "title": "จ้างก่อสร้างและปรับปรุงถนน คสล. ถนนทรายทอง 4 ซอยบ้านนายเลิศ โดยวิธีคัดเลือก",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=69039600727&amp;templateType=W2&amp;temp_Announ=A&amp;temp_itemNo=0&amp;seqNo=1",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69039601229",
+    "title": "จ้างก่อสร้างและปรับปรุงถนน คสล. ถนนชลธารเขต ซอย 2 โดยวิธีคัดเลือก",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=69039601229&amp;templateType=W2&amp;temp_Announ=A&amp;temp_itemNo=0&amp;seqNo=1",
+    "queued_at": "2026-05-22T10:02:26",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059316458",
+    "title": "ประกวดราคาซื้อวัสดุวิทยาศาสตร์การแพทย์ที่ใช้ในกลุ่มงานธนาคารเลือดและเวชศาสตร์บริการโลหิต จำนวน ๒ รายการ ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=2a96ca61-3fe5-4ac4-aa9f-7a0610204b72",
+    "queued_at": "2026-05-22T10:02:41",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059155828",
+    "title": "ประกวดราคาจ้างก่อสร้างจ้างปรับปรุงบ่อบำบัดน้ำเสีย พื้นที่ กรมการสื่อสารทหาร กองบัญชาการกองทัพไทย ตามโครงการซ่อมบำรุงอาคารสวัสดิการส่วนกลาง และบ้านพักประจำหน่วย กองบัญชาการกองทัพไทย ประจำปีงบประมาณ พ.ศ. ๒๕๖๙ ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "0208",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=0fa9b415-e655-4ec3-b11c-56d265708225",
+    "queued_at": "2026-05-22T10:05:39",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059158852",
+    "title": "ประกวดราคาจ้างก่อสร้างจ้างปรับปรุงศูนย์อาหารสวัสดิการ พื้นที่ กรมการสื่อสารทหาร กองบัญชาการกองทัพไทย ตามโครงการซ่อมบำรุงอาคารสวัสดิการส่วนกลาง และบ้านพักประจำหน่วย กองบัญชาการกองทัพไทย ประจำปีงบประมาณ พ.ศ. ๒๕๖๙ ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "0208",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=4e300616-62f7-4678-a25d-853d23bc69fb",
+    "queued_at": "2026-05-22T10:05:39",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059360893",
+    "title": "ประกวดราคาซื้อเครื่องดับเพลิงและน้ำยาโฟมดับเพลิง สนับสนุนหน่วยต่างๆ ใน ทบ. (ครั้งที่ 2) จำนวน 2 รายการ ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "0204",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=c3788494-f3c0-44a3-aaa0-5a01b410a2e9",
+    "queued_at": "2026-05-22T10:05:39",
+    "source": "rss"
+  },
+  {
+    "projectId": "69049423849",
+    "title": "ประกวดราคาจ้างก่อสร้างงานก่อสร้างเรือนแถวนายร้อย พร้อมสิ่งอำนวยความสะดวก ของ โรงพยาบาลค่ายพระยอดเมืองขวาง จังหวัดนครพนม ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "0204",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=6963e501-6e8d-4ab0-a8fb-995a3c30caf5",
+    "queued_at": "2026-05-22T10:05:39",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059320437",
+    "title": "ประกวดราคาจ้างก่อสร้างงานก่อสร้างลานพื้นแข็ง ของ รพ.ค่ายวิภาวดีรังสิต ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "0204",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=e6d7c51f-34cb-469f-8d66-0c23cc2bab67",
+    "queued_at": "2026-05-22T10:05:39",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059264305",
+    "title": "ประกวดราคาจ้างก่อสร้างงานก่อสร้างโรงรถ พร้อมสิ่งอำนวยความสะดวก ของ โรงพยาบาลค่ายจิรประวัติ จังหวัดนครสวรรค์ ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "0204",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=04101ea3-604c-415a-b06e-3c140a0aa150",
+    "queued_at": "2026-05-22T10:05:39",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059223001",
+    "title": "ประกวดราคาจ้างก่อสร้างปรับปรุงอาคารและสิ่งปลูกสร้าง ประจำปีงบประมาณ พ.ศ. ๒๕๖๙ โครงการปรับปรุงและพัฒนา กองทัพภาคที่ ๓ และหน่วยขึ้นตรง ของ กองทัพภาคที่ ๓ จังหวัดพิษณุโลก ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "0204",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=c85646af-3ce5-44ad-a857-abd3700c2f0f",
+    "queued_at": "2026-05-22T10:05:39",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059223652",
+    "title": "ประกวดราคาจ้างก่อสร้างโครงการก่อสร้างปรับปรุงอาคารและสิ่งปลูกสร้าง ประจำปีงบประมาณ พ.ศ. ๒๕๖๙ โครงการปรับปรุงและพัฒนาหน่วย มณฑลทหารบก ของ กองทัพภาคที่ ๓ ระยะที่ ๒ ของ มณฑลทหารบกที่ ๓๘ ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "0204",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=f921c94b-2ab4-4390-89cd-46f0de4c31c9",
+    "queued_at": "2026-05-22T10:05:39",
+    "source": "rss"
   }
 ]

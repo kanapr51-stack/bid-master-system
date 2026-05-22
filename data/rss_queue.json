@@ -2806,5 +2806,41 @@
     "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050015062&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
     "queued_at": "2026-05-22T15:28:36",
     "source": "rss"
+  },
+  {
+    "projectId": "69059381522",
+    "title": "ประกวดราคาจ้างผลิตเครื่องแต่งกาย แผนงานที่ 2 ตามกิจกรรมปราบปรามยาเสพติด โครงการปฏิบัติการข่าวสกัดกั้นยาเสพติดในพื้นที่พิเศษ โครงการสกัดกั้นยาเสพติดตามแนวชายแดน และโครงการปราบปรามกลุ่มผู้ค้ายาเสพติดในพื้นที่แพร่ระบาด จำนวน 3 รายการ ประจำปีงบประมาณ พ.ศ. 2569 ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=4b012c5f-555e-41e2-85fd-c4ebeeee2665",
+    "queued_at": "2026-05-22T16:11:43",
+    "source": "rss"
+  },
+  {
+    "projectId": "P69050017645",
+    "title": "โครงการร่วมพัฒนาสุขภาวะที่ยั่งยืน",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050015227&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
+    "queued_at": "2026-05-22T16:11:43",
+    "source": "rss"
+  },
+  {
+    "projectId": "P69050017646",
+    "title": "จ้างทำอาหารกลางวัน  ภาคเรียนที่ 1  ปีการศึกษา  2569",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050015228&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
+    "queued_at": "2026-05-22T16:11:43",
+    "source": "rss"
+  },
+  {
+    "projectId": "69059184098",
+    "title": "จ้างย้ายศูนย์บูรณาการกล้องโทรทัศน์วงจรปิด (CCTV) จำนวน 1 งาน โดยวิธีคัดเลือก",
+    "deptId": "",
+    "pubDate": "2026-05-22",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=69059184098&amp;templateType=W2&amp;temp_Announ=A&amp;temp_itemNo=0&amp;seqNo=1",
+    "queued_at": "2026-05-22T16:11:43",
+    "source": "rss"
   }
 ]

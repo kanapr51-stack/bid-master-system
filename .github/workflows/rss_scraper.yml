@@ -12,7 +12,7 @@ permissions:
 jobs:
   rss:
     runs-on: ubuntu-latest
-    timeout-minutes: 30   # เดิม 15 → 30: รวม global+per-dept+commit+queue process (budget 23 min + buffer)
+    timeout-minutes: 40   # split per-dept 1×10 → 3×8 step = 24 min + global 3 + commit 1 + queue 10 = ~38 + buffer
 
     steps:
       - uses: actions/checkout@v6
@@ -38,17 +38,36 @@ jobs:
           python scripts/Sebastian_RSS_Scraper.py --global --queue || true
           python scripts/Sebastian_RSS_Scraper.py --stage B0 --global --queue || true
 
-      - name: Per-dept RSS poll (D0+B0+P0 known active depts)
-        timeout-minutes: 10
+      # Split per-dept poll เป็น 3 steps — แต่ละ stage budget แยก ถ้า P0 ห่วยก็ไม่กระทบ D0/B0
+      - name: Per-dept RSS poll [D0]
+        timeout-minutes: 8
+        continue-on-error: true
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           DATABASE_URL:                ${{ secrets.DATABASE_URL }}
           DISCORD_BOT_TOKEN:           ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_CHANNEL_ID:          ${{ secrets.DISCORD_CHANNEL_ID }}
-        run: |
-          python scripts/Sebastian_RSS_Scraper.py --stage D0 --full-poll --no-probe --queue || true
-          python scripts/Sebastian_RSS_Scraper.py --stage B0 --full-poll --no-probe --queue || true
-          python scripts/Sebastian_RSS_Scraper.py --stage P0 --full-poll --no-probe --queue || true
+        run: python scripts/Sebastian_RSS_Scraper.py --stage D0 --full-poll --no-probe --queue
+
+      - name: Per-dept RSS poll [B0]
+        timeout-minutes: 8
+        continue-on-error: true
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          DATABASE_URL:                ${{ secrets.DATABASE_URL }}
+          DISCORD_BOT_TOKEN:           ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID:          ${{ secrets.DISCORD_CHANNEL_ID }}
+        run: python scripts/Sebastian_RSS_Scraper.py --stage B0 --full-poll --no-probe --queue
+
+      - name: Per-dept RSS poll [P0]
+        timeout-minutes: 8
+        continue-on-error: true
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          DATABASE_URL:                ${{ secrets.DATABASE_URL }}
+          DISCORD_BOT_TOKEN:           ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID:          ${{ secrets.DISCORD_CHANNEL_ID }}
+        run: python scripts/Sebastian_RSS_Scraper.py --stage P0 --full-poll --no-probe --queue
 
       - name: Commit catalog + RSS state
         if: always()

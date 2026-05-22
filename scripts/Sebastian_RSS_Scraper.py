@@ -46,6 +46,7 @@ TARGET_FILE = DATA_DIR / "target_deptids.json"
 RSS_SEEN_FILE = DATA_DIR / "rss_seen_ids.json"
 RSS_QUEUE_FILE = DATA_DIR / "rss_queue.json"
 SCRAPER_SEEN_FILE = DATA_DIR / "seen_ids.json"
+DEPT_FAIL_STATE_FILE = DATA_DIR / "dept_failure_state.json"
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -65,6 +66,9 @@ PROBE_WORKERS = 1
 DEPT_ID_RANGE = (1, 9999)
 # Negative cache: skip depts confirmed empty within this many days
 NEGATIVE_CACHE_DAYS = 3
+
+# Blacklist: skip depts ที่ timeout/error N ครั้งติด (full_poll เท่านั้น)
+BLACKLIST_THRESHOLD     = 5
 
 
 
@@ -561,6 +565,31 @@ def probe_unknown_depts(catalog: dict) -> int:
 
 
 # ================================================================
+# Dept failure tracking — blacklist depts ที่ timeout/error ติดกัน
+# ================================================================
+
+def load_dept_fail_state() -> dict:
+    """{dept_id: {"consec_fails": N, "last_status": int, "last_attempt": iso}}"""
+    if not DEPT_FAIL_STATE_FILE.exists():
+        return {}
+    try:
+        return json.loads(DEPT_FAIL_STATE_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def save_dept_fail_state(state: dict) -> None:
+    DEPT_FAIL_STATE_FILE.write_text(
+        json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+
+def get_blacklisted_depts(state: dict) -> set[str]:
+    return {d for d, s in state.items()
+            if isinstance(s, dict) and s.get("consec_fails", 0) >= BLACKLIST_THRESHOLD}
+
+
+# ================================================================
 # Main
 # ================================================================
 
@@ -582,6 +611,14 @@ def run(queue_new: bool = False, skip_probe: bool = False,
     log(f"=== RSS Discovery Run · stage={anounce_type or 'D0'} ({stage_label}) ===")
     log(f"Catalog: {len(catalog)} depts known · Target: {len(targets)}")
 
+    # Blacklist: skip depts ที่ fail >= threshold ใน full_poll mode
+    fail_state = load_dept_fail_state()
+    blacklisted = get_blacklisted_depts(fail_state)
+    if full_poll and blacklisted:
+        before = len(targets)
+        targets = [d for d in targets if d not in blacklisted]
+        log(f"Blacklist: skipped {before - len(targets)} depts (consec_fails ≥ {BLACKLIST_THRESHOLD})")
+
     # Pass 1: Poll target depts via direct cffi_requests (no browser — RSS is plain XML)
     all_items: list[dict] = []
     poll_started = time.time()
@@ -593,6 +630,7 @@ def run(queue_new: bool = False, skip_probe: bool = False,
     _timeout = PROBE_ALL_TIMEOUT if full_poll else POLL_TIMEOUT
     _retries = 0 if full_poll else 2
     _done = 0
+    now_iso = datetime.now().isoformat(timespec="seconds")
     with ThreadPoolExecutor(max_workers=_workers) as ex:
         futs = {ex.submit(fetch_dept, d, anounce_type, _timeout, _retries): d for d in targets}
         for fut in as_completed(futs):
@@ -601,7 +639,17 @@ def run(queue_new: bool = False, skip_probe: bool = False,
             _done += 1
             if status != 200:
                 poll_errors += 1
+                if full_poll:
+                    st = fail_state.setdefault(dept_id, {"consec_fails": 0})
+                    st["consec_fails"] = int(st.get("consec_fails", 0)) + 1
+                    st["last_status"]  = status
+                    st["last_attempt"] = now_iso
                 continue
+            # success → reset fail count
+            if full_poll and dept_id in fail_state:
+                fail_state[dept_id]["consec_fails"] = 0
+                fail_state[dept_id]["last_status"]  = 200
+                fail_state[dept_id]["last_attempt"] = now_iso
             if items:
                 all_items.extend(items)
                 catalog[dept_id] = {
@@ -618,6 +666,13 @@ def run(queue_new: bool = False, skip_probe: bool = False,
 
     poll_elapsed = time.time() - poll_started
     log(f"Polled {len(targets)} depts in {poll_elapsed:.1f}s · {len(all_items)} items · {poll_errors} errors")
+
+    # Save updated fail state + log new blacklist additions
+    if full_poll:
+        new_bl = get_blacklisted_depts(fail_state) - blacklisted
+        if new_bl:
+            log(f"  ⛔ {len(new_bl)} new depts blacklisted (consec_fails ≥ {BLACKLIST_THRESHOLD})")
+        save_dept_fail_state(fail_state)
 
     # Pass 2: Probe unknowns (catalog growth)
     new_depts = 0

@@ -2218,3 +2218,50 @@ d08dda0 Dashboard: Vercel Blob real-time snapshot
 ### Followup
 - commit egp_deptid_catalog.json เมื่อ catalog ขยายใหญ่ขึ้น (ตอนนี้ 475 entries ใน git)
 - RssCatalogCard component อาจต้องใช้ last_run_at แสดง "Last Run" timestamp
+
+---
+
+## งาน 2026-05-22 → 2026-05-23: Nationwide scan 4-stage complete + parser fix
+
+### สถานะ: ✅ เสร็จ
+
+### Root cause ที่แก้
+1. **RSS parser bug** — link format เปลี่ยน projectId ย้ายจาก URL → `<description>` 
+   - คืนก่อน scan ได้ 0/2,603 depts ทำให้คิดว่า RSS feed ล่ม
+   - จริงๆ parser อ่าน `projectId=` ใน link แล้วทิ้งทุก item
+   - Fix: regex จาก description แทน
+2. **HTTP 429 rate limit** — parallel scan 4 ตัว = 320 req/120s เกิน eGP limit 100/120s
+   - Fix: SEQUENTIAL only (1 ตัวพร้อมกัน) + 429 retry 120s cooldown
+3. **GHA timeout** — workflow budget 23 min แต่ job timeout 15 → cancelled ทุกครั้ง
+   - Fix: timeout 15 → 30 min
+
+### Fix / ผล
+
+**Commits:**
+- `079e8f8` fix(scan): parse projectId จาก description + 429 retry + per-atype queue
+- `472c8b1` fix(gha): RSS scraper timeout 15→30
+
+**Scan results (4 stages × 2,603 depts):**
+| Stage | Items | Active depts | 429 events |
+|---|---|---|---|
+| D0 (active) | 180 | 56 | 10 |
+| B0 (TOR draft) | 105 | 47 | 11 |
+| W0 (awarded) | 2,125 | 186 | 12 |
+| P0 (planning) | 488 | 88 | 13 |
+| **รวม** | **2,898** | **377** | 46 |
+
+**Sheets final (Δ จากเริ่มต้นวัน):**
+- ✨ **pre_tor: 0 → 488** (ครั้งแรก!)
+- tor_review: 86 → 178 (+92)
+- **active_bidding: 51 → 278** (+227, **5.4x**)
+- pending_award: 8,441 → 10,567 (+2,126)
+- awarded_jobs: 363 → 363 ⚠️
+- cancelled_jobs: 243 → 267 (+24)
+- **Total +2,957 jobs**
+
+### Followup
+- **Winner cache fetch** — awarded_jobs ไม่อัปเดตเพราะ refresh ไม่เรียก getProcureResult; แผนแก้ใน `memory/project_winner_cache_todo.md`
+- **Pending_award cleanup** — 10,567 เยอะเกิน ส่วนใหญ่น่าจะ stale (ติด step C03/I03 ไม่มี winner)
+- **GHA workflow split (Plan B)** — ดู `memory/project_gha_workflow_split_todo.md` ประเมิน 7 วันหลัง 472c8b1
+- **5-digit deptIds expansion** — ยังไม่ scan 5K+ อบต./เทศบาล รอ probe 5-10 ตัวก่อนตัดสินใจ
+- **LINE Notify re-enable** — ปิดไว้ รอ per-customer province filter

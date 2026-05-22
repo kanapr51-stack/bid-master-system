@@ -398,10 +398,28 @@ def main():
                     time.sleep(1)
                     continue
 
+            # ── Winner fetch สำหรับ W0/contract stage (C/I/X) — มี winner data ใน getProcureResult ──
+            step_id = detail.get("step_id", "")
+            a_type  = detail.get("announce_type", "")
+            if a_type == "W0" or step_id.startswith(("C", "I", "X")):
+                winfo = get_procure_result(jid)
+                if winfo.get("winner"):
+                    price = winfo.get("winning_price", "")
+                    budget = q_item.get("budget", "") or ""
+                    pct = calc_pct_discount(budget, price)
+                    cache[jid] = {
+                        "winner_name":  winfo["winner"],
+                        "winner_price": str(price),
+                        "discount_pct": pct,
+                        "award_date":   winfo.get("announce_date", ""),
+                    }
+                    new_winners += 1
+                    detail["winner"] = cache[jid]  # ส่งต่อให้ _build_sparse_row ใส่ใน row
+
             sparse_row = _build_sparse_row(jid, q_item, detail)
             appended_rows.append(sparse_row)
             processed_pids.add(jid)
-            log(f"  ✅ {jid}: sparse row prepared (step={detail.get('step_id')}, announce={detail.get('announce_type')})")
+            log(f"  ✅ {jid}: sparse row prepared (step={detail.get('step_id')}, announce={detail.get('announce_type')}{', WINNER' if jid in cache else ''})")
             time.sleep(1)
 
     # ── Write ──

@@ -32,48 +32,10 @@ WINNER_CACHE     = Path(__file__).parent.parent / "data" / "winner_cache_bootstr
 # การเก็บ province ของ project แรกเป็น HQ ของ dept ทั้งหมดทำให้ routing ลูกค้าผิด
 
 # ── Province extraction ──────────────────────────────────────────
-_PROVINCES = [
-    'กระบี่','กรุงเทพมหานคร','กาญจนบุรี','กาฬสินธุ์','กำแพงเพชร',
-    'ขอนแก่น','จันทบุรี','ฉะเชิงเทรา','ชลบุรี','ชัยนาท','ชัยภูมิ',
-    'ชุมพร','ตรัง','ตราด','ตาก','นครนายก','นครปฐม','นครพนม',
-    'นครราชสีมา','นครศรีธรรมราช','นครสวรรค์','นนทบุรี','นราธิวาส',
-    'น่าน','บึงกาฬ','บุรีรัมย์','ปทุมธานี','ประจวบคีรีขันธ์',
-    'ปราจีนบุรี','ปัตตานี','พระนครศรีอยุธยา','พะเยา','พังงา',
-    'พัทลุง','พิจิตร','พิษณุโลก','ภูเก็ต','มหาสารคาม','มุกดาหาร',
-    'ยะลา','ยโสธร','ระนอง','ระยอง','ราชบุรี','ร้อยเอ็ด','ลพบุรี',
-    'ลำปาง','ลำพูน','ศรีสะเกษ','สกลนคร','สงขลา','สตูล',
-    'สมุทรปราการ','สมุทรสงคราม','สมุทรสาคร','สระบุรี','สระแก้ว',
-    'สิงห์บุรี','สุพรรณบุรี','สุราษฎร์ธานี','สุรินทร์','สุโขทัย',
-    'หนองคาย','หนองบัวลำภู','อำนาจเจริญ','อุดรธานี','อุตรดิตถ์',
-    'อุทัยธานี','อุบลราชธานี','อ่างทอง','เชียงราย','เชียงใหม่',
-    'เพชรบุรี','เพชรบูรณ์','เลย','แพร่','แม่ฮ่องสอน',
-]
-# เรียงยาวก่อน กัน partial match (เช่น "นคร" match "นครพนม" ก่อน)
-_PROVINCES_SORTED = sorted(_PROVINCES, key=len, reverse=True)
-_PROVINCE_ALIASES = {
-    'กรุงเทพฯ': 'กรุงเทพมหานคร',
-    'กทม': 'กรุงเทพมหานคร',
-    'กทม.': 'กรุงเทพมหานคร',
-    'Bangkok': 'กรุงเทพมหานคร',
-    'ปทุมฯ': 'ปทุมธานี',
-    'โคราช': 'นครราชสีมา',
-    'อยุธยา': 'พระนครศรีอยุธยา',
-}
-
-
-def extract_province(text: str) -> str:
-    """หา province จาก dept_sub_name หรือ title — คืนชื่อจังหวัด หรือ '' ถ้าไม่พบ"""
-    if not text:
-        return ""
-    # Alias ก่อน
-    for alias, full in _PROVINCE_ALIASES.items():
-        if alias in text:
-            return full
-    # ค้น province name ยาวก่อน
-    for prov in _PROVINCES_SORTED:
-        if prov in text:
-            return prov
-    return ""
+# ใช้ province_extractor: cascade 8 ชั้น (prefix → org-cache → bare matching)
+# แทน substring-only เดิม — ดู scripts/province_extractor.py
+# สำคัญ: ต้องส่ง dept_name + title แยกกัน (org-cache ใช้ exact-match บน dept_name)
+from province_extractor import extract_province as extract_province
 
 
 def log(msg: str):
@@ -172,9 +134,7 @@ def _build_sparse_row(jid: str, q_item: dict, detail: dict) -> list:
     # ── ไม่ fallback ไป deptId map เพราะ dept ใหญ่มีหลายสาขาทั่วประเทศ ──
     # การเก็บ "province ของ project แรก" เป็น HQ ของ dept ผิด design
     # ถ้าหา province ไม่เจอ → ปล่อยว่าง (ลูกค้า filter จังหวัดจะไม่ได้รับ — safe กว่า)
-    dept_id = str(q_item.get("deptId", "")).strip()
-    search_text = f"{dept_name} {title}"
-    province = extract_province(search_text)
+    province = extract_province(dept_name, title)
 
     row_dict = {
         "title": title,

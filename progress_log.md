@@ -2265,3 +2265,29 @@ d08dda0 Dashboard: Vercel Blob real-time snapshot
 - **GHA workflow split (Plan B)** — ดู `memory/project_gha_workflow_split_todo.md` ประเมิน 7 วันหลัง 472c8b1
 - **5-digit deptIds expansion** — ยังไม่ scan 5K+ อบต./เทศบาล รอ probe 5-10 ตัวก่อนตัดสินใจ
 - **LINE Notify re-enable** — ปิดไว้ รอ per-customer province filter
+
+## งานที่ 23: Province Extraction System (2026-05-23)
+
+### สถานะ: ✅ เสร็จ
+
+### สิ่งที่ทำ
+ระบบแยกจังหวัดของงาน (text matching cascade 8 ชั้น) แทน substring-only เดิม
+- ชั้น: prefix(จ./อ./ต.) → org-cache(CGD) → bare province/อำเภอ/ตำบล (unique only)
+- ข้อมูล: thai_geo_raw.csv (อำเภอ unique 99.8%, ตำบล 87.1%) + exclusion list + national-org guard
+- org cache 800 หน่วยงาน จาก CGD (นครพนม+บึงกาฬ) — ground-truth, exact-match บน deptSubName
+
+### ผล (validate กับ CGD จริง, ground-truth จากพิกัด GPS)
+- precision: นครพนม 99.4% / บึงกาฬ 97.7% / nationwide 81.6% (จำกัดที่งานทางหลวงข้ามจังหวัด)
+- production deptSubName ตรงกับ CGD 100% (40/40) → org cache hit ชัวร์
+- backfill all_jobs: coverage 41% → 96.2% (11,683/12,146), เหลือว่าง 463 (ปล่อยว่างถูกต้อง)
+- แก้ bug admin-province เก่า: ฝายที่นครพนม เคยติดป้ายมุกดาหาร(จว.สำนักงาน) → แก้เป็นนครพนม(ที่ตั้งงาน)
+
+### ไฟล์
+สร้าง: scripts/{province_extractor,build_geo_lookup,build_org_cache,test_province_extractor,backfill_province}.py
+       data/{amphoe_lookup,tambon_lookup,geo_exclusion_list,cgd_org_province_cache}.json
+แก้: scripts/refresh_active_jobs.py (import extract_province แทน inline)
+backup: backups/all_jobs_province_*.json
+
+### Followup
+- ขยาย org cache เป็น 77 จังหวัด (รัน build_org_cache.py --provinces ...) เมื่อ scale
+- nationwide precision ต่ำเพราะงานทางหลวง/ประปาข้ามจังหวัด — Phase 3 ค่อยพิจารณา coordinate

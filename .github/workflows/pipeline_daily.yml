@@ -11,7 +11,7 @@ permissions:
 jobs:
   pipeline:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 55
 
     steps:
       - name: Checkout repo
@@ -41,12 +41,18 @@ jobs:
           ANTHROPIC_API_KEY:           ${{ secrets.ANTHROPIC_API_KEY }}
           VERCEL_DASHBOARD_URL:        ${{ secrets.VERCEL_DASHBOARD_URL }}
           REVALIDATE_SECRET:           ${{ secrets.REVALIDATE_SECRET }}
+          OPEND_USER_TOKEN:            ${{ secrets.OPEND_USER_TOKEN }}
         run: |
           set -e
           echo "=== Step 1: Refresh active jobs ==="
           # active+tor เต็ม + pending: งานประกาศ ≤30 วันเช็คทุกวัน (ช่วงลุ้นผู้ชนะ ~9 วัน)
           # + pending เก่าหมุนวน 1500/รอบ (เก็บตก) → กัน timeout แต่จับ winner เร็ว
           python scripts/refresh_active_jobs.py --expand --workers 5 --pending-recent-days 30 --max-pending 1500
+
+          echo "=== Step 1.5: Winner Sweep (CGD batch + eGP rotation) ==="
+          # Old pending (>30d): CGD province-batch ล้าง backlog + eGP rotation สำหรับ miss
+          # Recent pending ครอบคลุมโดย Step 1 refresh แล้ว — ไม่ซ้ำ
+          python scripts/winner_sweep.py --min-age-days 30 --max-cgd-calls 200 --max-egp 400 --workers 5 || true
 
           echo "=== Step 2: Patch missing deadlines ==="
           python scripts/patch_deadlines.py || true
@@ -68,7 +74,8 @@ jobs:
                   data/transitions_latest.json \
                   data/sheet_snapshot.json \
                   data/scrape_baseline.json \
-                  data/refresh_pending_cursor.json || true
+                  data/refresh_pending_cursor.json \
+                  data/winner_sweep_cursor.json || true
           git diff --staged --quiet || \
             git commit -m "chore: auto-update state files $(date -u '+%Y-%m-%d %H:%M') [skip ci]"
           git push || true

@@ -125,6 +125,31 @@ def _extract_winner_from_cgd(rec: dict) -> tuple[str, str, str]:
     return winner, price, award_date
 
 
+_SCHEMA_CACHE: dict[str, list[str]] = {}  # rid → [field_name, ...] in order
+
+
+def _get_cgd_schema(rid: str, token: str) -> list[str]:
+    """ดึง field order จริงจาก CKAN datastore_info — cache per rid"""
+    if rid in _SCHEMA_CACHE:
+        return _SCHEMA_CACHE[rid]
+    try:
+        r = requests.get(
+            f"{CKAN_BASE}/datastore_info",
+            params={"resource_id": rid},
+            headers={"api-key": token, "Accept": "application/json"},
+            timeout=15,
+        )
+        if r.ok:
+            fields = r.json().get("result", {}).get("fields", [])
+            names = [f["id"] for f in fields if "id" in f]
+            if names:
+                _SCHEMA_CACHE[rid] = names
+                return names
+    except Exception:
+        pass
+    return []
+
+
 def _cgd_datastore_search(rid: str, province: str, token: str,
                            limit: int = 1000, offset: int = 0) -> Optional[dict]:
     params = {
@@ -145,6 +170,22 @@ def _cgd_datastore_search(rid: str, province: str, token: str,
     return None
 
 
+def _winner_fields_from_schema(schema: list[str]) -> tuple[str, str, str]:
+    """
+    คืน (winner_field, price_field, date_field) จาก schema จริง
+    ถ้า schema ไม่มี หรือ field drift → fallback ไป heuristic เดิม
+    """
+    # หา winner field: ชื่อผู้ชนะ ก่อน — ถ้าไม่มีใน schema แสดงว่า drift
+    winner_candidates = ["ชื่อผู้ชนะ", "ละติจูดโครงการ", "เลขนิติบุคคล", "ลองจิจูดโครงการ"]
+    price_candidates  = ["ราคาตกลงซื้อ/จ้าง", "เลขที่สัญญา"]
+    date_candidates   = ["วันที่ลงนามสัญญา", "เลขนิติบุคคล"]
+
+    winner = next((f for f in winner_candidates if f in schema), winner_candidates[0])
+    price  = next((f for f in price_candidates  if f in schema), price_candidates[0])
+    date   = next((f for f in date_candidates   if f in schema), date_candidates[0])
+    return winner, price, date
+
+
 def _fetch_cgd_for_province(province: str, token: str, call_budget: int) -> tuple[dict, int]:
     """
     Download ทุก record ของ province จาก CGD (ทุก 10 files, paginate)
@@ -156,6 +197,11 @@ def _fetch_cgd_for_province(province: str, token: str, call_budget: int) -> tupl
     for rid in CGD_CONTRACT_RIDS:
         if calls >= call_budget:
             break
+
+        # ดึง schema จริงจาก CKAN เพื่อ map field ที่ drift ได้ถูกต้อง
+        schema = _get_cgd_schema(rid, token)
+        winner_f, price_f, date_f = _winner_fields_from_schema(schema)
+
         offset = 0
         while calls < call_budget:
             data = _cgd_datastore_search(rid, province, token, limit=1000, offset=offset)
@@ -171,7 +217,15 @@ def _fetch_cgd_for_province(province: str, token: str, call_budget: int) -> tupl
                 pid = str(rec.get("รหัสโครงการ", "")).strip()
                 if not pid:
                     continue
-                winner, price, award_date = _extract_winner_from_cgd(rec)
+                # ลอง schema-aware field ก่อน → fallback ไป heuristic ถ้าค่าผิดปกติ
+                winner = str(rec.get(winner_f, "") or "").strip()
+                if not _is_company_name(winner):
+                    # schema field ไม่ถูก (drift) → heuristic scan
+                    winner, price, award_date = _extract_winner_from_cgd(rec)
+                else:
+                    price      = str(rec.get(price_f, "") or "").strip()
+                    award_date = str(rec.get(date_f, "")  or "").strip()
+
                 if winner:
                     result[pid] = {
                         "winner_name": winner,
@@ -249,23 +303,62 @@ def sweep_egp(jids: list[str], budget_map: dict[str, str], workers: int) -> dict
     return results
 
 
-def _rotate_cursor(jids: list[str], max_n: int) -> list[str]:
-    if max_n <= 0 or len(jids) <= max_n:
+def _deadline_priority_select(jids: list[str], max_n: int,
+                               deadline_map: dict[str, datetime]) -> list[str]:
+    """
+    เลือก max_n jobs จาก jids โดยให้ priority กับงานที่ deadline ผ่านมาใหม่สุด
+
+    Tier A (deadline 0-60 วันที่ผ่านมา): เช็คทุกวัน — ตรวจเจอผู้ชนะวันเดียวกัน
+    Tier B (deadline >60 วัน หรือไม่รู้): หมุนวน cursor เหมือนเดิม
+
+    แก้ปัญหา: งานที่ประกาศผลวันนี้เจอภายใน 1-2 วัน แทน 25 วัน
+    """
+    if max_n <= 0:
+        return []
+    if len(jids) <= max_n:
         return jids
-    off = 0
-    if SWEEP_CURSOR.exists():
-        try:
-            off = int(json.loads(SWEEP_CURSOR.read_text(encoding="utf-8")).get("offset", 0))
-        except Exception:
-            off = 0
-    off %= len(jids)
-    sel = (jids + jids)[off:off + max_n]
-    SWEEP_CURSOR.write_text(
-        json.dumps({"offset": (off + max_n) % len(jids), "total": len(jids),
-                    "updated": datetime.now().isoformat(timespec="seconds")}),
-        encoding="utf-8",
-    )
-    return sel
+
+    today = datetime.now()
+    HIGH_PRIORITY_DAYS = 60  # deadline ผ่านมาไม่เกิน 60 วัน → ตรวจทุกวัน
+
+    tier_a, tier_b = [], []
+    for jid in jids:
+        dl = deadline_map.get(jid)
+        if dl:
+            days_past = (today - dl).days
+            if 0 <= days_past <= HIGH_PRIORITY_DAYS:
+                tier_a.append((jid, days_past))
+            else:
+                tier_b.append(jid)
+        else:
+            tier_b.append(jid)
+
+    # Tier A: เรียงจาก deadline ผ่านมาใหม่สุด (งานสดกว่า → priority สูงกว่า)
+    tier_a.sort(key=lambda x: x[1])
+    tier_a_jids = [jid for jid, _ in tier_a]
+
+    selected = tier_a_jids[:max_n]
+    remaining = max_n - len(selected)
+
+    # Tier B: หมุนวน cursor สำหรับงานเก่า (backlog เคลียร์ช้าๆ)
+    if remaining > 0 and tier_b:
+        off = 0
+        if SWEEP_CURSOR.exists():
+            try:
+                off = int(json.loads(SWEEP_CURSOR.read_text(encoding="utf-8")).get("offset", 0))
+            except Exception:
+                off = 0
+        off %= len(tier_b)
+        sel_b = (tier_b + tier_b)[off:off + remaining]
+        selected.extend(sel_b)
+        SWEEP_CURSOR.write_text(
+            json.dumps({"offset": (off + remaining) % len(tier_b),
+                        "total_tier_b": len(tier_b),
+                        "updated": datetime.now().isoformat(timespec="seconds")}),
+            encoding="utf-8",
+        )
+
+    return selected
 
 
 def _load_env():
@@ -308,16 +401,18 @@ def main():
     rows = ws.get_all_values()
     hdrs = rows[0]
     h = {col: i for i, col in enumerate(hdrs)}
-    pub_i    = h.get("publish_date", -1)
-    prov_i   = h.get("province", -1)
-    budget_i = h.get("budget", -1)
+    pub_i      = h.get("publish_date", -1)
+    prov_i     = h.get("province", -1)
+    budget_i   = h.get("budget", -1)
+    deadline_i = h.get("deadline", -1)
 
     cache = _load_cache()
     today = datetime.now()
 
     old_by_province: dict[str, list[str]] = {}  # province → [jid]
     old_no_province: list[str] = []
-    budget_map: dict[str, str] = {}
+    budget_map:   dict[str, str]      = {}
+    deadline_map: dict[str, datetime] = {}  # jid → deadline datetime (สำหรับ priority sort)
 
     for r in rows[1:]:
         if not r or not r[0]:
@@ -325,14 +420,19 @@ def main():
         jid = r[0].strip()
         if jid in cache:
             continue   # winner รู้แล้ว — skip
-        pub  = r[pub_i].strip()  if 0 <= pub_i < len(r)    else ""
-        prov = r[prov_i].strip() if 0 <= prov_i < len(r)   else ""
+        pub      = r[pub_i].strip()      if 0 <= pub_i < len(r)      else ""
+        prov     = r[prov_i].strip()     if 0 <= prov_i < len(r)     else ""
+        deadline = r[deadline_i].strip() if 0 <= deadline_i < len(r) else ""
         budget_map[jid] = r[budget_i].strip() if 0 <= budget_i < len(r) else ""
 
         d = _parse_thai_date(pub)
         age_days = (today - d).days if d else 999
         if age_days < args.min_age_days:
             continue   # recent → refresh handles it
+
+        dl = _parse_thai_date(deadline)
+        if dl:
+            deadline_map[jid] = dl
 
         if prov:
             old_by_province.setdefault(prov, []).append(jid)
@@ -375,8 +475,11 @@ def main():
     unmatched_jids.extend(old_no_province)
 
     if unmatched_jids and args.max_egp > 0:
-        sel = _rotate_cursor(unmatched_jids, args.max_egp)
-        log(f"\n[Pass 2] eGP rotation: {len(sel)}/{len(unmatched_jids)} unmatched (workers={args.workers})...")
+        sel = _deadline_priority_select(unmatched_jids, args.max_egp, deadline_map)
+        tier_a_cnt = sum(1 for j in sel if deadline_map.get(j) and
+                         0 <= (today - deadline_map[j]).days <= 60)
+        log(f"\n[Pass 2] eGP priority: {len(sel)}/{len(unmatched_jids)} unmatched "
+            f"(tier_a={tier_a_cnt} recent ≤60d | tier_b={len(sel)-tier_a_cnt} old | workers={args.workers})")
         t0 = datetime.now()
         egp_updates = sweep_egp(sel, budget_map, args.workers)
         cache.update(egp_updates)

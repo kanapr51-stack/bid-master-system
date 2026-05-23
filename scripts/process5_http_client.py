@@ -10,6 +10,7 @@ Usage:
 
 import sys
 import time
+import random
 import requests
 from typing import Optional
 
@@ -30,22 +31,30 @@ HEADERS = {
     "Accept-Language": "th-TH,th;q=0.9,en-US;q=0.8,en;q=0.7",
 }
 
-TIMEOUT        = 15   # วินาที ต่อ request
-RATE_LIMIT_SLEEP = 90 # วินาที รอเมื่อโดน rate limit
-MAX_RETRIES    = 3
+TIMEOUT     = 15  # วินาที ต่อ request
+MAX_RETRIES = 3
+_RL_BASE    = 30  # exponential backoff base (วินาที)
+_RL_CAP     = 300 # cap สูงสุด (5 นาที)
+
+
+def _rl_sleep(attempt: int):
+    """Exponential backoff + jitter: 30s → 60s → 120s (+ random 0-15s)"""
+    wait = min(_RL_BASE * (2 ** (attempt - 1)), _RL_CAP) + random.uniform(0, 15)
+    time.sleep(wait)
 
 
 def _get(url: str, params: dict = None, retries: int = MAX_RETRIES) -> Optional[dict]:
     """
     GET url → JSON dict หรือ None ถ้าล้มเหลวหลัง retry ครบ
     Rate limit detection: response code 429 หรือ body ที่มี 'Rate limit'
+    Backoff: exponential 30s→60s→120s + jitter แทน fixed 90s
     """
     for attempt in range(1, retries + 1):
         try:
             r = requests.get(url, params=params, headers=HEADERS, timeout=TIMEOUT)
             if r.status_code == 429:
                 if attempt < retries:
-                    time.sleep(RATE_LIMIT_SLEEP)
+                    _rl_sleep(attempt)
                     continue
                 return None
             if not r.ok:
@@ -53,13 +62,13 @@ def _get(url: str, params: dict = None, retries: int = MAX_RETRIES) -> Optional[
             text = r.text
             if "Rate limit" in text or "rate limit" in text.lower():
                 if attempt < retries:
-                    time.sleep(RATE_LIMIT_SLEEP)
+                    _rl_sleep(attempt)
                     continue
                 return None
             return r.json()
         except requests.Timeout:
             if attempt < retries:
-                time.sleep(3)
+                time.sleep(3 * attempt)
                 continue
             return None
         except Exception:

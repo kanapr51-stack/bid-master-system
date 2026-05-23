@@ -27,6 +27,31 @@ from process5_http_client import get_project_detail, get_procure_result
 
 SPREADSHEET_ID   = "1gz7qLDIWphDhqxLf8Pxm08_cPmNb_IXTDvyxm6uThps"
 WINNER_CACHE     = Path(__file__).parent.parent / "data" / "winner_cache_bootstrap.json"
+PENDING_CURSOR   = Path(__file__).parent.parent / "data" / "refresh_pending_cursor.json"
+
+
+def _rotate_pending(jids: list[str], max_n: int) -> list[str]:
+    """
+    เลือก pending_award แค่ max_n งานต่อรอบ แบบหมุนวน (cursor) — กัน timeout
+    (pending_award 10K+ งาน, re-fetch ทุกงานทุกวันไม่ไหว) ครบทุกงานใน ceil(N/max_n) รอบ
+    """
+    if max_n <= 0 or len(jids) <= max_n:
+        return jids
+    off = 0
+    if PENDING_CURSOR.exists():
+        try:
+            off = int(json.loads(PENDING_CURSOR.read_text(encoding="utf-8")).get("offset", 0))
+        except (json.JSONDecodeError, ValueError):
+            off = 0
+    off %= len(jids)
+    sel = (jids + jids)[off:off + max_n]   # wrap-around
+    new_off = (off + max_n) % len(jids)
+    PENDING_CURSOR.write_text(
+        json.dumps({"offset": new_off, "total": len(jids),
+                    "updated": datetime.now().isoformat(timespec="seconds")}),
+        encoding="utf-8",
+    )
+    return sel
 
 # Note: เคยมี deptid_province_map.json — ลบ design ทิ้ง เพราะ dept ใหญ่มีหลายสาขา
 # การเก็บ province ของ project แรกเป็น HQ ของ dept ทั้งหมดทำให้ routing ลูกค้าผิด
@@ -182,6 +207,8 @@ def main():
     ap.add_argument("--dry-run",   action="store_true", help="ไม่ write จริง — แค่ log")
     ap.add_argument("--limit",     type=int, default=0, help="จำกัด jobs (สำหรับ test)")
     ap.add_argument("--workers",   type=int, default=3, help="parallel workers (default 3)")
+    ap.add_argument("--max-pending", type=int, default=2000,
+                    help="จำกัด pending_award ต่อรอบ (rotating, กัน timeout; 0=ไม่จำกัด)")
     args = ap.parse_args()
 
     log("=" * 60)
@@ -212,17 +239,28 @@ def main():
         target_jids = [j.strip() for j in args.jids.split(",") if j.strip()]
         log(f"  targeted refresh: {len(target_jids)} jobs")
     elif args.expand:
-        target_jids = []
-        for sn in ("active_bidding", "tor_review", "pending_award"):
+        # active + tor = งานที่ลูกค้าประมูลได้/กำลังเปลี่ยน → refresh เต็มทุกรอบ
+        core_jids = []
+        for sn in ("active_bidding", "tor_review"):
             try:
                 ws = open_sheet(SPREADSHEET_ID, sn)
                 rows = ws.get_all_values()
                 jids = [r[0] for r in rows[1:] if r and r[0]]
-                target_jids.extend(jids)
+                core_jids.extend(jids)
                 log(f"  {sn}: +{len(jids)} jobs")
             except Exception as e:
                 log(f"  {sn}: error {e}")
-        target_jids = list(dict.fromkeys(target_jids))
+        # pending_award = รอประกาศผู้ชนะ (10K+) → rotating batch กัน timeout
+        pending_jids = []
+        try:
+            ws = open_sheet(SPREADSHEET_ID, "pending_award")
+            rows = ws.get_all_values()
+            pending_jids = [r[0] for r in rows[1:] if r and r[0]]
+        except Exception as e:
+            log(f"  pending_award: error {e}")
+        sel_pending = _rotate_pending(pending_jids, args.max_pending)
+        log(f"  pending_award: {len(pending_jids)} total → batch {len(sel_pending)} (rotating)")
+        target_jids = list(dict.fromkeys(core_jids + sel_pending))
         log(f"  expand mode: {len(target_jids)} unique jobs")
     else:
         ws_act = open_sheet(SPREADSHEET_ID, "active_bidding")

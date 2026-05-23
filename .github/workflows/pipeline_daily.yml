@@ -68,7 +68,10 @@ jobs:
           # rotation cursor: quota หมดกลางคัน → ต่อพรุ่งนี้
           python scripts/cgd_discovery.py --provinces all --max-calls 600 || true
 
-          echo "=== Step 3: Patch missing deadlines ==="
+          echo "=== Step 3: Enrich dept names ==="
+          python scripts/enrich_dept_names.py --limit 50 || true
+
+          echo "=== Step 3.5: Patch missing deadlines ==="
           python scripts/patch_deadlines.py || true
 
           echo "=== Step 4: Classify (rebuild derived sheets) ==="
@@ -92,7 +95,8 @@ jobs:
                   data/winner_sweep_cursor.json \
                   data/cgd_discovery_seen.json \
                   data/rss_queue.json \
-                  data/_discover_alljobs_cache.json || true
+                  data/_discover_alljobs_cache.json \
+                  data/egp_deptid_catalog.json || true
           git diff --staged --quiet || \
             git commit -m "chore: auto-update state files $(date -u '+%Y-%m-%d %H:%M') [skip ci]"
           git push || true

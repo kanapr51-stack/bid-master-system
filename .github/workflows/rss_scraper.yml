@@ -90,7 +90,7 @@ jobs:
           DISCORD_BOT_TOKEN:           ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_CHANNEL_ID:          ${{ secrets.DISCORD_CHANNEL_ID }}
         run: |
-          python scripts/refresh_active_jobs.py --from-queue --workers 5 || true
+          python scripts/refresh_active_jobs.py --from-queue --workers 5 --limit 200 || true
 
       - name: Commit winner cache
         if: always()

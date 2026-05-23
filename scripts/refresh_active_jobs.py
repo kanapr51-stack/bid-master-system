@@ -30,11 +30,24 @@ WINNER_CACHE     = Path(__file__).parent.parent / "data" / "winner_cache_bootstr
 PENDING_CURSOR   = Path(__file__).parent.parent / "data" / "refresh_pending_cursor.json"
 
 
-def _rotate_pending(jids: list[str], max_n: int) -> list[str]:
-    """
-    เลือก pending_award แค่ max_n งานต่อรอบ แบบหมุนวน (cursor) — กัน timeout
-    (pending_award 10K+ งาน, re-fetch ทุกงานทุกวันไม่ไหว) ครบทุกงานใน ceil(N/max_n) รอบ
-    """
+def _parse_thai_date(s: str):
+    """แปลงวันที่ DD/MM/YYYY (รองรับ พ.ศ.) หรือ ISO → datetime หรือ None"""
+    s = str(s).strip()[:10]
+    if not s:
+        return None
+    for fmt in ("%d/%m/%Y", "%Y-%m-%d", "%d/%m/%y"):
+        try:
+            d = datetime.strptime(s, fmt)
+            if d.year >= 2400:          # พ.ศ. → ค.ศ.
+                d = d.replace(year=d.year - 543)
+            return d
+        except ValueError:
+            continue
+    return None
+
+
+def _rotate_old(jids: list[str], max_n: int) -> list[str]:
+    """หมุนวน (cursor) เลือก max_n จาก jids — สำหรับ pending เก่า (เก็บตก/เคลียร์งานตาย)"""
     if max_n <= 0 or len(jids) <= max_n:
         return jids
     off = 0
@@ -45,13 +58,30 @@ def _rotate_pending(jids: list[str], max_n: int) -> list[str]:
             off = 0
     off %= len(jids)
     sel = (jids + jids)[off:off + max_n]   # wrap-around
-    new_off = (off + max_n) % len(jids)
     PENDING_CURSOR.write_text(
-        json.dumps({"offset": new_off, "total": len(jids),
+        json.dumps({"offset": (off + max_n) % len(jids), "total": len(jids),
                     "updated": datetime.now().isoformat(timespec="seconds")}),
         encoding="utf-8",
     )
     return sel
+
+
+def _select_pending(pairs: list[tuple], recent_days: int, max_old: int) -> list[str]:
+    """
+    pairs = [(job_id, publish_date), ...]
+    คืน job_ids ที่จะ refresh:
+      - งานประกาศ ≤ recent_days วัน → เช็คทุกวัน (อยู่ในช่วงลุ้นผู้ชนะ ~9 วันหลังปิดซอง)
+      - งานเก่ากว่านั้น → หมุนวน max_old/รอบ (เก็บตกผู้ชนะที่ประกาศช้า + เคลียร์งานตาย)
+    """
+    today = datetime.now()
+    recent, old = [], []
+    for jid, pub in pairs:
+        d = _parse_thai_date(pub)
+        if d and 0 <= (today - d).days <= recent_days:
+            recent.append(jid)
+        else:
+            old.append(jid)
+    return recent + _rotate_old(old, max_old)
 
 # Note: เคยมี deptid_province_map.json — ลบ design ทิ้ง เพราะ dept ใหญ่มีหลายสาขา
 # การเก็บ province ของ project แรกเป็น HQ ของ dept ทั้งหมดทำให้ routing ลูกค้าผิด
@@ -207,8 +237,10 @@ def main():
     ap.add_argument("--dry-run",   action="store_true", help="ไม่ write จริง — แค่ log")
     ap.add_argument("--limit",     type=int, default=0, help="จำกัด jobs (สำหรับ test)")
     ap.add_argument("--workers",   type=int, default=3, help="parallel workers (default 3)")
-    ap.add_argument("--max-pending", type=int, default=2000,
-                    help="จำกัด pending_award ต่อรอบ (rotating, กัน timeout; 0=ไม่จำกัด)")
+    ap.add_argument("--pending-recent-days", type=int, default=30,
+                    help="pending ที่ประกาศ ≤N วัน → เช็คทุกวัน (ช่วงลุ้นผู้ชนะ)")
+    ap.add_argument("--max-pending", type=int, default=1500,
+                    help="จำกัด pending 'เก่า' (>recent-days) ต่อรอบ แบบหมุนวน; 0=ไม่จำกัด")
     args = ap.parse_args()
 
     log("=" * 60)
@@ -250,16 +282,22 @@ def main():
                 log(f"  {sn}: +{len(jids)} jobs")
             except Exception as e:
                 log(f"  {sn}: error {e}")
-        # pending_award = รอประกาศผู้ชนะ (10K+) → rotating batch กัน timeout
-        pending_jids = []
+        # pending_award = รอประกาศผู้ชนะ (10K+) → จัดลำดับด้วย publish_date กัน timeout
+        pending_pairs = []
         try:
             ws = open_sheet(SPREADSHEET_ID, "pending_award")
             rows = ws.get_all_values()
-            pending_jids = [r[0] for r in rows[1:] if r and r[0]]
+            ph = {h: i for i, h in enumerate(rows[0])}
+            pub_i = ph.get("publish_date", -1)
+            for r in rows[1:]:
+                if r and r[0]:
+                    pub = r[pub_i] if 0 <= pub_i < len(r) else ""
+                    pending_pairs.append((r[0], pub))
         except Exception as e:
             log(f"  pending_award: error {e}")
-        sel_pending = _rotate_pending(pending_jids, args.max_pending)
-        log(f"  pending_award: {len(pending_jids)} total → batch {len(sel_pending)} (rotating)")
+        sel_pending = _select_pending(pending_pairs, args.pending_recent_days, args.max_pending)
+        log(f"  pending_award: {len(pending_pairs)} total → "
+            f"refresh {len(sel_pending)} (recent ≤{args.pending_recent_days}d + old rotate {args.max_pending})")
         target_jids = list(dict.fromkeys(core_jids + sel_pending))
         log(f"  expand mode: {len(target_jids)} unique jobs")
     else:

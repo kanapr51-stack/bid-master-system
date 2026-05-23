@@ -11,7 +11,7 @@ permissions:
 jobs:
   pipeline:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Checkout repo
@@ -44,8 +44,9 @@ jobs:
         run: |
           set -e
           echo "=== Step 1: Refresh active jobs ==="
-          # active+tor refresh เต็ม + pending_award rotating 2000/รอบ (กัน timeout, ครบใน ~6 วัน)
-          python scripts/refresh_active_jobs.py --expand --workers 5 --max-pending 2000
+          # active+tor เต็ม + pending: งานประกาศ ≤30 วันเช็คทุกวัน (ช่วงลุ้นผู้ชนะ ~9 วัน)
+          # + pending เก่าหมุนวน 1500/รอบ (เก็บตก) → กัน timeout แต่จับ winner เร็ว
+          python scripts/refresh_active_jobs.py --expand --workers 5 --pending-recent-days 30 --max-pending 1500
 
           echo "=== Step 2: Patch missing deadlines ==="
           python scripts/patch_deadlines.py || true

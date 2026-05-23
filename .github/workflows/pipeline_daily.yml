@@ -54,16 +54,20 @@ jobs:
           # Recent pending ครอบคลุมโดย Step 1 refresh แล้ว — ไม่ซ้ำ
           python scripts/winner_sweep.py --min-age-days 30 --max-cgd-calls 200 --max-egp 400 --workers 5 || true
 
-          echo "=== Step 2: Patch missing deadlines ==="
+          echo "=== Step 2: CGD Discovery (local govt: อบต./เทศบาล/โรงพยาบาล) ==="
+          # Province-batch download → delta vs all_jobs → append new awarded jobs + update winner_cache
+          python scripts/cgd_discovery.py --provinces "นครพนม,บึงกาฬ" --max-calls 400 || true
+
+          echo "=== Step 3: Patch missing deadlines ==="
           python scripts/patch_deadlines.py || true
 
-          echo "=== Step 3: Classify (rebuild derived sheets) ==="
+          echo "=== Step 4: Classify (rebuild derived sheets) ==="
           python scripts/Sebastian_Classifier.py
 
-          echo "=== Step 4: LINE Notify (ปิดชั่วคราว — รอ province filter สำหรับ SaaS) ==="
+          echo "=== Step 5: LINE Notify (ปิดชั่วคราว — รอ province filter สำหรับ SaaS) ==="
           # python scripts/Sebastian_LINE_Notify.py || true
 
-          echo "=== Step 5: Dashboard snapshot ==="
+          echo "=== Step 6: Dashboard snapshot ==="
           python scripts/dashboard_extractor.py || true
 
       - name: Commit updated state files
@@ -75,7 +79,8 @@ jobs:
                   data/sheet_snapshot.json \
                   data/scrape_baseline.json \
                   data/refresh_pending_cursor.json \
-                  data/winner_sweep_cursor.json || true
+                  data/winner_sweep_cursor.json \
+                  data/cgd_discovery_seen.json || true
           git diff --staged --quiet || \
             git commit -m "chore: auto-update state files $(date -u '+%Y-%m-%d %H:%M') [skip ci]"
           git push || true

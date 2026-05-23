@@ -305,6 +305,9 @@ def queue_for_lookup(items_to_queue: list[dict]):
             "link": item.get("link", ""),
             "queued_at": now,
             "source": "rss",
+            # anounceType (camelCase) จาก fetch_dept → เก็บเป็น anounce_type (snake_case)
+            # ให้ refresh_active_jobs.py ใช้ p0 fallback ได้
+            "anounce_type": item.get("anounceType", ""),
         })
         added += 1
     RSS_QUEUE_FILE.write_text(

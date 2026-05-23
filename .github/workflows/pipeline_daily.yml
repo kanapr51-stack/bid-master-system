@@ -54,9 +54,11 @@ jobs:
           # Recent pending ครอบคลุมโดย Step 1 refresh แล้ว — ไม่ซ้ำ
           python scripts/winner_sweep.py --min-age-days 30 --max-cgd-calls 200 --max-egp 400 --workers 5 || true
 
-          echo "=== Step 2: CGD Discovery (local govt: อบต./เทศบาล/โรงพยาบาล) ==="
-          # Province-batch download → delta vs all_jobs → append new awarded jobs + update winner_cache
-          python scripts/cgd_discovery.py --provinces "นครพนม,บึงกาฬ" --max-calls 400 || true
+          echo "=== Step 2: CGD Discovery (ทั้งประเทศ — ingest-once + filter-per-tenant) ==="
+          # Province-batch download ทุกจังหวัด → delta vs all_jobs → append new awarded jobs + update winner_cache
+          # early-stop: skip resource เมื่อ page เต็มไปด้วย seen IDs (ลด calls หลัง first run)
+          # rotation cursor: quota หมดกลางคัน → ต่อพรุ่งนี้
+          python scripts/cgd_discovery.py --provinces all --max-calls 600 || true
 
           echo "=== Step 3: Patch missing deadlines ==="
           python scripts/patch_deadlines.py || true

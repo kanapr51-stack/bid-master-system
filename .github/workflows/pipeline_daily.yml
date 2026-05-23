@@ -11,7 +11,7 @@ permissions:
 jobs:
   pipeline:
     runs-on: ubuntu-latest
-    timeout-minutes: 55
+    timeout-minutes: 75
 
     steps:
       - name: Checkout repo
@@ -27,6 +27,9 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r requirements.txt
+
+      - name: Install Playwright browser
+        run: playwright install chromium --with-deps
 
       - name: Run pipeline — refresh + patch + classify + notify
         env:
@@ -44,6 +47,11 @@ jobs:
           OPEND_USER_TOKEN:            ${{ secrets.OPEND_USER_TOKEN }}
         run: |
           set -e
+          echo "=== Step 0: eGP Keyword Discovery (ทั้งประเทศ — อบต./เทศบาล/รพ./โรงเรียน) ==="
+          # Playwright bypass CF Turnstile → search 77 จังหวัด → queue new projectIds
+          # rss_scraper.yml (hourly) จะ process queue ต่อ
+          python scripts/discover_jobs_playwright.py --provinces all --max-pages 15 || true
+
           echo "=== Step 1: Refresh active jobs ==="
           # active+tor เต็ม + pending: งานประกาศ ≤30 วันเช็คทุกวัน (ช่วงลุ้นผู้ชนะ ~9 วัน)
           # + pending เก่าหมุนวน 1500/รอบ (เก็บตก) → กัน timeout แต่จับ winner เร็ว
@@ -82,7 +90,9 @@ jobs:
                   data/scrape_baseline.json \
                   data/refresh_pending_cursor.json \
                   data/winner_sweep_cursor.json \
-                  data/cgd_discovery_seen.json || true
+                  data/cgd_discovery_seen.json \
+                  data/rss_queue.json \
+                  data/_discover_alljobs_cache.json || true
           git diff --staged --quiet || \
             git commit -m "chore: auto-update state files $(date -u '+%Y-%m-%d %H:%M') [skip ci]"
           git push || true

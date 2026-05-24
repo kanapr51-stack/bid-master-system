@@ -1503,5 +1503,25 @@
     "queued_at": "2026-05-24T17:54:53",
     "source": "rss",
     "anounce_type": "W0"
+  },
+  {
+    "projectId": "P69050017823",
+    "title": "โครงการพัฒนาระบบงานธุรการและสารสนเทศ",
+    "deptId": "",
+    "pubDate": "2026-05-25",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=M69050015330&amp;templateType=P0&amp;temp_Announ=P&amp;temp_itemNo=&amp;seqNo=",
+    "queued_at": "2026-05-24T19:45:36",
+    "source": "rss",
+    "anounce_type": "P0"
+  },
+  {
+    "projectId": "69059390536",
+    "title": "จ้างงานวางท่อเหล็กขนาด 400 มม. และก่อสร้างโครงเหล็กถักรับท่อข้ามแม่น้ำแม่แตง เนื่องจากเหตุอุทกภัย ตำบลสันมหาพน อำเภอแม่แตง จังหวัดเชียงใหม่ การประปาส่วนภูมิภาคสาขาแม่แตง โดยวิธีคัดเลือก",
+    "deptId": "",
+    "pubDate": "2026-05-25",
+    "link": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&amp;proc_id=ShowHTMLFile&amp;processFlows=Procure&amp;projectId=69059390536&amp;templateType=W2&amp;temp_Announ=A&amp;temp_itemNo=0&amp;seqNo=1",
+    "queued_at": "2026-05-24T19:45:36",
+    "source": "rss",
+    "anounce_type": "W0"
   }
 ]

@@ -1,0 +1,15 @@
+{
+  "sheets": {
+    "all_jobs": 43150,
+    "awarded_jobs": 31918,
+    "pending_award": 11096,
+    "active_bidding": 1,
+    "tor_review": 0,
+    "pre_tor": 12,
+    "cancelled_jobs": 120
+  },
+  "non_nakhon": 0,
+  "winner_cache": 31918,
+  "seen_set": 37576,
+  "checked_at": "2026-05-25 04:43"
+}

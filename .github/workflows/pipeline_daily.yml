@@ -76,6 +76,14 @@ jobs:
             git commit -m "chore: daily-pipeline state $(date -u '+%Y-%m-%d %H:%M') [skip ci]"
           git push || true
 
+      - name: Health Check — deterministic
+        if: success()
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          DISCORD_BOT_TOKEN:           ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID:          ${{ secrets.DISCORD_CHANNEL_ID }}
+        run: python scripts/sebastian_health_check.py || true
+
       - name: Discord — success report
         if: success()
         env:

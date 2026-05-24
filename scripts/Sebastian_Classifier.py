@@ -115,6 +115,8 @@ LETTER_TO_SHEET = {
     "I": "pending_award",   # I03 = implementation
     "E": "pending_award",   # E03 = re-bid variants
     "X": "pending_award",   # X01/X03 = rare winner variants
+    "O": "pending_award",   # O01/O03 = announce=W0 ไม่มี winner → pending (พบจริงในข้อมูล)
+    "R": "pending_award",   # R01 = rare variant → pending (พบจริงในข้อมูล)
     "Q": "pre_tor",         # Q01/Q03 = early prep (Quote stage)
     "B": "cancelled_jobs",  # B01/B03 = cancelled (Block stage)
 }

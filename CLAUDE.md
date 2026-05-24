@@ -71,6 +71,48 @@ send(token, ch, "ข้อความที่จะส่ง")
 
 ---
 
+## 🔍 Sanity Check Protocol (บังคับก่อนขั้นตอนถัดไปทุกครั้ง)
+
+**ทุกครั้งที่แก้ไข เพิ่ม หรือดัดแปลงไฟล์ / สคริปต์ / pipeline — ต้องรัน sanity check ก่อนขั้นตอนถัดไปเสมอ**
+
+### สิ่งที่ต้องตรวจ (เลือกตามบริบท):
+
+| สิ่งที่ทำ | Sanity Check ที่ต้องทำ |
+|---|---|
+| **เพิ่ม/แก้ data ingestion** | row count, duplicate IDs, province filter, empty fields |
+| **แก้ winner extraction** | ตรวจ sample winners ว่า match company pattern, ไม่มี garbage |
+| **แก้ classifier / state machine** | นับ job count per sheet, ไม่มี job หายหรือซ้ำ |
+| **แก้ pipeline script** | ดู exit code, log ว่ามี silent error ไหม |
+| **แก้ GHA workflow** | ดู step log ครบ, ไม่มี `|| true` ที่กลบ error สำคัญ |
+| **เพิ่ม/แก้ CGD discovery** | winner count, seen set size, duplicate check |
+
+### วิธีตรวจ (template):
+```python
+# row count + province
+rows = ws.get_all_values()[1:]
+print(f'rows: {len(rows)}')
+from collections import Counter
+print(Counter(r[3] for r in rows).most_common(5))
+
+# duplicate IDs
+ids = [r[0] for r in rows if r]
+dups = {k:v for k,v in Counter(ids).items() if v>1}
+print(f'duplicates: {len(dups)}')
+
+# winner cache
+cache = json.loads(open('data/winner_cache_bootstrap.json').read())
+print(f'winner_cache: {len(cache)}')
+```
+
+### กฎ:
+1. ถ้าพบ **duplicate IDs** — หาสาเหตุก่อน อย่า commit
+2. ถ้าพบ **silent error** (`|| true`, exception ถูก swallow) — fix ก่อน
+3. ถ้า **row count ต่างจากที่คาด > 5%** — ตรวจสาเหตุก่อน
+4. ถ้า **winner extraction เปลี่ยน** — test กับ real records ก่อน commit เสมอ
+5. บันทึกผล sanity check ใน `progress_log.md` ทุกครั้ง
+
+---
+
 ## 🔄 Resume Protocol (ถ้า Claude ใหม่เข้ามาทำต่อ)
 
 **ถ้าคุณกัญจน์ส่งข้อความใดข้อความหนึ่งต่อไปนี้:**

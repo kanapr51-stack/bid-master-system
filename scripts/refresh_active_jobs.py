@@ -47,8 +47,12 @@ def _parse_thai_date(s: str):
 
 
 def _rotate_old(jids: list[str], max_n: int) -> list[str]:
-    """หมุนวน (cursor) เลือก max_n จาก jids — สำหรับ pending เก่า (เก็บตก/เคลียร์งานตาย)"""
-    if max_n <= 0 or len(jids) <= max_n:
+    """หมุนวน (cursor) เลือก max_n จาก jids — สำหรับ pending เก่า (เก็บตก/เคลียร์งานตาย)
+    max_n=0 → skip ทั้งหมด | max_n<0 → ไม่จำกัด | max_n>0 → rotate
+    """
+    if max_n == 0:
+        return []   # skip all old pending explicitly
+    if max_n < 0 or len(jids) <= max_n:
         return jids
     off = 0
     if PENDING_CURSOR.exists():
@@ -70,9 +74,12 @@ def _select_pending(pairs: list[tuple], recent_days: int, max_old: int) -> list[
     """
     pairs = [(job_id, publish_date), ...]
     คืน job_ids ที่จะ refresh:
+      - max_old=0 → skip ทั้งหมด (recent + old) — ใช้เมื่อต้องการรัน active+tor เท่านั้น
       - งานประกาศ ≤ recent_days วัน → เช็คทุกวัน (อยู่ในช่วงลุ้นผู้ชนะ ~9 วันหลังปิดซอง)
       - งานเก่ากว่านั้น → หมุนวน max_old/รอบ (เก็บตกผู้ชนะที่ประกาศช้า + เคลียร์งานตาย)
     """
+    if max_old == 0:
+        return []  # skip all pending — ลด runtime สำหรับ daily pipeline
     today = datetime.now()
     recent, old = [], []
     for jid, pub in pairs:

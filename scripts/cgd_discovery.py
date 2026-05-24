@@ -202,10 +202,12 @@ def _cgd_search(rid: str, province: str, token: str,
     return None
 
 
-def _fetch_new_for_province(province: str, token: str, seen: set[str],
+def _fetch_new_for_province(province: str, token: str, seen_cgd: set[str],
                              calls_budget: int) -> tuple[list[dict], int]:
     """
-    Download new CGD records for province (early-stop when page is fully seen).
+    Download CGD records not yet in seen_cgd for province.
+    Early-stop when entire page is already in seen_cgd (CGD-processed IDs only —
+    NOT all_jobs IDs, so we still fetch winner data for known jobs).
     Returns (new_records_list, calls_used).
     """
     new_records: list[dict] = []
@@ -226,12 +228,13 @@ def _fetch_new_for_province(province: str, token: str, seen: set[str],
                 break
             total = data.get("result", {}).get("total", 0)
 
+            # Filter: only records NOT yet processed by CGD discovery
             page_new = [r for r in records
-                        if str(r.get("รหัสโครงการ", "")).strip() not in seen]
+                        if str(r.get("รหัสโครงการ", "")).strip() not in seen_cgd]
             new_records.extend(page_new)
             rid_new += len(page_new)
 
-            # Early-stop: ทุก record บนหน้านี้เจอใน seen set แล้ว → หยุดทั้ง resource
+            # Early-stop: ทุก record บนหน้านี้เจอใน seen_cgd แล้ว → หยุดทั้ง resource
             if not page_new:
                 break
 
@@ -421,9 +424,6 @@ def main():
     winner_cache = _load_winner_cache()
     log(f"  cgd seen: {len(seen_cgd)} | winner_cache: {len(winner_cache)}")
 
-    # seen สำหรับ early-stop = all_jobs IDs ∪ cgd_discovery_seen IDs
-    seen_combined = known_ids | seen_cgd
-
     calls_left       = args.max_calls
     new_rows: list[list] = []
     total_new_jobs   = 0
@@ -440,21 +440,23 @@ def main():
                 f"(index {real_offset}) | {remaining} จังหวัดเหลือ → ต่อพรุ่งนี้")
             break
 
-        new_records, calls = _fetch_new_for_province(province, token, seen_combined, calls_left)
+        # Early-stop ใช้เฉพาะ seen_cgd (CGD-processed IDs) —
+        # ไม่รวม known_ids เพื่อให้ดึง winner data สำหรับ jobs ที่อยู่ใน all_jobs แล้ว
+        new_records, calls = _fetch_new_for_province(province, token, seen_cgd, calls_left)
         calls_left -= calls
         provinces_done += 1
 
         if not new_records:
             continue  # ไม่มีใหม่ — ข้าม (ไม่ log เพื่อลด noise)
 
-        log(f"  [{province}] +{len(new_records)} new records | calls {calls} (เหลือ {calls_left})")
+        log(f"  [{province}] +{len(new_records)} CGD records | calls {calls} (เหลือ {calls_left})")
 
         for rec in new_records:
             pid = str(rec.get("รหัสโครงการ", "")).strip()
             if not pid:
                 continue
 
-            # Winner cache update (รวมถึง jobs ที่อยู่ใน all_jobs แล้ว)
+            # Winner cache update สำหรับ ทุก record (รวมถึง jobs ที่อยู่ใน all_jobs แล้ว)
             winner_name, winner_price, award_date = _extract_winner(rec)
             budget_raw = rec.get("งบประมาณ(บาท)", "")
             if winner_name and pid not in winner_cache:
@@ -466,17 +468,15 @@ def main():
                 }
                 total_new_winners += 1
 
+            seen_cgd.add(pid)
+
             # Discovery: append ถ้าไม่เคยอยู่ใน all_jobs
             if pid in known_ids:
-                seen_cgd.add(pid)
-                seen_combined.add(pid)
                 continue
 
             row = _build_row(rec, now_iso)
             new_rows.append(row)
             known_ids.add(pid)
-            seen_cgd.add(pid)
-            seen_combined.add(pid)
             total_new_jobs += 1
     else:
         # Loop เสร็จโดยไม่โดน quota — reset cursor

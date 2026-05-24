@@ -47,7 +47,7 @@ jobs:
           DATABASE_URL:                ${{ secrets.DATABASE_URL }}
           DISCORD_BOT_TOKEN:           ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_CHANNEL_ID:          ${{ secrets.DISCORD_CHANNEL_ID }}
-        run: python scripts/Sebastian_RSS_Scraper.py --stage D0 --full-poll --no-probe --queue
+        run: python scripts/Sebastian_RSS_Scraper.py --stage D0 --no-probe --queue
 
       - name: Per-dept RSS poll [B0]
         timeout-minutes: 8
@@ -57,7 +57,7 @@ jobs:
           DATABASE_URL:                ${{ secrets.DATABASE_URL }}
           DISCORD_BOT_TOKEN:           ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_CHANNEL_ID:          ${{ secrets.DISCORD_CHANNEL_ID }}
-        run: python scripts/Sebastian_RSS_Scraper.py --stage B0 --full-poll --no-probe --queue
+        run: python scripts/Sebastian_RSS_Scraper.py --stage B0 --no-probe --queue
 
       - name: Per-dept RSS poll [P0]
         timeout-minutes: 8
@@ -67,7 +67,7 @@ jobs:
           DATABASE_URL:                ${{ secrets.DATABASE_URL }}
           DISCORD_BOT_TOKEN:           ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_CHANNEL_ID:          ${{ secrets.DISCORD_CHANNEL_ID }}
-        run: python scripts/Sebastian_RSS_Scraper.py --stage P0 --full-poll --no-probe --queue
+        run: python scripts/Sebastian_RSS_Scraper.py --stage P0 --no-probe --queue
 
       - name: Commit catalog + RSS state
         if: always()

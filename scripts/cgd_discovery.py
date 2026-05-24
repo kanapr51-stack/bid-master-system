@@ -186,7 +186,7 @@ def _cgd_search(rid: str, province: str, token: str,
         "limit":       limit,
         "offset":      offset,
         "sort":        "_id desc",
-        "filters":     json.dumps({"จังหวัด": province}),
+        "filters":     json.dumps({"จังหวัด": province}, ensure_ascii=False),
     }
     try:
         r = requests.get(
@@ -197,6 +197,7 @@ def _cgd_search(rid: str, province: str, token: str,
         )
         if r.ok:
             return r.json()
+        log(f"    ⚠️ CGD HTTP {r.status_code} rid:{rid[:8]} — {r.text[:120]}")
     except Exception as e:
         log(f"    ⚠️ CGD error: {e}")
     return None

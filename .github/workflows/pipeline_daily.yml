@@ -55,7 +55,7 @@ jobs:
           echo "=== Step 1: Refresh active jobs ==="
           # active+tor เต็ม + pending: งานประกาศ ≤30 วันเช็คทุกวัน (ช่วงลุ้นผู้ชนะ ~9 วัน)
           # + pending เก่าหมุนวน 1500/รอบ (เก็บตก) → กัน timeout แต่จับ winner เร็ว
-          python scripts/refresh_active_jobs.py --expand --workers 5 --pending-recent-days 30 --max-pending 300
+          python scripts/refresh_active_jobs.py --expand --workers 5
 
           echo "=== Step 1.5: Winner Sweep (CGD batch + eGP rotation) ==="
           # Old pending (>30d): CGD province-batch ล้าง backlog + eGP rotation สำหรับ miss

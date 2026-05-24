@@ -1,0 +1,80 @@
+name: BMS Winner Sweep
+
+on:
+  schedule:
+    - cron: '15 22 * * *'  # 05:15 Thailand — หลัง CGD Discovery 15 นาที (ป้องกัน push conflict)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  winner-sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Winner Sweep
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          DATABASE_URL:                ${{ secrets.DATABASE_URL }}
+          OPEND_USER_TOKEN:            ${{ secrets.OPEND_USER_TOKEN }}
+        run: |
+          # Pass 1: CGD batch (200 calls) → Pass 2: eGP rotation (400 calls)
+          # เฉพาะเจาะจง (method_id=19) ข้าม Pass 2 — CGD จัดการแทน
+          python scripts/winner_sweep.py \
+            --min-age-days 30 \
+            --max-cgd-calls 200 \
+            --max-egp 400 \
+            --workers 5
+
+      - name: Commit state files
+        run: |
+          git config user.name  "Sebastian Bot"
+          git config user.email "bot@bidmaster.local"
+          git pull --no-rebase origin main || true
+          git add data/winner_cache_bootstrap.json \
+                  data/winner_sweep_cursor.json || true
+          git diff --staged --quiet || \
+            git commit -m "chore: winner-sweep state $(date -u '+%Y-%m-%d %H:%M') [skip ci]"
+          git push || true
+
+      - name: Discord — สำเร็จ
+        if: success()
+        env:
+          DISCORD_BOT_TOKEN:  ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+        run: |
+          python -c "
+          import sys, os; sys.path.insert(0, 'scripts')
+          from Sebastian_Discord_Notify import send
+          send(os.environ['DISCORD_BOT_TOKEN'], os.environ['DISCORD_CHANNEL_ID'],
+               '✅ Winner Sweep เสร็จ')
+          "
+
+      - name: Discord — พัง
+        if: failure()
+        env:
+          DISCORD_BOT_TOKEN:  ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+        run: |
+          python -c "
+          import sys, os; sys.path.insert(0, 'scripts')
+          from Sebastian_Discord_Notify import send
+          send(os.environ['DISCORD_BOT_TOKEN'], os.environ['DISCORD_CHANNEL_ID'],
+               '❌ Winner Sweep พัง — ตรวจ GHA log ด่วน')
+          "

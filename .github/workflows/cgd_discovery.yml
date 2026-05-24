@@ -1,0 +1,74 @@
+name: BMS CGD Discovery
+
+on:
+  schedule:
+    - cron: '0 22 * * *'   # 05:00 Thailand (UTC+7) — 1 ชั่วโมงก่อน pipeline_daily
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cgd-discovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run CGD Discovery — นครพนม (Phase 0)
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          OPEND_USER_TOKEN:            ${{ secrets.OPEND_USER_TOKEN }}
+        run: |
+          # Phase 0: นครพนม ก่อน — ขยายจังหวัดใน Phase 1+
+          python scripts/cgd_discovery.py --provinces "นครพนม" --max-calls 600
+
+      - name: Commit state files
+        run: |
+          git config user.name  "Sebastian Bot"
+          git config user.email "bot@bidmaster.local"
+          git add data/winner_cache_bootstrap.json \
+                  data/cgd_discovery_seen.json \
+                  data/cgd_discovery_cursor.json || true
+          git diff --staged --quiet || \
+            git commit -m "chore: cgd-discovery state $(date -u '+%Y-%m-%d %H:%M') [skip ci]"
+          git push || true
+
+      - name: Discord — สำเร็จ
+        if: success()
+        env:
+          DISCORD_BOT_TOKEN:  ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+        run: |
+          python -c "
+          import sys, os; sys.path.insert(0, 'scripts')
+          from Sebastian_Discord_Notify import send
+          send(os.environ['DISCORD_BOT_TOKEN'], os.environ['DISCORD_CHANNEL_ID'],
+               '✅ CGD Discovery (นครพนม) เสร็จ')
+          "
+
+      - name: Discord — พัง
+        if: failure()
+        env:
+          DISCORD_BOT_TOKEN:  ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+        run: |
+          python -c "
+          import sys, os; sys.path.insert(0, 'scripts')
+          from Sebastian_Discord_Notify import send
+          send(os.environ['DISCORD_BOT_TOKEN'], os.environ['DISCORD_CHANNEL_ID'],
+               '❌ CGD Discovery พัง — ตรวจ GHA log ด่วน')
+          "

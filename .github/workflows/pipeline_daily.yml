@@ -2,16 +2,16 @@ name: BMS Daily Pipeline
 
 on:
   schedule:
-    - cron: '0 23 * * *'   # 06:00 Thailand (UTC+7) = 23:00 UTC ของวันก่อน
-  workflow_dispatch:        # รันมือได้จาก GitHub UI
+    - cron: '0 23 * * *'   # 06:00 Thailand (UTC+7) — หลัง cgd_discovery + winner_sweep 1 ชั่วโมง
+  workflow_dispatch:
 
 permissions:
-  contents: write           # สำหรับ commit state files กลับ
+  contents: write
 
 jobs:
   pipeline:
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 30    # ลดจาก 75 → 30 เพราะ CGD + winner_sweep ย้ายออกแล้ว
 
     steps:
       - name: Checkout repo
@@ -28,10 +28,7 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Install Playwright browser
-        run: playwright install chromium --with-deps
-
-      - name: Run pipeline — refresh + patch + classify + notify
+      - name: Run pipeline — refresh + classify + dashboard
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           DATABASE_URL:                ${{ secrets.DATABASE_URL }}
@@ -44,59 +41,75 @@ jobs:
           ANTHROPIC_API_KEY:           ${{ secrets.ANTHROPIC_API_KEY }}
           VERCEL_DASHBOARD_URL:        ${{ secrets.VERCEL_DASHBOARD_URL }}
           REVALIDATE_SECRET:           ${{ secrets.REVALIDATE_SECRET }}
-          OPEND_USER_TOKEN:            ${{ secrets.OPEND_USER_TOKEN }}
         run: |
           set -e
-          echo "=== Step 0: eGP Keyword Discovery (ทั้งประเทศ — อบต./เทศบาล/รพ./โรงเรียน) ==="
-          # Playwright bypass CF Turnstile → search 77 จังหวัด → queue new projectIds
-          # rss_scraper.yml (hourly) จะ process queue ต่อ
-          python scripts/discover_jobs_playwright.py --provinces all --max-pages 15 || true
 
-          echo "=== Step 1: Refresh active jobs ==="
-          # active+tor เต็ม + pending: งานประกาศ ≤30 วันเช็คทุกวัน (ช่วงลุ้นผู้ชนะ ~9 วัน)
-          # + pending เก่าหมุนวน 1500/รอบ (เก็บตก) → กัน timeout แต่จับ winner เร็ว
+          echo "=== Step 1: Refresh active + tor_review ==="
+          # active+tor เต็ม เท่านั้น — pending ย้ายไป winner_sweep.yml แล้ว
           python scripts/refresh_active_jobs.py --expand --workers 5 --max-pending 0
 
-          echo "=== Step 1.5: Winner Sweep (CGD batch + eGP rotation) ==="
-          # Old pending (>30d): CGD province-batch ล้าง backlog + eGP rotation สำหรับ miss
-          # Recent pending ครอบคลุมโดย Step 1 refresh แล้ว — ไม่ซ้ำ
-          python scripts/winner_sweep.py --min-age-days 30 --max-cgd-calls 200 --max-egp 400 --workers 5 || true
-
-          echo "=== Step 2: CGD Discovery (ทั้งประเทศ — ingest-once + filter-per-tenant) ==="
-          # Province-batch download ทุกจังหวัด → delta vs all_jobs → append new awarded jobs + update winner_cache
-          # early-stop: skip resource เมื่อ page เต็มไปด้วย seen IDs (ลด calls หลัง first run)
-          # rotation cursor: quota หมดกลางคัน → ต่อพรุ่งนี้
-          python scripts/cgd_discovery.py --provinces all --max-calls 600 || true
-
-          echo "=== Step 3: Enrich dept names ==="
+          echo "=== Step 2: Enrich dept names ==="
           python scripts/enrich_dept_names.py --limit 50 || true
 
-          echo "=== Step 3.5: Patch missing deadlines ==="
+          echo "=== Step 3: Patch missing deadlines ==="
           python scripts/patch_deadlines.py || true
 
           echo "=== Step 4: Classify (rebuild derived sheets) ==="
           python scripts/Sebastian_Classifier.py
 
-          echo "=== Step 5: LINE Notify (ปิดชั่วคราว — รอ province filter สำหรับ SaaS) ==="
-          # python scripts/Sebastian_LINE_Notify.py || true
-
-          echo "=== Step 6: Dashboard snapshot ==="
+          echo "=== Step 5: Dashboard snapshot ==="
           python scripts/dashboard_extractor.py || true
 
       - name: Commit updated state files
         run: |
           git config user.name  "Sebastian Bot"
           git config user.email "bot@bidmaster.local"
-          git add data/winner_cache_bootstrap.json \
-                  data/transitions_latest.json \
+          git pull --no-rebase origin main || true
+          git add data/transitions_latest.json \
                   data/sheet_snapshot.json \
                   data/scrape_baseline.json \
                   data/refresh_pending_cursor.json \
-                  data/winner_sweep_cursor.json \
-                  data/cgd_discovery_seen.json \
                   data/rss_queue.json \
                   data/_discover_alljobs_cache.json \
                   data/egp_deptid_catalog.json || true
           git diff --staged --quiet || \
-            git commit -m "chore: auto-update state files $(date -u '+%Y-%m-%d %H:%M') [skip ci]"
+            git commit -m "chore: daily-pipeline state $(date -u '+%Y-%m-%d %H:%M') [skip ci]"
           git push || true
+
+      - name: Discord — success report
+        if: success()
+        env:
+          DISCORD_BOT_TOKEN:  ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+        run: |
+          python -c "
+          import sys, os, json
+          sys.stdout.reconfigure(encoding='utf-8')
+          sys.path.insert(0, 'scripts')
+          from Sebastian_Discord_Notify import send
+          token = os.environ['DISCORD_BOT_TOKEN']
+          ch    = os.environ['DISCORD_CHANNEL_ID']
+          try:
+              snap = json.loads(open('data/sheet_snapshot.json', encoding='utf-8').read())
+              from collections import Counter
+              counts = Counter(snap.get('state', {}).values())
+              stats = (f\"active={counts.get('active_bidding',0)} | \"
+                       f\"pending={counts.get('pending_award',0)} | \"
+                       f\"awarded={counts.get('awarded_jobs',0)}\")
+          except Exception:
+              stats = 'snapshot ไม่พร้อม'
+          send(token, ch, f'✅ Daily Pipeline 06:00 — {stats}')
+          " || true
+
+      - name: Discord — failure alert
+        if: failure()
+        env:
+          DISCORD_BOT_TOKEN:  ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+        run: |
+          python -c "
+          import sys, os; sys.path.insert(0, 'scripts')
+          from Sebastian_Discord_Notify import send
+          send(os.environ['DISCORD_BOT_TOKEN'], os.environ['DISCORD_CHANNEL_ID'],
+               '❌ Daily Pipeline พัง — ตรวจ GHA log ด่วน https://github.com/kanapr51-stack/bid-master-system/actions')
+          " || true

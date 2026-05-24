@@ -190,6 +190,25 @@ async def _discover_keyword(page, keyword: str, known_ids: set[str], max_pages: 
     return new_items
 
 
+async def _probe_cf_session(page) -> bool:
+    """ทดสอบ 1 request ว่า CF session พร้อมไหม — True = ผ่าน, False = ถูกบล็อก"""
+    probe_url = f"{SEARCH_API}?keyword=%E0%B8%81%E0%B8%A3%E0%B8%B8%E0%B8%87%E0%B9%80%E0%B8%97%E0%B8%9E&methodId=16&page=1&pageSize=1"
+    js = f"""async () => {{
+        try {{
+            const r = await fetch({json.dumps(probe_url)}, {{credentials: 'include'}});
+            const t = await r.text();
+            try {{ return JSON.parse(t); }} catch {{ return {{text: t.slice(0,200)}}; }}
+        }} catch(e) {{ return {{error: e.toString()}}; }}
+    }}"""
+    try:
+        result = await page.evaluate(js)
+        if isinstance(result, dict) and "validateCfTurnTile" in result:
+            return False
+        return True
+    except Exception:
+        return False
+
+
 async def discover_async(dry_run: bool = False, max_pages: int = MAX_PAGES) -> list[dict]:
     from playwright.async_api import async_playwright
 
@@ -211,11 +230,20 @@ async def discover_async(dry_run: bool = False, max_pages: int = MAX_PAGES) -> l
 
         log(f"นำทางไป eGP search page...")
         try:
-            await page.goto(EGP_SEARCH_PAGE, timeout=PW_TIMEOUT, wait_until="networkidle")
+            await page.goto(EGP_SEARCH_PAGE, timeout=PW_TIMEOUT, wait_until="load")
         except Exception as e:
-            log(f"[WARN] networkidle timeout: {e} — รอต่อ")
+            log(f"[WARN] load timeout: {e} — รอต่อ")
         await asyncio.sleep(PAGE_INIT_WAIT)
-        log(f"Page loaded — cookies set")
+
+        # CF probe — ถ้าถูกบล็อกให้หยุดทันที ไม่เสียเวลา loop 77 จังหวัด
+        cf_ok = await _probe_cf_session(page)
+        if not cf_ok:
+            log("⚠️ CF Turnstile บล็อก API — search endpoint ต้อง real browser session")
+            log("   ข้าม discover step (RSS + CGD ครอบคลุมงานใหม่แทน)")
+            await browser.close()
+            return []
+
+        log(f"Page loaded — CF session OK")
 
         for kw in TARGET_KEYWORDS:
             log(f"\nSearching: '{kw}'...")

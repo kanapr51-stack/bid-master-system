@@ -405,6 +405,7 @@ def main():
     prov_i     = h.get("province", -1)
     budget_i   = h.get("budget", -1)
     deadline_i = h.get("deadline", -1)
+    method_i   = h.get("method_id", -1)
 
     cache = _load_cache()
     today = datetime.now()
@@ -413,6 +414,8 @@ def main():
     old_no_province: list[str] = []
     budget_map:   dict[str, str]      = {}
     deadline_map: dict[str, datetime] = {}  # jid → deadline datetime (สำหรับ priority sort)
+    # เฉพาะเจาะจง (method_id=19) ไม่มี getProcureResult → skip eGP Pass 2, ให้ CGD handle
+    DIRECT_METHOD_IDS = {"19"}
 
     for r in rows[1:]:
         if not r or not r[0]:
@@ -420,10 +423,13 @@ def main():
         jid = r[0].strip()
         if jid in cache:
             continue   # winner รู้แล้ว — skip
-        pub      = r[pub_i].strip()      if 0 <= pub_i < len(r)      else ""
-        prov     = r[prov_i].strip()     if 0 <= prov_i < len(r)     else ""
-        deadline = r[deadline_i].strip() if 0 <= deadline_i < len(r) else ""
+        pub       = r[pub_i].strip()      if 0 <= pub_i < len(r)      else ""
+        prov      = r[prov_i].strip()     if 0 <= prov_i < len(r)     else ""
+        deadline  = r[deadline_i].strip() if 0 <= deadline_i < len(r) else ""
+        method_id = r[method_i].strip()   if 0 <= method_i < len(r)   else ""
         budget_map[jid] = r[budget_i].strip() if 0 <= budget_i < len(r) else ""
+        if method_id in DIRECT_METHOD_IDS:
+            continue  # เฉพาะเจาะจง → CGD จะหา winner เอง ไม่ต้องลองใน eGP
 
         d = _parse_thai_date(pub)
         age_days = (today - d).days if d else 999
@@ -440,7 +446,7 @@ def main():
             old_no_province.append(jid)
 
     total_old = sum(len(v) for v in old_by_province.values()) + len(old_no_province)
-    log(f"  old pending (>{args.min_age_days}d, not in cache): {total_old}")
+    log(f"  old pending (>{args.min_age_days}d, not in cache): {total_old} (เฉพาะเจาะจง skipped → CGD)")
     log(f"    → with province: {total_old - len(old_no_province)} ({len(old_by_province)} provinces)")
     log(f"    → no province:   {len(old_no_province)}")
     log(f"  winner_cache: {len(cache)} known entries")

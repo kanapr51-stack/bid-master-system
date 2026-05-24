@@ -32,9 +32,22 @@ jobs:
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           OPEND_USER_TOKEN:            ${{ secrets.OPEND_USER_TOKEN }}
+          DISCORD_BOT_TOKEN:           ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID:          ${{ secrets.DISCORD_CHANNEL_ID }}
         run: |
           # Phase 0: นครพนม ก่อน — ขยายจังหวัดใน Phase 1+
-          python scripts/cgd_discovery.py --provinces "นครพนม" --max-calls 600
+          # หมายเหตุ: opend.data.go.th block GHA IPs (403) — ต้องรัน local
+          OUTPUT=$(python scripts/cgd_discovery.py --provinces "นครพนม" --max-calls 600 2>&1)
+          echo "$OUTPUT"
+          if echo "$OUTPUT" | grep -q "CGD HTTP 403"; then
+            python -c "
+          import sys, os; sys.path.insert(0, 'scripts')
+          from Sebastian_Discord_Notify import send
+          send(os.environ['DISCORD_BOT_TOKEN'], os.environ['DISCORD_CHANNEL_ID'],
+               '⚠️ CGD Discovery: opend.data.go.th บล็อก GHA IP (403) — ต้องรัน local แทน')
+          " || true
+            echo "⚠️ CGD API blocked in GHA — ต้องรัน cgd_discovery.py ใน local machine"
+          fi
 
       - name: Commit state files
         run: |

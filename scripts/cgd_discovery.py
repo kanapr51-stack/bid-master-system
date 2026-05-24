@@ -87,6 +87,29 @@ def log(msg: str):
 
 # ── Winner extraction ─────────────────────────────────────────────────────────
 
+# Fields ที่รู้แน่ว่าไม่ใช่ชื่อผู้ชนะ — ใช้ exclude ใน column-drift scan
+_NON_WINNER_FIELDS = {
+    "รหัสโครงการ", "ชื่อโครงการ", "จังหวัด", "เขต/อำเภอ", "ตำบล/แขวง",
+    "ชื่อหน่วยงาน", "ชื่อหน่วยงานย่อย", "ชื่อประเภทโครงการ", "วิธีการจัดหา",
+    "งบประมาณ(บาท)", "ราคาตกลงซื้อ/จ้าง", "วันที่ประกาศ", "วันที่ลงนามสัญญา",
+    "รหัสงบประมาณ", "แหล่งที่มาของเงิน", "ปีงบประมาณ", "_id",
+}
+
+# Fields ที่น่าจะเป็นชื่อผู้ชนะ (priority scan ก่อน)
+_WINNER_PRIORITY_FIELDS = [
+    "ชื่อผู้ชนะ", "ชื่อผู้รับจ้าง", "ชื่อผู้ขาย", "ชื่อบริษัท",
+    "ผู้ชนะการเสนอราคา", "ชื่อผู้เสนอราคา",
+]
+
+
+# ต้องมี indicator อย่างน้อย 1 อย่าง ถึงจะถือว่าเป็นชื่อผู้ชนะ
+_COMPANY_PATTERN = re.compile(
+    r'บริษัท|ห้างหุ้นส่วน|หจก\.|บมจ\.|บจก\.|จำกัด|'
+    r'กิจการร่วมค้า|สหกรณ์|มูลนิธิ|สมาคม|วิสาหกิจ|'
+    r'นาย\s*[ก-๛]|นาง(?:สาว)?\s*[ก-๛]'
+)
+
+
 def _is_company_name(val) -> bool:
     if not val or not isinstance(val, str):
         return False
@@ -98,26 +121,47 @@ def _is_company_name(val) -> bool:
     if not re.search(r'[฀-๿]', s):
         return False
     if re.match(r'^\d{1,2}\s*[฀-๿]', s):
-        return False
+        return False  # ป้องกันวันที่ภาษาไทย เช่น "31 มี.ค. 71"
     if re.fullmatch(r'[\d,.\s]+', s):
         return False
-    return True
+    # ต้องมี company indicator — กัน "วิธีการจัดหา...", "ประกาศเชิญชวน..." ฯลฯ
+    return bool(_COMPANY_PATTERN.search(s))
 
 
 def _extract_winner(rec: dict) -> tuple[str, str, str]:
-    """Extract (winner_name, winning_price, award_date) รองรับ column drift"""
+    """
+    Extract (winner_name, winning_price, award_date) แบบ schema-agnostic
+
+    Strategy:
+      Pass 1 — ลอง priority field names ที่รู้จัก (fast path)
+      Pass 2 — scan ทุก field ที่ไม่ใช่ non-winner → validate ด้วย _is_company_name
+               (รองรับ column drift เมื่อ CGD เปลี่ยนชื่อ column)
+    """
     winner = ""
-    for field in ["ละติจูดโครงการ", "ชื่อผู้ชนะ", "เลขนิติบุคคล", "ลองจิจูดโครงการ"]:
+
+    # Pass 1: known winner field names
+    for field in _WINNER_PRIORITY_FIELDS:
         if _is_company_name(rec.get(field)):
             winner = str(rec[field]).strip()
             break
 
+    # Pass 2: column-drift fallback — scan all remaining fields
+    if not winner:
+        for field, val in rec.items():
+            if field in _NON_WINNER_FIELDS:
+                continue
+            if field in _WINNER_PRIORITY_FIELDS:
+                continue  # already tried
+            if _is_company_name(val):
+                winner = str(val).strip()
+                break
+
     price = str(rec.get("ราคาตกลงซื้อ/จ้าง") or "").strip()
 
     award_date = ""
-    for field in ["เลขนิติบุคคล", "วันที่ลงนามสัญญา"]:
+    for field in ["วันที่ลงนามสัญญา", "วันที่ตกลงราคา", "วันที่สัญญา"]:
         v = str(rec.get(field) or "").strip()
-        if v and re.search(r'\d', v) and re.search(r'[฀-๿]', v):
+        if v and re.search(r'\d', v):
             award_date = v
             break
 

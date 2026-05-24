@@ -297,6 +297,9 @@ def queue_for_lookup(items_to_queue: list[dict]):
         pid = item.get("projectId")
         if not pid or pid in existing_ids:
             continue
+        # P-prefix = แผนการจัดซื้อ (Pre-TOR) — ไม่มี eGP detail page → ข้ามไม่ใส่ queue
+        if str(pid).upper().startswith("P"):
+            continue
         queue.append({
             "projectId": pid,
             "title": item.get("title", ""),

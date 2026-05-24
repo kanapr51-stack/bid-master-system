@@ -455,7 +455,7 @@ def main():
             cancelled.append(base + ["ยกเลิก (legacy)"])
             continue
         if proj_status == "กำลังเตรียม":
-            tor_review.append(base + ["รับฟังคำวิจารณ์ (legacy)"])
+            pre_tor.append(base + ["ขั้นวางแผน (legacy)"])
             continue
         if proj_status == "ประมูลแล้ว":
             pending.append(base + ["รอประกาศผล (legacy)"])

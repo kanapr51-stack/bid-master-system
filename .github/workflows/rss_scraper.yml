@@ -22,20 +22,12 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.12'
-          cache: pip
-
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r requirements.txt --quiet
 
       - name: Global RSS poll (D0+P0+W0+B0 all-Thailand)
         timeout-minutes: 3
-        env:
-          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-          DISCORD_BOT_TOKEN:           ${{ secrets.DISCORD_BOT_TOKEN }}
-          DISCORD_CHANNEL_ID:          ${{ secrets.DISCORD_CHANNEL_ID }}
+        # credentials อ่านจาก .env และ credentials/ บน home runner โดยตรง — ไม่ต้องส่ง secrets
         run: |
           python scripts/Sebastian_RSS_Scraper.py --global --queue || true
           python scripts/Sebastian_RSS_Scraper.py --stage B0 --global --queue || true
@@ -44,28 +36,16 @@ jobs:
       - name: Per-dept RSS poll [D0]
         timeout-minutes: 8
         continue-on-error: true
-        env:
-          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-          DISCORD_BOT_TOKEN:           ${{ secrets.DISCORD_BOT_TOKEN }}
-          DISCORD_CHANNEL_ID:          ${{ secrets.DISCORD_CHANNEL_ID }}
         run: python scripts/Sebastian_RSS_Scraper.py --stage D0 --no-probe --queue
 
       - name: Per-dept RSS poll [B0]
         timeout-minutes: 8
         continue-on-error: true
-        env:
-          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-          DISCORD_BOT_TOKEN:           ${{ secrets.DISCORD_BOT_TOKEN }}
-          DISCORD_CHANNEL_ID:          ${{ secrets.DISCORD_CHANNEL_ID }}
         run: python scripts/Sebastian_RSS_Scraper.py --stage B0 --no-probe --queue
 
       - name: Per-dept RSS poll [P0]
         timeout-minutes: 8
         continue-on-error: true
-        env:
-          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-          DISCORD_BOT_TOKEN:           ${{ secrets.DISCORD_BOT_TOKEN }}
-          DISCORD_CHANNEL_ID:          ${{ secrets.DISCORD_CHANNEL_ID }}
         run: python scripts/Sebastian_RSS_Scraper.py --stage P0 --no-probe --queue
 
       - name: Commit catalog + RSS state
@@ -84,10 +64,6 @@ jobs:
       - name: Process RSS queue
         timeout-minutes: 10
         continue-on-error: true
-        env:
-          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-          DISCORD_BOT_TOKEN:           ${{ secrets.DISCORD_BOT_TOKEN }}
-          DISCORD_CHANNEL_ID:          ${{ secrets.DISCORD_CHANNEL_ID }}
         run: |
           python scripts/refresh_active_jobs.py --from-queue --workers 5 --limit 80 || true
 

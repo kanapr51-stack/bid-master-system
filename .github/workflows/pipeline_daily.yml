@@ -44,7 +44,12 @@ jobs:
         run: |
           set -e
 
-          echo "=== Step 1: Refresh active + tor_review ==="
+          echo "=== Step 1a: Ingest new RSS discoveries (Universe B creation) ==="
+          # consume rss_queue.json → new rows with discovered_at + enrichment_version=v2_process5
+          # ต้องรันก่อน --expand เสมอ — new universe creation ก่อน existing row maintenance
+          python scripts/refresh_active_jobs.py --from-queue --workers 3 || true
+
+          echo "=== Step 1b: Refresh active + tor_review ==="
           # active+tor เต็ม เท่านั้น — pending ย้ายไป winner_sweep.yml แล้ว
           python scripts/refresh_active_jobs.py --expand --workers 5 --max-pending 0
 

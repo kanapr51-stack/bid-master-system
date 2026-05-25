@@ -43,6 +43,8 @@ ALL_JOBS_HEADERS = [
     # 2026-05-19: Phase 1+2 multi-dim classifier tags (cols S-Z)
     "project_type", "construction_subtype", "budget_tier", "urgency_tier",
     "method_id", "sme_suitable", "geographic_precision", "unspsc_family",
+    # 2026-05-25: event lineage fields (immutable after first write)
+    "discovered_at", "ingestion_source", "ingestion_version",
 ]
 
 PRE_TOR_HEADERS        = ALL_JOBS_HEADERS + ["stage_note"]

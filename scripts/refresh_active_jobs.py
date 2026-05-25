@@ -232,7 +232,13 @@ def _build_sparse_row(jid: str, q_item: dict, detail: dict) -> list:
         detail.get("announce_type", ""),
     ]
     base.extend(tags[col] for col in TAG_COLUMNS)
-    return base  # 26 cols
+    # event lineage fields — immutable after first write
+    base.extend([
+        now_iso,        # discovered_at (set once, never overwritten)
+        "rss_scraper",  # ingestion_source
+        "v2_process5",  # ingestion_version
+    ])
+    return base  # 29 cols
 
 
 def main():

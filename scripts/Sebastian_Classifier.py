@@ -54,7 +54,8 @@ AWARDED_JOBS_HEADERS   = ALL_JOBS_HEADERS + [
     "winner_name", "winner_price", "discount_pct", "award_date",
     "deliver_day", "num_bidders",
 ]
-CANCELLED_JOBS_HEADERS = ALL_JOBS_HEADERS + ["cancel_note"]
+CANCELLED_JOBS_HEADERS  = ALL_JOBS_HEADERS + ["cancel_note"]
+ARCHIVED_UNRESOLVED_HEADERS = ALL_JOBS_HEADERS + ["archived_reason", "archived_at"]
 # bid_history: 1 row = 1 bidder ต่อ 1 job
 BID_HISTORY_HEADERS = [
     "job_id", "bidder_name", "bidder_tin", "price_proposal", "price_agree",
@@ -251,7 +252,16 @@ def load_winner_cache() -> dict:
 
 
 def write_sheet(sheet_name: str, headers: list, rows: list):
-    ws = open_sheet(SPREADSHEET_ID, sheet_name)
+    from gspread.exceptions import WorksheetNotFound
+    import gspread
+    try:
+        ws = open_sheet(SPREADSHEET_ID, sheet_name)
+    except WorksheetNotFound:
+        log(f"  creating new sheet: {sheet_name}")
+        from sheets_client import get_client
+        gc = get_client()
+        sh = gc.open_by_key(SPREADSHEET_ID)
+        ws = sh.add_worksheet(title=sheet_name, rows=max(len(rows) + 10, 100), cols=len(headers) + 5)
     ws.clear()
     payload = [headers] + rows if rows else [headers]
     ws.update(payload, "A1", value_input_option="USER_ENTERED")
@@ -374,11 +384,13 @@ def main():
     log(f"  jobs: {len(all_values) - 1}")
     log(f"  today: {today.isoformat()}")
 
-    pre_tor, tor_review, active, pending, awarded, cancelled = [], [], [], [], [], []
+    pre_tor, tor_review, active, pending, awarded, cancelled, archived = [], [], [], [], [], [], []
     skipped_no_jid = 0
     skipped_unclassified = 0
     used_stepid_path = 0
-    used_legacy_path = 0
+    used_fallback_announce = 0  # announce_type fallback (medium confidence)
+    used_legacy_path = 0        # legacy text fallback (low confidence, truly unknown)
+    archived_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     for r in all_values[1:]:
         jid = g(r, "job_id")
@@ -442,16 +454,52 @@ def main():
             skipped_unclassified += 1
             continue
 
-        # ── Path B: ไม่มี stepId → fallback to legacy text-based logic ──
-        used_legacy_path += 1
+        # ── Path B: ไม่มี stepId → hierarchical fallback ──
+        # B-archive: no deadline + no stepId + no announce_type = legacy orphan → archived_unresolved
+        deadline_val = g(r, "deadline")
+        if not deadline_val and not announce and not has_winner:
+            archived.append(base + ["legacy_missing_all_metadata", archived_at])
+            continue
+
+        # B0: cancellation signals
+        if ps_raw == "R" or announce in ("D1", "W1"):
+            cancelled.append(base + [f"ยกเลิก [fallback, announce={announce or ps_raw}]"])
+            used_fallback_announce += 1
+            continue
+
+        # B1: winner cache
         if has_winner:
             wd = winner_cache[jid]
             awarded.append(base + [
                 wd.get("winner_name", ""), wd.get("winner_price", ""),
                 wd.get("discount_pct", ""), wd.get("award_date", ""),
             ])
+            used_fallback_announce += 1
             continue
 
+        # B2: announce_type fallback — medium confidence
+        at = (announce or "").strip().upper()
+        if at == "B0":
+            tor_review.append(base + ["รับฟังคำวิจารณ์ [fallback:B0]"])
+            used_fallback_announce += 1
+            continue
+        if at == "D0":
+            dl = parse_thai_date(g(r, "deadline"))
+            if dl is None:
+                active.append(base + [""])
+            elif dl >= today:
+                active.append(base + [str((dl - today).days)])
+            else:
+                pending.append(base + [f"deadline ผ่าน {(today - dl).days} วัน [fallback:D0]"])
+            used_fallback_announce += 1
+            continue
+        if at == "W0":
+            pending.append(base + ["รอประกาศผู้ชนะ [fallback:W0]"])
+            used_fallback_announce += 1
+            continue
+
+        # B3: legacy text-based logic — low confidence, truly unknown announce_type
+        used_legacy_path += 1
         proj_status = _normalize_project_status(g(r, "project_status"))
         if proj_status == "ยกเลิก":
             cancelled.append(base + ["ยกเลิก (legacy)"])
@@ -475,15 +523,17 @@ def main():
             pending.append(base + [f"deadline ผ่าน {(today - dl).days} วัน"])
 
     log(f"\nClassified (6-sheet lifecycle):")
-    log(f"  🟣 pre_tor        (ขั้นวางแผน Q):       {len(pre_tor)}")
-    log(f"  🟢 tor_review     (รับฟังคำวิจารณ์):    {len(tor_review)}")
-    log(f"  🔵 active_bidding (ยื่นซองได้):         {len(active)}")
-    log(f"  🟡 pending_award  (รอรู้ผู้ชนะ):         {len(pending)}")
-    log(f"  ⚪ awarded_jobs   (ประกาศแล้ว):         {len(awarded)}")
-    log(f"  ❌ cancelled_jobs (ยกเลิก):              {len(cancelled)}")
-    log(f"\nPath usage:")
-    log(f"  stepId-driven (Path A): {used_stepid_path}")
-    log(f"  legacy text  (Path B):  {used_legacy_path}")
+    log(f"  🟣 pre_tor           (ขั้นวางแผน Q):    {len(pre_tor)}")
+    log(f"  🟢 tor_review        (รับฟังคำวิจารณ์): {len(tor_review)}")
+    log(f"  🔵 active_bidding    (ยื่นซองได้):      {len(active)}")
+    log(f"  🟡 pending_award     (รอรู้ผู้ชนะ):      {len(pending)}")
+    log(f"  ⚪ awarded_jobs      (ประกาศแล้ว):      {len(awarded)}")
+    log(f"  ❌ cancelled_jobs    (ยกเลิก):           {len(cancelled)}")
+    log(f"  🗄️  archived_unresolved (legacy orphan): {len(archived)}")
+    log(f"\nRoute source (confidence):")
+    log(f"  🟢 stepId        [high]   : {used_stepid_path}")
+    log(f"  🟡 announce_type [medium] : {used_fallback_announce}")
+    log(f"  🔴 legacy text   [low]    : {used_legacy_path}")
     log(f"\nSkipped:")
     log(f"  unclassified status:  {skipped_unclassified}")
     log(f"  no job_id:            {skipped_no_jid}")
@@ -494,6 +544,7 @@ def main():
         ("pre_tor", pre_tor), ("tor_review", tor_review),
         ("active_bidding", active), ("pending_award", pending),
         ("awarded_jobs", awarded), ("cancelled_jobs", cancelled),
+        ("archived_unresolved", archived),
     ]:
         for r in rows_list:
             new_state[r[0]] = sheet_name  # r[0] = job_id
@@ -543,12 +594,13 @@ def main():
     mark_rows(cancelled, -1)       # cancel_note
 
     log(f"\nWriting derived sheets (clear+rewrite)...")
-    write_sheet("pre_tor",         PRE_TOR_HEADERS,        pre_tor)
-    write_sheet("tor_review",      TOR_REVIEW_HEADERS,     tor_review)
-    write_sheet("active_bidding",  ACTIVE_BIDDING_HEADERS, active)
-    write_sheet("pending_award",   PENDING_AWARD_HEADERS,  pending)
-    write_sheet("awarded_jobs",    AWARDED_JOBS_HEADERS,   awarded)
-    write_sheet("cancelled_jobs",  CANCELLED_JOBS_HEADERS, cancelled)
+    write_sheet("pre_tor",              PRE_TOR_HEADERS,            pre_tor)
+    write_sheet("tor_review",           TOR_REVIEW_HEADERS,         tor_review)
+    write_sheet("active_bidding",       ACTIVE_BIDDING_HEADERS,     active)
+    write_sheet("pending_award",        PENDING_AWARD_HEADERS,      pending)
+    write_sheet("awarded_jobs",         AWARDED_JOBS_HEADERS,       awarded)
+    write_sheet("cancelled_jobs",       CANCELLED_JOBS_HEADERS,     cancelled)
+    write_sheet("archived_unresolved",  ARCHIVED_UNRESOLVED_HEADERS, archived)
 
     log("\nเสร็จสิ้น")
 

@@ -76,13 +76,12 @@ jobs:
             git commit -m "chore: daily-pipeline state $(date -u '+%Y-%m-%d %H:%M') [skip ci]"
           git push || true
 
-      - name: LINE Notify — ส่งสรุปงานประจำวัน
+      - name: LINE Push — ส่งสรุปงานรายบุคคลผ่าน Sebastian OA
         if: success()
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-          LINE_CHANNEL_ACCESS_TOKEN:   ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
-          LINE_GROUP_ID:               ${{ secrets.LINE_GROUP_ID }}
-        run: python scripts/Sebastian_LINE_Notify.py || true
+          SEBASTIAN_LINE_TOKEN:        ${{ secrets.SEBASTIAN_LINE_TOKEN }}
+        run: python scripts/Sebastian_LINE_Push.py || true
 
       - name: Health Check — deterministic
         if: success()

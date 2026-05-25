@@ -28,6 +28,9 @@ SPREADSHEET_ID = "1gz7qLDIWphDhqxLf8Pxm08_cPmNb_IXTDvyxm6uThps"
 SOURCE_SHEET   = "all_jobs"
 BOOTSTRAP_FILE = Path(__file__).parent.parent / "data" / "winner_cache_bootstrap.json"
 
+# Decision provenance — version bumped when classification logic changes
+CLASSIFIER_VERSION = "v3_process5"
+
 try:
     from Sebastian_Scraper import FLOW_STATUS_MAP
 except ImportError:
@@ -47,7 +50,13 @@ ALL_JOBS_HEADERS = [
     "discovered_at", "ingestion_source", "ingestion_version",
     # 2026-05-25: operational health fields
     "refresh_count", "api_validity_state",
+    # 2026-05-25: decision provenance (updated every classify run)
+    "route_reason_latest", "classifier_version",
 ]
+
+# Indices for mutating base during classification (avoid magic numbers)
+_RR_IDX = ALL_JOBS_HEADERS.index("route_reason_latest")   # 31
+_CV_IDX = ALL_JOBS_HEADERS.index("classifier_version")     # 32
 
 PRE_TOR_HEADERS        = ALL_JOBS_HEADERS + ["stage_note"]
 TOR_REVIEW_HEADERS     = ALL_JOBS_HEADERS + ["stage_note"]
@@ -176,10 +185,7 @@ def classify_by_stepid(step_id: str, project_status_raw: str, announce_type: str
     elif sheet == "pre_tor":
         note = f"ขั้นวางแผน Quote ({step})"
     elif sheet == "active_bidding":
-        if prefix == "M":
-            note = ""  # active_bidding ใช้ days_remaining column ไม่มี note
-        else:
-            note = ""
+        note = ""
     elif sheet == "pending_award":
         note = f"รอประกาศผู้ชนะ ({step})"
     else:
@@ -257,7 +263,6 @@ def load_winner_cache() -> dict:
 
 def write_sheet(sheet_name: str, headers: list, rows: list):
     from gspread.exceptions import WorksheetNotFound
-    import gspread
     try:
         ws = open_sheet(SPREADSHEET_ID, sheet_name)
     except WorksheetNotFound:
@@ -270,6 +275,38 @@ def write_sheet(sheet_name: str, headers: list, rows: list):
     payload = [headers] + rows if rows else [headers]
     ws.update(payload, "A1", value_input_option="USER_ENTERED")
     log(f"  {sheet_name}: {len(rows)} งาน")
+
+
+def _writeback_route_info(ws_src, all_values: list, route_data: dict):
+    """
+    เขียน route_reason_latest + classifier_version กลับไปที่ all_jobs
+    2 API calls: one per column (AF, AG) — each with full column data
+    """
+    from gspread.utils import rowcol_to_a1
+    n_hdrs = len(ALL_JOBS_HEADERS)
+    rr_col = n_hdrs - 1   # 1-indexed col number for route_reason_latest
+    cv_col = n_hdrs       # 1-indexed col number for classifier_version
+
+    rr_values = [["route_reason_latest"]]  # header row
+    cv_values = [["classifier_version"]]
+
+    for row in all_values[1:]:
+        jid = row[0] if row else ""
+        info = route_data.get(jid)
+        if info:
+            rr_values.append([info["route_reason"]])
+            cv_values.append([CLASSIFIER_VERSION])
+        else:
+            rr_values.append([""])
+            cv_values.append([""])
+
+    rr_a1 = rowcol_to_a1(1, rr_col)
+    cv_a1 = rowcol_to_a1(1, cv_col)
+    ws_src.update(rr_values, rr_a1)
+    ws_src.update(cv_values, cv_a1)
+    classified_count = sum(1 for v in rr_values[1:] if v[0])
+    log(f"  writeback route_reason_latest → {rr_a1} ({classified_count} rows)")
+    log(f"  writeback classifier_version  → {cv_a1} ({classified_count} rows)")
 
 
 # ================================================================
@@ -307,29 +344,45 @@ def _save_snapshot(jid_to_sheet: dict):
     }, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def _compute_transitions(prev: dict, curr: dict) -> dict:
-    """คืน {jid: {from, to, type, arrow}} — type ∈ new/moved/removed"""
+def _compute_transitions(prev: dict, curr: dict, route_data: dict = None) -> dict:
+    """
+    คืน {jid: {from, to, type, arrow, route_reason, confidence, refresh_count_snapshot}}
+    type ∈ new/moved/removed
+    route_data: {jid: {"route_reason": str, "confidence": str, "refresh_count_snapshot": str}}
+    """
+    route_data = route_data or {}
     transitions = {}
     for jid, new_sheet in curr.items():
         old_sheet = prev.get(jid)
+        info = route_data.get(jid, {})
+        provenance = {
+            "route_reason":           info.get("route_reason", ""),
+            "confidence":             info.get("confidence", ""),
+            "refresh_count_snapshot": info.get("refresh_count_snapshot", ""),
+            "classifier_version":     CLASSIFIER_VERSION,
+        }
         if old_sheet is None:
-            transitions[jid] = {"from": None, "to": new_sheet, "type": "new", "arrow": "🆕"}
+            transitions[jid] = {"from": None, "to": new_sheet, "type": "new", "arrow": "🆕",
+                                 **provenance}
         elif old_sheet != new_sheet:
             old_rank = SHEET_RANK.get(old_sheet, 99)
             new_rank = SHEET_RANK.get(new_sheet, 99)
             if new_sheet == "cancelled_jobs":
-                arrow = "❌"  # ยกเลิก
+                arrow = "❌"
             elif new_sheet == "awarded_jobs":
-                arrow = "🏆"  # ชนะ
+                arrow = "🏆"
             elif new_rank > old_rank:
-                arrow = "⬆️"  # เลื่อนขั้น
+                arrow = "⬆️"
             else:
-                arrow = "⬇️"  # ถอยขั้น
-            transitions[jid] = {"from": old_sheet, "to": new_sheet, "type": "moved", "arrow": arrow}
+                arrow = "⬇️"
+            transitions[jid] = {"from": old_sheet, "to": new_sheet, "type": "moved", "arrow": arrow,
+                                 **provenance}
     # Removed (jid disappear from all sheets)
     for jid, old_sheet in prev.items():
         if jid not in curr:
-            transitions[jid] = {"from": old_sheet, "to": None, "type": "removed", "arrow": "❓"}
+            transitions[jid] = {"from": old_sheet, "to": None, "type": "removed", "arrow": "❓",
+                                 "route_reason": "", "confidence": "", "refresh_count_snapshot": "",
+                                 "classifier_version": CLASSIFIER_VERSION}
     return transitions
 
 
@@ -341,7 +394,6 @@ def _apply_transition_marker(note: str, jid: str, transitions: dict) -> str:
     if t["type"] == "new":
         marker = "🆕 ใหม่!"
     elif t["type"] == "moved":
-        # From → To
         from_th = {
             "pre_tor": "วางแผน", "tor_review": "รับฟัง",
             "active_bidding": "ยื่นซอง", "pending_award": "รอผล",
@@ -349,15 +401,16 @@ def _apply_transition_marker(note: str, jid: str, transitions: dict) -> str:
         }.get(t["from"], t["from"])
         marker = f"{t['arrow']} จาก {from_th}"
     else:
-        return note  # removed = ไม่ต้อง mark (ไม่อยู่ใน sheet)
+        return note  # removed = ไม่ต้อง mark
     return f"{marker} | {note}" if note else marker
 
 
 def _save_transitions(transitions: dict):
     TRANSITIONS_FILE.parent.mkdir(parents=True, exist_ok=True)
     TRANSITIONS_FILE.write_text(json.dumps({
-        "computed_at": datetime.now().isoformat(timespec="seconds"),
-        "transitions": transitions,
+        "computed_at":      datetime.now().isoformat(timespec="seconds"),
+        "classifier_version": CLASSIFIER_VERSION,
+        "transitions":      transitions,
     }, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
@@ -392,9 +445,19 @@ def main():
     skipped_no_jid = 0
     skipped_unclassified = 0
     used_stepid_path = 0
-    used_fallback_announce = 0  # announce_type fallback (medium confidence)
-    used_legacy_path = 0        # legacy text fallback (low confidence, truly unknown)
+    used_fallback_announce = 0
+    used_legacy_path = 0
     archived_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Decision provenance map: {jid: {"route_reason": str, "confidence": str, "refresh_count_snapshot": str}}
+    route_data = {}
+
+    def _track(jid: str, reason: str, confidence: str, row):
+        route_data[jid] = {
+            "route_reason":           reason,
+            "confidence":             confidence,
+            "refresh_count_snapshot": g(row, "refresh_count"),
+        }
 
     for r in all_values[1:]:
         jid = g(r, "job_id")
@@ -413,6 +476,9 @@ def main():
 
         # ── Path A0: announce_type=P0 → pre_tor โดยตรง (planning stage) ──
         if announce == "P0" and ps_raw != "R":
+            _track(jid, "announce:P0", "medium", r)
+            base[_RR_IDX] = "announce:P0"
+            base[_CV_IDX] = CLASSIFIER_VERSION
             pre_tor.append(base + ["ขั้นวางแผน (P0)"])
             continue
 
@@ -420,6 +486,10 @@ def main():
         if step_id:
             used_stepid_path += 1
             sheet, note = classify_by_stepid(step_id, ps_raw, announce, has_winner)
+            reason = f"stepId:{step_id}"
+            _track(jid, reason, "high", r)
+            base[_RR_IDX] = reason
+            base[_CV_IDX] = CLASSIFIER_VERSION
 
             if sheet == "cancelled_jobs":
                 cancelled.append(base + [note])
@@ -440,11 +510,9 @@ def main():
                 pre_tor.append(base + [note])
                 continue
             if sheet == "active_bidding":
-                # ตรวจ deadline เพิ่ม: ถ้า deadline ผ่านแล้ว → ย้ายไป pending
-                # (eGP บางครั้งไม่ขยับ stepId จาก M03/S01 → W03 ทันทีหลังวันยื่นซอง)
                 dl = parse_thai_date(g(r, "deadline"))
                 if dl is None:
-                    active.append(base + [""])  # ไม่รู้ deadline → คง active (pessimistic)
+                    active.append(base + [""])
                 elif dl >= today:
                     active.append(base + [str((dl - today).days)])
                 else:
@@ -454,7 +522,6 @@ def main():
             if sheet == "pending_award":
                 pending.append(base + [note or "รอประกาศผู้ชนะ"])
                 continue
-            # sheet is None → skip
             skipped_unclassified += 1
             continue
 
@@ -462,17 +529,27 @@ def main():
         # B-archive: no deadline + no stepId + no announce_type = legacy orphan → archived_unresolved
         deadline_val = g(r, "deadline")
         if not deadline_val and not announce and not has_winner:
+            _track(jid, "legacy_orphan", "low", r)
+            base[_RR_IDX] = "legacy_orphan"
+            base[_CV_IDX] = CLASSIFIER_VERSION
             archived.append(base + ["legacy_missing_all_metadata", archived_at])
             continue
 
         # B0: cancellation signals
         if ps_raw == "R" or announce in ("D1", "W1"):
+            reason = f"fallback:cancel_{announce or ps_raw}"
+            _track(jid, reason, "medium", r)
+            base[_RR_IDX] = reason
+            base[_CV_IDX] = CLASSIFIER_VERSION
             cancelled.append(base + [f"ยกเลิก [fallback, announce={announce or ps_raw}]"])
             used_fallback_announce += 1
             continue
 
         # B1: winner cache
         if has_winner:
+            _track(jid, "fallback:winner_cache", "medium", r)
+            base[_RR_IDX] = "fallback:winner_cache"
+            base[_CV_IDX] = CLASSIFIER_VERSION
             wd = winner_cache[jid]
             awarded.append(base + [
                 wd.get("winner_name", ""), wd.get("winner_price", ""),
@@ -484,10 +561,17 @@ def main():
         # B2: announce_type fallback — medium confidence
         at = (announce or "").strip().upper()
         if at == "B0":
+            _track(jid, "fallback:B0", "medium", r)
+            base[_RR_IDX] = "fallback:B0"
+            base[_CV_IDX] = CLASSIFIER_VERSION
             tor_review.append(base + ["รับฟังคำวิจารณ์ [fallback:B0]"])
             used_fallback_announce += 1
             continue
         if at == "D0":
+            reason = "fallback:D0"
+            _track(jid, reason, "medium", r)
+            base[_RR_IDX] = reason
+            base[_CV_IDX] = CLASSIFIER_VERSION
             dl = parse_thai_date(g(r, "deadline"))
             if dl is None:
                 active.append(base + [""])
@@ -498,6 +582,9 @@ def main():
             used_fallback_announce += 1
             continue
         if at == "W0":
+            _track(jid, "fallback:W0", "medium", r)
+            base[_RR_IDX] = "fallback:W0"
+            base[_CV_IDX] = CLASSIFIER_VERSION
             pending.append(base + ["รอประกาศผู้ชนะ [fallback:W0]"])
             used_fallback_announce += 1
             continue
@@ -506,18 +593,30 @@ def main():
         used_legacy_path += 1
         proj_status = _normalize_project_status(g(r, "project_status"))
         if proj_status == "ยกเลิก":
+            _track(jid, "legacy_text:cancel", "low", r)
+            base[_RR_IDX] = "legacy_text:cancel"
+            base[_CV_IDX] = CLASSIFIER_VERSION
             cancelled.append(base + ["ยกเลิก (legacy)"])
             continue
         if proj_status == "กำลังเตรียม":
+            _track(jid, "legacy_text:pre_tor", "low", r)
+            base[_RR_IDX] = "legacy_text:pre_tor"
+            base[_CV_IDX] = CLASSIFIER_VERSION
             pre_tor.append(base + ["ขั้นวางแผน (legacy)"])
             continue
         if proj_status == "ประมูลแล้ว":
+            _track(jid, "legacy_text:awarded", "low", r)
+            base[_RR_IDX] = "legacy_text:awarded"
+            base[_CV_IDX] = CLASSIFIER_VERSION
             pending.append(base + ["รอประกาศผล (legacy)"])
             continue
         if proj_status != "กำลังประมูล":
             skipped_unclassified += 1
             continue
 
+        _track(jid, "legacy_text:active", "low", r)
+        base[_RR_IDX] = "legacy_text:active"
+        base[_CV_IDX] = CLASSIFIER_VERSION
         dl = parse_thai_date(g(r, "deadline"))
         if dl is None:
             active.append(base + [""])
@@ -538,9 +637,14 @@ def main():
     log(f"  🟢 stepId        [high]   : {used_stepid_path}")
     log(f"  🟡 announce_type [medium] : {used_fallback_announce}")
     log(f"  🔴 legacy text   [low]    : {used_legacy_path}")
+    log(f"  📍 decision provenance:   : {len(route_data)} jobs tracked")
     log(f"\nSkipped:")
     log(f"  unclassified status:  {skipped_unclassified}")
     log(f"  no job_id:            {skipped_no_jid}")
+
+    # ── Write route_reason_latest + classifier_version back to all_jobs ──
+    log(f"\nWriting decision provenance back to all_jobs...")
+    _writeback_route_info(ws_src, all_values, route_data)
 
     # ── Compute transitions vs last classify run ──
     new_state = {}
@@ -554,7 +658,7 @@ def main():
             new_state[r[0]] = sheet_name  # r[0] = job_id
 
     prev_state  = _load_snapshot()
-    transitions = _compute_transitions(prev_state, new_state)
+    transitions = _compute_transitions(prev_state, new_state, route_data)
 
     # Log transitions
     if transitions:
@@ -565,11 +669,11 @@ def main():
         if by_type["new"]:
             log(f"  🆕 NEW ({len(by_type['new'])}):")
             for jid, t in by_type["new"][:10]:
-                log(f"      {jid} → {t['to']}")
+                log(f"      {jid} → {t['to']} [{t.get('route_reason','')}]")
         if by_type["moved"]:
             log(f"  🔀 MOVED ({len(by_type['moved'])}):")
             for jid, t in by_type["moved"][:10]:
-                log(f"      {jid} {t['arrow']} {t['from']} → {t['to']}")
+                log(f"      {jid} {t['arrow']} {t['from']} → {t['to']} [{t.get('route_reason','')}]")
         if by_type["removed"]:
             log(f"  ❓ REMOVED ({len(by_type['removed'])}):")
             for jid, t in by_type["removed"][:10]:
@@ -582,7 +686,6 @@ def main():
 
     # ── Apply transition markers to derived sheets (modify note column) ──
     def mark_rows(rows_list, note_col_index):
-        """แก้ note column (-1 = last column) ของแต่ละ row ถ้า jid มี transition"""
         for r in rows_list:
             jid = r[0]
             old_note = r[note_col_index] if abs(note_col_index) <= len(r) else ""
@@ -590,12 +693,11 @@ def main():
             if new_note != old_note:
                 r[note_col_index] = new_note
 
-    mark_rows(pre_tor, -1)         # stage_note
-    mark_rows(tor_review, -1)      # stage_note
-    mark_rows(active, -1)          # days_remaining
-    mark_rows(pending, -1)         # wait_reason
-    # awarded_jobs ไม่ mark (มี winner_name อยู่ — note column ไม่เหมาะ)
-    mark_rows(cancelled, -1)       # cancel_note
+    mark_rows(pre_tor, -1)
+    mark_rows(tor_review, -1)
+    mark_rows(active, -1)
+    mark_rows(pending, -1)
+    mark_rows(cancelled, -1)
 
     log(f"\nWriting derived sheets (clear+rewrite)...")
     write_sheet("pre_tor",              PRE_TOR_HEADERS,            pre_tor)

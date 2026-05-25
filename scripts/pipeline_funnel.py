@@ -50,10 +50,11 @@ def main():
     print(f"Stage 2 — all_jobs (ingested)            : {total_jobs:>8,}")
 
     # Stage 3: process5 enriched (has step_id OR announce_type)
-    step_i = h.get("step_id", -1)
-    api_i  = h.get("api_validity_state", -1)
-    ann_i  = h.get("announce_type", -1)
-    disc_i = h.get("discovered_at", -1)
+    step_i  = h.get("step_id", -1)
+    api_i   = h.get("api_validity_state", -1)
+    ann_i   = h.get("announce_type", -1)
+    disc_i  = h.get("discovered_at", -1)
+    ev_i    = h.get("enrichment_version", -1)
 
     has_stepid  = sum(1 for r in data_rows if step_i >= 0 and r[step_i].strip())
     has_ann     = sum(1 for r in data_rows if ann_i >= 0 and r[ann_i].strip())
@@ -61,14 +62,40 @@ def main():
     api_retired = sum(1 for r in data_rows if api_i >= 0 and r[api_i].strip() == "retired")
     enriched    = sum(1 for r in data_rows if (step_i >= 0 and r[step_i].strip()) or (ann_i >= 0 and r[ann_i].strip()))
 
-    # Operational cohort: jobs ingested after funnel tracking started
-    has_lineage = sum(1 for r in data_rows if disc_i >= 0 and r[disc_i].strip())
+    # Universe split
+    has_lineage  = sum(1 for r in data_rows if disc_i >= 0 and r[disc_i].strip())
+    univ_b_count = sum(1 for r in data_rows if ev_i >= 0 and r[ev_i].strip() and r[ev_i].strip() != "legacy_none")
+    univ_a_count = total_jobs - univ_b_count
+
     print(f"Stage 3 — enriched (has stepId/announce) : {enriched:>8,}  ({enriched/total_jobs*100:.1f}%)")
     print(f"          └ has stepId                   : {has_stepid:>8,}")
     print(f"          └ has announce_type            : {has_ann:>8,}")
     print(f"          └ api_validity_state=active    : {api_active:>8,}")
     print(f"          └ api_validity_state=retired   : {api_retired:>8,}")
     print(f"          └ has discovered_at (new era)  : {has_lineage:>8,}")
+    print()
+    print(f"=== Universe Split ===")
+    print(f"  Universe A — legacy corpus (enrichment_version=legacy_none)")
+    print(f"    count  : {univ_a_count:>8,}  ({univ_a_count/total_jobs*100:.1f}%)")
+    if univ_a_count > 0:
+        a_active = sum(1 for r in data_rows
+                       if ev_i >= 0 and (not r[ev_i].strip() or r[ev_i].strip() == "legacy_none")
+                       and step_i >= 0 and r[step_i].strip())
+        print(f"    enriched (has stepId): {a_active:>6,}  ({a_active/univ_a_count*100:.1f}%) ← expected ~0%")
+    print(f"  Universe B — operational telemetry era (enrichment_version≠legacy_none)")
+    print(f"    count  : {univ_b_count:>8,}  ({univ_b_count/total_jobs*100:.1f}%)")
+    if univ_b_count > 0:
+        b_stepid = sum(1 for r in data_rows
+                       if ev_i >= 0 and r[ev_i].strip() and r[ev_i].strip() != "legacy_none"
+                       and step_i >= 0 and r[step_i].strip())
+        b_enrich_rate = b_stepid / univ_b_count * 100
+        print(f"    has stepId           : {b_stepid:>6,}  ({b_enrich_rate:.1f}%) ← target >70%")
+        b_active = sum(1 for r in data_rows
+                       if ev_i >= 0 and r[ev_i].strip() and r[ev_i].strip() != "legacy_none"
+                       and api_i >= 0 and r[api_i].strip() == "active")
+        print(f"    api_validity=active  : {b_active:>6,}")
+    else:
+        print(f"    (empty — will populate after first pipeline run post {FUNNEL_TRACKING_STARTED_AT})")
 
     # Stage 4: classified into derived sheets
     sheet_counts = {}

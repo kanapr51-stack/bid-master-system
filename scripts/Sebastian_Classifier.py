@@ -52,11 +52,15 @@ ALL_JOBS_HEADERS = [
     "refresh_count", "api_validity_state",
     # 2026-05-25: decision provenance (updated every classify run)
     "route_reason_latest", "classifier_version",
+    # 2026-05-25: enrichment quality — derived from ingestion_version
+    # "legacy_none" = never through process5; "v2_process5" = enriched
+    "enrichment_version",
 ]
 
 # Indices for mutating base during classification (avoid magic numbers)
 _RR_IDX = ALL_JOBS_HEADERS.index("route_reason_latest")   # 31
 _CV_IDX = ALL_JOBS_HEADERS.index("classifier_version")     # 32
+_EV_IDX = ALL_JOBS_HEADERS.index("enrichment_version")     # 33
 
 PRE_TOR_HEADERS        = ALL_JOBS_HEADERS + ["stage_note"]
 TOR_REVIEW_HEADERS     = ALL_JOBS_HEADERS + ["stage_note"]
@@ -279,42 +283,62 @@ def write_sheet(sheet_name: str, headers: list, rows: list):
 
 def _writeback_route_info(ws_src, all_values: list, route_data: dict):
     """
-    เขียน route_reason_latest + classifier_version กลับไปที่ all_jobs
-    2 API calls: one per column (AF, AG) — each with full column data
+    เขียน route_reason_latest + classifier_version + enrichment_version กลับไปที่ all_jobs
+    3 API calls: one per column (AF, AG, AH) — each with full column data
+    enrichment_version: derived from ingestion_version (blank→legacy_none, else use value)
     """
     from gspread.utils import rowcol_to_a1
-    n_hdrs = len(ALL_JOBS_HEADERS)
-    rr_col = n_hdrs - 1   # 1-indexed col number for route_reason_latest
-    cv_col = n_hdrs       # 1-indexed col number for classifier_version
 
-    rr_values = [["route_reason_latest"]]  # header row
+    # Column positions (1-indexed)
+    n = len(ALL_JOBS_HEADERS)
+    rr_col = n - 2   # route_reason_latest
+    cv_col = n - 1   # classifier_version
+    ev_col = n       # enrichment_version
+
+    # Locate ingestion_version in source headers for enrichment derivation
+    src_hdrs = all_values[0] if all_values else []
+    src_h = {v: i for i, v in enumerate(src_hdrs)}
+    iv_idx = src_h.get("ingestion_version", -1)
+
+    rr_values = [["route_reason_latest"]]
     cv_values = [["classifier_version"]]
+    ev_values = [["enrichment_version"]]
 
     for row in all_values[1:]:
         jid = row[0] if row else ""
         info = route_data.get(jid)
+        ingestion_ver = row[iv_idx] if 0 <= iv_idx < len(row) else ""
+        ev = ingestion_ver if ingestion_ver else "legacy_none"
         if info:
             rr_values.append([info["route_reason"]])
             cv_values.append([CLASSIFIER_VERSION])
+            ev_values.append([ev])
         else:
             rr_values.append([""])
             cv_values.append([""])
+            ev_values.append([ev])
 
     rr_a1 = rowcol_to_a1(1, rr_col)
     cv_a1 = rowcol_to_a1(1, cv_col)
+    ev_a1 = rowcol_to_a1(1, ev_col)
     ws_src.update(rr_values, rr_a1)
     ws_src.update(cv_values, cv_a1)
+    ws_src.update(ev_values, ev_a1)
     classified_count = sum(1 for v in rr_values[1:] if v[0])
+    legacy_count     = sum(1 for v in ev_values[1:] if v[0] == "legacy_none")
+    process5_count   = sum(1 for v in ev_values[1:] if v[0] != "legacy_none" and v[0])
     log(f"  writeback route_reason_latest → {rr_a1} ({classified_count} rows)")
     log(f"  writeback classifier_version  → {cv_a1} ({classified_count} rows)")
+    log(f"  writeback enrichment_version  → {ev_a1} (legacy_none={legacy_count}, process5={process5_count})")
 
 
 # ================================================================
 # Transition tracking — diff vs last classify run
 # ================================================================
 
-SNAPSHOT_FILE     = Path(__file__).parent.parent / "data" / "sheet_snapshot.json"
-TRANSITIONS_FILE  = Path(__file__).parent.parent / "data" / "transitions_latest.json"
+SNAPSHOT_FILE      = Path(__file__).parent.parent / "data" / "sheet_snapshot.json"
+TRANSITIONS_FILE   = Path(__file__).parent.parent / "data" / "transitions_latest.json"
+TRANSITIONS_HISTORY = Path(__file__).parent.parent / "data" / "transitions_history.ndjson"
 
 # Sheet ranking — for arrow direction (lower number = earlier in lifecycle)
 SHEET_RANK = {
@@ -408,10 +432,27 @@ def _apply_transition_marker(note: str, jid: str, transitions: dict) -> str:
 def _save_transitions(transitions: dict):
     TRANSITIONS_FILE.parent.mkdir(parents=True, exist_ok=True)
     TRANSITIONS_FILE.write_text(json.dumps({
-        "computed_at":      datetime.now().isoformat(timespec="seconds"),
+        "computed_at":        datetime.now().isoformat(timespec="seconds"),
         "classifier_version": CLASSIFIER_VERSION,
-        "transitions":      transitions,
+        "transitions":        transitions,
     }, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _append_transitions_history(transitions: dict):
+    """Append-only event log — one JSON line per run (ndjson format)"""
+    if not transitions:
+        return
+    TRANSITIONS_HISTORY.parent.mkdir(parents=True, exist_ok=True)
+    run_at = datetime.now().isoformat(timespec="seconds")
+    with TRANSITIONS_HISTORY.open("a", encoding="utf-8") as f:
+        for jid, t in transitions.items():
+            record = {
+                "run_at":             run_at,
+                "classifier_version": CLASSIFIER_VERSION,
+                "job_id":             jid,
+                **t,
+            }
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
 def main():
@@ -459,6 +500,13 @@ def main():
             "refresh_count_snapshot": g(row, "refresh_count"),
         }
 
+    def _set_base_provenance(base: list, reason: str, row):
+        """stamp route_reason, classifier_version, enrichment_version onto base"""
+        base[_RR_IDX] = reason
+        base[_CV_IDX] = CLASSIFIER_VERSION
+        iv = g(row, "ingestion_version")
+        base[_EV_IDX] = iv if iv else "legacy_none"
+
     for r in all_values[1:]:
         jid = g(r, "job_id")
         if not jid:
@@ -477,8 +525,7 @@ def main():
         # ── Path A0: announce_type=P0 → pre_tor โดยตรง (planning stage) ──
         if announce == "P0" and ps_raw != "R":
             _track(jid, "announce:P0", "medium", r)
-            base[_RR_IDX] = "announce:P0"
-            base[_CV_IDX] = CLASSIFIER_VERSION
+            _set_base_provenance(base, "announce:P0", r)
             pre_tor.append(base + ["ขั้นวางแผน (P0)"])
             continue
 
@@ -488,8 +535,7 @@ def main():
             sheet, note = classify_by_stepid(step_id, ps_raw, announce, has_winner)
             reason = f"stepId:{step_id}"
             _track(jid, reason, "high", r)
-            base[_RR_IDX] = reason
-            base[_CV_IDX] = CLASSIFIER_VERSION
+            _set_base_provenance(base, reason, r)
 
             if sheet == "cancelled_jobs":
                 cancelled.append(base + [note])
@@ -530,8 +576,7 @@ def main():
         deadline_val = g(r, "deadline")
         if not deadline_val and not announce and not has_winner:
             _track(jid, "legacy_orphan", "low", r)
-            base[_RR_IDX] = "legacy_orphan"
-            base[_CV_IDX] = CLASSIFIER_VERSION
+            _set_base_provenance(base, "legacy_orphan", r)
             archived.append(base + ["legacy_missing_all_metadata", archived_at])
             continue
 
@@ -539,8 +584,7 @@ def main():
         if ps_raw == "R" or announce in ("D1", "W1"):
             reason = f"fallback:cancel_{announce or ps_raw}"
             _track(jid, reason, "medium", r)
-            base[_RR_IDX] = reason
-            base[_CV_IDX] = CLASSIFIER_VERSION
+            _set_base_provenance(base, reason, r)
             cancelled.append(base + [f"ยกเลิก [fallback, announce={announce or ps_raw}]"])
             used_fallback_announce += 1
             continue
@@ -548,8 +592,7 @@ def main():
         # B1: winner cache
         if has_winner:
             _track(jid, "fallback:winner_cache", "medium", r)
-            base[_RR_IDX] = "fallback:winner_cache"
-            base[_CV_IDX] = CLASSIFIER_VERSION
+            _set_base_provenance(base, "fallback:winner_cache", r)
             wd = winner_cache[jid]
             awarded.append(base + [
                 wd.get("winner_name", ""), wd.get("winner_price", ""),
@@ -562,16 +605,14 @@ def main():
         at = (announce or "").strip().upper()
         if at == "B0":
             _track(jid, "fallback:B0", "medium", r)
-            base[_RR_IDX] = "fallback:B0"
-            base[_CV_IDX] = CLASSIFIER_VERSION
+            _set_base_provenance(base, "fallback:B0", r)
             tor_review.append(base + ["รับฟังคำวิจารณ์ [fallback:B0]"])
             used_fallback_announce += 1
             continue
         if at == "D0":
             reason = "fallback:D0"
             _track(jid, reason, "medium", r)
-            base[_RR_IDX] = reason
-            base[_CV_IDX] = CLASSIFIER_VERSION
+            _set_base_provenance(base, reason, r)
             dl = parse_thai_date(g(r, "deadline"))
             if dl is None:
                 active.append(base + [""])
@@ -583,8 +624,7 @@ def main():
             continue
         if at == "W0":
             _track(jid, "fallback:W0", "medium", r)
-            base[_RR_IDX] = "fallback:W0"
-            base[_CV_IDX] = CLASSIFIER_VERSION
+            _set_base_provenance(base, "fallback:W0", r)
             pending.append(base + ["รอประกาศผู้ชนะ [fallback:W0]"])
             used_fallback_announce += 1
             continue
@@ -594,20 +634,17 @@ def main():
         proj_status = _normalize_project_status(g(r, "project_status"))
         if proj_status == "ยกเลิก":
             _track(jid, "legacy_text:cancel", "low", r)
-            base[_RR_IDX] = "legacy_text:cancel"
-            base[_CV_IDX] = CLASSIFIER_VERSION
+            _set_base_provenance(base, "legacy_text:cancel", r)
             cancelled.append(base + ["ยกเลิก (legacy)"])
             continue
         if proj_status == "กำลังเตรียม":
             _track(jid, "legacy_text:pre_tor", "low", r)
-            base[_RR_IDX] = "legacy_text:pre_tor"
-            base[_CV_IDX] = CLASSIFIER_VERSION
+            _set_base_provenance(base, "legacy_text:pre_tor", r)
             pre_tor.append(base + ["ขั้นวางแผน (legacy)"])
             continue
         if proj_status == "ประมูลแล้ว":
             _track(jid, "legacy_text:awarded", "low", r)
-            base[_RR_IDX] = "legacy_text:awarded"
-            base[_CV_IDX] = CLASSIFIER_VERSION
+            _set_base_provenance(base, "legacy_text:awarded", r)
             pending.append(base + ["รอประกาศผล (legacy)"])
             continue
         if proj_status != "กำลังประมูล":
@@ -615,8 +652,7 @@ def main():
             continue
 
         _track(jid, "legacy_text:active", "low", r)
-        base[_RR_IDX] = "legacy_text:active"
-        base[_CV_IDX] = CLASSIFIER_VERSION
+        _set_base_provenance(base, "legacy_text:active", r)
         dl = parse_thai_date(g(r, "deadline"))
         if dl is None:
             active.append(base + [""])
@@ -682,6 +718,7 @@ def main():
         log(f"\n🔄 No transitions since last classify")
 
     _save_transitions(transitions)
+    _append_transitions_history(transitions)
     _save_snapshot(new_state)
 
     # ── Apply transition markers to derived sheets (modify note column) ──

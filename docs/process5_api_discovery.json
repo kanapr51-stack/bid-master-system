@@ -1,0 +1,98 @@
+{
+  "discovered_at": "2026-05-25T14:09:09",
+  "source": "Sebastian_XHR_Discovery.py + manual probe",
+  "finding": "process5.gprocurement.go.th has REST API endpoints accessible WITHOUT auth",
+  "architecture": {
+    "old_system": "process.gprocurement.go.th — Java EE (INETPIS), intermittent RSS servlet",
+    "new_system": "process5.gprocurement.go.th — Angular + Keycloak + microservices",
+    "announcement_frontend": "egp-aann09-web (Module Federation micro-frontend)",
+    "main_api_service": "egp-atpj27-service/pb/a-egp-allt-project",
+    "ref_data_service": "egp-rdb-service (fully public, no auth)"
+  },
+  "public_endpoints": [
+    {
+      "url": "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement/getProjectDetail?projectId={projectId}",
+      "method": "GET",
+      "auth": false,
+      "verified": true,
+      "fields": [
+        "projectId",
+        "methodId",
+        "typeId",
+        "projectName",
+        "goodsId",
+        "flowId",
+        "stepId",
+        "projectStatus",
+        "realMethodId",
+        "deptSubName",
+        "flowSeqno",
+        "announceType",
+        "isSect7"
+      ],
+      "note": "Replaces old process.gprocurement.go.th API — same fields, no Cloudflare"
+    },
+    {
+      "url": "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement/getProcureResult?projectId={projectId}",
+      "method": "GET",
+      "auth": false,
+      "verified": true,
+      "fields": [
+        "projectId",
+        "procureResultList",
+        "priceAgree",
+        "announceDate",
+        "deliverDay"
+      ],
+      "note": "Winner data without auth — key for awarded_jobs classification"
+    },
+    {
+      "url": "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement/getStepGrp",
+      "method": "GET",
+      "auth": false,
+      "verified": true,
+      "fields": [
+        "stepGrpId",
+        "stepGrpName",
+        "startDate",
+        "lastDate",
+        "stepWebName"
+      ],
+      "note": "5 step groups — useful for classification"
+    },
+    {
+      "url": "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement/get-budget-year-list",
+      "method": "GET",
+      "auth": false,
+      "verified": true,
+      "note": "22 budget years available"
+    },
+    {
+      "url": "https://process5.gprocurement.go.th/egp-rdb-service/rdbsysm011/listProvince",
+      "method": "GET",
+      "auth": false,
+      "verified": true,
+      "note": "All 77 provinces with provinceMoiId"
+    },
+    {
+      "url": "https://process5.gprocurement.go.th/egp-rdb-service/listProcureMethod",
+      "method": "GET",
+      "auth": false,
+      "verified": true,
+      "note": "All procurement methods"
+    }
+  ],
+  "needs_auth": [
+    {
+      "url": "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement",
+      "note": "Returns {validateCfTurnTile: false} — announcement list/search gate",
+      "workaround": "RSS feed on old system OR probe Cloudflare bypass options"
+    }
+  ],
+  "next_steps": [
+    "1. Migrate getProjectDetail + getProcureResult calls from old system to process5",
+    "2. Test rate limits on process5 endpoints (no auth = may have IP-based limits)",
+    "3. Investigate /announcement main endpoint — try with CSRF token from egp-amas22-service",
+    "4. Check egp-aann23-service (another announcement service found in bundle)"
+  ]
+}

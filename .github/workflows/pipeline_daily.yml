@@ -72,6 +72,7 @@ jobs:
                   data/transitions_history.ndjson \
                   data/sheet_snapshot.json \
                   data/daily_health_snapshot.json \
+                  data/health_snapshots/ \
                   data/scrape_baseline.json \
                   data/refresh_pending_cursor.json \
                   data/rss_queue.json \

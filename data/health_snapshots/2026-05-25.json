@@ -1,0 +1,18 @@
+{
+  "date": "2026-05-25",
+  "generated_at": "2026-05-25T17:53:01",
+  "total_jobs": 43230,
+  "active_bidding": 46,
+  "pending_award": 28,
+  "awarded_jobs": 31998,
+  "health_status": "LOW",
+  "universe_a_count": 43230,
+  "universe_b_count": 0,
+  "universe_b_enrich_rate": 0.0,
+  "enriched_total": 114,
+  "api_active": 0,
+  "api_retired": 0,
+  "discovered_today": 0,
+  "refresh_count_gt0": 0,
+  "rss_seen_ids": 1221
+}

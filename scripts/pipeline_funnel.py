@@ -19,7 +19,8 @@ from sheets_client import open_sheet
 
 SPREADSHEET_ID = "1gz7qLDIWphDhqxLf8Pxm08_cPmNb_IXTDvyxm6uThps"
 DATA_DIR = Path(__file__).parent.parent / "data"
-HEALTH_SNAPSHOT_FILE = DATA_DIR / "daily_health_snapshot.json"
+HEALTH_SNAPSHOT_FILE    = DATA_DIR / "daily_health_snapshot.json"
+HEALTH_SNAPSHOTS_DIR    = DATA_DIR / "health_snapshots"
 
 # Funnel tracking started when event lineage fields were added to all_jobs
 FUNNEL_TRACKING_STARTED_AT = "2026-05-25"
@@ -226,11 +227,15 @@ def main():
             "refresh_count_gt0":      rc_populated,
             "rss_seen_ids":           rss_discovered,
         }
+        payload = json.dumps(snapshot, ensure_ascii=False, indent=2)
         HEALTH_SNAPSHOT_FILE.parent.mkdir(parents=True, exist_ok=True)
-        HEALTH_SNAPSHOT_FILE.write_text(
-            json.dumps(snapshot, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+        HEALTH_SNAPSHOT_FILE.write_text(payload, encoding="utf-8")
+        # Archive per-day copy — enables trend analysis + SLA reporting
+        HEALTH_SNAPSHOTS_DIR.mkdir(parents=True, exist_ok=True)
+        archive_file = HEALTH_SNAPSHOTS_DIR / f"{today_str}.json"
+        archive_file.write_text(payload, encoding="utf-8")
         print(f"\n📊 Exported: {HEALTH_SNAPSHOT_FILE.name}")
+        print(f"   Archived: health_snapshots/{today_str}.json")
 
 
 if __name__ == "__main__":

@@ -11,8 +11,11 @@ permissions:
 
 jobs:
   rss:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, bms]
     timeout-minutes: 40   # split per-dept 1×10 → 3×8 step = 24 min + global 3 + commit 1 + queue 10 = ~38 + buffer
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - uses: actions/checkout@v6

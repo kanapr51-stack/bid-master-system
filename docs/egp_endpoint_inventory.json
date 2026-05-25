@@ -73,18 +73,23 @@
         "sumProjectMoneyAndCount": {
           "path": "/announcement/sumProjectMoneyAndCount",
           "method": "GET",
-          "params": ["?"],
-          "auth": "unknown",
-          "verified": false,
-          "note": "Timeout on probe — may need POST body or specific params"
+          "params": ["budgetYear"],
+          "auth": false,
+          "verified": true,
+          "latency_ms_avg": 3000,
+          "note": "budgetYear IS a working filter. All-time=68.4M, 2568=6.77M, 2567=6.64M, 2566=6.25M, 2565=5.79M. announceType/stepId/deptId params ignored. POST=405.",
+          "data": {
+            "all_time": 68408263,
+            "by_year": {"2568": 6770965, "2567": 6642064, "2566": 6252761, "2565": 5787288}
+          }
         },
         "csv_export": {
           "path": "/announcement/csv",
-          "method": "GET",
+          "method": "POST",
           "params": ["?"],
-          "auth": "unknown",
+          "auth": "cloudflare_turnstile",
           "verified": false,
-          "note": "Found in Angular bundle — may be bulk export"
+          "note": "GET=405, POST with body returns {validateCfTurnTile:false} — same Cloudflare gate as /announcement listing"
         },
         "getProcurementDetail": {
           "path": "/announcement/getProcurementDetail",
@@ -170,12 +175,21 @@
     "egp-aann23-service": {
       "base": "https://process5.gprocurement.go.th/egp-aann23-service",
       "purpose": "Unknown announcement service (found in bundle)",
-      "note": "TODO: probe endpoints"
+      "note": "Service alive (returns JSON 404 with timestamp). All tested paths 404. /actuator/* blocked by WAF (ConnectionReset). No Swagger/OpenAPI. Need Angular bundle analysis to find paths."
     },
     "egp-project-service": {
       "base": "https://process5.gprocurement.go.th/egp-project-service",
       "purpose": "Unknown project service (found in bundle)",
-      "note": "TODO: probe /getProjectDetail pattern"
+      "note": "Root GET 200 — {data: 'appInfo: egp-project-service, env:prod'}. All path patterns 404 (pb/a-egp-project, /project, /api). /actuator/* blocked by WAF. Need bundle analysis to find actual path prefix.",
+      "endpoints": {
+        "root": {
+          "path": "/",
+          "method": "GET",
+          "auth": false,
+          "verified": true,
+          "note": "Returns service identity: appInfo + env=prod"
+        }
+      }
     },
     "egp-authen-service": {
       "base": "https://process5.gprocurement.go.th/egp-authen-service",
@@ -195,10 +209,16 @@
     "note": "Intermittent, home IP required (GHA IPs blocked)"
   },
   "todo_investigate": [
-    "egp-aann23-service — what endpoints does it expose?",
-    "/announcement listing endpoint — what params unlock the data?",
-    "/announcement/sumProjectMoneyAndCount — what POST body does it need?",
-    "/announcement/csv — bulk export endpoint?",
-    "egp-project-service — alternative to egp-atpj27-service?"
-  ]
+    "egp-aann23-service — extract path prefix from Angular bundle chunk analysis",
+    "egp-project-service — extract path prefix from Angular bundle (chunk 594 or remoteEntry.js)",
+    "/announcement listing — Cloudflare Turnstile required; cannot unlock without browser/token. Options: (a) Playwright+Turnstile solve, (b) accept RSS as discovery layer",
+    "/announcement/csv — POST method, Cloudflare-gated same as /announcement listing",
+    "sumProjectMoneyAndCount — budgetYear filter confirmed; explore methodId/provinceId format to unlock finer counts"
+  ],
+  "conclusions_2026_05_25": {
+    "rss_vs_process5": "RSS = discovery layer (finds new projectIds), process5 REST = detail layer (getProjectDetail + getProcureResult without auth). This two-tier architecture is correct and stable.",
+    "cloudflare_gate": "Announcement listing (/announcement, /csv) requires Cloudflare Turnstile in prod. bypassCloudflareStatus=N. No workaround without browser automation.",
+    "database_scale": "68.4M records all-time. budgetYear=2568 → 6.77M. Confirms national procurement database is comprehensive.",
+    "process5_stability": "10 microservices confirmed. getProjectDetail avg 205ms, no throttling at 20-burst. WAF blocks /actuator/* but API paths remain open."
+  }
 }

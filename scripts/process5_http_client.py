@@ -14,6 +14,28 @@ import random
 import requests
 from typing import Optional
 
+try:
+    from Sebastian_Telemetry import record_poll
+    _telemetry = True
+except ImportError:
+    _telemetry = False
+
+
+def _record(endpoint: str, success: bool, response_time_ms: float,
+            bytes_received: int, items_count: int, failure_reason: str | None = None):
+    if not _telemetry:
+        return
+    try:
+        record_poll(
+            endpoint=endpoint, dept_id="", anounce_type="",
+            success=success, http_status=200 if success else -1,
+            response_time_ms=response_time_ms, ttfb_ms=response_time_ms,
+            bytes_received=bytes_received, items_count=items_count,
+            failure_reason=failure_reason, source_type="process5_api",
+        )
+    except Exception:
+        pass
+
 sys.stdout.reconfigure(encoding="utf-8")
 
 PROCESS5_BASE = "https://process5.gprocurement.go.th"
@@ -50,28 +72,38 @@ def _get(url: str, params: dict = None, retries: int = MAX_RETRIES) -> Optional[
     Backoff: exponential 30s→60s→120s + jitter แทน fixed 90s
     """
     for attempt in range(1, retries + 1):
+        t0 = time.time()
         try:
             r = requests.get(url, params=params, headers=HEADERS, timeout=TIMEOUT)
+            rt_ms = (time.time() - t0) * 1000
             if r.status_code == 429:
+                _record(url, False, rt_ms, 0, 0, "http_429")
                 if attempt < retries:
                     _rl_sleep(attempt)
                     continue
                 return None
             if not r.ok:
+                _record(url, False, rt_ms, 0, 0, f"http_{r.status_code}")
                 return None
             text = r.text
             if "Rate limit" in text or "rate limit" in text.lower():
+                _record(url, False, rt_ms, len(r.content), 0, "rate_limit_body")
                 if attempt < retries:
                     _rl_sleep(attempt)
                     continue
                 return None
+            _record(url, True, rt_ms, len(r.content), 1)
             return r.json()
         except requests.Timeout:
+            rt_ms = (time.time() - t0) * 1000
+            _record(url, False, rt_ms, 0, 0, "timeout")
             if attempt < retries:
                 time.sleep(3 * attempt)
                 continue
             return None
-        except Exception:
+        except Exception as e:
+            rt_ms = (time.time() - t0) * 1000
+            _record(url, False, rt_ms, 0, 0, "unknown_error")
             return None
     return None
 

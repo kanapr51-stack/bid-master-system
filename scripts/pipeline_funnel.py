@@ -8,6 +8,7 @@ Usage:
 
 import sys
 import json
+import argparse
 from pathlib import Path
 from collections import Counter
 from datetime import datetime, timezone, timedelta
@@ -18,12 +19,17 @@ from sheets_client import open_sheet
 
 SPREADSHEET_ID = "1gz7qLDIWphDhqxLf8Pxm08_cPmNb_IXTDvyxm6uThps"
 DATA_DIR = Path(__file__).parent.parent / "data"
+HEALTH_SNAPSHOT_FILE = DATA_DIR / "daily_health_snapshot.json"
 
 # Funnel tracking started when event lineage fields were added to all_jobs
 FUNNEL_TRACKING_STARTED_AT = "2026-05-25"
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--export", action="store_true",
+                    help="เขียน daily_health_snapshot.json")
+    args = ap.parse_args()
     now = datetime.now()
     print(f"=== BMS Pipeline Funnel [{now.strftime('%Y-%m-%d %H:%M')}] ===")
     print(f"    (Operational funnel tracking since: {FUNNEL_TRACKING_STARTED_AT})\n")
@@ -66,6 +72,7 @@ def main():
     has_lineage  = sum(1 for r in data_rows if disc_i >= 0 and r[disc_i].strip())
     univ_b_count = sum(1 for r in data_rows if ev_i >= 0 and r[ev_i].strip() and r[ev_i].strip() != "legacy_none")
     univ_a_count = total_jobs - univ_b_count
+    b_enrich_rate = 0.0
 
     print(f"Stage 3 — enriched (has stepId/announce) : {enriched:>8,}  ({enriched/total_jobs*100:.1f}%)")
     print(f"          └ has stepId                   : {has_stepid:>8,}")
@@ -88,7 +95,7 @@ def main():
         b_stepid = sum(1 for r in data_rows
                        if ev_i >= 0 and r[ev_i].strip() and r[ev_i].strip() != "legacy_none"
                        and step_i >= 0 and r[step_i].strip())
-        b_enrich_rate = b_stepid / univ_b_count * 100
+        b_enrich_rate = round(b_stepid / univ_b_count * 100, 2)
         print(f"    has stepId           : {b_stepid:>6,}  ({b_enrich_rate:.1f}%) ← target >70%")
         b_active = sum(1 for r in data_rows
                        if ev_i >= 0 and r[ev_i].strip() and r[ev_i].strip() != "legacy_none"
@@ -178,19 +185,52 @@ def main():
     if active < 50:
         print(f"  ⚠️  LOW — likely RSS coverage gap or classifier issue")
         print(f"       Diagnose: 1) RSS feed health  2) refresh pipeline lag  3) classifier logic")
+        health_status = "LOW"
     elif active < 100:
         print(f"  🟡 GROWING — runner online, expect increase in 24-48h")
+        health_status = "GROWING"
     else:
         print(f"  ✅ HEALTHY")
+        health_status = "HEALTHY"
 
     # Daily new active_bidding KPI (jobs with discovered_at today)
+    today_str = now.strftime("%Y-%m-%d")
+    new_today = 0
     if disc_i >= 0:
-        today_str = now.strftime("%Y-%m-%d")
         new_today = sum(
             1 for r in data_rows
             if disc_i < len(r) and r[disc_i].strip().startswith(today_str)
         )
         print(f"  New jobs discovered today              : {new_today:>7,}")
+
+    # Export daily_health_snapshot.json
+    if args.export:
+        rc_populated = sum(1 for r in data_rows
+                           if rc_i >= 0 and rc_i < len(r) and r[rc_i].strip().isdigit()
+                           and int(r[rc_i]) > 0)
+        snapshot = {
+            "date":                   today_str,
+            "generated_at":           now.isoformat(timespec="seconds"),
+            "total_jobs":             total_jobs,
+            "active_bidding":         active,
+            "pending_award":          sheet_counts.get("pending_award", 0),
+            "awarded_jobs":           sheet_counts.get("awarded_jobs", 0),
+            "health_status":          health_status,
+            "universe_a_count":       univ_a_count,
+            "universe_b_count":       univ_b_count,
+            "universe_b_enrich_rate": round(b_enrich_rate, 2) if univ_b_count > 0 else 0.0,
+            "enriched_total":         enriched,
+            "api_active":             api_active,
+            "api_retired":            api_retired,
+            "discovered_today":       new_today,
+            "refresh_count_gt0":      rc_populated,
+            "rss_seen_ids":           rss_discovered,
+        }
+        HEALTH_SNAPSHOT_FILE.parent.mkdir(parents=True, exist_ok=True)
+        HEALTH_SNAPSHOT_FILE.write_text(
+            json.dumps(snapshot, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        print(f"\n📊 Exported: {HEALTH_SNAPSHOT_FILE.name}")
 
 
 if __name__ == "__main__":

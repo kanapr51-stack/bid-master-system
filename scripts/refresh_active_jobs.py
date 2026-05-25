@@ -245,7 +245,9 @@ def _build_sparse_row(jid: str, q_item: dict, detail: dict) -> list:
         "0",            # refresh_count (starts at 0 for new jobs)
         "unknown",      # api_validity_state (unknown until first refresh)
     ])
-    return base  # 31 cols
+    # decision provenance — classifier fills via writeback on next classify run
+    base.extend(["", "", ""])  # route_reason_latest, classifier_version, enrichment_version
+    return base  # 34 cols (matches ALL_JOBS_HEADERS)
 
 
 def main():
@@ -485,13 +487,15 @@ def main():
     # ── Apply cell updates ──
     if update_payload:
         log(f"\nApply {len(update_payload)} row updates → all_jobs...")
+        from gspread.utils import rowcol_to_a1
         batch_data = []
         for u in update_payload:
             for field, val in u["fields"].items():
                 if field in h_idx:
-                    col = chr(ord("A") + h_idx[field])
+                    col_num = h_idx[field] + 1  # 1-indexed
+                    cell = rowcol_to_a1(u["row"], col_num)
                     batch_data.append({
-                        "range":  f"all_jobs!{col}{u['row']}",
+                        "range":  f"all_jobs!{cell}",
                         "values": [[val]],
                     })
         BATCH = 200

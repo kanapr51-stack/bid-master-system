@@ -60,13 +60,18 @@ jobs:
           echo "=== Step 5: Dashboard snapshot ==="
           python scripts/dashboard_extractor.py || true
 
+          echo "=== Step 5.5: Pipeline funnel health ==="
+          python scripts/pipeline_funnel.py --export
+
       - name: Commit updated state files
         run: |
           git config user.name  "Sebastian Bot"
           git config user.email "bot@bidmaster.local"
           git pull --no-rebase origin main || true
           git add data/transitions_latest.json \
+                  data/transitions_history.ndjson \
                   data/sheet_snapshot.json \
+                  data/daily_health_snapshot.json \
                   data/scrape_baseline.json \
                   data/refresh_pending_cursor.json \
                   data/rss_queue.json \

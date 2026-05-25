@@ -136,6 +136,8 @@ def _process_one(jid: str, budget: str) -> dict:
     winner  = {}
 
     detail = get_project_detail(jid)
+    fields["api_validity_state"] = "active" if detail.get("valid") else "retired"
+
     if detail.get("valid"):
         stepId  = detail.get("step_id", "")
         ps_raw  = detail.get("project_status_raw", "")
@@ -238,7 +240,12 @@ def _build_sparse_row(jid: str, q_item: dict, detail: dict) -> list:
         "rss_scraper",  # ingestion_source
         "v2_process5",  # ingestion_version
     ])
-    return base  # 29 cols
+    # operational health fields
+    base.extend([
+        "0",            # refresh_count (starts at 0 for new jobs)
+        "unknown",      # api_validity_state (unknown until first refresh)
+    ])
+    return base  # 31 cols
 
 
 def main():
@@ -373,6 +380,11 @@ def main():
         def _worker(jid: str):
             row_num, budget = row_map[jid]
             result = _process_one(jid, budget)
+            # increment refresh_count from current row value
+            r = all_values[row_num - 1]
+            rc_i = h_idx.get("refresh_count", -1)
+            cur_rc = int(r[rc_i]) if 0 <= rc_i < len(r) and str(r[rc_i]).isdigit() else 0
+            result["fields"]["refresh_count"] = str(cur_rc + 1)
             return jid, row_num, result
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as ex:

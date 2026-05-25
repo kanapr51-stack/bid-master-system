@@ -1,0 +1,118 @@
+"""
+pipeline_funnel.py — Pipeline funnel metrics for BMS
+
+Reports discovery → enrichment → classification → active_bidding funnel.
+Usage:
+    python scripts/pipeline_funnel.py
+"""
+
+import sys
+import json
+from pathlib import Path
+from collections import Counter
+from datetime import datetime
+
+sys.stdout.reconfigure(encoding="utf-8")
+sys.path.insert(0, str(Path(__file__).parent))
+from sheets_client import open_sheet
+
+SPREADSHEET_ID = "1gz7qLDIWphDhqxLf8Pxm08_cPmNb_IXTDvyxm6uThps"
+DATA_DIR = Path(__file__).parent.parent / "data"
+
+
+def main():
+    print(f"=== BMS Pipeline Funnel [{datetime.now().strftime('%Y-%m-%d %H:%M')}] ===\n")
+
+    # Stage 1: RSS discovered (rss_seen_ids.json)
+    seen_file = DATA_DIR / "rss_seen_ids.json"
+    rss_discovered = 0
+    if seen_file.exists():
+        try:
+            seen = json.loads(seen_file.read_text(encoding="utf-8"))
+            rss_discovered = len(seen) if isinstance(seen, (list, dict)) else 0
+        except Exception:
+            pass
+    print(f"Stage 1 — RSS discovered (seen IDs)     : {rss_discovered:>8,}")
+
+    # Stage 2: all_jobs (ingested)
+    ws_all = open_sheet(SPREADSHEET_ID, "all_jobs")
+    all_rows = ws_all.get_all_values()
+    hdrs = all_rows[0] if all_rows else []
+    h = {v: i for i, v in enumerate(hdrs)}
+    data_rows = all_rows[1:]
+    total_jobs = len(data_rows)
+    print(f"Stage 2 — all_jobs (ingested)            : {total_jobs:>8,}")
+
+    # Stage 3: process5 enriched (has step_id OR api_validity_state=active)
+    step_i = h.get("step_id", -1)
+    api_i  = h.get("api_validity_state", -1)
+    ann_i  = h.get("announce_type", -1)
+
+    has_stepid  = sum(1 for r in data_rows if step_i >= 0 and r[step_i].strip())
+    has_ann     = sum(1 for r in data_rows if ann_i >= 0 and r[ann_i].strip())
+    api_active  = sum(1 for r in data_rows if api_i >= 0 and r[api_i].strip() == "active")
+    api_retired = sum(1 for r in data_rows if api_i >= 0 and r[api_i].strip() == "retired")
+    enriched    = sum(1 for r in data_rows if (step_i >= 0 and r[step_i].strip()) or (ann_i >= 0 and r[ann_i].strip()))
+    print(f"Stage 3 — enriched (has stepId/announce) : {enriched:>8,}  ({enriched/total_jobs*100:.1f}%)")
+    print(f"          └ has stepId                   : {has_stepid:>8,}")
+    print(f"          └ has announce_type            : {has_ann:>8,}")
+    print(f"          └ api_validity_state=active    : {api_active:>8,}")
+    print(f"          └ api_validity_state=retired   : {api_retired:>8,}")
+
+    # Stage 4: classified into derived sheets
+    sheet_counts = {}
+    for sheet in ["pre_tor", "tor_review", "active_bidding", "pending_award",
+                  "awarded_jobs", "cancelled_jobs", "archived_unresolved"]:
+        try:
+            ws = open_sheet(SPREADSHEET_ID, sheet)
+            n = len(ws.get_all_values()) - 1
+            sheet_counts[sheet] = max(n, 0)
+        except Exception:
+            sheet_counts[sheet] = 0
+
+    classified = sum(sheet_counts.values())
+    print(f"Stage 4 — classified (all sheets)        : {classified:>8,}")
+    print()
+
+    # Sheet breakdown
+    emoji = {"pre_tor": "🟣", "tor_review": "🟢", "active_bidding": "🔵",
+             "pending_award": "🟡", "awarded_jobs": "⚪", "cancelled_jobs": "❌",
+             "archived_unresolved": "🗄️"}
+    for s, n in sheet_counts.items():
+        pct = f"{n/total_jobs*100:.1f}%" if total_jobs else ""
+        print(f"  {emoji.get(s,'  ')} {s:<24} : {n:>8,}  {pct}")
+
+    # Funnel drop-off analysis
+    print(f"\n=== Bottleneck Analysis ===")
+    unenriched = total_jobs - enriched
+    unarchived_pending = sheet_counts.get("pending_award", 0)
+    print(f"  No enrichment data (no stepId/announce): {unenriched:>7,}  ({unenriched/total_jobs*100:.1f}%) ← discovery gap")
+    print(f"  Genuine pending (post-cleanup)         : {unarchived_pending:>7,}")
+
+    # refresh_count distribution
+    rc_i = h.get("refresh_count", -1)
+    if rc_i >= 0:
+        rc_values = [int(r[rc_i]) for r in data_rows if r[rc_i].strip().isdigit()]
+        if rc_values:
+            never_refreshed = sum(1 for v in rc_values if v == 0)
+            refreshed_once  = sum(1 for v in rc_values if v == 1)
+            refreshed_multi = sum(1 for v in rc_values if v > 1)
+            print(f"\n  refresh_count=0 (never refreshed)     : {never_refreshed:>7,}")
+            print(f"  refresh_count=1                        : {refreshed_once:>7,}")
+            print(f"  refresh_count>1                        : {refreshed_multi:>7,}")
+        else:
+            print(f"\n  refresh_count: no data yet (new field)")
+
+    print(f"\n=== Active Bidding Health ===")
+    active = sheet_counts.get("active_bidding", 0)
+    print(f"  active_bidding count: {active}")
+    if active < 50:
+        print(f"  ⚠️  LOW — likely RSS coverage gap or classifier issue")
+    elif active < 100:
+        print(f"  🟡 GROWING — runner online, expect increase in 24-48h")
+    else:
+        print(f"  ✅ HEALTHY")
+
+
+if __name__ == "__main__":
+    main()

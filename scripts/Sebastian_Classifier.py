@@ -45,6 +45,8 @@ ALL_JOBS_HEADERS = [
     "method_id", "sme_suitable", "geographic_precision", "unspsc_family",
     # 2026-05-25: event lineage fields (immutable after first write)
     "discovered_at", "ingestion_source", "ingestion_version",
+    # 2026-05-25: operational health fields
+    "refresh_count", "api_validity_state",
 ]
 
 PRE_TOR_HEADERS        = ALL_JOBS_HEADERS + ["stage_note"]

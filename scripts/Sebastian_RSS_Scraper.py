@@ -34,6 +34,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 from curl_cffi import requests as cffi_requests
 
+from Sebastian_Telemetry import check_breaker, record_poll
+
 sys.stdout.reconfigure(encoding="utf-8")
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -150,11 +152,24 @@ STAGE_CODES = {
 }
 
 
+def _classify_error(exc: Exception) -> str:
+    msg = str(exc).lower()
+    if "timed out" in msg or "timeout" in msg:
+        return "timeout"
+    if "tls" in msg or "ssl" in msg or "certificate" in msg:
+        return "tls_error"
+    if "connection" in msg:
+        return "connection_error"
+    return "unknown_error"
+
+
 def fetch_dept(dept_id: str, anounce_type: str | None = None,
-               timeout: int | None = None, retries: int = 2) -> tuple[int, list[dict]]:
+               timeout: int | None = None, retries: int = 2,
+               record_telemetry: bool = False) -> tuple[int, list[dict]]:
     """Return (http_status, items). Retries on timeout with backoff.
     anounce_type: P0/B0/D0/W0/D1 (None = D0 default behavior)
     timeout: override POLL_TIMEOUT (ใช้ PROBE_ALL_TIMEOUT สำหรับ bulk probe)
+    record_telemetry: True สำหรับ global poll — บันทึก circuit breaker + poll_log
     Note: param name is 'anounceType' (typo by government)
     """
     params: dict[str, str] = {}
@@ -165,14 +180,26 @@ def fetch_dept(dept_id: str, anounce_type: str | None = None,
     _timeout = timeout if timeout is not None else POLL_TIMEOUT
 
     for attempt in range(retries + 1):
+        t_start = time.time()
         try:
             # curl_cffi เลียนแบบ Chrome 120 TLS fingerprint
-            # — process.gprocurement.go.th block python-requests' JA3 fingerprint
+            # — process.gprocurement.go.th block python-requests' JA3 fingerprint via TLS hang
+            # GHA IPs blocked by server (consistent 0 bytes) → RSS ต้องรันจาก local cron
             r = cffi_requests.get(
                 RSS_URL, params=params, headers=HEADERS,
                 timeout=_timeout, impersonate="chrome120",
             )
+            response_time_ms = (time.time() - t_start) * 1000
             if r.status_code != 200:
+                if record_telemetry:
+                    record_poll(
+                        endpoint=RSS_URL, dept_id=dept_id or "",
+                        anounce_type=anounce_type or "D0",
+                        success=False, http_status=r.status_code,
+                        response_time_ms=response_time_ms, ttfb_ms=response_time_ms,
+                        bytes_received=0, items_count=0,
+                        failure_reason=f"http_{r.status_code}",
+                    )
                 return r.status_code, []
             text = decode_thai(r.content)
             items = parse_items(text)
@@ -181,13 +208,31 @@ def fetch_dept(dept_id: str, anounce_type: str | None = None,
                 it["deptId"] = dept_id
                 it["anounceType"] = anounce_type or "D0"
                 it["stage"] = stage_tag
+            if record_telemetry:
+                record_poll(
+                    endpoint=RSS_URL, dept_id=dept_id or "",
+                    anounce_type=anounce_type or "D0",
+                    success=True, http_status=200,
+                    response_time_ms=response_time_ms, ttfb_ms=response_time_ms,
+                    bytes_received=len(r.content), items_count=len(items),
+                )
             return 200, items
         except Exception as e:
+            response_time_ms = (time.time() - t_start) * 1000
             is_timeout = "timed out" in str(e).lower() or "timeout" in str(e).lower()
             if attempt < retries and is_timeout:
                 time.sleep(1 + attempt)  # 1s, 2s backoff
                 continue
             log(f"  ⚠️ {dept_id} ({anounce_type or 'D0'}): {e}")
+            if record_telemetry:
+                record_poll(
+                    endpoint=RSS_URL, dept_id=dept_id or "",
+                    anounce_type=anounce_type or "D0",
+                    success=False, http_status=-1,
+                    response_time_ms=response_time_ms, ttfb_ms=None,
+                    bytes_received=0, items_count=0,
+                    failure_reason=_classify_error(e),
+                )
             return -1, []
     return -1, []
 
@@ -755,17 +800,28 @@ def poll_global_rss(anounce_types: list[str] | None = None,
     ครอบคลุม dept ใหม่ที่ถูก negative-cache skip อยู่ —
     ทุก dept ที่ post วันนี้จะปรากฏในfeed นี้อัตโนมัติ.
 
-    Returns: {"total_items": int, "new_to_rss": int, "types_polled": list}
+    Returns: {"total_items": int, "new_to_rss": int, "types_polled": list, "breaker": str}
     """
     if anounce_types is None:
         anounce_types = ["D0", "P0", "W0"]
+
+    # ── Circuit breaker check ──────────────────────────────────────────────
+    breaker = check_breaker(RSS_URL)
+    if breaker == "OPEN":
+        log(f"⛔ Circuit breaker OPEN — skip global RSS poll (cooldown active)")
+        return {"total_items": 0, "new_to_rss": 0, "types_polled": [], "breaker": "OPEN"}
+    if breaker == "HALF_OPEN":
+        log(f"🟡 Circuit breaker HALF_OPEN — probe 1 type then decide")
+        anounce_types = anounce_types[:1]   # probe แค่ type เดียว
+    # ──────────────────────────────────────────────────────────────────────
 
     rss_seen = load_seen(RSS_SEEN_FILE)
     all_items: list[dict] = []
     types_ok: list[str] = []
 
     for atype in anounce_types:
-        status, items = fetch_dept("", anounce_type=atype, timeout=12, retries=1)
+        status, items = fetch_dept("", anounce_type=atype, timeout=12, retries=1,
+                                   record_telemetry=True)
         if status == 200 and items:
             for it in items:
                 it["deptId"] = ""
@@ -790,11 +846,13 @@ def poll_global_rss(anounce_types: list[str] | None = None,
         ]
         queue_for_lookup(items_for_queue)
 
-    log(f"🌐 Global RSS: {len(all_items)} items · {len(new_to_rss)} new")
+    final_breaker = check_breaker(RSS_URL)
+    log(f"🌐 Global RSS: {len(all_items)} items · {len(new_to_rss)} new · breaker={final_breaker}")
     return {
         "total_items": len(all_items),
         "new_to_rss": len(new_to_rss),
         "types_polled": types_ok,
+        "breaker": final_breaker,
     }
 
 

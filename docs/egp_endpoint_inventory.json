@@ -1,0 +1,204 @@
+{
+  "generated_at": "2026-05-25",
+  "generated_by": "Phase 1.6 Endpoint Cartography",
+  "systems": {
+    "old_system": {
+      "host": "process.gprocurement.go.th",
+      "tech": "Java EE / Tomcat (INETPIS)",
+      "status": "intermittent — down 08:00–17:00 Thai time",
+      "note": "RSS servlet ล่มช่วงกลางวัน, กลับมา ~18:00"
+    },
+    "new_system": {
+      "host": "process5.gprocurement.go.th",
+      "tech": "Angular + Keycloak + microservices",
+      "status": "stable — 20/20 burst avg 205ms, no throttling observed",
+      "note": "parallel-run กับ old system, likely canonical future platform"
+    }
+  },
+  "services": {
+    "egp-atpj27-service": {
+      "base": "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project",
+      "purpose": "Main procurement API",
+      "endpoints": {
+        "getProjectDetail": {
+          "path": "/announcement/getProjectDetail",
+          "method": "GET",
+          "params": ["projectId"],
+          "auth": false,
+          "verified": true,
+          "latency_ms_avg": 200,
+          "fields": ["projectId","methodId","typeId","projectName","goodsId","flowId","stepId",
+                     "projectStatus","realMethodId","deptSubName","flowSeqno","announceType","isSect7"],
+          "use_in": ["refresh_active_jobs.py", "process5_http_client.py"],
+          "note": "Replaces old process.gprocurement.go.th — same fields"
+        },
+        "getProcureResult": {
+          "path": "/announcement/getProcureResult",
+          "method": "GET",
+          "params": ["projectId"],
+          "auth": false,
+          "verified": true,
+          "latency_ms_avg": 200,
+          "fields": ["projectId","procureResultList","priceAgree","announceDate","deliverDay","reportDate"],
+          "use_in": ["refresh_active_jobs.py", "process5_http_client.py"],
+          "note": "Winner data without auth — key for awarded_jobs"
+        },
+        "getStepGrp": {
+          "path": "/announcement/getStepGrp",
+          "method": "GET",
+          "params": [],
+          "auth": false,
+          "verified": true,
+          "latency_ms_avg": 210,
+          "fields": ["stepGrpId","stepGrpName","startDate","lastDate","stepWebName"],
+          "note": "5 step groups — useful for classification"
+        },
+        "get-budget-year-list": {
+          "path": "/announcement/get-budget-year-list",
+          "method": "GET",
+          "params": [],
+          "auth": false,
+          "verified": true,
+          "latency_ms_avg": 160,
+          "note": "22 budget years available"
+        },
+        "announcement_list": {
+          "path": "/announcement",
+          "method": "GET",
+          "params": ["?"],
+          "auth": "unknown — returns {validateCfTurnTile: false}",
+          "verified": false,
+          "note": "HOLY GRAIL — announcement list/search gate, Cloudflare protected. TODO: find params"
+        },
+        "sumProjectMoneyAndCount": {
+          "path": "/announcement/sumProjectMoneyAndCount",
+          "method": "GET",
+          "params": ["?"],
+          "auth": "unknown",
+          "verified": false,
+          "note": "Timeout on probe — may need POST body or specific params"
+        },
+        "csv_export": {
+          "path": "/announcement/csv",
+          "method": "GET",
+          "params": ["?"],
+          "auth": "unknown",
+          "verified": false,
+          "note": "Found in Angular bundle — may be bulk export"
+        },
+        "getProcurementDetail": {
+          "path": "/announcement/getProcurementDetail",
+          "method": "GET",
+          "params": ["projectId?"],
+          "auth": "unknown",
+          "verified": false,
+          "note": "Found in Angular bundle — similar to getProjectDetail?"
+        },
+        "cfturnstile_bypass": {
+          "path": "/api/v1/cfturnstile/bypasscloudflare",
+          "method": "GET",
+          "params": ["systemName"],
+          "auth": false,
+          "verified": true,
+          "note": "bypassCloudflareStatus=N on PROD — Cloudflare active"
+        }
+      }
+    },
+    "egp-rdb-service": {
+      "base": "https://process5.gprocurement.go.th/egp-rdb-service",
+      "purpose": "Reference data (provinces, methods, lookup tables)",
+      "auth_required": false,
+      "endpoints": {
+        "listProvince": {
+          "path": "/rdbsysm011/listProvince",
+          "method": "GET",
+          "auth": false,
+          "verified": true,
+          "latency_ms_avg": 490,
+          "note": "All 77 provinces with provinceMoiId"
+        },
+        "listProcureMethod": {
+          "path": "/listProcureMethod",
+          "method": "GET",
+          "auth": false,
+          "verified": true,
+          "latency_ms_avg": 210,
+          "note": "All procurement methods (ตกลงราคา, สอบราคา, ประกวดราคา ...)"
+        }
+      }
+    },
+    "egp-amas22-service": {
+      "base": "https://process5.gprocurement.go.th/egp-amas22-service",
+      "purpose": "Auth / session management",
+      "endpoints": {
+        "app-hidden": {
+          "path": "/pb/a-master/app-hidden",
+          "method": "POST",
+          "auth": false,
+          "verified": true,
+          "note": "Returns CSRF token — called on every Angular init"
+        },
+        "app-ver": {
+          "path": "/pb/a-master/app-ver",
+          "method": "POST",
+          "auth": false,
+          "verified": true,
+          "note": "Returns encrypted version string"
+        }
+      }
+    },
+    "egp-template-service": {
+      "base": "https://process5.gprocurement.go.th/egp-template-service",
+      "purpose": "PDF / document download",
+      "endpoints": {
+        "view-pdf-file": {
+          "path": "/dwnt/view-pdf-file",
+          "method": "GET",
+          "params": ["templateId"],
+          "auth": "unknown",
+          "verified": "partially",
+          "use_in": ["process5_http_client.py"],
+          "note": "templateId comes from RSS <link> field (UUID)"
+        }
+      }
+    },
+    "egp-aann09-web": {
+      "base": "https://process5.gprocurement.go.th/egp-aann09-web",
+      "purpose": "Announcement micro-frontend (Module Federation)",
+      "note": "Angular remote entry — exposes ./Announcement and ./Home1 modules"
+    },
+    "egp-aann23-service": {
+      "base": "https://process5.gprocurement.go.th/egp-aann23-service",
+      "purpose": "Unknown announcement service (found in bundle)",
+      "note": "TODO: probe endpoints"
+    },
+    "egp-project-service": {
+      "base": "https://process5.gprocurement.go.th/egp-project-service",
+      "purpose": "Unknown project service (found in bundle)",
+      "note": "TODO: probe /getProjectDetail pattern"
+    },
+    "egp-authen-service": {
+      "base": "https://process5.gprocurement.go.th/egp-authen-service",
+      "purpose": "Authentication service (found in bundle)",
+      "note": "Likely Keycloak wrapper"
+    }
+  },
+  "rss_feeds": {
+    "host": "process.gprocurement.go.th",
+    "base": "https://process.gprocurement.go.th/EPROCRssFeedWeb/egpannouncerss.xml",
+    "reliability": "~40% during Thai business hours, ~95% at night",
+    "known_params": {
+      "deptId": "department ID (0001-9999)",
+      "anounceType": "D0/B0/P0/W0/D1 (note: typo missing 'n')"
+    },
+    "role": "Primary discovery feed — finds new projectIds",
+    "note": "Intermittent, home IP required (GHA IPs blocked)"
+  },
+  "todo_investigate": [
+    "egp-aann23-service — what endpoints does it expose?",
+    "/announcement listing endpoint — what params unlock the data?",
+    "/announcement/sumProjectMoneyAndCount — what POST body does it need?",
+    "/announcement/csv — bulk export endpoint?",
+    "egp-project-service — alternative to egp-atpj27-service?"
+  ]
+}

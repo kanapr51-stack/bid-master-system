@@ -1,0 +1,99 @@
+{
+  "getProjectDetail": {
+    "url": "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement/getProjectDetail?projectId=69049437914",
+    "latency_ms": 248,
+    "response_code": "0",
+    "schema": {
+      "projectId": "str",
+      "methodId": "str",
+      "typeId": "str",
+      "projectName": "str",
+      "goodsId": "str",
+      "flowId": "str",
+      "stepId": "str",
+      "projectStatus": "str",
+      "realMethodId": "str",
+      "deptSubName": "str",
+      "publishTypeName": "NoneType",
+      "flowSeqno": "int",
+      "announceType": "str",
+      "isSect7": "bool"
+    },
+    "snapshotted_at": "2026-05-25T14:20:51"
+  },
+  "getProcureResult": {
+    "url": "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement/getProcureResult?projectId=69049437914",
+    "latency_ms": 162,
+    "response_code": "0",
+    "schema": {
+      "projectId": "str",
+      "projectCost": "str",
+      "projectCostName": "str",
+      "minQualityScore": "float",
+      "realMethodId": "str",
+      "announceDate": "NoneType",
+      "deliverDay": "int",
+      "reportDate": "str",
+      "procureResultList": [
+        {
+          "considerDesc": "str",
+          "procureResultDataResponse": [
+            "..."
+          ]
+        }
+      ]
+    },
+    "snapshotted_at": "2026-05-25T14:20:51"
+  },
+  "getStepGrp": {
+    "url": "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement/getStepGrp",
+    "latency_ms": 210,
+    "response_code": "0",
+    "schema": [
+      {
+        "stepGrpId": "str",
+        "stepGrpName": "str",
+        "startDate": "str",
+        "lastDate": "NoneType",
+        "stepWebName": "str"
+      }
+    ],
+    "snapshotted_at": "2026-05-25T14:20:51"
+  },
+  "get-budget-year-list": {
+    "url": "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement/get-budget-year-list",
+    "latency_ms": 158,
+    "response_code": "0",
+    "schema": [
+      "int"
+    ],
+    "snapshotted_at": "2026-05-25T14:20:51"
+  },
+  "listProvince": {
+    "url": "https://process5.gprocurement.go.th/egp-rdb-service/rdbsysm011/listProvince",
+    "latency_ms": 489,
+    "response_code": "0",
+    "schema": [
+      {
+        "provinceMoiId": "str",
+        "provinceName": "str",
+        "provinceNameEng": "NoneType"
+      }
+    ],
+    "snapshotted_at": "2026-05-25T14:20:52"
+  },
+  "listProcureMethod": {
+    "url": "https://process5.gprocurement.go.th/egp-rdb-service/listProcureMethod",
+    "latency_ms": 211,
+    "response_code": "0",
+    "schema": [
+      {
+        "methodId": "str",
+        "methodName": "str",
+        "startDate": "str",
+        "lastDate": "NoneType"
+      }
+    ],
+    "snapshotted_at": "2026-05-25T14:20:52"
+  }
+}

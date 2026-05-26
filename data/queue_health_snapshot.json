@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-05-26T12:07:59Z",
+  "generated_at": "2026-05-26T12:36:23Z",
   "queue_depth": 212,
-  "oldest_item_age_minutes": 664.5,
+  "oldest_item_age_minutes": 692.9,
   "oldest_item_queued_at": "2026-05-26T01:03:28",
   "newest_item_queued_at": "2026-05-26T06:54:00",
   "queue_by_type": {
@@ -13,8 +13,8 @@
   "drain_eta_confidence": "low",
   "recent_runs_window": 0,
   "recent_success_rate": 0.8,
-  "api_state": "HEALTHY",
-  "blocked_until": "",
-  "last_canary_success": "2026-05-26T19:05:58",
-  "health": "CRITICAL"
+  "api_state": "BLOCKED",
+  "blocked_until": "2026-05-26T21:36:23",
+  "last_canary_success": "2026-05-26T19:36:01",
+  "health": "BLOCKED"
 }

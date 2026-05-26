@@ -46,7 +46,7 @@ $state = Read-State
 if ($state -and $state.blocked_until) {
     $blockedUntil = [datetime]::Parse($state.blocked_until)
     if ((Get-Date) -lt $blockedUntil) {
-        Log "BLOCKED (persisted) — blocked_until=$($state.blocked_until) — skipping cycle"
+        Log "BLOCKED (persisted) -- blocked_until=$($state.blocked_until) -- skipping cycle"
         Log "=== Queue Processor skipped (BLOCKED) ==="
         exit 0
     }
@@ -73,7 +73,7 @@ if ($probeStr -notmatch "VALID") {
     $blockedUntil = (Get-Date).AddMinutes(30).ToString("yyyy-MM-ddTHH:mm:ss")
     $lastSuccess  = if ($state) { $state.last_canary_success } else { "" }
     Write-State "BLOCKED" $blockedUntil $lastSuccess 15
-    Log "BLOCKED — canary fail. blocked_until=$blockedUntil. Aborting."
+    Log "BLOCKED -- canary fail. blocked_until=$blockedUntil. Aborting."
     # Record canary_fail to history so failure_mode pattern is complete
     $hf = Join-Path $ScriptDir "data\ingestion_run_history.json"
     $h  = @(); if (Test-Path $hf) { try { $h = Get-Content $hf -Raw | ConvertFrom-Json } catch {} }
@@ -85,24 +85,45 @@ if ($probeStr -notmatch "VALID") {
     exit 0
 }
 
-# Canary passed
+# Canary passed — capture inter-run gap before overwriting state
+$prevLastSuccess = if ($state -and $state.last_canary_success) { $state.last_canary_success } else { "" }
 $lastSuccess  = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss")
 $runStartedAt = $lastSuccess
 Write-State "HEALTHY" "" $lastSuccess 15
-Log "HEALTHY — proceeding with batch (limit=15)"
+Log "HEALTHY -- proceeding with batch (limit=15)"
+
+# Observation: RSS latency = age of top-15 queue items at time of processing
+$rssLatencyAvgMin = 0
+try {
+    $qRaw = Get-Content (Join-Path $ScriptDir "data\rss_queue.json") -Raw | ConvertFrom-Json
+    $qItems = if ($qRaw -is [array]) { $qRaw } else { $qRaw.items }
+    $now = Get-Date
+    $ages = $qItems | Select-Object -First 15 | ForEach-Object {
+        if ($_.queued_at) { ($now - [datetime]::Parse($_.queued_at)).TotalMinutes } else { 0 }
+    }
+    if ($ages.Count -gt 0) { $rssLatencyAvgMin = [math]::Round(($ages | Measure-Object -Average).Average, 1) }
+} catch {}
+
+# Observation: inter-run gap (minutes since last successful run)
+$interRunGapMin = -1
+if ($prevLastSuccess -ne "") {
+    try { $interRunGapMin = [math]::Round(((Get-Date) - [datetime]::Parse($prevLastSuccess)).TotalMinutes, 1) } catch {}
+}
 
 # Step 4: consume queue → new Universe B rows
+$batchStart = Get-Date
 $result = & $Python "scripts\refresh_active_jobs.py" "--from-queue" "--workers" "3" "--limit" "15" 2>&1
 foreach ($line in $result) { Log $line }
 $pyExit = $LASTEXITCODE
-Log "exit code: $pyExit"
+$elapsedBatchSec = [math]::Round(((Get-Date) - $batchStart).TotalSeconds, 1)
+Log "exit code: $pyExit | elapsed: ${elapsedBatchSec}s"
 
 # Parse time-to-block telemetry from output
 $processedCount = 0
 $firstInvalidAt = ""
 foreach ($line in $result) {
     if ($line -match "sparse row prepared") { $processedCount++ }
-    if ($line -match "detail ไม่ valid" -and $firstInvalidAt -eq "") {
+    if ($line -match "detail.*valid" -and $line -notmatch "VALID" -and $firstInvalidAt -eq "") {
         $firstInvalidAt = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss")
     }
 }
@@ -113,7 +134,7 @@ $earlyStop  = $logContent -match "EARLY STOP"
 if ($earlyStop) {
     $blockedUntil = (Get-Date).AddHours(2).ToString("yyyy-MM-ddTHH:mm:ss")
     Write-State "BLOCKED" $blockedUntil $lastSuccess 15
-    Log "Mid-batch EARLY STOP — extended block 2h. blocked_until=$blockedUntil"
+    Log "Mid-batch EARLY STOP -- extended block 2h. blocked_until=$blockedUntil"
 }
 
 # Classify failure_mode: shape of degradation matters more than throughput
@@ -127,7 +148,7 @@ $failureMode = if ($earlyStop) {
     "zero_processed"      # canary passed but immediately all invalid
 }
 
-# Log time-to-block envelope data
+# Log time-to-block envelope data (with observation notes)
 $envelopeEntry = @{
     run_started_at         = $runStartedAt
     first_invalid_at       = $firstInvalidAt
@@ -136,6 +157,9 @@ $envelopeEntry = @{
     early_stop             = $earlyStop
     canary_passed          = $true
     failure_mode           = $failureMode
+    elapsed_batch_sec      = $elapsedBatchSec
+    rss_latency_avg_min    = $rssLatencyAvgMin
+    inter_run_gap_min      = $interRunGapMin
 } | ConvertTo-Json -Compress
 Log "envelope: $envelopeEntry"
 
@@ -153,6 +177,9 @@ $newEntry = [PSCustomObject]@{
     canary_passed         = $true
     batch_limit           = 15
     failure_mode          = $failureMode
+    elapsed_batch_sec     = $elapsedBatchSec
+    rss_latency_avg_min   = $rssLatencyAvgMin
+    inter_run_gap_min     = $interRunGapMin
 }
 $history = @($history) + @($newEntry)
 if ($history.Count -gt 10) { $history = $history[-10..-1] }

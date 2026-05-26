@@ -35,7 +35,7 @@ def classify_health(oldest_min: float, api_state: str) -> str:
 
 def main():
     queue = json.loads(QUEUE_FILE.read_text(encoding="utf-8")) if QUEUE_FILE.exists() else []
-    state = json.loads(STATE_FILE.read_text(encoding="utf-8")) if STATE_FILE.exists() else {}
+    state = json.loads(STATE_FILE.read_text(encoding="utf-8-sig")) if STATE_FILE.exists() else {}
 
     if queue:
         ages = [(item.get("queued_at", ""), age_minutes(item.get("queued_at", ""))) for item in queue]

@@ -2,63 +2,106 @@
 # Universe B creation: consume rss_queue → new rows in all_jobs → git push
 # Runs from local machine only (credentials/service_account.json required)
 #
-# State machine: HEALTHY → process 15 | BLOCKED → abort (preserve local IP trust)
+# State machine: HEALTHY → process 15 | BLOCKED → skip (preserve local IP trust)
+# Block persistence: canary fail → +30min cooldown | HTML rejection → +2h
 
 $ScriptDir  = (Resolve-Path "$PSScriptRoot\..").Path
 $LogDir     = Join-Path $ScriptDir "logs\queue_processor"
 $LogFile    = Join-Path $LogDir ("queue_processor_" + (Get-Date -Format "yyyyMMdd") + ".log")
+$StateFile  = Join-Path $ScriptDir "data\api_ingestion_state.json"
 $Python     = (Get-Command python.exe -ErrorAction SilentlyContinue).Source
-# Known-good canary ID (confirmed valid=True locally, in Universe B)
 $CanaryID   = "69039439931"
 
 if (-not $Python) { exit 1 }
-
-if (-not (Test-Path $LogDir)) {
-    New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
-}
+if (-not (Test-Path $LogDir)) { New-Item -ItemType Directory -Force -Path $LogDir | Out-Null }
 
 function Log($msg) {
     $line = "[$(Get-Date -Format 'HH:mm:ss')] $msg"
     Add-Content -Path $LogFile -Value $line -Encoding UTF8
 }
 
+function Read-State {
+    if (Test-Path $StateFile) {
+        try { return Get-Content $StateFile -Raw | ConvertFrom-Json }
+        catch {}
+    }
+    return $null
+}
+
+function Write-State($apiState, $blockedUntil, $lastCanarySuccess, $safeLimit) {
+    $obj = @{
+        api_state            = $apiState
+        blocked_until        = $blockedUntil
+        last_canary_success  = $lastCanarySuccess
+        safe_limit_current   = $safeLimit
+        updated_at           = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss")
+    }
+    $obj | ConvertTo-Json | Set-Content $StateFile -Encoding UTF8
+}
+
 Log "=== Queue Processor start ==="
 
-# Step 1: git pull
+# Step 1: Check persistent block state
+$state = Read-State
+if ($state -and $state.blocked_until) {
+    $blockedUntil = [datetime]::Parse($state.blocked_until)
+    if ((Get-Date) -lt $blockedUntil) {
+        Log "BLOCKED (persisted) — blocked_until=$($state.blocked_until) — skipping cycle"
+        Log "=== Queue Processor skipped (BLOCKED) ==="
+        exit 0
+    }
+}
+
+# Step 2: git pull
 Set-Location $ScriptDir
 $pullOut = git pull --no-rebase origin main 2>&1
 Log "git pull: $($pullOut -join ' | ')"
 
-# Step 2: Preflight probe — known-good canary ID
+# Step 3: Preflight canary probe
 Log "Preflight probe: $CanaryID ..."
 $probeResult = & $Python -c "
-import sys, json
+import sys
 sys.path.insert(0, 'scripts')
 from process5_http_client import get_project_detail
 d = get_project_detail('$CanaryID')
-print('valid=True' if d.get('valid') else 'valid=False')
+print('VALID' if d.get('valid') else 'INVALID')
 " 2>&1
-$probeOK = ($probeResult -join '') -match "valid=True"
-Log "Probe result: $($probeResult -join '')"
+$probeStr = $probeResult -join ''
+Log "Probe: $probeStr"
 
-if (-not $probeOK) {
-    Log "BLOCKED — canary probe failed. eGP likely down or WAF active. Aborting batch."
+if ($probeStr -notmatch "VALID") {
+    $blockedUntil = (Get-Date).AddMinutes(30).ToString("yyyy-MM-ddTHH:mm:ss")
+    $lastSuccess  = if ($state) { $state.last_canary_success } else { "" }
+    Write-State "BLOCKED" $blockedUntil $lastSuccess 15
+    Log "BLOCKED — canary fail. blocked_until=$blockedUntil. Aborting."
     Log "=== Queue Processor aborted (BLOCKED) ==="
     exit 0
 }
 
+# Canary passed
+$lastSuccess = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss")
+Write-State "HEALTHY" "" $lastSuccess 15
 Log "HEALTHY — proceeding with batch (limit=15)"
 
-# Step 3: consume queue → new Universe B rows
+# Step 4: consume queue → new Universe B rows
 $result = & $Python "scripts\refresh_active_jobs.py" "--from-queue" "--workers" "3" "--limit" "15" 2>&1
 foreach ($line in $result) { Log $line }
-Log "exit code: $LASTEXITCODE"
+$pyExit = $LASTEXITCODE
+Log "exit code: $pyExit"
 
-# Step 4: commit updated queue + winner cache
-$gitAdd = git add data/rss_queue.json data/winner_cache_bootstrap.json data/rss_seen_ids.json 2>&1
+# Detect mid-batch HTML WAF block → extend cooldown to 2h
+$logContent = Get-Content $LogFile -Raw
+if ($logContent -match "EARLY STOP") {
+    $blockedUntil = (Get-Date).AddHours(2).ToString("yyyy-MM-ddTHH:mm:ss")
+    Write-State "BLOCKED" $blockedUntil $lastSuccess 15
+    Log "Mid-batch EARLY STOP detected — extended block to 2h. blocked_until=$blockedUntil"
+}
+
+# Step 5: commit updated queue + winner cache
+$gitAdd = git add data/rss_queue.json data/winner_cache_bootstrap.json data/rss_seen_ids.json data/api_ingestion_state.json 2>&1
 Log "git add: $($gitAdd -join ' | ')"
 
-$staged = git diff --staged --quiet 2>&1
+$null = git diff --staged --quiet 2>&1
 if ($LASTEXITCODE -ne 0) {
     $ts = (Get-Date -Format "yyyy-MM-dd HH:mm")
     $commitOut = git commit -m "chore: queue-processor $ts [skip ci]" 2>&1

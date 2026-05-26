@@ -420,6 +420,8 @@ def main():
 
     if new_jids:
         log(f"\nProcessing {len(new_jids)} new jobs from RSS queue...")
+        consecutive_invalid = 0
+        EARLY_STOP_THRESHOLD = 3  # abort batch ถ้า eGP กำลัง block
         for jid in new_jids:
             q_item = queue_by_pid[jid]
             q_atype = q_item.get("anounce_type", "")
@@ -437,8 +439,13 @@ def main():
                         "announce_type": "P0",
                     }
                     log(f"  📋 {jid}: P0 planning — save from RSS (no getProjectDetail)")
+                    consecutive_invalid = 0
                 else:
-                    log(f"  ⚠️ {jid}: detail ไม่ valid — ข้าม (retry รอบหน้า)")
+                    consecutive_invalid += 1
+                    log(f"  ⚠️ {jid}: detail ไม่ valid — ข้าม ({consecutive_invalid}/{EARLY_STOP_THRESHOLD})")
+                    if consecutive_invalid >= EARLY_STOP_THRESHOLD:
+                        log(f"  🛑 EARLY STOP — {EARLY_STOP_THRESHOLD} consecutive invalid (eGP blocking) — abort batch")
+                        break
                     time.sleep(1)
                     continue
 
@@ -463,6 +470,7 @@ def main():
             sparse_row = _build_sparse_row(jid, q_item, detail)
             appended_rows.append(sparse_row)
             processed_pids.add(jid)
+            consecutive_invalid = 0
             log(f"  ✅ {jid}: sparse row prepared (step={detail.get('step_id')}, announce={detail.get('announce_type')}{', WINNER' if jid in cache else ''})")
             time.sleep(random.uniform(4, 9))
 

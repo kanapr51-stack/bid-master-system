@@ -429,11 +429,14 @@ def main():
         log(f"\nProcessing {len(new_jids)} new jobs from RSS queue...")
         consecutive_invalid = 0
         EARLY_STOP_THRESHOLD = 3  # abort batch ถ้า eGP กำลัง block
+        _request_latencies_ms: list[float] = []
         for jid in new_jids:
             q_item = queue_by_pid[jid]
             q_atype = q_item.get("anounce_type", "")
 
+            _t0 = time.time()
             detail = get_project_detail(jid)
+            _request_latencies_ms.append((time.time() - _t0) * 1000)
             if not detail.get("valid"):
                 # P0 (planning) items fail getProjectDetail — save from RSS data directly
                 if q_atype == "P0":
@@ -480,6 +483,14 @@ def main():
             consecutive_invalid = 0
             log(f"  ✅ {jid}: sparse row prepared (step={detail.get('step_id')}, announce={detail.get('announce_type')}{', WINNER' if jid in cache else ''})")
             time.sleep(random.uniform(4, 9))
+
+    # ── Latency distribution summary (for telemetry parsing) ──
+    if _request_latencies_ms:
+        _sorted = sorted(_request_latencies_ms)
+        _avg = sum(_sorted) / len(_sorted)
+        _p95 = _sorted[int(len(_sorted) * 0.95)] if len(_sorted) >= 2 else _sorted[-1]
+        _max = _sorted[-1]
+        log(f"  latency_ms avg={_avg:.0f} p95={_p95:.0f} max={_max:.0f} n={len(_sorted)}")
 
     # ── Write ──
     if appended_rows:

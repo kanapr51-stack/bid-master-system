@@ -119,12 +119,20 @@ $elapsedBatchSec = [math]::Round(((Get-Date) - $batchStart).TotalSeconds, 1)
 Log "exit code: $pyExit | elapsed: ${elapsedBatchSec}s"
 
 # Parse time-to-block telemetry from output
-$processedCount = 0
-$firstInvalidAt = ""
+$processedCount      = 0
+$firstInvalidAt      = ""
+$latencyAvgMs        = -1
+$latencyP95Ms        = -1
+$latencyMaxMs        = -1
 foreach ($line in $result) {
     if ($line -match "sparse row prepared") { $processedCount++ }
     if ($line -match "detail.*valid" -and $line -notmatch "VALID" -and $firstInvalidAt -eq "") {
         $firstInvalidAt = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss")
+    }
+    if ($line -match "latency_ms avg=(\d+) p95=(\d+) max=(\d+)") {
+        $latencyAvgMs = [int]$Matches[1]
+        $latencyP95Ms = [int]$Matches[2]
+        $latencyMaxMs = [int]$Matches[3]
     }
 }
 
@@ -160,6 +168,9 @@ $envelopeEntry = @{
     elapsed_batch_sec      = $elapsedBatchSec
     rss_latency_avg_min    = $rssLatencyAvgMin
     inter_run_gap_min      = $interRunGapMin
+    request_latency_avg_ms = $latencyAvgMs
+    request_latency_p95_ms = $latencyP95Ms
+    request_latency_max_ms = $latencyMaxMs
 } | ConvertTo-Json -Compress
 Log "envelope: $envelopeEntry"
 
@@ -171,15 +182,18 @@ if (Test-Path $historyFile) {
     if (-not $history) { $history = @() }
 }
 $newEntry = [PSCustomObject]@{
-    run_at                = $runStartedAt
-    processed_count       = $processedCount
-    early_stop            = [bool]$earlyStop
-    canary_passed         = $true
-    batch_limit           = 15
-    failure_mode          = $failureMode
-    elapsed_batch_sec     = $elapsedBatchSec
-    rss_latency_avg_min   = $rssLatencyAvgMin
-    inter_run_gap_min     = $interRunGapMin
+    run_at                 = $runStartedAt
+    processed_count        = $processedCount
+    early_stop             = [bool]$earlyStop
+    canary_passed          = $true
+    batch_limit            = 15
+    failure_mode           = $failureMode
+    elapsed_batch_sec      = $elapsedBatchSec
+    rss_latency_avg_min    = $rssLatencyAvgMin
+    inter_run_gap_min      = $interRunGapMin
+    request_latency_avg_ms = $latencyAvgMs
+    request_latency_p95_ms = $latencyP95Ms
+    request_latency_max_ms = $latencyMaxMs
 }
 $history = @($history) + @($newEntry)
 if ($history.Count -gt 10) { $history = $history[-10..-1] }

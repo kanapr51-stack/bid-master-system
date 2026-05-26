@@ -116,15 +116,34 @@ $envelopeEntry = @{
     processed_before_stop  = $processedCount
     batch_limit            = 15
     early_stop             = $earlyStop
+    canary_passed          = $true
 } | ConvertTo-Json -Compress
 Log "envelope: $envelopeEntry"
+
+# Append run to ingestion_run_history.json (keep last 10)
+$historyFile = Join-Path $ScriptDir "data\ingestion_run_history.json"
+$history = @()
+if (Test-Path $historyFile) {
+    try { $history = Get-Content $historyFile -Raw | ConvertFrom-Json } catch {}
+    if (-not $history) { $history = @() }
+}
+$newEntry = [PSCustomObject]@{
+    run_at                = $runStartedAt
+    processed_count       = $processedCount
+    early_stop            = [bool]$earlyStop
+    canary_passed         = $true
+    batch_limit           = 15
+}
+$history = @($history) + @($newEntry)
+if ($history.Count -gt 10) { $history = $history[-10..-1] }
+$history | ConvertTo-Json | Set-Content $historyFile -Encoding UTF8
 
 # Step 5: export queue health snapshot
 $healthOut = & $Python "scripts\queue_health.py" 2>&1
 Log "queue_health: $($healthOut -join '')"
 
 # Step 6: commit updated queue + winner cache + health snapshot
-$gitAdd = git add data/rss_queue.json data/winner_cache_bootstrap.json data/rss_seen_ids.json data/api_ingestion_state.json data/queue_health_snapshot.json 2>&1
+$gitAdd = git add data/rss_queue.json data/winner_cache_bootstrap.json data/rss_seen_ids.json data/api_ingestion_state.json data/queue_health_snapshot.json data/ingestion_run_history.json 2>&1
 Log "git add: $($gitAdd -join ' | ')"
 
 $null = git diff --staged --quiet 2>&1

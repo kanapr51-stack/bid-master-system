@@ -74,6 +74,13 @@ if ($probeStr -notmatch "VALID") {
     $lastSuccess  = if ($state) { $state.last_canary_success } else { "" }
     Write-State "BLOCKED" $blockedUntil $lastSuccess 15
     Log "BLOCKED — canary fail. blocked_until=$blockedUntil. Aborting."
+    # Record canary_fail to history so failure_mode pattern is complete
+    $hf = Join-Path $ScriptDir "data\ingestion_run_history.json"
+    $h  = @(); if (Test-Path $hf) { try { $h = Get-Content $hf -Raw | ConvertFrom-Json } catch {} }
+    if (-not $h) { $h = @() }
+    $h  = @($h) + @([PSCustomObject]@{ run_at=(Get-Date -Format "yyyy-MM-ddTHH:mm:ss"); processed_count=0; early_stop=$false; canary_passed=$false; batch_limit=15; failure_mode="canary_fail" })
+    if ($h.Count -gt 10) { $h = $h[-10..-1] }
+    $h | ConvertTo-Json | Set-Content $hf -Encoding UTF8
     Log "=== Queue Processor aborted (BLOCKED) ==="
     exit 0
 }
@@ -109,6 +116,17 @@ if ($earlyStop) {
     Log "Mid-batch EARLY STOP — extended block 2h. blocked_until=$blockedUntil"
 }
 
+# Classify failure_mode: shape of degradation matters more than throughput
+$failureMode = if ($earlyStop) {
+    "early_stop"          # 3 consecutive invalid (behavioral WAF)
+} elseif ($processedCount -ge 15) {
+    "clean_pass"          # full batch, no degradation
+} elseif ($processedCount -ge 1) {
+    "partial"             # processed some, stopped without early_stop trigger
+} else {
+    "zero_processed"      # canary passed but immediately all invalid
+}
+
 # Log time-to-block envelope data
 $envelopeEntry = @{
     run_started_at         = $runStartedAt
@@ -117,6 +135,7 @@ $envelopeEntry = @{
     batch_limit            = 15
     early_stop             = $earlyStop
     canary_passed          = $true
+    failure_mode           = $failureMode
 } | ConvertTo-Json -Compress
 Log "envelope: $envelopeEntry"
 
@@ -133,6 +152,7 @@ $newEntry = [PSCustomObject]@{
     early_stop            = [bool]$earlyStop
     canary_passed         = $true
     batch_limit           = 15
+    failure_mode          = $failureMode
 }
 $history = @($history) + @($newEntry)
 if ($history.Count -gt 10) { $history = $history[-10..-1] }

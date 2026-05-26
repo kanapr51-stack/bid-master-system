@@ -62,5 +62,19 @@
         "request_latency_avg_ms":  3878,
         "request_latency_p95_ms":  3905,
         "request_latency_max_ms":  3905
+    },
+    {
+        "run_at":  "2026-05-27T00:36:01",
+        "processed_count":  0,
+        "early_stop":  true,
+        "canary_passed":  true,
+        "batch_limit":  15,
+        "failure_mode":  "early_stop",
+        "elapsed_batch_sec":  22.7,
+        "rss_latency_avg_min":  1412.3,
+        "inter_run_gap_min":  150,
+        "request_latency_avg_ms":  3908,
+        "request_latency_p95_ms":  3913,
+        "request_latency_max_ms":  3913
     }
 ]

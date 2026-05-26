@@ -79,7 +79,8 @@ if ($probeStr -notmatch "VALID") {
 }
 
 # Canary passed
-$lastSuccess = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss")
+$lastSuccess  = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss")
+$runStartedAt = $lastSuccess
 Write-State "HEALTHY" "" $lastSuccess 15
 Log "HEALTHY — proceeding with batch (limit=15)"
 
@@ -89,13 +90,34 @@ foreach ($line in $result) { Log $line }
 $pyExit = $LASTEXITCODE
 Log "exit code: $pyExit"
 
+# Parse time-to-block telemetry from output
+$processedCount = 0
+$firstInvalidAt = ""
+foreach ($line in $result) {
+    if ($line -match "sparse row prepared") { $processedCount++ }
+    if ($line -match "detail ไม่ valid" -and $firstInvalidAt -eq "") {
+        $firstInvalidAt = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss")
+    }
+}
+
 # Detect mid-batch HTML WAF block → extend cooldown to 2h
 $logContent = Get-Content $LogFile -Raw
-if ($logContent -match "EARLY STOP") {
+$earlyStop  = $logContent -match "EARLY STOP"
+if ($earlyStop) {
     $blockedUntil = (Get-Date).AddHours(2).ToString("yyyy-MM-ddTHH:mm:ss")
     Write-State "BLOCKED" $blockedUntil $lastSuccess 15
-    Log "Mid-batch EARLY STOP detected — extended block to 2h. blocked_until=$blockedUntil"
+    Log "Mid-batch EARLY STOP — extended block 2h. blocked_until=$blockedUntil"
 }
+
+# Log time-to-block envelope data
+$envelopeEntry = @{
+    run_started_at         = $runStartedAt
+    first_invalid_at       = $firstInvalidAt
+    processed_before_stop  = $processedCount
+    batch_limit            = 15
+    early_stop             = $earlyStop
+} | ConvertTo-Json -Compress
+Log "envelope: $envelopeEntry"
 
 # Step 5: commit updated queue + winner cache
 $gitAdd = git add data/rss_queue.json data/winner_cache_bootstrap.json data/rss_seen_ids.json data/api_ingestion_state.json 2>&1

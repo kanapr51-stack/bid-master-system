@@ -2,6 +2,47 @@
 
 ---
 
+## งานที่ N+28: Adaptive Ingestion Control Loop — Universe B Day 1 (2026-05-26)
+
+### สถานะ: ✅ เสร็จ (commits af0e915→3be472c) / ⏳ characterization phase คืนนี้
+
+### สิ่งที่ทำ
+- Universe B เกิด 12:43 น. — 3 rows แรก (discovered_at + enrichment_version=v2_process5)
+- --from-queue ย้ายออกจาก GHA ไป local Task Scheduler (eGP behavioral block ต่อ datacenter IP)
+- Local machine = ingestion authority, GHA = maintenance layer
+- BidMaster_Queue_Processor: canary probe + early_stop + blocked_until + jitter 4-9s
+- Queue Health Snapshot: depth, oldest_age, drain_eta_hours, drain_eta_confidence
+- failure_mode taxonomy: canary_fail | early_stop | partial | zero_processed | clean_pass
+- Envelope history rolling last 5 (EWMA-lite, non-stationary env)
+
+### Commits
+- af0e915: Queue Processor + limit 15 + jitter
+- 680ba17: Canary probe + early_stop (3 consecutive invalid)
+- b16810a: blocked_until persistence (circuit breaker)
+- 123e2cb: time-to-block envelope logging
+- 3058e9c: queue_health.py + weighted D0>B0>W0 sort + drain_eta
+- 42e7b0c: envelope history rolling-5 + drain_eta_confidence
+- 3be472c: failure_mode classification ทุก code path
+
+### สถานะ 18:00 Playbook
+1. Manual trigger: `.\scripts\run_queue_processor.ps1`
+2. Watch canary → ถ้า HEALTHY + 3+ IDs valid → Enable-ScheduledTask BidMaster_Queue_Processor
+3. เก็บ failure_mode จากรอบแรก — Scenario B (partial/early_stop) คือ valuable signal
+
+### TODO พรุ่งนี้ (หลังมีข้อมูลคืนนี้)
+- [ ] Add `first_invalid_after_n_requests` (≈ processed_before_stop + 1) ใน envelope — raw data มีแล้ว
+- [ ] Add `time_to_first_invalid_seconds` (run_started_at → first_invalid_at) — raw data มีแล้ว
+- [ ] เปลี่ยน drain_eta_hours ให้ใช้ actual rolling throughput แทน bootstrap 80%
+- [ ] Review tonight's failure_mode pattern → diurnal trust curve เริ่มเห็น?
+
+### Insight สำคัญที่บันทึกไว้
+- zero_processed ≠ canary_fail: probe path trusted แต่ sustained fetch ถูก downgrade คนละ phenomenon
+- partial + early_stop = signature ของ upstream WAF mood ณ เวลานั้น
+- multi-run stability > single-run clean_pass ก่อน scale ใดๆ
+- goal คืนนี้: observe shape of degradation ไม่ใช่ drain queue
+
+---
+
 ## งานที่ N+23: Dept ID Coverage Research + Global RSS Mode (2026-05-21)
 
 ### สถานะ: ✅ เสร็จ (commit ec190bf)
@@ -2291,3 +2332,93 @@ backup: backups/all_jobs_province_*.json
 ### Followup
 - ขยาย org cache เป็น 77 จังหวัด (รัน build_org_cache.py --provinces ...) เมื่อ scale
 - nationwide precision ต่ำเพราะงานทางหลวง/ประปาข้ามจังหวัด — Phase 3 ค่อยพิจารณา coordinate
+
+## งานที่ N+26: Schema Migration + Funnel Metrics Upgrade (2026-05-25)
+
+### สถานะ: ✅ เสร็จ (commit ee5e05d)
+
+### สิ่งที่ทำ
+1. **Schema migration** — เพิ่ม 5 คอลัมน์ใน all_jobs Google Sheet (AA-AE):
+   - discovered_at, ingestion_source, ingestion_version, refresh_count, api_validity_state
+   - ต้องขยาย grid ก่อน (resize cols=32) เพราะ sheet ติด max=26
+   - ค่าทั้งหมดว่าง (ถูกต้อง — ไม่กรอกย้อนหลัง ตาม ChatGPT review)
+
+2. **pipeline_funnel.py upgrade**:
+   - เพิ่ม FUNNEL_TRACKING_STARTED_AT = 2026-05-25 แยก legacy corpus vs operational
+   - Discovery freshness section: jobs <24h, median lag, enrich success rate
+   - Daily new active_bidding KPI (jobs discovered today)
+   - has_discovered_at counter ใน Stage 3 track new-era ingestion
+
+### Sanity Check
+- all_jobs: 43,230 rows, 31 columns ✅
+- New columns blank = ถูกต้อง (จะเต็มหลัง pipeline run ถัดไป)
+- pipeline_funnel.py output ถูกต้อง — active_bidding 46 (⚠️ LOW รอ RSS กลับ)
+
+### Root Cause (column migration error ก่อนหน้า)
+- chr(ord('A') + 26) = '[' (invalid) — ต้องใช้ rowcol_to_a1() + resize() ก่อน
+
+### Followup
+- รอ GHA runner รัน pipeline ครั้งแรก → ข้อมูล discovered_at จะเริ่มเต็ม
+- Monitor active_bidding 24-48h (ตอนนี้ 46, target >100)
+
+## งานที่ N+27: Universe A/B Split + enrichment_version + transitions history (2026-05-25)
+
+### สถานะ: ✅ เสร็จ (commit 5713c84)
+
+### สิ่งที่ทำ
+1. **enrichment_version column (AH)** — derived จาก ingestion_version
+   - legacy_none = historical corpus ไม่เคยผ่าน process5
+   - 2_process5 = operational telemetry era (หลัง 2026-05-25)
+   - ALL_JOBS_HEADERS ตอนนี้ 34 cols
+
+2. **_set_base_provenance() helper** — stamp route_reason + classifier_version + enrichment_version พร้อมกัน
+   - ทุก path เรียก 1 function แทนที่จะ set 3 ค่าแยก
+
+3. **transitions_history.ndjson** — append-only event log
+   - เพิ่ม record ทุกครั้งที่มี job เปลี่ยน sheet
+   - format: {run_at, classifier_version, job_id, from, to, type, route_reason, confidence, ...}
+
+4. **pipeline_funnel.py Universe Split section**
+   - Universe A count + enriched rate (ควร ~0.2%)
+   - Universe B count + target >70% enrich success
+   - สถานะตอนนี้: A=43,230 (100%), B=0 รอ pipeline run
+
+### Architecture Insight (ChatGPT)
+- classifier_version ≠ enrichment_version (semantically different concepts)
+- classifier_version = logic version (always v3_process5, correct)
+- enrichment_version = data quality indicator (legacy_none vs v2_process5)
+
+### Followup
+- Universe B จะโตหลัง 06:00 พรุ่งนี้ (2026-05-26)
+- Target: B enrich success >70%
+- transitions_history.ndjson จะเริ่มมีข้อมูลเมื่อ job เปลี่ยน sheet
+
+## งานที่ N+28: Night Sprint — P1 fix + P2 funnel GHA + health archive (2026-05-25)
+
+### สถานะ: ✅ เสร็จ (commits 2745291 + 92d4b8f)
+
+### สิ่งที่ทำ
+1. **fix(critical): rowcol_to_a1** — chr(ord(A)+idx) invalid สำหรับ col > Z
+   - refresh_count (idx 29 → ^) + api_validity_state (idx 30 → _) ไม่เคยถูก write
+   - fix: gspread.utils.rowcol_to_a1(row, col+1)
+   - impact: Universe B จะโตได้จริงตั้งแต่ 06:00 พรุ่งนี้
+
+2. **P2: pipeline_funnel.py --export → GHA Step 5.5**
+   - data/daily_health_snapshot.json (latest)
+   - data/health_snapshots/YYYY-MM-DD.json (archive = time-series operational memory)
+
+3. **RSS State Machine spec** บันทึกใน memory
+   - DOWN / RECOVERING / STABLE + controlled catch-up by time window
+
+### ChatGPT confirmed: BMS ผ่าน "minimum viable operational platform threshold" แล้ว
+7 capabilities ครบ: ingestion, enrichment, observability, provenance, event history, trend memory, operational semantics
+
+### พรุ่งนี้ 06:00 — monitoring plan
+- ดู delta across runs: 06:00, 06:30, 07:00 (ไม่ดูแค่ snapshot เดียว)
+- Priority: universe_b_count > 0 → refresh_count_gt0 > 0 → discovered_today > 0 → active_bidding > 46
+- Scenario A (healthy) → Portal Recon Sprint
+- Scenario B (partial) → Discovery Reliability Sprint
+- Scenario C (dead) → inspect write path
+
+### Followup
+- Portal Recon Sprint หลัง Universe B confirm

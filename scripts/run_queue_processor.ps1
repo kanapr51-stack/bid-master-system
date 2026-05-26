@@ -119,8 +119,12 @@ $envelopeEntry = @{
 } | ConvertTo-Json -Compress
 Log "envelope: $envelopeEntry"
 
-# Step 5: commit updated queue + winner cache
-$gitAdd = git add data/rss_queue.json data/winner_cache_bootstrap.json data/rss_seen_ids.json data/api_ingestion_state.json 2>&1
+# Step 5: export queue health snapshot
+$healthOut = & $Python "scripts\queue_health.py" 2>&1
+Log "queue_health: $($healthOut -join '')"
+
+# Step 6: commit updated queue + winner cache + health snapshot
+$gitAdd = git add data/rss_queue.json data/winner_cache_bootstrap.json data/rss_seen_ids.json data/api_ingestion_state.json data/queue_health_snapshot.json 2>&1
 Log "git add: $($gitAdd -join ' | ')"
 
 $null = git diff --staged --quiet 2>&1

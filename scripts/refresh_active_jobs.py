@@ -282,6 +282,13 @@ def main():
             except json.JSONDecodeError:
                 queue_items = []
             log(f"  📥 queue: {len(queue_items)} items pending")
+            # Weighted priority sort: D0 > B0 > W0 (shuffle within same priority for fairness)
+            import random as _rnd
+            _PRIO = {"D0": 3, "B0": 2, "W0": 1}
+            queue_items.sort(
+                key=lambda x: (_PRIO.get(x.get("anounce_type", ""), 0), _rnd.random()),
+                reverse=True,
+            )
         else:
             log(f"  ⚠️ {queue_file} ไม่พบ — queue ว่าง")
 

@@ -1,8 +1,24 @@
-﻿{
-    "run_at":  "2026-05-26T18:21:22",
-    "processed_count":  15,
-    "early_stop":  false,
-    "canary_passed":  true,
-    "batch_limit":  15,
-    "failure_mode":  "clean_pass"
-}
+﻿[
+    {
+        "run_at":  "2026-05-26T18:21:22",
+        "processed_count":  15,
+        "early_stop":  false,
+        "canary_passed":  true,
+        "batch_limit":  15,
+        "failure_mode":  "clean_pass"
+    },
+    {
+        "run_at":  "2026-05-26T18:35:58",
+        "processed_count":  15,
+        "early_stop":  false,
+        "canary_passed":  true,
+        "batch_limit":  15,
+        "failure_mode":  "clean_pass",
+        "elapsed_batch_sec":  112,
+        "rss_latency_avg_min":  1052.3,
+        "inter_run_gap_min":  14.6,
+        "request_latency_avg_ms":  657,
+        "request_latency_p95_ms":  3429,
+        "request_latency_max_ms":  3429
+    }
+]

@@ -1,0 +1,8 @@
+﻿{
+    "run_at":  "2026-05-26T18:21:22",
+    "processed_count":  15,
+    "early_stop":  false,
+    "canary_passed":  true,
+    "batch_limit":  15,
+    "failure_mode":  "clean_pass"
+}

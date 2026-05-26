@@ -1,0 +1,20 @@
+{
+  "generated_at": "2026-05-26T08:18:49Z",
+  "queue_depth": 257,
+  "oldest_item_age_minutes": 435.4,
+  "oldest_item_queued_at": "2026-05-26T01:03:28",
+  "newest_item_queued_at": "2026-05-26T06:54:00",
+  "queue_by_type": {
+    "D0": 193,
+    "W0": 21,
+    "B0": 43
+  },
+  "drain_eta_hours": 10.7,
+  "drain_eta_confidence": "low",
+  "recent_runs_window": 0,
+  "recent_success_rate": 0.8,
+  "api_state": "UNKNOWN",
+  "blocked_until": "",
+  "last_canary_success": "",
+  "health": "CRITICAL"
+}

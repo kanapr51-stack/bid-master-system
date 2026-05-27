@@ -1,7 +1,7 @@
 ﻿{
-    "blocked_until":  "2026-05-27T10:06:27",
+    "blocked_until":  "2026-05-27T12:36:24",
     "safe_limit_current":  15,
     "api_state":  "BLOCKED",
-    "last_canary_success":  "2026-05-27T08:06:02",
-    "updated_at":  "2026-05-27T08:06:27"
+    "last_canary_success":  "2026-05-27T10:36:02",
+    "updated_at":  "2026-05-27T10:36:24"
 }

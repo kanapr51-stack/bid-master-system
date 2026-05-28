@@ -19,9 +19,13 @@
 $ScriptDir = (Resolve-Path "$PSScriptRoot\..").Path
 $LogDir    = Join-Path $ScriptDir "logs\line_sender"
 $LogFile   = Join-Path $LogDir ("sender_" + (Get-Date -Format "yyyyMMdd") + ".log")
+$BootLog   = Join-Path $ScriptDir "logs\boot_trace.log"
 $Python    = (Get-Command python.exe -ErrorAction SilentlyContinue).Source
 
-if (-not $Python) { exit 1 }
+if (-not $Python) {
+    Add-Content -Path $BootLog -Value "$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ss') LINE_SENDER BOOT_FAIL python_not_found" -Encoding UTF8
+    exit 1
+}
 if (-not (Test-Path $LogDir)) { New-Item -ItemType Directory -Force -Path $LogDir | Out-Null }
 
 function Log($msg) {
@@ -30,6 +34,7 @@ function Log($msg) {
 }
 
 Set-Location $ScriptDir
+Add-Content -Path $BootLog -Value "$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ss') LINE_SENDER START pid=$PID cwd=$ScriptDir" -Encoding UTF8
 Log "=== LINE Sender wrapper start ==="
 
 $result = & $Python "scripts\Sebastian_LINE_Sender.py" 2>&1

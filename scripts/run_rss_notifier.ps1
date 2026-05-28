@@ -13,9 +13,13 @@
 $ScriptDir = (Resolve-Path "$PSScriptRoot\..").Path
 $LogDir    = Join-Path $ScriptDir "logs\rss_notifier"
 $LogFile   = Join-Path $LogDir ("notifier_" + (Get-Date -Format "yyyyMMdd") + ".log")
+$BootLog   = Join-Path $ScriptDir "logs\boot_trace.log"
 $Python    = (Get-Command python.exe -ErrorAction SilentlyContinue).Source
 
-if (-not $Python) { exit 1 }
+if (-not $Python) {
+    Add-Content -Path $BootLog -Value "$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ss') RSS_NOTIFIER BOOT_FAIL python_not_found" -Encoding UTF8
+    exit 1
+}
 if (-not (Test-Path $LogDir)) { New-Item -ItemType Directory -Force -Path $LogDir | Out-Null }
 
 function Log($msg) {
@@ -24,6 +28,7 @@ function Log($msg) {
 }
 
 Set-Location $ScriptDir
+Add-Content -Path $BootLog -Value "$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ss') RSS_NOTIFIER START pid=$PID cwd=$ScriptDir" -Encoding UTF8
 Log "=== RSS Notifier wrapper start ==="
 
 $result = & $Python "scripts\Sebastian_RSS_Notifier.py" 2>&1

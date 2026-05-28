@@ -83,6 +83,10 @@ data/refresh_pending_cursor.json
 
 # ── Customer database (sensitive) ──
 data/bms_customers.db
+*.wal
+*.shm
+*.sqlite
+*.sqlite3
 
 # ── Large legacy archives ──
 archives/

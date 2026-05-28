@@ -202,6 +202,7 @@ def main():
             "dept_name":           "",
             "extraction_confidence": classification["confidence"],
             "is_backfill":         backfill,
+            "source_stage":        "rss_provisional",
         }, min_confidence=MIN_CONFIDENCE)
 
         if n > 0:

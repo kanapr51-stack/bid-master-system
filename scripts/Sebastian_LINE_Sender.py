@@ -61,10 +61,10 @@ def _load_line_token() -> str:
 def format_notification(project_id: str, province: str = "",
                          announce_type: str = "D0", budget: int = 0,
                          project_name: str = "", dept_name: str = "",
-                         is_backfill: bool = False) -> str:
+                         is_backfill: bool = False,
+                         source_stage: str = "api_enriched") -> str:
     budget_str = f"{budget:,}" if budget else "ไม่ระบุ"
     type_label = TYPE_LABELS.get(announce_type, announce_type or "ไม่ระบุ")
-    # Backfill = imported before notifier went live → different label to set correct expectation
     if is_backfill:
         header = "📦 โครงการที่ยังเปิดประมูลอยู่\n(นำเข้าหลังเปิดระบบแจ้งเตือน)"
     else:
@@ -80,6 +80,9 @@ def format_notification(project_id: str, province: str = "",
     if dept_name:
         lines.append(f"หน่วยงาน: {dept_name}")
     lines.append(f"รหัส: {project_id}")
+    # Provenance label for RSS-provisional — sets expectation, preserves trust
+    if source_stage == "rss_provisional":
+        lines.append("\n📡 ข้อมูลเบื้องต้นจาก RSS")
     return "\n".join(lines)
 
 
@@ -175,6 +178,7 @@ def main():
         project_name  = item.get("project_name") or "",
         dept_name     = item.get("dept_name") or "",
         is_backfill   = bool(item.get("is_backfill")),
+        source_stage  = item.get("source_stage") or "api_enriched",
     )
 
     if dry_run:

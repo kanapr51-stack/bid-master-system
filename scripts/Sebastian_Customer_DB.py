@@ -18,6 +18,12 @@ Schema v1.4 (2026-05-28):
   notification_queue  — + is_backfill INTEGER (0=live discovery, 1=imported/backfill)
                           backfill items use different message label in format_notification()
 
+Schema v1.5 (2026-05-28):
+  notification_queue  — + source_stage TEXT (latent metadata, NOT active in delivery logic)
+                          values: 'rss_provisional' | 'api_enriched'
+                          intentionally deferred: enriched re-notification semantics
+                          are out of scope for pilot phase (see progress_log.md N+32)
+
 Architecture: notification = historical event, not live view.
   Confidence gating: only enqueue if extraction_confidence == 'high' (pilot phase).
   Snapshot at enqueue: DO NOT JOIN live projects_seen at send/render time.
@@ -177,7 +183,20 @@ def init_schema():
     _migrate_v12()
     _migrate_v13()
     _migrate_v14()
-    print(f"Schema v1.4 ready: {DB_PATH}")
+    _migrate_v15()
+    print(f"Schema v1.5 ready: {DB_PATH}")
+
+
+def _migrate_v15():
+    """Add source_stage to notification_queue (latent metadata, idempotent).
+    source_stage is stored for future upgrade-path decisions — NOT active in delivery logic.
+    Enriched re-notification semantics are intentionally deferred beyond pilot phase.
+    """
+    with get_connection() as conn:
+        try:
+            conn.execute("ALTER TABLE notification_queue ADD COLUMN source_stage TEXT")
+        except sqlite3.OperationalError:
+            pass
 
 
 def _migrate_v14():
@@ -311,7 +330,8 @@ class SubscriptionStore:
 
         project keys: project_id, province, announce_type, budget,
                       project_name, dept_name, extraction_confidence,
-                      is_backfill (bool/int, default False)
+                      is_backfill (bool/int, default False),
+                      source_stage (str, default 'api_enriched')
 
         min_confidence: gate — only enqueue if project confidence >= threshold.
           'high'   → only high (default, pilot phase)
@@ -333,6 +353,7 @@ class SubscriptionStore:
         project_name = project.get("project_name", "") or None
         dept_name    = project.get("dept_name", "") or None
         is_backfill  = 1 if project.get("is_backfill") else 0
+        source_stage = project.get("source_stage", "api_enriched") or "api_enriched"
 
         # Confidence gate
         if _CONFIDENCE_RANK.get(confidence, 0) < _CONFIDENCE_RANK.get(min_confidence, 2):
@@ -357,10 +378,11 @@ class SubscriptionStore:
                 cur = conn.execute(
                     "INSERT OR IGNORE INTO notification_queue "
                     "(customer_id, project_id, status, created_at, "
-                    " province_snapshot, project_name_snapshot, dept_name_snapshot, is_backfill) "
-                    "VALUES (?,?,?,?,?,?,?,?)",
+                    " province_snapshot, project_name_snapshot, dept_name_snapshot, "
+                    " is_backfill, source_stage) "
+                    "VALUES (?,?,?,?,?,?,?,?,?)",
                     (row["customer_id"], project_id, "pending", now,
-                     province or None, project_name, dept_name, is_backfill),
+                     province or None, project_name, dept_name, is_backfill, source_stage),
                 )
                 if cur.lastrowid:
                     count += 1
@@ -378,7 +400,7 @@ class SubscriptionStore:
             conn.execute("BEGIN IMMEDIATE")
             rows = conn.execute("""
                 SELECT q.id, q.customer_id, q.project_id, q.retry_count,
-                       q.is_backfill,
+                       q.is_backfill, q.source_stage,
                        c.line_user_id, c.tier,
                        q.province_snapshot     AS province,
                        q.project_name_snapshot AS project_name,

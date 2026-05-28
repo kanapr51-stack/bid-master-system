@@ -2,6 +2,55 @@
 
 ---
 
+## งานที่ N+32: RSS-First Pilot + Schema v1.5 source_stage (2026-05-28 11:30)
+
+### สถานะ: ✅ เสร็จ
+
+### สิ่งที่ทำ
+
+**Schema v1.5 — source_stage (latent metadata)**
+- เพิ่ม `source_stage TEXT` ใน notification_queue
+- values: `rss_provisional` | `api_enriched`
+- ยัง NOT active ใน delivery logic — เก็บไว้เป็น upgrade path สำหรับอนาคต
+
+**Pilot Semantics Decision (intentionally deferred):**
+```
+Current pilot semantics:
+  - One notification per project_id (UNIQUE constraint preserved)
+  - RSS-first notifications are terminal notifications during pilot phase
+  - Enriched re-notification intentionally deferred — not oversight, scoped decision
+```
+เหตุผล: enriched re-notification มี complexity สูง (supersession, "spam vs refinement",
+snapshot invalidation, versioned payloads, customer preference) — พิสูจน์ใน Phase 2+
+
+**RSS Notifier** — pass `source_stage="rss_provisional"` ทุก item ที่ enqueue
+
+**LINE Sender format_notification()** — เพิ่ม provenance footer:
+```
+📡 ข้อมูลเบื้องต้นจาก RSS
+```
+เมื่อ `source_stage == "rss_provisional"` เท่านั้น
+
+**WAF probe result (10:26):** Scenario C — canary INVALID (3863ms), silence ต่อ
+
+**Working hypothesis (H2-style):**
+Multi-day persistent interaction-history-sensitive regime explains observations better than
+short-horizon decay (H1). VALID→INVALID during 21h silence weakens H1 assumption
+"inactivity moves toward healthier regime". Key signal: stable 3800ms latency plateau
+across 9+ runs (mechanistically robust), not VALID→INVALID (could be classifier drift).
+
+**Probe trigger framework (declared):**
+- Class 1: Identity/interaction conditions changed
+- Class 2: Upstream regime evidence changed
+- Class 3: Crossed hypothesized upstream persistence boundary (must declare H first)
+- Class 4: Operational necessity (label as such)
+Time-based Class 3 requires declared hypothesis — not numerology.
+
+### Followup
+- รอ LINE user ID จากคุณกัญจน์ → `python scripts/seed_self_notify.py --line-id U...`
+- RSS-first pilot: `python scripts/Sebastian_RSS_Notifier.py` → `python scripts/Sebastian_LINE_Sender.py --dry-run` → live send
+- R2 probe: เมื่อมี Class 1/2/3(H-declared) trigger เท่านั้น
+
 ## งานที่ N+31: WAF Morning Probe — Decision Framework (2026-05-28 03:30)
 
 ### สถานะ: ⏳ รอ probe 06:00

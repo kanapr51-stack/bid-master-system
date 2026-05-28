@@ -24,6 +24,14 @@ Schema v1.5 (2026-05-28):
                           intentionally deferred: enriched re-notification semantics
                           are out of scope for pilot phase (see progress_log.md N+32)
 
+Schema v1.6 (2026-05-28):
+  notification_queue  — + is_test_data INTEGER NOT NULL DEFAULT 0
+  delivery_log        — + is_test_data INTEGER NOT NULL DEFAULT 0
+  Observability hygiene boundary — separates production metrics from fault-injection.
+  Production queries: WHERE is_test_data=0
+  Synthetic/validation: WHERE is_test_data=1
+  Kept separate from source_stage to preserve data-provenance semantic purity.
+
 Architecture: notification = historical event, not live view.
   Confidence gating: only enqueue if extraction_confidence == 'high' (pilot phase).
   Snapshot at enqueue: DO NOT JOIN live projects_seen at send/render time.
@@ -184,7 +192,25 @@ def init_schema():
     _migrate_v13()
     _migrate_v14()
     _migrate_v15()
-    print(f"Schema v1.5 ready: {DB_PATH}")
+    _migrate_v16()
+    print(f"Schema v1.6 ready: {DB_PATH}")
+
+
+def _migrate_v16():
+    """Add is_test_data to notification_queue + delivery_log (idempotent).
+    Observability hygiene: separates synthetic fault-injection from production metrics.
+    Never merged into source_stage — different semantic axis (test identity vs data provenance).
+    """
+    stmts = [
+        "ALTER TABLE notification_queue ADD COLUMN is_test_data INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE delivery_log       ADD COLUMN is_test_data INTEGER NOT NULL DEFAULT 0",
+    ]
+    with get_connection() as conn:
+        for sql in stmts:
+            try:
+                conn.execute(sql)
+            except sqlite3.OperationalError:
+                pass
 
 
 def _migrate_v15():
@@ -323,7 +349,8 @@ class SubscriptionStore:
             )
 
     def enqueue_notifications(self, project: dict,
-                               min_confidence: str = "high") -> int:
+                               min_confidence: str = "high",
+                               is_test_data: int = 0) -> int:
         """
         Match project against subscriptions → insert pending items into notification_queue.
         Returns count of new queue items created.
@@ -332,6 +359,7 @@ class SubscriptionStore:
                       project_name, dept_name, extraction_confidence,
                       is_backfill (bool/int, default False),
                       source_stage (str, default 'api_enriched')
+        is_test_data: 1 = synthetic/fault-injection item, excluded from production metrics.
 
         min_confidence: gate — only enqueue if project confidence >= threshold.
           'high'   → only high (default, pilot phase)
@@ -379,10 +407,11 @@ class SubscriptionStore:
                     "INSERT OR IGNORE INTO notification_queue "
                     "(customer_id, project_id, status, created_at, "
                     " province_snapshot, project_name_snapshot, dept_name_snapshot, "
-                    " is_backfill, source_stage) "
-                    "VALUES (?,?,?,?,?,?,?,?,?)",
+                    " is_backfill, source_stage, is_test_data) "
+                    "VALUES (?,?,?,?,?,?,?,?,?,?)",
                     (row["customer_id"], project_id, "pending", now,
-                     province or None, project_name, dept_name, is_backfill, source_stage),
+                     province or None, project_name, dept_name, is_backfill, source_stage,
+                     is_test_data),
                 )
                 if cur.lastrowid:
                     count += 1
@@ -400,7 +429,7 @@ class SubscriptionStore:
             conn.execute("BEGIN IMMEDIATE")
             rows = conn.execute("""
                 SELECT q.id, q.customer_id, q.project_id, q.retry_count,
-                       q.is_backfill, q.source_stage,
+                       q.is_backfill, q.source_stage, q.is_test_data,
                        c.line_user_id, c.tier,
                        q.province_snapshot     AS province,
                        q.project_name_snapshot AS project_name,
@@ -507,12 +536,16 @@ class SubscriptionStore:
                     (now, queue_id, MAX_RETRIES),
                 )
 
-            # Always append audit record
+            # Always append audit record (propagate is_test_data for clean metric filtering)
+            q_row = conn.execute(
+                "SELECT is_test_data FROM notification_queue WHERE id=?", (queue_id,)
+            ).fetchone()
+            is_test = q_row["is_test_data"] if q_row else 0
             conn.execute(
                 "INSERT INTO delivery_log "
-                "(customer_id, project_id, channel, status, error_type, attempted_at) "
-                "VALUES (?,?,?,?,?,?)",
-                (customer_id, project_id, "line", status, error_type or None, now),
+                "(customer_id, project_id, channel, status, error_type, attempted_at, is_test_data) "
+                "VALUES (?,?,?,?,?,?,?)",
+                (customer_id, project_id, "line", status, error_type or None, now, is_test),
             )
 
     def already_sent(self, customer_id: int, project_id: str) -> bool:

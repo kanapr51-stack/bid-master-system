@@ -294,6 +294,160 @@ def get_procurement_detail(project_id: str) -> dict:
     }
 
 
+# ---- PDF Enrichment (logical plane, lazy parse + DB cache) ------------------
+
+PARSER_VERSION = "v1"
+
+
+def _classify_confidence(parsed: dict) -> str:
+    """high = date+time matched, medium = date only, low = neither."""
+    has_date = bool(parsed.get("bid_submit_date"))
+    has_time = bool(parsed.get("bid_submit_time"))
+    if has_date and has_time:
+        return "high"
+    if has_date:
+        return "medium"
+    return "low"
+
+
+def get_pdf_enrichment(project_id: str, pdf_url: str, db_path: str) -> dict:
+    """
+    Lazy PDF enrichment with DB cache (project_enrichments table).
+
+    Policy (ChatGPT-confirmed 2026-05-28):
+      - Cache by project_id (per-project, not per-delivery)
+      - Re-parse only when parser_version differs OR no cached entry
+      - Cache failures too (avoid re-downloading broken PDFs)
+      - Bounded failure: never raises — returns {"cache_hit", "enrichment_status", ...}
+
+    Return:
+      cache_hit: bool
+      enrichment_status: 'success' | 'failed' | 'partial'
+      bid_submit_date, bid_submit_time, eb_number: from PDF
+      pdf_download_ms, pdf_parse_ms: timing
+      extraction_confidence: high | medium | low
+    """
+    import sqlite3 as _sql
+    import time as _t
+
+    # Check cache first
+    try:
+        with _sql.connect(db_path) as conn:
+            conn.row_factory = _sql.Row
+            row = conn.execute(
+                "SELECT * FROM project_enrichments WHERE project_id=? AND parser_version=?",
+                (project_id, PARSER_VERSION),
+            ).fetchone()
+            if row:
+                d = dict(row)
+                d["cache_hit"] = True
+                return d
+    except Exception:
+        pass
+
+    # Cache miss — download + parse
+    t_dl_start = _t.time()
+    pdf_bytes = b""
+    download_ok = False
+    try:
+        r = requests.get(pdf_url, headers=HEADERS, timeout=20)
+        if r.status_code == 200 and len(r.content) > 1000:
+            pdf_bytes = r.content
+            download_ok = True
+    except Exception:
+        pass
+    pdf_download_ms = int((_t.time() - t_dl_start) * 1000)
+
+    result = {
+        "cache_hit":          False,
+        "project_id":         project_id,
+        "parser_version":     PARSER_VERSION,
+        "pdf_url":            pdf_url,
+        "pdf_download_ms":    pdf_download_ms,
+        "pdf_parse_ms":       0,
+        "parse_duration_ms":  0,
+        "parsed_at":          _utc_now_iso(),
+        "bid_submit_date":    None,
+        "bid_submit_time":    None,
+        "eb_number":          None,
+        "announce_date_pdf":  None,
+        "raw_extract_json":   None,
+        "parse_error_type":   None,
+        "enrichment_status":  "failed",
+        "extraction_confidence": "low",
+    }
+
+    if not download_ok:
+        result["parse_error_type"] = "pdf_download_failed"
+        _persist_enrichment(db_path, result)
+        return result
+
+    # Parse
+    t_parse_start = _t.time()
+    try:
+        from egp_pdf_parser import parse_announcement_pdf
+        parsed = parse_announcement_pdf(pdf_bytes)
+    except Exception as e:
+        parsed = {"error": f"parser_exception: {e}"}
+    pdf_parse_ms = int((_t.time() - t_parse_start) * 1000)
+    result["pdf_parse_ms"]      = pdf_parse_ms
+    result["parse_duration_ms"] = pdf_parse_ms
+
+    if "error" in parsed:
+        result["parse_error_type"] = parsed["error"][:100]
+        _persist_enrichment(db_path, result)
+        return result
+
+    # Map parsed fields
+    import json as _json
+    result["bid_submit_date"]   = parsed.get("bid_submit_date")
+    result["bid_submit_time"]   = parsed.get("bid_submit_time")
+    result["eb_number"]         = parsed.get("eb_number")
+    result["announce_date_pdf"] = parsed.get("announce_date")
+    result["raw_extract_json"]  = _json.dumps(parsed, ensure_ascii=False)
+
+    # Classify
+    if result["bid_submit_date"]:
+        result["enrichment_status"] = "success" if result["bid_submit_time"] else "partial"
+    else:
+        result["enrichment_status"] = "failed"
+        result["parse_error_type"]  = "regex_no_bid_date"
+    result["extraction_confidence"] = _classify_confidence(parsed)
+
+    _persist_enrichment(db_path, result)
+    return result
+
+
+def _utc_now_iso() -> str:
+    """UTC ISO8601 with Z suffix (replay-friendly)."""
+    from datetime import datetime, timezone as _tz
+    return datetime.now(_tz.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _persist_enrichment(db_path: str, result: dict):
+    """Write enrichment result to project_enrichments (idempotent upsert)."""
+    import sqlite3 as _sql
+    try:
+        with _sql.connect(db_path) as conn:
+            conn.execute("""
+                INSERT OR REPLACE INTO project_enrichments
+                  (project_id, parser_version, enrichment_status, extraction_confidence,
+                   parsed_at, parse_duration_ms, pdf_download_ms,
+                   bid_submit_date, bid_submit_time, eb_number, announce_date_pdf,
+                   pdf_url, raw_extract_json, parse_error_type)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            """, (
+                result["project_id"], result["parser_version"],
+                result["enrichment_status"], result["extraction_confidence"],
+                result["parsed_at"], result["parse_duration_ms"], result["pdf_download_ms"],
+                result["bid_submit_date"], result["bid_submit_time"],
+                result["eb_number"], result["announce_date_pdf"],
+                result["pdf_url"], result["raw_extract_json"], result["parse_error_type"],
+            ))
+    except Exception:
+        pass  # cache write failure is non-fatal
+
+
 def get_procure_result(project_id: str) -> dict:
     """
     เรียก getProcureResult?projectId=X → dict winner info + full bidders list

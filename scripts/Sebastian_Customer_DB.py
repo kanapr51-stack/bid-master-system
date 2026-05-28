@@ -194,7 +194,50 @@ def init_schema():
     _migrate_v14()
     _migrate_v15()
     _migrate_v16()
-    print(f"Schema v1.6 ready: {DB_PATH}")
+    _migrate_v17()
+    print(f"Schema v1.7 ready: {DB_PATH}")
+
+
+def _migrate_v17():
+    """Add project_enrichments table (per-project, shared across customers/notifications).
+
+    Schema design (ChatGPT-confirmed 2026-05-28):
+      - per-project semantics (NOT per-delivery — avoid duplication explosion)
+      - enrichment_status enum: success | failed | partial  (NO 'pending' — no async worker yet)
+      - extraction_confidence enum: high | medium | low
+          high   = bid_submit_date + time both matched
+          medium = bid_submit_date matched only
+          low    = heuristic/ambiguous parse
+      - parsed_at: UTC ISO8601 (Z suffix) for replay/drift analysis
+      - raw_extract_json: preserved for parser-version replay
+      - re-parse policy: only when parser_version changes OR manual replay
+    """
+    with get_connection() as conn:
+        try:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS project_enrichments (
+                    project_id            TEXT PRIMARY KEY,
+                    parser_version        TEXT NOT NULL,
+                    enrichment_status     TEXT NOT NULL CHECK(enrichment_status IN ('success','failed','partial')),
+                    extraction_confidence TEXT CHECK(extraction_confidence IN ('high','medium','low')),
+                    parsed_at             TEXT NOT NULL,
+                    parse_duration_ms     INTEGER,
+                    pdf_download_ms       INTEGER,
+                    bid_submit_date       TEXT,
+                    bid_submit_time       TEXT,
+                    eb_number             TEXT,
+                    announce_date_pdf     TEXT,
+                    pdf_url               TEXT,
+                    raw_extract_json      TEXT,
+                    parse_error_type      TEXT
+                )
+            """)
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_enrich_parser_version
+                    ON project_enrichments(parser_version)
+            """)
+        except sqlite3.OperationalError:
+            pass
 
 
 def _migrate_v16():

@@ -58,6 +58,23 @@ def _load_line_token() -> str:
     return token
 
 
+def _lookup_pdf_url_from_rss(project_id: str) -> str:
+    """Find PDF link from rss_queue.json by project_id (best-effort, non-fatal)."""
+    try:
+        import json as _json
+        from pathlib import Path as _Path
+        rss_path = _Path(__file__).parent.parent / "data" / "rss_queue.json"
+        if not rss_path.exists():
+            return ""
+        items = _json.loads(rss_path.read_text(encoding="utf-8-sig"))
+        for item in items:
+            if item.get("projectId") == project_id:
+                return item.get("link") or ""
+    except Exception:
+        pass
+    return ""
+
+
 def _shorten_project_name(name: str, max_len: int = 60) -> str:
     """ตัดชื่อโครงการ — ลบ prefix ที่ไม่มีความหมายออก"""
     prefixes = [
@@ -88,15 +105,44 @@ def _fmt_budget(budget: float) -> str:
     return f"{int(budget):,} บาท"
 
 
+def _fmt_thai_date(iso_date: str) -> str:
+    """'2026-06-08' → '8 มิ.ย.' """
+    if not iso_date:
+        return ""
+    try:
+        from datetime import datetime as _dt
+        d = _dt.strptime(iso_date, "%Y-%m-%d")
+        months = ["", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+                  "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."]
+        return f"{d.day} {months[d.month]}"
+    except Exception:
+        return iso_date
+
+
+def _days_remaining(bid_date_iso: str) -> int | None:
+    """Days from today to bid_submit_date. Negative = past."""
+    if not bid_date_iso:
+        return None
+    try:
+        from datetime import datetime as _dt, timezone as _tz, timedelta as _td
+        TZ_TH = _tz(_td(hours=7))
+        d = _dt.strptime(bid_date_iso, "%Y-%m-%d").replace(tzinfo=TZ_TH)
+        today = _dt.now(TZ_TH).replace(hour=0, minute=0, second=0, microsecond=0)
+        return (d - today).days
+    except Exception:
+        return None
+
+
 def format_notification(project_id: str, province: str = "",
                          announce_type: str = "D0", budget: float = 0,
                          project_name: str = "", dept_name: str = "",
                          deliver_day: int = 0, report_date: str = "",
+                         bid_submit_date: str = "", bid_submit_time: str = "",
                          is_backfill: bool = False,
                          source_stage: str = "api_enriched") -> str:
     """
-    v1 Mobile-first format — optimize สำหรับ 3-second decision scan
-    ลำดับ: geography → project → money → agency → timeline
+    v2 Mobile-first format — optimize สำหรับ 3-second decision scan
+    ลำดับ: geography → project → money → agency → DEADLINE → timeline → announced
     """
     short_name = _shorten_project_name(project_name) if project_name else project_id
     lines = []
@@ -113,16 +159,23 @@ def format_notification(project_id: str, province: str = "",
     if dept_name:
         lines.append(f"🏢 {dept_name}")
 
+    # ⏰ deadline — high priority placement after agency
+    if bid_submit_date:
+        thai_date = _fmt_thai_date(bid_submit_date)
+        time_part = f" {bid_submit_time}" if bid_submit_time else ""
+        lines.append(f"⏰ ยื่นซอง {thai_date}{time_part}")
+        days = _days_remaining(bid_submit_date)
+        if days is not None and days >= 0:
+            lines.append(f"⌛ เหลือ {days} วัน")
+
     if deliver_day:
         lines.append(f"⏱ ระยะเวลา {deliver_day} วัน")
 
     if report_date:
         lines.append(f"📅 ประกาศ {report_date}")
 
-    lines.append(f"\n🔑 รหัส: {project_id}")
-
     if source_stage == "rss_provisional":
-        lines.append("📡 ข้อมูลเบื้องต้นจาก RSS")
+        lines.append("\n📡 ข้อมูลเบื้องต้นจาก RSS")
 
     return "\n".join(lines)
 
@@ -210,7 +263,7 @@ def main():
         f"customer={item['customer_id']} retry={item['retry_count']}"
     )
 
-    # Step 4: enrich missing fields from process5 API (opportunistic — fallback to snapshot)
+    # Step 4a: API enrichment (opportunistic, bounded failure)
     dept_name   = item.get("dept_name") or ""
     budget      = float(item.get("budget") or 0)
     deliver_day = 0
@@ -225,22 +278,42 @@ def main():
                 budget      = enriched.get("budget") or budget
                 deliver_day = enriched.get("deliver_day") or 0
                 report_date = enriched.get("report_date") or ""
-                log(f"  Enriched: dept={dept_name[:30]} budget={budget} days={deliver_day}")
+                log(f"  API enrich: dept={dept_name[:30]} budget={budget} days={deliver_day}")
         except Exception as e:
-            log(f"  Enrich failed (non-fatal): {e}")
+            log(f"  API enrich failed (non-fatal): {e}")
+
+    # Step 4b: PDF enrichment for bid_submit_date (lazy + cached)
+    bid_submit_date = ""
+    bid_submit_time = ""
+    pdf_url = item.get("pdf_url") or _lookup_pdf_url_from_rss(item["project_id"])
+    if pdf_url:
+        try:
+            from process5_http_client import get_pdf_enrichment
+            from Sebastian_Customer_DB import DB_PATH
+            penrich = get_pdf_enrichment(item["project_id"], pdf_url, str(DB_PATH))
+            bid_submit_date = penrich.get("bid_submit_date") or ""
+            bid_submit_time = penrich.get("bid_submit_time") or ""
+            cache_label = "cached" if penrich.get("cache_hit") else "fresh"
+            log(f"  PDF enrich ({cache_label}): status={penrich.get('enrichment_status')} "
+                f"bid={bid_submit_date} time={bid_submit_time} "
+                f"dl={penrich.get('pdf_download_ms')}ms parse={penrich.get('pdf_parse_ms')}ms")
+        except Exception as e:
+            log(f"  PDF enrich failed (non-fatal): {e}")
 
     # Step 5: format message
     text = format_notification(
-        project_id    = item["project_id"],
-        province      = item.get("province") or "",
-        announce_type = item.get("announce_type") or "D0",
-        budget        = budget,
-        project_name  = item.get("project_name") or "",
-        dept_name     = dept_name,
-        deliver_day   = deliver_day,
-        report_date   = report_date,
-        is_backfill   = bool(item.get("is_backfill")),
-        source_stage  = item.get("source_stage") or "api_enriched",
+        project_id      = item["project_id"],
+        province        = item.get("province") or "",
+        announce_type   = item.get("announce_type") or "D0",
+        budget          = budget,
+        project_name    = item.get("project_name") or "",
+        dept_name       = dept_name,
+        deliver_day     = deliver_day,
+        report_date     = report_date,
+        bid_submit_date = bid_submit_date,
+        bid_submit_time = bid_submit_time,
+        is_backfill     = bool(item.get("is_backfill")),
+        source_stage    = item.get("source_stage") or "api_enriched",
     )
 
     if dry_run:

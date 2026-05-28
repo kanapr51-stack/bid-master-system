@@ -10,6 +10,7 @@ Status symbols:
   FAIL  = failure
   ZERO  = informative zero (healthy absence)
 """
+import os
 import sys
 import io
 import json
@@ -145,10 +146,35 @@ def delivery_section() -> str:
     else:
         sym = "WARN "  # pending but not sent
 
+    # Monthly quota (LINE push API = 200 free/month)
+    LINE_MONTHLY_QUOTA = 200
+    month_start = NOW.replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
+    sent_month = conn.execute(
+        "SELECT COUNT(*) n FROM delivery_log "
+        "WHERE status='sent' AND is_test_data=0 AND attempted_at >= ?",
+        (month_start,),
+    ).fetchone()["n"]
+    quota_remaining = LINE_MONTHLY_QUOTA - sent_month
+
+    # Per-customer sent today
+    per_customer = conn.execute(
+        "SELECT c.display_name, COUNT(*) n FROM delivery_log d "
+        "JOIN customers c ON c.id = d.customer_id "
+        "WHERE d.status='sent' AND d.is_test_data=0 AND d.attempted_at >= ? "
+        "GROUP BY d.customer_id",
+        (WINDOW.isoformat(),),
+    ).fetchall()
+
     lines = [
         f"Delivery: {sym}",
         f"  sent={sent}  failed={failed}  queue_pending={pending}",
+        f"  quota: {sent_month}/{LINE_MONTHLY_QUOTA} used  remaining={quota_remaining}",
     ]
+    if per_customer:
+        breakdown = "  ".join(f"{r['display_name'][:10]}={r['n']}" for r in per_customer)
+        lines.append(f"  per_user: {breakdown}")
+    if quota_remaining <= 20:
+        lines.append(f"  ⚠️ QUOTA LOW: {quota_remaining} remaining this month")
     if sent == 0 and pending == 0 and sym == "ZERO ":
         lines.append("  (no matching projects in queue — expected)")
     if failed > 0:

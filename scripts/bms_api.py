@@ -1,11 +1,11 @@
 """
-bms_api.py — FastAPI bridge for BMS VPS
-Receives webhooks from Vercel LINE handler + preferences from portal.
+bms_api.py -- FastAPI bridge for BMS VPS
+Receives webhooks from LINE Messaging API + preferences from portal.
 
 Endpoints:
-  GET  /health                  — liveness check
-  POST /webhook/line            — LINE follow/unfollow events (LINE signature verified)
-  POST /api/preferences         — province preferences from portal (X-BMS-Secret verified)
+  GET  /health                  -- liveness check
+  POST /webhook/line            -- LINE events: follow/unfollow/message (LINE signature verified)
+  POST /api/preferences         -- province preferences from portal (X-BMS-Secret verified)
 """
 import hashlib
 import hmac
@@ -19,7 +19,7 @@ from pathlib import Path
 import httpx
 from fastapi import FastAPI, Request, Header, HTTPException
 
-# ── Config ────────────────────────────────────────────────────────────────────
+# -- Config -------------------------------------------------------------------
 
 DB_PATH              = Path("/opt/bms/data/bms_customers.db")
 LINE_CHANNEL_SECRET  = os.getenv("SEBASTIAN_LINE_SECRET", "")
@@ -29,7 +29,7 @@ TZ_TH = timezone(timedelta(hours=7))
 
 LINE_API = "https://api.line.me/v2/bot"
 
-app = FastAPI(title="BMS API Bridge", version="1.1")
+app = FastAPI(title="BMS API Bridge", version="1.2")
 
 
 def _now() -> str:
@@ -44,18 +44,18 @@ def get_conn() -> sqlite3.Connection:
     return conn
 
 
-# ── LINE helpers ──────────────────────────────────────────────────────────────
+# -- LINE helpers -------------------------------------------------------------
 
 def _line_headers() -> dict:
-    return {"Authorization": f"Bearer {LINE_ACCESS_TOKEN}"}
+    return {"Authorization": "Bearer " + LINE_ACCESS_TOKEN}
 
 
-async def fetch_line_profile(user_id: str) -> tuple[str, str | None]:
+async def fetch_line_profile(user_id: str):
     """Return (display_name, picture_url). Falls back to 'LINE User' on error."""
     try:
         async with httpx.AsyncClient(timeout=5) as client:
             r = await client.get(
-                f"{LINE_API}/profile/{user_id}",
+                LINE_API + "/profile/" + user_id,
                 headers=_line_headers(),
             )
         if r.status_code == 200:
@@ -66,28 +66,98 @@ async def fetch_line_profile(user_id: str) -> tuple[str, str | None]:
     return "LINE User", None
 
 
-async def push_welcome(user_id: str, display_name: str) -> None:
-    """Send welcome message after new LINE follow."""
-    text = (
-        f"สวัสดีครับ คุณ{display_name} \U0001f44b\n\n"
-        "ผม Sebastian ผู้ช่วยติดตามงานประมูลภาครัฐ\n\n"
-        "เมื่อมีโครงการใหม่ในพื้นที่ที่คุณสนใจ ผมจะแจ้งเตือนทันทีครับ\n\n"
-        "ทีมงานจะติดต่อเพื่อตั้งค่าพื้นที่ให้คุณเร็วๆ นี้ครับ \U0001f64f"
-    )
+async def push_message(user_id: str, text: str) -> None:
+    """Push message to a LINE user (no replyToken needed)."""
     try:
         async with httpx.AsyncClient(timeout=10) as client:
             await client.post(
-                f"{LINE_API}/message/push",
+                LINE_API + "/message/push",
                 headers={**_line_headers(), "Content-Type": "application/json"},
                 json={"to": user_id, "messages": [{"type": "text", "text": text}]},
             )
     except Exception:
-        pass  # non-fatal — customer already created in DB
+        pass
 
 
-# ── LINE signature verification ───────────────────────────────────────────────
+async def reply_message(reply_token: str, text: str) -> None:
+    """Reply via replyToken -- must call within ~30s of receiving the event."""
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            await client.post(
+                LINE_API + "/message/reply",
+                headers={**_line_headers(), "Content-Type": "application/json"},
+                json={"replyToken": reply_token, "messages": [{"type": "text", "text": text}]},
+            )
+    except Exception:
+        pass
 
-def verify_line_signature(body: bytes, signature: str | None) -> bool:
+
+# -- Message text helpers (ASCII quotes only, no smart/curly quotes) ----------
+
+def _welcome_text(display_name: str) -> str:
+    return "\n".join([
+        "สวัสดีครับ คุณ" + display_name + " \U0001f44b",
+        "",
+        "ผม Sebastian ผู้ช่วยติดตามงานประมูลภาครัฐ",
+        "",
+        "เมื่อมีโครงการใหม่ในพื้นที่ที่คุณสนใจ ผมจะแจ้งเตือนทันทีครับ",
+        "",
+        "ทีมงานจะติดต่อเพื่อตั้งค่าพื้นที่ให้คุณเร็วๆ นี้ครับ \U0001f64f",
+        "",
+        "พิมพ์ ช่วย เพื่อดูคำสั่งทั้งหมด",
+    ])
+
+
+def _help_text() -> str:
+    return "\n".join([
+        "\U0001f4d6 คำสั่งของ Sebastian",
+        "",
+        "ช่วย -- แสดงคำสั่งทั้งหมด",
+        "สถานะ -- ดูจังหวัดที่ตั้งค่าไว้",
+        "",
+        "การแจ้งเตือนจะส่งเมื่อมีโครงการใหม่ในพื้นที่ของคุณครับ",
+    ])
+
+
+def _status_text(display_name: str, provinces: list, tier: str) -> str:
+    prov_str = ", ".join(provinces) if provinces else "(ยังไม่ตั้งค่า)"
+    return "\n".join([
+        "\U0001f4cb สถานะของคุณ" + display_name,
+        "",
+        "จังหวัด: " + prov_str,
+        "แพ็กเกจ: " + tier,
+        "",
+        "ติดต่อทีมงานเพื่อแก้ไขพื้นที่ครับ",
+    ])
+
+
+def _get_customer_status(user_id: str):
+    """Return (display_name, provinces, tier) or None if not found."""
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT c.id, c.display_name, c.tier "
+            "FROM customers c WHERE c.line_user_id=? AND c.active=1",
+            (user_id,),
+        ).fetchone()
+        if not row:
+            return None
+        sub = conn.execute(
+            "SELECT id FROM subscriptions WHERE customer_id=? AND active=1",
+            (row["id"],),
+        ).fetchone()
+        provinces = []
+        if sub:
+            rows = conn.execute(
+                "SELECT province FROM subscription_provinces WHERE subscription_id=?",
+                (sub["id"],),
+            ).fetchall()
+            provinces = [r["province"] for r in rows]
+        return row["display_name"] or "ลูกค้า", provinces, row["tier"]
+
+
+# -- LINE signature verification ----------------------------------------------
+
+def verify_line_signature(body: bytes, signature) -> bool:
     if not signature or not LINE_CHANNEL_SECRET:
         return False
     digest = hmac.new(
@@ -99,7 +169,7 @@ def verify_line_signature(body: bytes, signature: str | None) -> bool:
     return hmac.compare_digest(expected, signature)
 
 
-# ── Endpoints ─────────────────────────────────────────────────────────────────
+# -- Endpoints ----------------------------------------------------------------
 
 @app.get("/health")
 async def health():
@@ -109,7 +179,7 @@ async def health():
 @app.post("/webhook/line")
 async def line_webhook(
     request: Request,
-    x_line_signature: str | None = Header(default=None),
+    x_line_signature=Header(default=None),
 ):
     body = await request.body()
 
@@ -136,7 +206,6 @@ async def line_webhook(
                 ).fetchone()
 
                 if existing:
-                    # Re-follow: reactivate + refresh display_name
                     conn.execute(
                         "UPDATE customers SET active=1, display_name=?, updated_at=? "
                         "WHERE line_user_id=?",
@@ -154,7 +223,6 @@ async def line_webhook(
                     customer_id = cur.lastrowid
                     is_new = True
 
-                # Ensure subscription row exists (no provinces yet — admin sets via /api/preferences)
                 has_sub = conn.execute(
                     "SELECT id FROM subscriptions WHERE customer_id=? AND active=1",
                     (customer_id,),
@@ -168,7 +236,7 @@ async def line_webhook(
                     )
 
             if is_new:
-                await push_welcome(user_id, display_name)
+                await push_message(user_id, _welcome_text(display_name))
 
         elif event.get("type") == "unfollow":
             with get_conn() as conn:
@@ -177,13 +245,39 @@ async def line_webhook(
                     (now, user_id),
                 )
 
+        elif event.get("type") == "message":
+            reply_token = event.get("replyToken")
+            if not reply_token:
+                continue
+            text_in = ((event.get("message") or {}).get("text") or "").strip().lower()
+
+            if text_in in ("ช่วย", "help", "?", "คำสั่ง"):
+                await reply_message(reply_token, _help_text())
+
+            elif text_in in ("สถานะ", "status"):
+                info = _get_customer_status(user_id)
+                if info:
+                    name, provinces, tier = info
+                    await reply_message(reply_token, _status_text(name, provinces, tier))
+                else:
+                    await reply_message(
+                        reply_token,
+                        "ยังไม่ได้ลงทะเบียนครับ กรุณา follow บัญชีนี้ใหม่อีกครั้ง",
+                    )
+
+            else:
+                await reply_message(
+                    reply_token,
+                    "พิมพ์ ช่วย เพื่อดูคำสั่งที่ใช้ได้ครับ \U0001f916",
+                )
+
     return {"ok": True}
 
 
 @app.post("/api/preferences")
 async def update_preferences(
     request: Request,
-    x_bms_secret: str | None = Header(default=None),
+    x_bms_secret=Header(default=None),
 ):
     if x_bms_secret != BMS_INTERNAL_SECRET:
         raise HTTPException(status_code=403, detail="Forbidden")

@@ -50,9 +50,9 @@ def _load_line_token() -> str:
     env_path = Path(__file__).parent.parent / ".env"
     if env_path.exists():
         for line in env_path.read_text(encoding="utf-8").splitlines():
-            if line.startswith("LINE_CHANNEL_ACCESS_TOKEN="):
+            if line.startswith("SEBASTIAN_LINE_TOKEN="):
                 return line.split("=", 1)[1].strip().strip('"').strip("'")
-    token = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN", "")
+    token = os.environ.get("SEBASTIAN_LINE_TOKEN", "")
     if not token:
         raise RuntimeError("LINE_CHANNEL_ACCESS_TOKEN not found in .env or environment")
     return token

@@ -20,19 +20,33 @@ export interface CompanyFile {
   sizeBytes: number;
 }
 
+export interface DocumentFile {
+  id: string;
+  name: string;
+  url: string;
+  uploadedAt: string;
+  sizeBytes: number;
+  category: string;
+  summary?: string;
+}
+
 export interface BusinessClass {
   id: string;
   name: string;
+  companyName?: string;
   color: string;
   geo: BusinessClassGeo;
   keywords: string[];
   defaultKeywords: string[];
+  businessTypes?: string[];
   budgetMinBaht?: number;
   budgetMaxBaht?: number;
   isSME?: boolean;
   isMIT?: boolean;
   notifyTime?: string;
   files?: CompanyFile[];
+  phones?: string[];
+  emails?: string[];
 }
 
 export interface PortalProfile {
@@ -44,6 +58,10 @@ export interface PortalProfile {
   isSME: boolean;
   isMIT: boolean;
   notifyTime: string;
+  userName?: string;
+  userGmail?: string;
+  userPhone?: string;
+  userLineId?: string;
 }
 
 export interface PortalJob {
@@ -76,6 +94,11 @@ export interface PortalNotes {
   isMIT?: boolean;
   notifyTime?: string;
   starred?: string[];
+  documents?: Record<string, DocumentFile[]>;
+  userName?: string;
+  userGmail?: string;
+  userPhone?: string;
+  userLineId?: string;
 }
 
 export interface Tier {

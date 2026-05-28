@@ -2,57 +2,83 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { TopBar, Chip, Icons, Crest, Toggle, Field, Modal, DividerOrnate, ButlerNote } from '../_ui';
-import type { PortalProfile } from '@/lib/portal-data';
+import { TopBar, Chip, Icons, Crest, Modal, DividerOrnate, ButlerNote, Field } from '../_ui';
+import type { PortalProfile, BusinessClass } from '@/lib/portal-data';
 
-// ── Budget Range ──────────────────────────────────────────────────────────────
+// ── CompanyContactCard ────────────────────────────────────────────────────────
 
-function BudgetRange({ min, max, onChange }: { min: number; max: number; onChange: (min: number, max: number) => void }) {
-  const MIN = 0.1, MAX = 100;
-  const pctMin = ((Math.min(min, MAX) - MIN) / (MAX - MIN)) * 100;
-  const pctMax = ((Math.min(max, MAX) - MIN) / (MAX - MIN)) * 100;
+function CompanyContactCard({
+  cls,
+  onStatsClick,
+}: {
+  cls: BusinessClass;
+  onStatsClick: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const phones = cls.phones ?? [];
+  const emails = cls.emails ?? [];
+
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12, gap: 8 }}>
-        <div><div className="p-mono p-fg-dim" style={{ fontSize: 10, letterSpacing: '0.06em' }}>MIN</div><div className="p-display p-fg-accent" style={{ fontSize: 22 }}>{min.toLocaleString()} ลบ.</div></div>
-        <div className="p-fg-dim" style={{ fontSize: 12 }}>—</div>
-        <div style={{ textAlign: 'right' }}><div className="p-mono p-fg-dim" style={{ fontSize: 10, letterSpacing: '0.06em' }}>MAX</div><div className="p-display p-fg-accent" style={{ fontSize: 22 }}>{max.toLocaleString()} ลบ.</div></div>
-      </div>
-      <div style={{ position: 'relative', height: 6, background: 'var(--border)', borderRadius: 3, marginBottom: 18 }}>
-        <div style={{ position: 'absolute', height: '100%', left: `${pctMin}%`, right: `${100 - pctMax}%`, background: 'var(--accent)', borderRadius: 3 }} />
-        <div style={{ position: 'absolute', top: '50%', transform: 'translate(-50%, -50%)', left: `${pctMin}%`, width: 14, height: 14, background: 'var(--accent)', borderRadius: '50%', border: '2px solid var(--bg)' }} />
-        <div style={{ position: 'absolute', top: '50%', transform: 'translate(-50%, -50%)', left: `${pctMax}%`, width: 14, height: 14, background: 'var(--accent)', borderRadius: '50%', border: '2px solid var(--bg)' }} />
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        <div>
-          <div className="p-mono p-fg-dim" style={{ fontSize: 10, marginBottom: 4, letterSpacing: '0.06em' }}>MIN (ล้านบาท)</div>
-          <input className="p-input" type="number" step="0.5" min="0.1" max={max - 0.1} value={min} onChange={e => onChange(Math.max(0.1, parseFloat(e.target.value) || 0), max)} />
+    <div className="p-card" style={{ padding: 0, overflow: 'hidden', borderLeft: `3px solid ${cls.color || 'var(--accent)'}` }}>
+      <div
+        style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
+        onClick={() => setExpanded(v => !v)}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="p-display" style={{ fontSize: 16, lineHeight: 1.25 }}>{cls.companyName || cls.name}</div>
+          {cls.businessTypes?.length ? (
+            <div className="p-mono p-fg-dim" style={{ fontSize: 10.5, marginTop: 2, letterSpacing: '0.02em' }}>
+              {cls.businessTypes.slice(0, 2).join(' · ')}{cls.businessTypes.length > 2 ? ` +${cls.businessTypes.length - 2}` : ''}
+            </div>
+          ) : null}
         </div>
-        <div>
-          <div className="p-mono p-fg-dim" style={{ fontSize: 10, marginBottom: 4, letterSpacing: '0.06em' }}>MAX (ล้านบาท)</div>
-          <input className="p-input" type="number" step="0.5" min={min + 0.1} max="500" value={max} onChange={e => onChange(min, Math.max(min + 0.1, parseFloat(e.target.value) || 0))} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Time Picker ───────────────────────────────────────────────────────────────
-
-function TimePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const hours = ['05:00', '06:00', '07:00', '08:00', '09:00', '12:00', '18:00'];
-  return (
-    <div>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
-        {hours.map(h => (
-          <button key={h} onClick={() => onChange(h)}
-            className={value === h ? 'p-chip p-chip-gold' : 'p-chip p-chip-outline'}
-            style={{ cursor: 'pointer', padding: '8px 14px', fontSize: 13, fontFamily: 'var(--font-mono)', border: '1px solid ' + (value === h ? 'var(--accent-deep)' : 'var(--border)') }}>
-            {h}
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+          <button
+            className="p-btn p-btn-ghost"
+            onClick={e => { e.stopPropagation(); onStatsClick(); }}
+            style={{ fontSize: 11, padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 4 }}
+          >
+            <Icons.TrendUp size={12} />สถิติ
           </button>
-        ))}
+          <Icons.ChevronDown
+            size={14}
+            style={{ transform: expanded ? 'none' : 'rotate(-90deg)', transition: 'transform 0.15s', color: 'var(--fg-dim)' }}
+          />
+        </div>
       </div>
-      <input className="p-input" type="time" value={value} onChange={e => onChange(e.target.value)} />
+
+      {expanded && (
+        <div style={{ padding: '0 14px 14px', display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid var(--line)' }}>
+          <div style={{ paddingTop: 10 }}>
+            <div className="p-mono p-fg-dim" style={{ fontSize: 10, letterSpacing: '0.08em', marginBottom: 8 }}>เบอร์โทรติดต่อ</div>
+            {phones.length > 0 ? phones.map((p, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <div style={{ color: 'var(--accent)', flexShrink: 0 }}><Icons.Phone size={13} /></div>
+                <span style={{ fontSize: 13, fontFamily: 'var(--font-mono)' }}>{p}</span>
+              </div>
+            )) : (
+              <div className="p-fg-dim" style={{ fontSize: 12, fontStyle: 'italic' }}>ยังไม่ได้เพิ่มเบอร์โทร</div>
+            )}
+          </div>
+          <div>
+            <div className="p-mono p-fg-dim" style={{ fontSize: 10, letterSpacing: '0.08em', marginBottom: 8 }}>อีเมล</div>
+            {emails.length > 0 ? emails.map((e, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <div style={{ color: 'var(--accent)', flexShrink: 0 }}><Icons.Mail size={13} /></div>
+                <span style={{ fontSize: 13 }}>{e}</span>
+              </div>
+            )) : (
+              <div className="p-fg-dim" style={{ fontSize: 12, fontStyle: 'italic' }}>ยังไม่ได้เพิ่มอีเมล</div>
+            )}
+          </div>
+          {(cls.isSME || cls.isMIT) && (
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {cls.isSME && <Chip tone="emerald" icon={<Icons.Shield size={11} />}>SME +7.5%</Chip>}
+              {cls.isMIT && <Chip tone="emerald" icon={<Icons.Flag size={11} />}>MIT</Chip>}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -73,6 +99,7 @@ function Stat({ label, value, valueColor }: { label: string; value: string | num
 interface Props {
   lineUserId: string;
   initialProfile: PortalProfile;
+  classes: BusinessClass[];
   classCount: number;
   registeredAt: string;
   tierId: string;
@@ -80,7 +107,16 @@ interface Props {
   expiryLabel?: string;
 }
 
-export function ProfileClient({ lineUserId, initialProfile, classCount, registeredAt, tierId, daysLeft = 30, expiryLabel = '' }: Props) {
+export function ProfileClient({
+  lineUserId,
+  initialProfile,
+  classes,
+  classCount,
+  registeredAt,
+  tierId,
+  daysLeft = 30,
+  expiryLabel = '',
+}: Props) {
   const router = useRouter();
   const [profile, setProfile] = useState(initialProfile);
   const [showLogout, setShowLogout] = useState(false);
@@ -96,14 +132,12 @@ export function ProfileClient({ lineUserId, initialProfile, classCount, register
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          budgetMin: profile.budgetMin,
-          budgetMax: profile.budgetMax,
-          isSME: profile.isSME,
-          isMIT: profile.isMIT,
-          notifyTime: profile.notifyTime,
+          userName: profile.userName,
+          userGmail: profile.userGmail,
+          userPhone: profile.userPhone,
+          userLineId: profile.userLineId,
         }),
       });
-      // Update display_name + phone/email via customer API
       await fetch(`/api/line/customer?lineUserId=${lineUserId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -123,65 +157,65 @@ export function ProfileClient({ lineUserId, initialProfile, classCount, register
 
   return (
     <div className="p-enter">
-      <TopBar title="โปรไฟล์บริษัท" subtitle="Company Profile" />
+      <TopBar title="โปรไฟล์" subtitle="Profile · Sebastian" />
       <div className="p-page p-page-topbar">
+
         {/* Crest header */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px 0 24px', textAlign: 'center' }}>
-          <div style={{ marginBottom: 18 }}>
-            <div style={{ width: 84, height: 84, borderRadius: 12, background: 'var(--surface)', border: '1px solid var(--accent-deep)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)' }}>
-              <Crest size={56} />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px 0 22px', textAlign: 'center' }}>
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ width: 80, height: 80, borderRadius: 12, background: 'var(--surface)', border: '1px solid var(--accent-deep)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)' }}>
+              <Crest size={52} />
             </div>
           </div>
-          <div className="p-display" style={{ fontSize: 22, lineHeight: 1.25, padding: '0 24px' }}>{profile.companyName || '(ยังไม่ระบุชื่อบริษัท)'}</div>
-          <div className="p-mono p-fg-dim" style={{ fontSize: 11, letterSpacing: '0.08em', marginTop: 8 }}>MEMBER · MMXXVI</div>
-          <div style={{ display: 'flex', gap: 6, marginTop: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
-            {profile.isSME && <Chip tone="emerald" icon={<Icons.Shield size={11} />}>SME · แต้มต่อ 7.5%</Chip>}
-            {profile.isMIT && <Chip tone="emerald" icon={<Icons.Flag size={11} />}>Made in Thailand</Chip>}
+          <div className="p-display" style={{ fontSize: 22, lineHeight: 1.25, padding: '0 24px' }}>
+            {profile.userName || profile.companyName || '(ยังไม่ระบุชื่อ)'}
           </div>
+          <div className="p-mono p-fg-dim" style={{ fontSize: 11, letterSpacing: '0.08em', marginTop: 6 }}>MEMBER · MMXXVI</div>
         </div>
 
-        <DividerOrnate label="ข้อมูลบริษัท" />
+        {/* Personal Info */}
+        <DividerOrnate label="ข้อมูลส่วนตัว" />
+        <ButlerNote>ข้อมูลนี้ใช้เพื่อการแจ้งเตือนและการติดต่อกลับจาก Sebastian ครับท่าน</ButlerNote>
 
-        <Field label="ชื่อบริษัท / ชื่อที่แสดง">
-          <input className="p-input" value={profile.companyName} onChange={e => update({ companyName: e.target.value })} />
+        <Field label="ชื่อ-นามสกุล">
+          <input className="p-input" value={profile.userName ?? ''} onChange={e => update({ userName: e.target.value })} placeholder="ชื่อ-นามสกุลของท่าน" />
         </Field>
-        <Field label="เบอร์โทรศัพท์">
-          <input className="p-input" value={profile.phone} onChange={e => update({ phone: e.target.value })} placeholder="02-xxx-xxxx" inputMode="tel" />
+        <Field label="Gmail">
+          <input className="p-input" value={profile.userGmail ?? ''} onChange={e => update({ userGmail: e.target.value })} placeholder="your.email@gmail.com" inputMode="email" />
         </Field>
-        <Field label="อีเมล">
-          <input className="p-input" value={profile.email} onChange={e => update({ email: e.target.value })} placeholder="info@company.co.th" inputMode="email" />
+        <Field label="เบอร์โทรส่วนตัว">
+          <input className="p-input" value={profile.userPhone ?? ''} onChange={e => update({ userPhone: e.target.value })} placeholder="08x-xxx-xxxx" inputMode="tel" />
         </Field>
-
-        <DividerOrnate label="ขอบเขตงาน" />
-
-        <div style={{ marginBottom: 14 }}>
-          <div className="p-label">ช่วงมูลค่างานที่รับ</div>
-          <BudgetRange min={profile.budgetMin} max={profile.budgetMax} onChange={(min, max) => update({ budgetMin: min, budgetMax: max })} />
-          <div className="p-serif" style={{ fontSize: 14, marginTop: 10, fontStyle: 'italic', color: 'var(--fg-mute)' }}>
-            Sebastian จะแจ้งเตือนเฉพาะงานที่อยู่ในช่วง{' '}
-            <span className="p-fg-accent" style={{ fontStyle: 'normal' }}>{profile.budgetMin.toLocaleString()} – {profile.budgetMax.toLocaleString()} ล้านบาท</span>
-          </div>
-        </div>
-
-        <DividerOrnate label="คุณสมบัติพิเศษ" />
-
-        <div className="p-card" style={{ padding: '0 16px' }}>
-          <div style={{ borderBottom: '1px solid var(--line)' }}>
-            <Toggle value={profile.isSME} onChange={v => update({ isSME: v })} label="บริษัทเป็น SME" hint="ได้แต้มต่อ 7.5% ในการประมูลงานภาครัฐ" />
-          </div>
-          <Toggle value={profile.isMIT} onChange={v => update({ isMIT: v })} label="สินค้า Made in Thailand" hint="ได้สิทธิ์พิเศษในงานประมูลที่กำหนด MIT" />
-        </div>
-
-        <DividerOrnate label="การแจ้งเตือน" />
-
-        <Field label="เวลาแจ้งเตือนงานประจำวัน" hint="Sebastian จะส่งสรุปงานใหม่ใน LINE ทุกวันตามเวลานี้">
-          <TimePicker value={profile.notifyTime} onChange={v => update({ notifyTime: v })} />
+        <Field label="LINE ID">
+          <input className="p-input" value={profile.userLineId ?? ''} onChange={e => update({ userLineId: e.target.value })} placeholder="LINE ID ของท่าน" />
         </Field>
 
-        {/* Save button */}
-        <button className="p-btn p-btn-primary" onClick={handleSave} disabled={saving} style={{ width: '100%', height: 48, fontSize: 15, marginTop: 4, marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-          {saved ? <><Icons.Check2 size={16} />บันทึกเสร็จแล้ว</> : saving ? 'กำลังบันทึก…' : <><Icons.Check size={16} />บันทึกการตั้งค่า</>}
+        {/* Save personal info */}
+        <button
+          className="p-btn p-btn-primary"
+          onClick={handleSave}
+          disabled={saving}
+          style={{ width: '100%', height: 44, fontSize: 14, marginTop: 4, marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+        >
+          {saved ? <><Icons.Check2 size={16} />บันทึกเสร็จแล้ว</> : saving ? 'กำลังบันทึก…' : <><Icons.Check size={16} />บันทึกข้อมูลส่วนตัว</>}
         </button>
+
+        {/* Per-company contacts */}
+        {classes.length > 0 && (
+          <>
+            <DividerOrnate label="ข้อมูลติดต่อบริษัท" />
+            <ButlerNote>กดที่บริษัทเพื่อดูหรือแก้ไขข้อมูลติดต่อ · กด "สถิติ" เพื่อดูประวัติการประมูล</ButlerNote>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+              {classes.map(cls => (
+                <CompanyContactCard
+                  key={cls.id}
+                  cls={cls}
+                  onStatsClick={() => router.push(`/portal/company-stats?classId=${cls.id}`)}
+                />
+              ))}
+            </div>
+          </>
+        )}
 
         {/* Account Status */}
         <DividerOrnate label="สถานะบัญชี" />
@@ -204,8 +238,11 @@ export function ProfileClient({ lineUserId, initialProfile, classCount, register
           </div>
         </div>
 
-        <button className="p-btn p-btn-ghost" onClick={() => setShowLogout(true)}
-          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: 'var(--wine-soft)' }}>
+        <button
+          className="p-btn p-btn-ghost"
+          onClick={() => setShowLogout(true)}
+          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: 'var(--wine-soft)' }}
+        >
           <Icons.LogOut size={16} />ออกจากระบบ
         </button>
 

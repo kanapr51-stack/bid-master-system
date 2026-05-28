@@ -170,6 +170,62 @@ function FeedTab({ active, onClick, label, count, icon }: { active: boolean; onC
   );
 }
 
+// ── CompanyMatchesCard ────────────────────────────────────────────────────────
+
+function CompanyMatchesCard({
+  cls,
+  jobs,
+  starred,
+  onStar,
+}: {
+  cls: BusinessClass;
+  jobs: PortalJob[];
+  starred: Set<string>;
+  onStar: (id: string) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const starredCount = jobs.filter(j => starred.has(j.id)).length;
+  const urgentCount = jobs.filter(j => (j.daysLeft ?? 99) <= 5).length;
+
+  return (
+    <div className="p-card" style={{ padding: 0, overflow: 'hidden' }}>
+      <div
+        style={{
+          padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12,
+          cursor: 'pointer', borderLeft: `3px solid ${cls.color || 'var(--accent)'}`,
+          background: starredCount > 0 ? 'var(--gold-glow)' : 'var(--surface)',
+        }}
+        onClick={() => setExpanded(v => !v)}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="p-display" style={{ fontSize: 16, lineHeight: 1.2 }}>{cls.companyName || cls.name}</div>
+          <div className="p-mono p-fg-dim" style={{ fontSize: 10.5, marginTop: 2, letterSpacing: '0.02em' }}>
+            {jobs.length} งานที่ตรง{urgentCount > 0 && <span style={{ color: 'var(--wine-soft)' }}> · {urgentCount} เร่งด่วน</span>}
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+          {starredCount > 0 && (
+            <span style={{ color: 'var(--accent)', fontSize: 13 }}>★ {starredCount}</span>
+          )}
+          <Chip tone={urgentCount > 0 ? 'wine' : 'gold'}>{jobs.length}</Chip>
+          <Icons.ChevronDown
+            size={14}
+            style={{ transform: expanded ? 'none' : 'rotate(-90deg)', transition: 'transform 0.15s', color: 'var(--fg-dim)' }}
+          />
+        </div>
+      </div>
+
+      {expanded && (
+        <div style={{ padding: '0 12px 12px', borderTop: '1px solid var(--line)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 10 }}>
+            {jobs.map(job => <JobCard key={job.id} job={job} cls={cls} starred={starred.has(job.id)} onStar={() => onStar(job.id)} />)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── World Client ──────────────────────────────────────────────────────────────
 
 interface WorldClientProps {
@@ -204,7 +260,18 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
   const tier = TIERS.find(t => t.id === tierId) || TIERS[0];
   const biddingJobs = jobs.filter(j => j.stage === 'bidding');
   const pretorJobs = jobs.filter(j => j.stage === 'pretor');
-  const recentJobs = (feedTab === 'bidding' ? biddingJobs : pretorJobs).slice(0, 5);
+  const recentJobs = feedTab === 'pretor' ? pretorJobs.slice(0, 5) : [];
+
+  // Group bidding jobs by matched class
+  const jobsByClass = useMemo(() => {
+    const map = new Map<string, PortalJob[]>();
+    for (const j of biddingJobs) {
+      const key = j.matchedClassId ?? '__unmatched__';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(j);
+    }
+    return map;
+  }, [biddingJobs]);
 
   const totalKeywords = classes.reduce((a, c) => a + c.keywords.length, 0);
   const provincesSet = useMemo(() => {
@@ -278,7 +345,9 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
           <SumCard icon={<Icons.Map size={16} />} label="พื้นที่ครอบคลุม" value={provincesSet.size} unit="จังหวัด" href="/portal/classes" />
           <SumCard icon={<Icons.Tag size={16} />} label="Keywords" value={totalKeywords} unit="คำค้น" href="/portal/classes" />
           <SumCard icon={<Icons.Bell size={16} />} label="งานวันนี้" value={jobs.length} unit="ที่ตรงเงื่อนไข" accent />
-          <SumCard icon={<Icons.Shield size={16} />} label="ประวัติประมูล" value="ค้นหา" unit="คู่แข่ง" href="/portal/history" />
+          {starred.size > 0 && (
+            <SumCard icon={<span style={{ fontSize: 16 }}>★</span>} label="งานที่สนใจ" value={starred.size} unit="งาน" />
+          )}
         </div>
 
         {/* Recent matches */}
@@ -312,16 +381,33 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
         )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {recentJobs.length === 0 ? (
-            <div className="p-card" style={{ textAlign: 'center', padding: 28 }}>
-              <div className="p-serif p-fg-mute" style={{ fontStyle: 'italic', fontSize: 14 }}>ยังไม่พบงานในประเภทนี้ ผมจะแจ้งให้ทราบทันทีที่พบครับท่าน</div>
-            </div>
-          ) : feedTab === 'bidding' ? (
-            recentJobs.map(job => <JobCard key={job.id} job={job}
-              cls={classes.find(c => c.id === job.matchedClassId)}
-              starred={starred.has(job.id)} onStar={() => toggleStar(job.id)} />)
+          {feedTab === 'bidding' ? (
+            biddingJobs.length === 0 ? (
+              <div className="p-card" style={{ textAlign: 'center', padding: 28 }}>
+                <div className="p-serif p-fg-mute" style={{ fontStyle: 'italic', fontSize: 14 }}>ยังไม่พบงานในประเภทนี้ ผมจะแจ้งให้ทราบทันทีที่พบครับท่าน</div>
+              </div>
+            ) : (
+              <>
+                {/* Company grouped cards — collapsed by default */}
+                {classes.map(cls => {
+                  const clsJobs = jobsByClass.get(cls.id) ?? [];
+                  if (clsJobs.length === 0) return null;
+                  return <CompanyMatchesCard key={cls.id} cls={cls} jobs={clsJobs} starred={starred} onStar={toggleStar} />;
+                })}
+                {/* Unmatched jobs (no class) */}
+                {(jobsByClass.get('__unmatched__') ?? []).map(job => (
+                  <JobCard key={job.id} job={job} starred={starred.has(job.id)} onStar={() => toggleStar(job.id)} />
+                ))}
+              </>
+            )
           ) : (
-            recentJobs.map(job => <PretorCard key={job.id} job={job} cls={classes.find(c => c.id === job.matchedClassId)} />)
+            recentJobs.length === 0 ? (
+              <div className="p-card" style={{ textAlign: 'center', padding: 28 }}>
+                <div className="p-serif p-fg-mute" style={{ fontStyle: 'italic', fontSize: 14 }}>ยังไม่พบงานในประเภทนี้ ผมจะแจ้งให้ทราบทันทีที่พบครับท่าน</div>
+              </div>
+            ) : (
+              recentJobs.map(job => <PretorCard key={job.id} job={job} cls={classes.find(c => c.id === job.matchedClassId)} />)
+            )
           )}
         </div>
 

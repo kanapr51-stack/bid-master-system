@@ -11,6 +11,9 @@ const MapPreview = dynamic(() => import('./_map-preview').then(m => m.MapPreview
 
 const THAI_GEO = THAI_GEO_DATA;
 
+// Session-level cache for road distances (persists across component mounts)
+const _roadDistCache = new Map<string, Record<string, number>>();
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function parseGoogleMapsUrl(url: string): { lat: number; lng: number } | null {
@@ -114,7 +117,7 @@ function GoogleMapsPicker({ current, onPick }: {
 
 interface DistrictData { name: string; lat: number; lng: number; tambons: { name: string; lat: number; lng: number }[]; }
 
-function DistrictRow({ district, dKey, picked, partial, tickedTambons, inRadiusDistrict, distance, pickedT, inRadiusT, hasRadius, gps, onToggleDistrict, onToggleTambon }: {
+function DistrictRow({ district, dKey, picked, partial, tickedTambons, inRadiusDistrict, distance, pickedT, inRadiusT, hasRadius, gps, roadDists, onToggleDistrict, onToggleTambon }: {
   district: DistrictData;
   dKey: string;
   picked: boolean;
@@ -126,6 +129,7 @@ function DistrictRow({ district, dKey, picked, partial, tickedTambons, inRadiusD
   inRadiusT: Set<string>;
   hasRadius: boolean;
   gps: { lat: number; lng: number } | null;
+  roadDists?: Record<string, number> | null;
   onToggleDistrict: () => void;
   onToggleTambon: (tKey: string) => void;
 }) {
@@ -155,7 +159,7 @@ function DistrictRow({ district, dKey, picked, partial, tickedTambons, inRadiusD
             const tKey = `${dKey}::${t.name}`;
             const tPicked = pickedT.has(tKey);
             const tInRadius = inRadiusT.has(tKey);
-            const tDist = hasRadius && gps ? distanceKm(gps.lat, gps.lng, t.lat, t.lng) : null;
+            const tDist = hasRadius && gps ? (roadDists?.[tKey] ?? distanceKm(gps.lat, gps.lng, t.lat, t.lng)) : null;
             return (
               <button key={tKey} onClick={() => onToggleTambon(tKey)}
                 className={tPicked ? 'p-chip p-chip-gold' : 'p-chip p-chip-outline'}
@@ -179,7 +183,7 @@ function DistrictRow({ district, dKey, picked, partial, tickedTambons, inRadiusD
 
 // ── ProvinceDistrictGroup ─────────────────────────────────────────────────────
 
-function ProvinceDistrictGroup({ province, districts, pickedD, pickedT, inRadiusD, inRadiusT, hasRadius, radiusKm, gps, onToggleDistrict, onToggleTambon, onTickAll, onClearAll }: {
+function ProvinceDistrictGroup({ province, districts, pickedD, pickedT, inRadiusD, inRadiusT, hasRadius, radiusKm, gps, roadDists, onToggleDistrict, onToggleTambon, onTickAll, onClearAll }: {
   province: string;
   districts: DistrictData[];
   pickedD: Set<string>;
@@ -189,6 +193,7 @@ function ProvinceDistrictGroup({ province, districts, pickedD, pickedT, inRadius
   hasRadius: boolean;
   radiusKm: number;
   gps: { lat: number; lng: number } | null;
+  roadDists?: Record<string, number> | null;
   onToggleDistrict: (dKey: string, tambonKeys: string[]) => void;
   onToggleTambon: (tKey: string, dKey: string, allTambonKeys: string[]) => void;
   onTickAll: () => void;
@@ -223,7 +228,11 @@ function ProvinceDistrictGroup({ province, districts, pickedD, pickedT, inRadius
             const tickedTambons = dTambonKeys.filter(k => pickedT.has(k)).length;
             const partial = tickedTambons > 0 && tickedTambons < d.tambons.length;
             const inRad = inRadiusD.has(dKey);
-            const dist = hasRadius && gps ? distanceKm(gps.lat, gps.lng, d.lat, d.lng) : null;
+            // district badge = ระยะตำบลที่ใกล้สุดในอำเภอ (tambon-level road dist)
+            const dist = hasRadius && gps ? (() => {
+              const vals = d.tambons.map(t => roadDists?.[`${dKey}::${t.name}`] ?? distanceKm(gps.lat, gps.lng, t.lat, t.lng));
+              return Math.min(...vals);
+            })() : null;
             return (
               <DistrictRow
                 key={dKey}
@@ -238,6 +247,7 @@ function ProvinceDistrictGroup({ province, districts, pickedD, pickedT, inRadius
                 inRadiusT={inRadiusT}
                 hasRadius={hasRadius}
                 gps={gps}
+                roadDists={roadDists}
                 onToggleDistrict={() => onToggleDistrict(dKey, dTambonKeys)}
                 onToggleTambon={(tKey) => onToggleTambon(tKey, dKey, dTambonKeys)}
               />
@@ -251,7 +261,11 @@ function ProvinceDistrictGroup({ province, districts, pickedD, pickedT, inRadius
 
 // ── DistrictTambonPicker ──────────────────────────────────────────────────────
 
-function DistrictTambonPicker({ cls, onChange }: { cls: BusinessClass; onChange: (patch: Partial<BusinessClass>) => void }) {
+function DistrictTambonPicker({ cls, onChange, roadDists }: {
+  cls: BusinessClass;
+  onChange: (patch: Partial<BusinessClass>) => void;
+  roadDists?: Record<string, number> | null;
+}) {
   const { geo } = cls;
   const hasRadius = !!(geo.gps && geo.radiusKm > 0);
 
@@ -262,14 +276,19 @@ function DistrictTambonPicker({ cls, onChange }: { cls: BusinessClass; onChange:
     for (const [prov, districts] of Object.entries(THAI_GEO)) {
       for (const d of districts as DistrictData[]) {
         const dKey = `${prov}::${d.name}`;
-        if (distanceKm(geo.gps!.lat, geo.gps!.lng, d.lat, d.lng) <= geo.radiusKm) dSet.add(dKey);
         for (const t of d.tambons) {
-          if (distanceKm(geo.gps!.lat, geo.gps!.lng, t.lat, t.lng) <= geo.radiusKm) tSet.add(`${dKey}::${t.name}`);
+          const tKey = `${dKey}::${t.name}`;
+          // ใช้ tambon-level road distance ถ้ามี, fallback Haversine
+          const dist = roadDists?.[tKey] ?? distanceKm(geo.gps!.lat, geo.gps!.lng, t.lat, t.lng);
+          if (dist <= geo.radiusKm) {
+            tSet.add(tKey);
+            dSet.add(dKey);
+          }
         }
       }
     }
     return { districts: dSet, tambons: tSet };
-  }, [hasRadius, geo.gps?.lat, geo.gps?.lng, geo.radiusKm]);
+  }, [hasRadius, geo.gps?.lat, geo.gps?.lng, geo.radiusKm, roadDists]);
 
   const candidateProvinces = useMemo(() => {
     const s = new Set(geo.provinces);
@@ -280,12 +299,19 @@ function DistrictTambonPicker({ cls, onChange }: { cls: BusinessClass; onChange:
 
   const radiusSignature = `${geo.gps?.lat || 0}|${geo.gps?.lng || 0}|${geo.radiusKm || 0}`;
   const lastSig = useRef('');
+  const lastAutoDistricts = useRef<Set<string>>(new Set(geo.districts));
+  const lastAutoTambons = useRef<Set<string>>(new Set(geo.tambons));
   useEffect(() => {
     if (!hasRadius) return;
     if (lastSig.current === radiusSignature) return;
     lastSig.current = radiusSignature;
-    const newDistricts = new Set([...geo.districts, ...inRadius.districts]);
-    const newTambons = new Set([...geo.tambons, ...inRadius.tambons]);
+    // diff: ลบ auto-selections เก่าออก แล้วเพิ่มใหม่ — คง manual picks ไว้
+    const manualDistricts = geo.districts.filter(k => !lastAutoDistricts.current.has(k));
+    const manualTambons = geo.tambons.filter(k => !lastAutoTambons.current.has(k));
+    lastAutoDistricts.current = inRadius.districts;
+    lastAutoTambons.current = inRadius.tambons;
+    const newDistricts = new Set([...manualDistricts, ...inRadius.districts]);
+    const newTambons = new Set([...manualTambons, ...inRadius.tambons]);
     onChange({ geo: { ...geo, districts: Array.from(newDistricts), tambons: Array.from(newTambons) } });
   }, [radiusSignature]);
 
@@ -379,6 +405,7 @@ function DistrictTambonPicker({ cls, onChange }: { cls: BusinessClass; onChange:
             hasRadius={hasRadius}
             radiusKm={geo.radiusKm}
             gps={geo.gps}
+            roadDists={roadDists}
             onToggleDistrict={toggleDistrict}
             onToggleTambon={toggleTambon}
             onTickAll={() => tickAllInProvince(prov)}
@@ -460,6 +487,23 @@ function GeoEditor({ cls, onChange, onSave }: { cls: BusinessClass; onChange: (p
   const [provinceSearch, setProvinceSearch] = useState('');
   const useProvinces = cls.geo.provinces.length > 0;
   const useRadius = cls.geo.radiusKm > 0 || !!cls.geo.gps;
+
+  const [roadDists, setRoadDists] = useState<Record<string, number> | null>(null);
+  const [loadingRoad, setLoadingRoad] = useState(false);
+  const gpsKey = cls.geo.gps ? `${cls.geo.gps.lat.toFixed(3)}|${cls.geo.gps.lng.toFixed(3)}` : null;
+  useEffect(() => {
+    if (!gpsKey || !cls.geo.gps) { setRoadDists(null); return; }
+    const cached = _roadDistCache.get(gpsKey);
+    if (cached) { setRoadDists(cached); return; }
+    setLoadingRoad(true);
+    fetch(`/api/portal/road-distances?lat=${cls.geo.gps.lat}&lng=${cls.geo.gps.lng}`)
+      .then(r => r.json())
+      .then((data: { distances?: Record<string, number> }) => {
+        if (data.distances) { _roadDistCache.set(gpsKey, data.distances); setRoadDists(data.distances); }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingRoad(false));
+  }, [gpsKey]);
 
   const toggleProvince = (p: string) => {
     const list = cls.geo.provinces.includes(p)
@@ -557,15 +601,24 @@ function GeoEditor({ cls, onChange, onSave }: { cls: BusinessClass; onChange: (p
           </div>
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
-              <span className="p-label" style={{ margin: 0 }}>รัศมีครอบคลุม</span>
+              <div>
+                <span className="p-label" style={{ margin: 0 }}>รัศมีถนน (Road Distance)</span>
+                {loadingRoad && <span className="p-mono p-fg-dim" style={{ fontSize: 10, marginLeft: 8 }}>⏳ กำลังโหลด…</span>}
+                {!loadingRoad && roadDists && <span className="p-mono" style={{ fontSize: 10, marginLeft: 8, color: 'var(--emerald)' }}>✓ ระยะถนนจริง</span>}
+                {!loadingRoad && !roadDists && cls.geo.gps && <span className="p-mono p-fg-dim" style={{ fontSize: 10, marginLeft: 8 }}>เส้นตรง</span>}
+              </div>
               <span className="p-mono p-fg-accent" style={{ fontSize: 14 }}>{cls.geo.radiusKm} กม.</span>
             </div>
             <input type="range" min="0" max="200" step="5"
               value={cls.geo.radiusKm}
               onChange={e => onChange({ geo: { ...cls.geo, radiusKm: parseInt(e.target.value, 10) } })}
               style={{ width: '100%', accentColor: 'var(--accent)' }} />
-            <div className="p-fg-dim p-mono" style={{ fontSize: 10, display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-              <span>0 กม.</span><span>50</span><span>100</span><span>200 กม.</span>
+            <div className="p-fg-dim p-mono" style={{ fontSize: 10, position: 'relative', height: 14, marginTop: 4 }}>
+              <span style={{ position: 'absolute', left: '0%' }}>0 กม.</span>
+              <span style={{ position: 'absolute', left: '25%', transform: 'translateX(-50%)' }}>50</span>
+              <span style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>100</span>
+              <span style={{ position: 'absolute', left: '75%', transform: 'translateX(-50%)' }}>150</span>
+              <span style={{ position: 'absolute', right: '0%' }}>200 กม.</span>
             </div>
           </div>
           {/* Mini map preview — OpenStreetMap via Leaflet */}
@@ -584,7 +637,7 @@ function GeoEditor({ cls, onChange, onSave }: { cls: BusinessClass; onChange: (p
         </div>
       </div>
 
-      <DistrictTambonPicker cls={cls} onChange={onChange} />
+      <DistrictTambonPicker cls={cls} onChange={onChange} roadDists={roadDists} />
       <SaveClassSummary cls={cls} onSave={onSave} />
     </div>
   );
@@ -592,8 +645,10 @@ function GeoEditor({ cls, onChange, onSave }: { cls: BusinessClass; onChange: (p
 
 // ── KeywordEditor ─────────────────────────────────────────────────────────────
 
-function KeywordEditor({ cls, onChange, onSave }: { cls: BusinessClass; onChange: (patch: Partial<BusinessClass>) => void; onSave: () => void }) {
+function KeywordEditor({ cls, onChange, onSave: _onSave }: { cls: BusinessClass; onChange: (patch: Partial<BusinessClass>) => void; onSave: () => void }) {
   const [input, setInput] = useState('');
+  const [saved, setSaved] = useState(false);
+  const handleSave = () => { setSaved(true); setTimeout(() => setSaved(false), 2200); };
 
   const add = () => {
     const v = input.trim();
@@ -663,8 +718,8 @@ function KeywordEditor({ cls, onChange, onSave }: { cls: BusinessClass; onChange
         </div>
       )}
 
-      <button className="p-btn p-btn-primary" onClick={onSave} style={{ width: '100%', marginTop: 4, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-        <Icons.Check size={16} />บันทึก ({cls.keywords.length} keywords)
+      <button className="p-btn p-btn-primary" onClick={handleSave} style={{ width: '100%', marginTop: 4, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+        {saved ? <><Icons.Check2 size={16} />บันทึกเสร็จแล้ว</> : <><Icons.Check size={16} />บันทึก ({cls.keywords.length} keywords)</>}
       </button>
     </div>
   );
@@ -672,7 +727,9 @@ function KeywordEditor({ cls, onChange, onSave }: { cls: BusinessClass; onChange
 
 // ── FilterEditor ──────────────────────────────────────────────────────────────
 
-function FilterEditor({ cls, onChange, onSave }: { cls: BusinessClass; onChange: (patch: Partial<BusinessClass>) => void; onSave: () => void }) {
+function FilterEditor({ cls, onChange, onSave: _onSave }: { cls: BusinessClass; onChange: (patch: Partial<BusinessClass>) => void; onSave: () => void }) {
+  const [saved, setSaved] = useState(false);
+  const handleSave = () => { setSaved(true); setTimeout(() => setSaved(false), 2200); };
   const budgetMin = cls.budgetMinBaht ?? 100000;
   const budgetMax = cls.budgetMaxBaht ?? 50000000;
 
@@ -713,9 +770,9 @@ function FilterEditor({ cls, onChange, onSave }: { cls: BusinessClass; onChange:
           onChange={e => onChange({ notifyTime: e.target.value })} />
       </Field>
 
-      <button className="p-btn p-btn-primary" onClick={onSave}
+      <button className="p-btn p-btn-primary" onClick={handleSave}
         style={{ width: '100%', height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-        <Icons.Check size={16} />บันทึกตัวกรอง
+        {saved ? <><Icons.Check2 size={16} />บันทึกเสร็จแล้ว</> : <><Icons.Check size={16} />บันทึกตัวกรอง</>}
       </button>
     </div>
   );
@@ -976,10 +1033,12 @@ export function ClassesClient({ lineUserId, initialClasses }: Props) {
     const newClass: BusinessClass = {
       id: `c${Date.now()}`,
       name: finalName,
+      companyName: name.trim() || undefined,
       color: CLASS_COLORS[classes.length % CLASS_COLORS.length],
       geo: { mode: 'province', provinces: [], districts: [], tambons: [], gps: null, radiusKm: 0 },
       keywords: [...defaults],
       defaultKeywords: defaults,
+      businessTypes: selectedTypes.length > 0 ? selectedTypes : undefined,
     };
     setClasses(prev => [...prev, newClass]);
     setShowAdd(false);

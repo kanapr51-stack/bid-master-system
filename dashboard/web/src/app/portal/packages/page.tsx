@@ -2,12 +2,12 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { parseSessionCookie, COOKIE_NAME } from '@/lib/session';
 import { getCustomerByLineId } from '@/lib/customers';
-import { parsePortalNotes } from '@/lib/portal-data';
-import { ProfileClient } from './_client';
+import { parsePortalNotes, getTierId } from '@/lib/portal-data';
+import { PackagesClient } from './_client';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ProfilePage() {
+export default async function PackagesPage() {
   const cookieStore = await cookies();
   const sessionValue = cookieStore.get(COOKIE_NAME)?.value;
   if (!sessionValue) redirect('/portal/login');
@@ -19,9 +19,10 @@ export default async function ProfilePage() {
   try { customer = await getCustomerByLineId(session.lineUserId); } catch { /* ignore */ }
 
   const notes = parsePortalNotes(customer?.notes ?? '');
+  const tierId = getTierId(customer ?? { status: 'trial', notes: '' });
 
   let daysLeft = 30;
-  let expiryLabel = '';
+  let expiryLabel = 'ทดลองใช้';
   if (customer?.expires_at) {
     const expiry = new Date(customer.expires_at);
     daysLeft = Math.max(0, Math.ceil((expiry.getTime() - Date.now()) / 86400000));
@@ -29,26 +30,9 @@ export default async function ProfilePage() {
   }
 
   return (
-    <ProfileClient
+    <PackagesClient
       lineUserId={session.lineUserId}
-      initialProfile={{
-        companyName: customer?.display_name || session.displayName || '',
-        phone: customer?.phone || '',
-        email: customer?.email || '',
-        budgetMin: notes.budgetMin ?? 1,
-        budgetMax: notes.budgetMax ?? 50,
-        isSME: notes.isSME ?? false,
-        isMIT: notes.isMIT ?? false,
-        notifyTime: notes.notifyTime ?? '06:00',
-        userName: notes.userName,
-        userGmail: notes.userGmail,
-        userPhone: notes.userPhone,
-        userLineId: notes.userLineId,
-      }}
-      classes={notes.classes ?? []}
-      classCount={notes.classes?.length ?? 0}
-      registeredAt={customer?.registered_at?.slice(0, 10) ?? ''}
-      tierId={notes.tierId ?? (customer?.status === 'trial' ? 'trial' : 'standard')}
+      currentTierId={tierId}
       daysLeft={daysLeft}
       expiryLabel={expiryLabel}
     />

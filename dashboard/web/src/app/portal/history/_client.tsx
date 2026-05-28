@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { TopBar, ButlerNote } from '../_ui';
-import type { BidderRow, JobBiddersResult, CompetitorProfile, CompetitorProfileResult, RecentJobRow } from '@/lib/bid-history';
+import type { BidderRow, JobBiddersResult, CompetitorProfile, CompetitorProfileResult } from '@/lib/bid-history';
 
 function fmt(n: string | number | null | undefined): string {
   if (n == null || n === '') return '—';
@@ -158,40 +158,16 @@ function ProfileView({
   );
 }
 
-// ── Mine job card ─────────────────────────────────────────────────────────────
-
-function MineJobCard({ j, onJobClick }: { j: RecentJobRow; onJobClick: (id: string) => void }) {
-  return (
-    <div className="p-card" style={{ marginBottom: 6, cursor: 'pointer',
-      borderColor: j.is_winner ? 'var(--accent-deep)' : 'var(--border)' }}
-      onClick={() => onJobClick(j.job_id)}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <span style={{ fontSize: 13, flex: 1 }}>
-          {j.title.length > 65 ? j.title.slice(0, 65) + '…' : j.title}
-        </span>
-        {j.is_winner && (
-          <span className="p-chip" style={{ background: 'var(--accent)', color: '#000', fontSize: 10, marginLeft: 6, flexShrink: 0 }}>ชนะ</span>
-        )}
-      </div>
-      <div className="p-fg-mute" style={{ fontSize: 11, marginTop: 2 }}>
-        {j.department} · {j.province} · {j.publish_date} · เสนอ {fmt(j.price_proposal)} บาท
-        {j.price_agree ? ` · ตกลง ${fmt(j.price_agree)} บาท` : ''}
-      </div>
-    </div>
-  );
-}
-
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 export default function HistoryClient() {
-  const [tab, setTab] = useState<'job' | 'company' | 'mine'>('job');
+  const [tab, setTab] = useState<'job' | 'company'>('job');
   const [jobId, setJobId] = useState('');
   const [companyQ, setCompanyQ] = useState('');
   const [loading, setLoading] = useState(false);
   const [jobResult, setJobResult] = useState<JobBiddersResult | null>(null);
   const [profileResult, setProfileResult] = useState<CompetitorProfileResult | null>(null);
   const [searchResults, setSearchResults] = useState<CompetitorProfile[]>([]);
-  const [mineResult, setMineResult] = useState<{ jobs: RecentJobRow[]; total: number } | null>(null);
   const [error, setError] = useState('');
 
   function resetState() {
@@ -238,17 +214,6 @@ export default function HistoryClient() {
     finally { setLoading(false); }
   }
 
-  async function loadMine() {
-    setLoading(true); setError('');
-    try {
-      const res = await fetch('/api/portal/history/mine');
-      if (!res.ok) { setError('ไม่พบข้อมูล'); return; }
-      const data = await res.json();
-      setMineResult(data);
-    } catch { setError('เกิดข้อผิดพลาด'); }
-    finally { setLoading(false); }
-  }
-
   function handleJobClick(id: string) {
     setTab('job'); setJobId(id); setProfileResult(null);
     searchJob(id);
@@ -257,7 +222,6 @@ export default function HistoryClient() {
   const TAB_LABELS: Record<typeof tab, string> = {
     job: 'ค้นหางาน',
     company: 'ค้นหาบริษัท',
-    mine: 'บริษัทฉัน',
   };
 
   return (
@@ -265,22 +229,19 @@ export default function HistoryClient() {
       <TopBar title="ประวัติการประมูล" subtitle="Bid History" />
       <ButlerNote>ค้นหาว่าใครเคยเสนอราคาในงานนี้ หรือบริษัทนี้เคยชนะงานไหนบ้าง · ฐานข้อมูล 469 บริษัท จาก 300 งานประมูลในพื้นที่นครพนม–บึงกาฬ</ButlerNote>
 
-      {/* Tab switcher */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 16, marginTop: 12 }}>
-        {(['job', 'company', 'mine'] as const).map(t => (
+      {/* Tab switcher — 2-column grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16, marginTop: 12 }}>
+        {(['job', 'company'] as const).map(t => (
           <button
             key={t}
-            onClick={() => {
-              setTab(t);
-              if (t !== 'mine') resetState();
-              if (t === 'mine' && !mineResult) loadMine();
-            }}
+            onClick={() => { setTab(t); resetState(); }}
             style={{
-              flex: 1, padding: '7px 4px', fontSize: 12, borderRadius: 8,
-              border: '1px solid var(--border)',
+              padding: '10px 8px', fontSize: 13, borderRadius: 10,
+              border: `1px solid ${tab === t ? 'var(--accent-deep)' : 'var(--border)'}`,
               background: tab === t ? 'var(--accent)' : 'var(--surface)',
-              color: tab === t ? '#000' : 'inherit',
-              cursor: 'pointer', fontWeight: tab === t ? 600 : 400,
+              color: tab === t ? 'var(--ink-deep)' : 'inherit',
+              cursor: 'pointer', fontWeight: tab === t ? 700 : 500,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             }}
           >
             {TAB_LABELS[t]}
@@ -382,25 +343,6 @@ export default function HistoryClient() {
         />
       )}
 
-      {/* Own company bids tab */}
-      {tab === 'mine' && (
-        <div>
-          {loading && <div className="p-fg-mute" style={{ fontSize: 13, textAlign: 'center', padding: 20 }}>กำลังโหลด…</div>}
-          {!loading && mineResult && (
-            <>
-              <div className="p-label" style={{ marginBottom: 8 }}>พบ {mineResult.total} งานที่บริษัทเคยเสนอราคา</div>
-              {mineResult.total === 0 && (
-                <div className="p-card" style={{ fontSize: 13, color: 'var(--fg-mute)' }}>
-                  ไม่พบประวัติ — Sebastian ค้นหาด้วยชื่อบริษัทจากโปรไฟล์ ถ้าต้องการค้นหาชื่ออื่นให้ใช้แท็บ &quot;ค้นหาบริษัท&quot;
-                </div>
-              )}
-              {mineResult.jobs.map((j, i) => (
-                <MineJobCard key={i} j={j} onJobClick={handleJobClick} />
-              ))}
-            </>
-          )}
-        </div>
-      )}
     </div>
   );
 }

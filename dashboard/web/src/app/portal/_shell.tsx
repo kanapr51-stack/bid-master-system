@@ -52,14 +52,23 @@ function ClockIcon({ size = 20, active = false }: { size?: number; active?: bool
   );
 }
 
+function FolderIcon({ size = 20, active = false }: { size?: number; active?: boolean }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2 : 1.5} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+
 // ── Nav items ─────────────────────────────────────────────────────────────────
 
 const NAV_ITEMS = [
-  { href: '/portal/world',    label: 'หน้าหลัก', Icon: HomeIcon },
-  { href: '/portal/classes',  label: 'บริษัท',   Icon: LayersIcon },
-  { href: '/portal/history',  label: 'ประวัติ',   Icon: ClockIcon },
-  { href: '/portal/profile',  label: 'โปรไฟล์',  Icon: UserIcon },
-  { href: '/portal/packages', label: 'แพ็กเกจ',  Icon: CrownIcon },
+  { href: '/portal/world',     label: 'หน้าหลัก', Icon: HomeIcon },
+  { href: '/portal/classes',   label: 'บริษัท',   Icon: LayersIcon },
+  { href: '/portal/documents', label: 'เอกสาร',   Icon: FolderIcon },
+  { href: '/portal/history',   label: 'ประวัติ',   Icon: ClockIcon },
+  { href: '/portal/profile',   label: 'โปรไฟล์',  Icon: UserIcon },
+  { href: '/portal/packages',  label: 'แพ็กเกจ',  Icon: CrownIcon },
 ];
 
 // ── Shell ─────────────────────────────────────────────────────────────────────

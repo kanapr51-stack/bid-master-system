@@ -16,17 +16,20 @@ import sqlite3
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+import httpx
 from fastapi import FastAPI, Request, Header, HTTPException
-from fastapi.responses import JSONResponse
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-DB_PATH             = Path("/opt/bms/data/bms_customers.db")
-LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET", "")
-BMS_INTERNAL_SECRET = os.getenv("BMS_INTERNAL_SECRET", "")
+DB_PATH              = Path("/opt/bms/data/bms_customers.db")
+LINE_CHANNEL_SECRET  = os.getenv("SEBASTIAN_LINE_SECRET", "")
+LINE_ACCESS_TOKEN    = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "")
+BMS_INTERNAL_SECRET  = os.getenv("BMS_INTERNAL_SECRET", "")
 TZ_TH = timezone(timedelta(hours=7))
 
-app = FastAPI(title="BMS API Bridge", version="1.0")
+LINE_API = "https://api.line.me/v2/bot"
+
+app = FastAPI(title="BMS API Bridge", version="1.1")
 
 
 def _now() -> str:
@@ -39,6 +42,47 @@ def get_conn() -> sqlite3.Connection:
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
+
+
+# ── LINE helpers ──────────────────────────────────────────────────────────────
+
+def _line_headers() -> dict:
+    return {"Authorization": f"Bearer {LINE_ACCESS_TOKEN}"}
+
+
+async def fetch_line_profile(user_id: str) -> tuple[str, str | None]:
+    """Return (display_name, picture_url). Falls back to 'LINE User' on error."""
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            r = await client.get(
+                f"{LINE_API}/profile/{user_id}",
+                headers=_line_headers(),
+            )
+        if r.status_code == 200:
+            data = r.json()
+            return data.get("displayName", "LINE User"), data.get("pictureUrl")
+    except Exception:
+        pass
+    return "LINE User", None
+
+
+async def push_welcome(user_id: str, display_name: str) -> None:
+    """Send welcome message after new LINE follow."""
+    text = (
+        f"สวัสดีครับ คุณ{display_name} \U0001f44b\n\n"
+        "ผม Sebastian ผู้ช่วยติดตามงานประมูลภาครัฐ\n\n"
+        "เมื่อมีโครงการใหม่ในพื้นที่ที่คุณสนใจ ผมจะแจ้งเตือนทันทีครับ\n\n"
+        "ทีมงานจะติดต่อเพื่อตั้งค่าพื้นที่ให้คุณเร็วๆ นี้ครับ \U0001f64f"
+    )
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            await client.post(
+                f"{LINE_API}/message/push",
+                headers={**_line_headers(), "Content-Type": "application/json"},
+                json={"to": user_id, "messages": [{"type": "text", "text": text}]},
+            )
+    except Exception:
+        pass  # non-fatal — customer already created in DB
 
 
 # ── LINE signature verification ───────────────────────────────────────────────
@@ -59,8 +103,7 @@ def verify_line_signature(body: bytes, signature: str | None) -> bool:
 
 @app.get("/health")
 async def health():
-    db_ok = DB_PATH.exists()
-    return {"ok": True, "db": db_ok, "ts": _now()}
+    return {"ok": True, "db": DB_PATH.exists(), "ts": _now()}
 
 
 @app.post("/webhook/line")
@@ -73,24 +116,62 @@ async def line_webhook(
     if not verify_line_signature(body, x_line_signature):
         raise HTTPException(status_code=401, detail="Invalid LINE signature")
 
-    payload = json.loads(body)   # parse from bytes — not re-reading stream
+    payload = json.loads(body)
     events  = payload.get("events", [])
 
-    with get_conn() as conn:
-        for event in events:
-            user_id = (event.get("source") or {}).get("userId")
-            if not user_id:
-                continue
+    for event in events:
+        user_id = (event.get("source") or {}).get("userId")
+        if not user_id:
+            continue
 
-            now = _now()
-            if event.get("type") == "follow":
-                conn.execute(
-                    "INSERT OR IGNORE INTO customers "
-                    "(line_user_id, display_name, tier, active, created_at, updated_at) "
-                    "VALUES (?,?,?,?,?,?)",
-                    (user_id, "LINE User", "trial", 1, now, now),
-                )
-            elif event.get("type") == "unfollow":
+        now = _now()
+
+        if event.get("type") == "follow":
+            display_name, _ = await fetch_line_profile(user_id)
+
+            with get_conn() as conn:
+                existing = conn.execute(
+                    "SELECT id, active FROM customers WHERE line_user_id=?",
+                    (user_id,),
+                ).fetchone()
+
+                if existing:
+                    # Re-follow: reactivate + refresh display_name
+                    conn.execute(
+                        "UPDATE customers SET active=1, display_name=?, updated_at=? "
+                        "WHERE line_user_id=?",
+                        (display_name, now, user_id),
+                    )
+                    customer_id = existing["id"]
+                    is_new = False
+                else:
+                    cur = conn.execute(
+                        "INSERT INTO customers "
+                        "(line_user_id, display_name, tier, active, created_at, updated_at) "
+                        "VALUES (?,?,?,?,?,?)",
+                        (user_id, display_name, "trial", 1, now, now),
+                    )
+                    customer_id = cur.lastrowid
+                    is_new = True
+
+                # Ensure subscription row exists (no provinces yet — admin sets via /api/preferences)
+                has_sub = conn.execute(
+                    "SELECT id FROM subscriptions WHERE customer_id=? AND active=1",
+                    (customer_id,),
+                ).fetchone()
+                if not has_sub:
+                    conn.execute(
+                        "INSERT INTO subscriptions "
+                        "(customer_id, announce_types, min_budget, delivery_mode, active, created_at, updated_at) "
+                        "VALUES (?,?,?,?,?,?,?)",
+                        (customer_id, "D0", 0, "instant", 1, now, now),
+                    )
+
+            if is_new:
+                await push_welcome(user_id, display_name)
+
+        elif event.get("type") == "unfollow":
+            with get_conn() as conn:
                 conn.execute(
                     "UPDATE customers SET active=0, updated_at=? WHERE line_user_id=?",
                     (now, user_id),
@@ -107,27 +188,25 @@ async def update_preferences(
     if x_bms_secret != BMS_INTERNAL_SECRET:
         raise HTTPException(status_code=403, detail="Forbidden")
 
-    payload    = await request.json()
+    payload     = await request.json()
     customer_id = payload.get("customer_id")
-    provinces  = payload.get("provinces", [])
-    keywords   = payload.get("keywords", "")
+    provinces   = payload.get("provinces", [])
+    keywords    = payload.get("keywords", "")
 
     if not customer_id:
         raise HTTPException(status_code=400, detail="customer_id required")
 
     now = _now()
     with get_conn() as conn:
-        # Verify customer exists
         row = conn.execute(
             "SELECT id FROM customers WHERE id=? AND active=1", (customer_id,)
         ).fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Customer not found")
 
-        # Upsert subscription (one per customer for now)
         sub = conn.execute(
             "SELECT id FROM subscriptions WHERE customer_id=? AND active=1",
-            (customer_id,)
+            (customer_id,),
         ).fetchone()
 
         if not sub:
@@ -140,11 +219,8 @@ async def update_preferences(
             sub_id = cur.lastrowid
         else:
             sub_id = sub["id"]
-            conn.execute(
-                "UPDATE subscriptions SET updated_at=? WHERE id=?", (now, sub_id)
-            )
+            conn.execute("UPDATE subscriptions SET updated_at=? WHERE id=?", (now, sub_id))
 
-        # Replace provinces (normalized join table)
         conn.execute(
             "DELETE FROM subscription_provinces WHERE subscription_id=?", (sub_id,)
         )
@@ -154,7 +230,6 @@ async def update_preferences(
                 (sub_id, province.strip()),
             )
 
-        # Keywords stored in subscriptions.work_categories for now
         if keywords is not None:
             conn.execute(
                 "UPDATE subscriptions SET work_categories=?, updated_at=? WHERE id=?",

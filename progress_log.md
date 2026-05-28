@@ -2,6 +2,59 @@
 
 ---
 
+## งานที่ N+33: 10-Day Family Beta Sprint Plan (2026-05-28 17:00)
+
+### สถานะ: 📋 แผน — รอ execute
+
+### Goal
+ให้พ่อและแม่ของคุณกัญจน์ใช้ BMS ได้จริงภายใน 10 วัน (deadline ~2026-06-07)
+
+Requirements:
+1. VPS — รัน workers เสถียร 24/7
+2. Customer portal — ตั้งค่าจังหวัดผ่านเว็บได้เอง
+3. LINE personal — แจ้งเตือนไปยัง LINE ส่วนตัวแต่ละคนแยกกัน
+
+### Architecture ที่ตัดสินใจ (ChatGPT confirmed ✅)
+
+```
+Portal UI        → Vercel (คงเดิม)
+Webhook API      → Vercel (คงเดิม)
+    ↓ POST to VPS
+FastAPI service  → VPS (ใหม่)
+    ↓
+SQLite DB        → VPS (ย้ายจาก local)
+RSS Notifier     → VPS (ย้ายจาก local)
+LINE Sender      → VPS (ย้ายจาก local)
+Queue Processor  → VPS (WAF bypass ด้วย IP ใหม่)
+Discord Digest   → VPS (centralized observability)
+```
+
+Key decisions:
+- SQLite ต่อไป (ไม่ migrate Postgres) — single writer, WAL, low QPS
+- Paid VPS (ไม่ใช่ Oracle Free) — reliability > cost ในช่วง deadline
+- Spec: Ubuntu 22.04, 2 vCPU, 2-4 GB RAM (Vultr/DigitalOcean ~$12-18/เดือน)
+
+### Sprint Plan
+
+| Day | งาน |
+|---|---|
+| 1-2 | ซื้อ VPS + install Python/git + ย้าย DB + workers + ทดสอบ WAF bypass |
+| 3-4 | FastAPI webhook service + portal wiring → bms_customers.db |
+| 5-6 | LINE follow → auto-create customer + auto-reply portal link |
+| 7-8 | ทดสอบ end-to-end กับพ่อ-แม่จริง |
+| 9-10 | Fix bugs + confirm digest + monitoring |
+
+### Defer (ไม่ทำใน 10 วัน)
+- WAF perfect recovery (RSS provisional พอแล้วสำหรับ beta)
+- Postgres migration
+- Multi-tier billing
+- 77-province extraction ครบ
+- Advanced analytics
+
+### Followup
+- RSS semantic experiment: probe ทุก 30 นาที จนกว่าจะ UP — บันทึก pubDate distribution
+- WAF test จาก VPS IP ทันทีหลัง setup
+
 ## งานที่ N+32: RSS-First Pilot + Schema v1.5 source_stage (2026-05-28 11:30)
 
 ### สถานะ: ✅ เสร็จ

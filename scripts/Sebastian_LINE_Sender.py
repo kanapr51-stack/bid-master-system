@@ -265,24 +265,39 @@ def main():
         f"customer={item['customer_id']} retry={item['retry_count']}"
     )
 
-    # Step 4a: API enrichment (opportunistic, bounded failure)
+    # Step 4a: API enrichment (opportunistic — skip if WAF state unknown/blocked)
     dept_name   = item.get("dept_name") or ""
     budget      = float(item.get("budget") or 0)
     deliver_day = 0
     report_date = ""
 
-    if not dept_name or not budget:
+    def _api_state() -> str:
+        """Read api_ingestion_state.json → api_state value, 'UNKNOWN' if unreadable."""
         try:
-            from process5_http_client import get_procurement_detail
-            enriched = get_procurement_detail(item["project_id"])
-            if enriched.get("valid"):
-                dept_name   = enriched.get("dept_sub_name") or dept_name
-                budget      = enriched.get("budget") or budget
-                deliver_day = enriched.get("deliver_day") or 0
-                report_date = enriched.get("report_date") or ""
-                log(f"  API enrich: dept={dept_name[:30]} budget={budget} days={deliver_day}")
-        except Exception as e:
-            log(f"  API enrich failed (non-fatal): {e}")
+            import json as _json
+            state_path = Path(__file__).parent.parent / "data" / "api_ingestion_state.json"
+            if state_path.exists():
+                return _json.loads(state_path.read_text(encoding="utf-8-sig")).get("api_state", "UNKNOWN")
+        except Exception:
+            pass
+        return "UNKNOWN"
+
+    if not dept_name or not budget:
+        api_state = _api_state()
+        if api_state == "HEALTHY":
+            try:
+                from process5_http_client import get_procurement_detail
+                enriched = get_procurement_detail(item["project_id"])
+                if enriched.get("valid"):
+                    dept_name   = enriched.get("dept_sub_name") or dept_name
+                    budget      = enriched.get("budget") or budget
+                    deliver_day = enriched.get("deliver_day") or 0
+                    report_date = enriched.get("report_date") or ""
+                    log(f"  API enrich: dept={dept_name[:30]} budget={budget} days={deliver_day}")
+            except Exception as e:
+                log(f"  API enrich failed (non-fatal): {e}")
+        else:
+            log(f"  API enrich skipped (api_state={api_state}) — RSS-only delivery")
 
     # Step 4b: PDF enrichment for bid_submit_date (lazy + cached)
     bid_submit_date = ""

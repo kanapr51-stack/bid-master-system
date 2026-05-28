@@ -1,19 +1,5 @@
 ﻿[
     {
-        "run_at":  "2026-05-26T18:35:58",
-        "processed_count":  15,
-        "early_stop":  false,
-        "canary_passed":  true,
-        "batch_limit":  15,
-        "failure_mode":  "clean_pass",
-        "elapsed_batch_sec":  112,
-        "rss_latency_avg_min":  1052.3,
-        "inter_run_gap_min":  14.6,
-        "request_latency_avg_ms":  657,
-        "request_latency_p95_ms":  3429,
-        "request_latency_max_ms":  3429
-    },
-    {
         "run_at":  "2026-05-26T19:05:58",
         "processed_count":  15,
         "early_stop":  false,
@@ -138,5 +124,17 @@
         "request_latency_avg_ms":  3865,
         "request_latency_p95_ms":  3907,
         "request_latency_max_ms":  3907
+    },
+    {
+        "probe_type":  "morning_probe_R1",
+        "probed_at":  "2026-05-28T10:26:47",
+        "silence_hours":  14,
+        "canary_latency_ms":  3863,
+        "canary_passed":  true,
+        "target_id":  "69059390446",
+        "processed_count":  0,
+        "latency_avg_ms":  3887,
+        "elapsed_ms":  13570,
+        "scenario":  "B_degraded"
     }
 ]

@@ -29,9 +29,9 @@ TZ_TH = timezone(timedelta(hours=7))
 NOW   = datetime.now(TZ_TH)
 
 RSS_TARGETS = [
-    ("0307", "https://process.gprocurement.go.th/egp2procmainWeb/rss/announcementList.rss?deptId=0307&anounceType=D0&lang=th"),
-    ("0708", "https://process.gprocurement.go.th/egp2procmainWeb/rss/announcementList.rss?deptId=0708&anounceType=D0&lang=th"),
-    ("8525", "https://process.gprocurement.go.th/egp2procmainWeb/rss/announcementList.rss?deptId=8525&anounceType=D0&lang=th"),
+    ("0307", "https://process.gprocurement.go.th/EPROCRssFeedWeb/egpannouncerss.xml?deptId=0307&anounceType=D0"),
+    ("0708", "https://process.gprocurement.go.th/EPROCRssFeedWeb/egpannouncerss.xml?deptId=0708&anounceType=D0"),
+    ("8525", "https://process.gprocurement.go.th/EPROCRssFeedWeb/egpannouncerss.xml?deptId=8525&anounceType=D0"),
 ]
 
 def fetch_rss(dept_id: str, url: str) -> dict:

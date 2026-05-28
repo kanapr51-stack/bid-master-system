@@ -56,7 +56,8 @@ from pathlib import Path
 if sys.stdout and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-DB_PATH = Path(__file__).parent.parent / "data" / "bms_customers.db"
+_DATA_DIR = os.environ.get("BMS_DATA_DIR") or str(Path(__file__).parent.parent / "data")
+DB_PATH = Path(_DATA_DIR) / "bms_customers.db"
 TZ_TH   = timezone(timedelta(hours=7))
 
 SENDING_TIMEOUT_MIN = 5
@@ -573,7 +574,7 @@ class SubscriptionStore:
 
 if __name__ == "__main__":
     import os
-    db = Path(__file__).parent.parent / "data" / "bms_customers.db"
+    db = DB_PATH
     if db.exists():
         os.remove(db)
         print("Removed old DB")

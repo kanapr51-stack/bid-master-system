@@ -109,7 +109,7 @@ def discovery_section() -> str:
 # ── Delivery ──────────────────────────────────────────────────────────────────
 
 def delivery_section() -> str:
-    db_path = BASE / "data" / "bms_customers.db"
+    db_path = Path(os.environ.get("BMS_DATA_DIR") or str(BASE / "data")) / "bms_customers.db"
     if not db_path.exists():
         return "Delivery: FAIL  bms_customers.db missing"
 

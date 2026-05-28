@@ -174,8 +174,10 @@ def format_notification(project_id: str, province: str = "",
     if report_date:
         lines.append(f"📅 ประกาศ {report_date}")
 
+    lines.append(f"\n🔑 {project_id}")
+
     if source_stage == "rss_provisional":
-        lines.append("\n📡 ข้อมูลเบื้องต้นจาก RSS")
+        lines.append("📡 ข้อมูลเบื้องต้นจาก RSS")
 
     return "\n".join(lines)
 

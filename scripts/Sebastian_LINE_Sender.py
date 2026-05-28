@@ -58,31 +58,72 @@ def _load_line_token() -> str:
     return token
 
 
+def _shorten_project_name(name: str, max_len: int = 60) -> str:
+    """ตัดชื่อโครงการ — ลบ prefix ที่ไม่มีความหมายออก"""
+    prefixes = [
+        "ประกวดราคาจ้างก่อสร้าง", "ประกวดราคาจ้าง", "ประกวดราคาซื้อ",
+        "ซื้อ", "จ้าง", "จ้างก่อสร้าง", "ประกวดราคา",
+    ]
+    result = name.strip()
+    for p in prefixes:
+        if result.startswith(p):
+            result = result[len(p):].lstrip()
+            break
+    # ตัด suffix เช่น "ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)"
+    for suffix in [" ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+                   " โดยวิธีเฉพาะเจาะจง", " ด้วยวิธีคัดเลือก"]:
+        if result.endswith(suffix):
+            result = result[:-len(suffix)].rstrip()
+    if len(result) > max_len:
+        result = result[:max_len] + "..."
+    return result or name[:max_len]
+
+
+def _fmt_budget(budget: float) -> str:
+    """แสดงราคากลางในรูปแบบอ่านง่าย เช่น 21.7 ล้าน / 850,000"""
+    if not budget:
+        return "ไม่ระบุ"
+    if budget >= 1_000_000:
+        return f"{budget / 1_000_000:.1f} ล้านบาท"
+    return f"{int(budget):,} บาท"
+
+
 def format_notification(project_id: str, province: str = "",
-                         announce_type: str = "D0", budget: int = 0,
+                         announce_type: str = "D0", budget: float = 0,
                          project_name: str = "", dept_name: str = "",
+                         deliver_day: int = 0, report_date: str = "",
                          is_backfill: bool = False,
                          source_stage: str = "api_enriched") -> str:
-    budget_str = f"{budget:,}" if budget else "ไม่ระบุ"
-    type_label = TYPE_LABELS.get(announce_type, announce_type or "ไม่ระบุ")
+    """
+    v1 Mobile-first format — optimize สำหรับ 3-second decision scan
+    ลำดับ: geography → project → money → agency → timeline
+    """
+    short_name = _shorten_project_name(project_name) if project_name else project_id
+    lines = []
+
     if is_backfill:
-        header = "📦 โครงการที่ยังเปิดประมูลอยู่\n(นำเข้าหลังเปิดระบบแจ้งเตือน)"
+        lines.append("📦 โครงการที่ยังเปิดประมูลอยู่")
     else:
-        header = "🔔 พบโครงการใหม่"
-    lines = [
-        header,
-        f"จังหวัด: {province or 'ไม่ระบุ'}",
-        f"งบประมาณ: {budget_str} บาท",
-        f"ประเภท: {type_label}",
-    ]
-    if project_name:
-        lines.append(f"โครงการ: {project_name}")
+        lines.append("🔔 พบโครงการใหม่")
+
+    lines.append(f"📍 {province or 'ไม่ระบุจังหวัด'}")
+    lines.append(f"🏗 {short_name}")
+    lines.append(f"💰 ราคากลาง {_fmt_budget(budget)}")
+
     if dept_name:
-        lines.append(f"หน่วยงาน: {dept_name}")
-    lines.append(f"รหัส: {project_id}")
-    # Provenance label for RSS-provisional — sets expectation, preserves trust
+        lines.append(f"🏢 {dept_name}")
+
+    if deliver_day:
+        lines.append(f"⏱ ระยะเวลา {deliver_day} วัน")
+
+    if report_date:
+        lines.append(f"📅 ประกาศ {report_date}")
+
+    lines.append(f"\n🔑 รหัส: {project_id}")
+
     if source_stage == "rss_provisional":
-        lines.append("\n📡 ข้อมูลเบื้องต้นจาก RSS")
+        lines.append("📡 ข้อมูลเบื้องต้นจาก RSS")
+
     return "\n".join(lines)
 
 
@@ -169,14 +210,35 @@ def main():
         f"customer={item['customer_id']} retry={item['retry_count']}"
     )
 
-    # Step 4: format message (use snapshot fields — not live projects_seen)
+    # Step 4: enrich missing fields from process5 API (opportunistic — fallback to snapshot)
+    dept_name   = item.get("dept_name") or ""
+    budget      = float(item.get("budget") or 0)
+    deliver_day = 0
+    report_date = ""
+
+    if not dept_name or not budget:
+        try:
+            from process5_http_client import get_procurement_detail
+            enriched = get_procurement_detail(item["project_id"])
+            if enriched.get("valid"):
+                dept_name   = enriched.get("dept_sub_name") or dept_name
+                budget      = enriched.get("budget") or budget
+                deliver_day = enriched.get("deliver_day") or 0
+                report_date = enriched.get("report_date") or ""
+                log(f"  Enriched: dept={dept_name[:30]} budget={budget} days={deliver_day}")
+        except Exception as e:
+            log(f"  Enrich failed (non-fatal): {e}")
+
+    # Step 5: format message
     text = format_notification(
         project_id    = item["project_id"],
         province      = item.get("province") or "",
         announce_type = item.get("announce_type") or "D0",
-        budget        = item.get("budget") or 0,
+        budget        = budget,
         project_name  = item.get("project_name") or "",
-        dept_name     = item.get("dept_name") or "",
+        dept_name     = dept_name,
+        deliver_day   = deliver_day,
+        report_date   = report_date,
         is_backfill   = bool(item.get("is_backfill")),
         source_stage  = item.get("source_stage") or "api_enriched",
     )

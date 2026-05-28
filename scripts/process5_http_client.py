@@ -268,6 +268,32 @@ def _parse_iso_to_thai(date_str: str) -> str:
     return s
 
 
+def get_procurement_detail(project_id: str) -> dict:
+    """
+    เรียก getProcurementDetail?projectId=X → ข้อมูลสำหรับ enriched notification
+
+    Return keys:
+      dept_sub_name (str), budget (float), deliver_day (int),
+      report_date (str — DD/MM/YYYY Thai), moi_name (str),
+      plan_project_name (str), valid (bool)
+    """
+    token = _get_token(project_id)
+    body = _get(f"{API_BASE}/getProcurementDetail", {"projectId": project_id}, token=token)
+    if body is None or body.get("validateAnnouncementToken") == 0:
+        return {"valid": False}
+
+    data = body.get("data", {}) or {}
+    return {
+        "valid":             bool(data),
+        "dept_sub_name":     data.get("deptSubName", "") or "",
+        "budget":            float(data.get("projectMoney") or 0),
+        "deliver_day":       int(data.get("deliverDay") or 0),
+        "report_date":       _parse_iso_to_thai(data.get("reportDate", "")),
+        "moi_name":          data.get("moiName", "") or "",
+        "plan_project_name": data.get("planProjectName", "") or "",
+    }
+
+
 def get_procure_result(project_id: str) -> dict:
     """
     เรียก getProcureResult?projectId=X → dict winner info + full bidders list

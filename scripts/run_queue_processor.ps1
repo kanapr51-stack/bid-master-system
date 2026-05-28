@@ -39,6 +39,24 @@ function Write-State($apiState, $blockedUntil, $lastCanarySuccess, $safeLimit) {
     $obj | ConvertTo-Json | Set-Content $StateFile -Encoding UTF8
 }
 
+function Reconcile-State($currentState) {
+    # Stale BLOCKED: blocked_until expired but no run has cleared it yet.
+    # Transition to UNKNOWN — removes false certainty without claiming recovery.
+    # Reconciliation ≠ recovery. Canary pulse tomorrow is source of truth.
+    $obj = @{
+        api_state            = "UNKNOWN"
+        blocked_until        = $currentState.blocked_until
+        last_canary_success  = $currentState.last_canary_success
+        safe_limit_current   = if ($currentState.safe_limit_current) { $currentState.safe_limit_current } else { 15 }
+        updated_at           = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss")
+        previous_state       = "BLOCKED"
+        reconciled_at        = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss")
+        reconcile_reason     = "blocked_until_expired"
+        needs_revalidation   = $true
+    }
+    $obj | ConvertTo-Json | Set-Content $StateFile -Encoding UTF8
+}
+
 Log "=== Queue Processor start ==="
 
 # Step 1: Check persistent block state
@@ -49,6 +67,13 @@ if ($state -and $state.blocked_until) {
         Log "BLOCKED (persisted) -- blocked_until=$($state.blocked_until) -- skipping cycle"
         Log "=== Queue Processor skipped (BLOCKED) ==="
         exit 0
+    }
+    # blocked_until expired but state still BLOCKED → reconcile to UNKNOWN
+    # Removes stale certainty without claiming recovery. Canary below decides truth.
+    if ($state.api_state -eq "BLOCKED") {
+        Reconcile-State $state
+        $state = Read-State
+        Log "Reconciled stale BLOCKED → UNKNOWN (blocked_until expired $($state.blocked_until))"
     }
 }
 

@@ -2,6 +2,189 @@
 
 ---
 
+## งานที่ N+31: WAF Morning Probe — Decision Framework (2026-05-28 03:30)
+
+### สถานะ: ⏳ รอ probe 06:00
+
+### Silence experiment state
+- Queue Processor OFF ตั้งแต่ 2026-05-27T13:20 (~14h ณ เวลาเขียน)
+- eGP API: UNKNOWN (needs_revalidation)
+- Last canary success: 2026-05-27T13:06 → early_stop avg 3,865ms
+
+### Probe plan 06:00
+```
+1. canary probe อย่างเดียวก่อน — ดู latency
+2. ถ้าผ่าน → run 1 unseen D0 ID เท่านั้น → STOP ทันที
+3. ห้าม resume scheduler แม้ healthy
+4. ห้าม run เพิ่มแม้ผลดี
+```
+
+### Decision tree (จาก ChatGPT review — ✅ ทั้งหมด)
+
+**Scenario A: canary pass + 1 ID < 600ms**
+- Interpret: "consistent with inactivity-linked recovery" (ไม่ใช่ "recovery proven")
+- Action: บันทึก latency + geometry + time-of-day → STOP
+- Next: รอ +6h หรือ next morning pulse ก่อน Phase R2
+- ห้าม: run เพิ่ม, resume scheduler, conclude stable
+
+**Scenario B: canary pass + 1 ID ≥ 3,000ms**
+- Interpret: "14h silence insufficient under current identity"
+- Action: extend silence, reduce probing frequency massively
+- Next experiment: longer silence (ยังไม่เปลี่ยน identity variables)
+- ห้าม: accept degraded, adaptive retry hammering, continuous probing
+
+**Scenario C: canary fail**
+- Interpret: "probe lane itself degraded" — ไม่ใช่ "fully banned"
+- Action: หยุด probe ทั้งหมด 24-48h minimum
+- ห้าม: test more (measurement itself = aggressive behavior ตอนนี้)
+
+### Re-engagement phases (เฉพาะหลัง Scenario A)
+```
+R1: 06:00 — 1 ID → STOP                        ← วันนี้
+R2: +6h later — 3 IDs spaced → observe geometry
+R3: +1 day — 5 IDs
+    → 10 IDs → 15 IDs → enable scheduler
+```
+**Core question: "what accumulates distrust?"** ไม่ใช่ "can we get 1 successful response?"
+
+### Key insight
+"recovery probe itself changes future interaction-history"
+→ ดังนั้น STOP after 1 ID เสมอในรอบนี้
+
+### Script
+`scripts/run_morning_probe.ps1` — พร้อมไว้รัน 06:00
+
+---
+
+## งานที่ N+30: Notification Delivery Pipeline — Phase 2 Complete (2026-05-28)
+
+### สถานะ: ✅ เสร็จ — รอ LINE user ID ก่อน first live send
+
+### สิ่งที่สร้าง
+
+**3-plane notification architecture:**
+
+| Plane | Script | Role |
+|---|---|---|
+| Discovery | Sebastian_RSS_Scraper.py | RSS → rss_queue.json (append-only log) |
+| Classify+Enqueue | Sebastian_RSS_Notifier.py ← **NEW** | province extract → confidence gate → notification_queue |
+| Deliver | Sebastian_LINE_Sender.py ← **NEW** | LINE push API, state machine, retry |
+
+**Schema ที่เพิ่ม (v1.1 → v1.4):**
+- `projects_seen`: + project_name, dept_id, dept_name, extraction_confidence, source
+- `notification_queue`: + retry_count, sending_at, worker_id, snapshot fields, is_backfill
+- `delivery_log`: append-only audit log (replaces sent_notifications)
+
+**Architecture decisions (confirmed ทุกจุดกับ ChatGPT):**
+- Option C hybrid: RSS = provisional signal, API enrich = async
+- Confidence gate: `extract_province(title) ∈ TARGET_PROVINCES` → "high" (wrapper heuristic)
+- Snapshot semantics: province/project_name/dept_name copy ลง notification_queue ตอน enqueue
+- rss_queue = immutable discovery log (ไม่เพิ่ม processed flag — projects_seen คือ dedup)
+- is_backfill: items ก่อน notifier epoch → 📦 label (ไม่ใช่ 🔔)
+- BATCH_SIZE=1 จนกว่า trust semantics validated
+
+### Dry-run results
+```
+rss_queue: 1,273 total → 260 eligible D0
+Province extracted (target): 3/260 = 1.2% → นครพนม
+All 3 = BACKFILL (queued 2026-05-26, ก่อน notifier epoch)
+```
+
+### Pilot launch sequence (confirmed โดยคุณกัญจน์)
+```
+Phase 0: seed customer (ต้องการ LINE user ID จาก LINE Developers Console)
+Phase 1:
+  1. seed_self_notify.py --line-id U... --provinces นครพนม บึงกาฬ
+  2. Sebastian_RSS_Notifier.py --dry-run   → verify classification
+  3. Sebastian_LINE_Sender.py --dry-run    → verify formatting
+  4. Sebastian_LINE_Sender.py              → manual live send (1 item)
+  5. inspect LINE message + delivery_log + queue state + dedup
+  6. rerun sender → verify no duplicate
+  7. เปิด Task Scheduler BidMaster_RSS_Notifier + BidMaster_LINE_Sender (LAST STEP)
+```
+
+### Pilot success metrics (4 layers)
+- Transport: LINE API success, queue transitions ถูก, no stuck, retry works, no duplicate
+- Semantic: province ถูก, title ไม่ misleading, backfill label ถูก
+- Usability: readable ใน <3 sec scan
+- Operational: scheduler rerun safe, restart safe, replay safe, DB consistent
+- Observation window: 3-5 วัน ก่อนเพิ่ม customer จริง
+
+### Blocking
+- LINE user ID: ดูจาก LINE Developers Console → Basic Settings → "Your user ID"
+
+### Followup
+- เปิด Task Scheduler หลัง first live send validate แล้วเท่านั้น
+- WAF morning probe (~06:00) ยังค้าง — Queue Processor ยัง OFF
+
+---
+
+## งานที่ N+29: Behavioral Characterization — WAF Trust Envelope Day 1 (2026-05-26 → 27)
+
+### สถานะ: ⏳ กำลังเก็บข้อมูล — รอ 06:00 pipeline เช้านี้
+
+### สรุปสถานะ ณ 00:45 น.
+
+**Queue Processor runs วันนี้:**
+| Run | เวลา | Result | avg_ms | p95_ms | gap_min |
+|-----|------|--------|--------|--------|---------|
+| #1 | 18:21 | clean_pass 15/15 | N/A | N/A | — |
+| #2 | 18:35 | clean_pass 15/15 | 657 | 3,429 | 14.6 |
+| #3 | 19:05 | clean_pass 15/15 | 450 | 519 | 30.0 |
+| #4 | 19:36 | **early_stop 0/15** | 3,875 | 3,937 | 30.1 |
+| #5 | 22:06 | **early_stop 0/15** | 3,878 | 3,905 | 150 |
+| #6 | 00:36 | **early_stop 0/15** | 3,908 | 3,913 | 150 |
+
+**API state ตอนนี้:** BLOCKED until 02:36 น.
+**RSS:** ยังไม่กลับ — last item queued_at = 2026-05-26T06:54:00
+**Queue depth:** ~167 items (D0:148, B0:43, W0:21 ตอนเริ่ม)
+
+### สิ่งที่รู้แล้วจากการ characterize
+- WAF มี memory — behavior ไม่ stateless
+- Pattern: 3 clean_pass → degraded regime เริ่มทันที
+- Degradation = distribution-wide (avg≈p95 ทั้ง 3 degraded runs) ไม่ใช่ spike เดี่ยว
+- 2.5h inactivity ไม่ช่วย recovery เลย (Run #5, #6 ยัง 3,900ms)
+- Canary pass ≠ batch safe (canary = "not fully banned" เท่านั้น)
+- Control plane ทำงานถูกต้อง (blocked_until, scheduler, telemetry ครบ)
+
+### สิ่งที่ยังไม่รู้
+- Variable อะไรที่ trigger recovery จริง (time-of-day? cumulative volume? IP reputation?)
+- Memory half-life ของ WAF
+- 2h cooldown อาจไม่ใช่ค่าที่ถูก — ตั้งขึ้นมาโดยไม่มี evidence
+
+### Next high-value datapoint
+**06:00 pipeline พรุ่งนี้** — ถ้า clean_pass → consistent with time-of-day-linked recovery
+ถ้า early_stop อีก → governing variable ไม่ใช่ time-of-day
+
+### Silence Experiment (เริ่ม 2026-05-27T13:20)
+- BidMaster_Queue_Processor: **DISABLED** ตอน 13:20 น.
+- Frame: "silence experiment" ไม่ใช่ "cooldown" — ยังไม่รู้ว่า upstream มี notion ของ recovery window จริงไหม
+- Upstream จะเห็น "absence" ครั้งแรก — สำคัญถ้า scoring เป็น rolling interaction-based
+
+**Morning probe plan (~06:00–08:00 พรุ่งนี้):**
+1. canary probe อย่างเดียวก่อน — ดู latency
+2. ถ้าผ่าน → run **1 ID เดียวเท่านั้น** โดยเลือกแบบ deterministic:
+   "first unseen D0 after RSS recovery timestamp" (ไม่เลือกด้วย intuition)
+3. Observe latency geometry → **STOP ทันที**
+4. ห้าม resume scheduler แม้ healthy
+5. ถ้า healthy → ยังไม่แปลว่า "silence fixed it" — อาจเป็น low-volume allowance หรือ probe tolerance
+   next question ยังคือ: "does sustained interaction re-trigger degradation?"
+
+**Interpretation rules:**
+- ถ้า healthy → "consistent with inactivity-linked recovery under current identity"  (ไม่ใช่ "24h reset proven")
+- ถ้ายัง degraded → "24h inactivity alone insufficient under persistent identity" (ตัด time-only hypothesis)
+
+### Engineering backlog (รอ characterization เสร็จก่อน)
+- P0: Fix GH Runner (GHA `shell: pwsh`) — ง่าย, 30 นาที
+- P1: Winner sweep script แยกสำหรับ W0 — ปานกลาง
+- P2: CGD integration — ปานกลาง-ยาก
+- P3: Scale 77 จังหวัด — ยากที่สุด
+
+### Params ที่ freeze อยู่ (ห้ามเปลี่ยนจนกว่า characterization จบ)
+- limit=15, jitter=4-9s, workers=3, cooldown=2h (early_stop), cooldown=30min (canary_fail)
+
+---
+
 ## งานที่ N+28: Adaptive Ingestion Control Loop — Universe B Day 1 (2026-05-26)
 
 ### สถานะ: ✅ เสร็จ (commits af0e915→3be472c) / ⏳ characterization phase คืนนี้
@@ -34,6 +217,8 @@
 - [ ] Add `time_to_first_invalid_seconds` (run_started_at → first_invalid_at) — raw data มีแล้ว
 - [ ] เปลี่ยน drain_eta_hours ให้ใช้ actual rolling throughput แทน bootstrap 80%
 - [ ] Review tonight's failure_mode pattern → diurnal trust curve เริ่มเห็น?
+- [ ] Add `rss_avg_response_ms` + `rss_latency_p95` ใน RSS workflow log — latency inflation อาจเป็น early warning ก่อน canary fail
+- [ ] Cross-correlate: ถ้า RSS latency สูงขึ้น + API partial degradation พร้อมกัน → strengthen shared reputation hypothesis
 
 ### Insight สำคัญที่บันทึกไว้
 - zero_processed ≠ canary_fail: probe path trusted แต่ sustained fetch ถูก downgrade คนละ phenomenon

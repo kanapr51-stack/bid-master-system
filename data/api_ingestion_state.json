@@ -1,7 +1,11 @@
 ﻿{
-    "blocked_until":  "2026-05-27T15:06:26",
+    "previous_state":  "BLOCKED",
+    "updated_at":  "2026-05-27T22:01:33",
     "safe_limit_current":  15,
-    "api_state":  "BLOCKED",
     "last_canary_success":  "2026-05-27T13:06:02",
-    "updated_at":  "2026-05-27T13:06:27"
+    "api_state":  "UNKNOWN",
+    "reconcile_reason":  "blocked_until_expired",
+    "blocked_until":  "2026-05-27T15:06:26",
+    "reconciled_at":  "2026-05-27T22:01:33",
+    "needs_revalidation":  true
 }

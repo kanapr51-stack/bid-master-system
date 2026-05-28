@@ -137,3 +137,36 @@ Bid Master Knowledge Base (Google Sheets + Google Drive)
 1. ตอนนี้ → สร้าง + ทดสอบบนเครื่องหลัก
 2. พร้อม deploy → Copy ไปเครื่องสำรอง + ทดสอบซ้ำ
 3. รันจริง → เครื่องสำรองเปิดทิ้งไว้ตลอด
+
+---
+
+## [INTEL] Procurement Lifecycle Duration Analytics (ChatGPT, 2026-05-25)
+
+เมื่อ transitions_history.ndjson สะสมข้อมูลพอ จะ query ได้:
+
+### time_between_states
+
+`
+P0 → M03 = avg 14 days
+M03 → W03 = avg 21 days
+W03 → awarded = avg 7 days
+`
+
+### Intelligence ที่ได้
+
+| คำถาม | ประโยชน์ |
+|---|---|
+| stage ไหนนานสุด | procurement intelligence |
+| agency ไหนช้า | analytics insight |
+| average award lag | customer value |
+| cancellation pattern | bid strategy |
+
+### Implementation (future, เมื่อมี Universe B data)
+
+1. aggregate transitions_history.ndjson ตาม job_id
+2. sort by timestamp → คำนวณ duration per stage
+3. group by agency / procurement_type / province
+
+**Why:** BMS จะตอบได้ว่า "งานประเภทนี้ปกติประกาศผู้ชนะภายในกี่วัน" — procurement intelligence moat
+
+---

@@ -1,4 +1,26 @@
 {
-  "computed_at": "2026-05-24T02:00:22",
-  "transitions": {}
+  "computed_at": "2026-05-26T12:37:51",
+  "classifier_version": "v3_process5",
+  "transitions": {
+    "69059407707": {
+      "from": null,
+      "to": "active_bidding",
+      "type": "new",
+      "arrow": "🆕",
+      "route_reason": "stepId:M03",
+      "confidence": "high",
+      "refresh_count_snapshot": "0",
+      "classifier_version": "v3_process5"
+    },
+    "69049070661": {
+      "from": null,
+      "to": "active_bidding",
+      "type": "new",
+      "arrow": "🆕",
+      "route_reason": "stepId:M03",
+      "confidence": "high",
+      "refresh_count_snapshot": "0",
+      "classifier_version": "v3_process5"
+    }
+  }
 }

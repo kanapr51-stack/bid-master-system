@@ -2,6 +2,48 @@
 
 ---
 
+## งานที่ N+34: X-Announcement-Token Reverse Engineering สำเร็จ (2026-05-28 ~21:00)
+
+### สถานะ: ✅ เสร็จ — พร้อม integrate
+
+### Root cause / Discovery
+eGP process5 เพิ่ม `X-Announcement-Token` requirement ซึ่งทำให้ API เดิมได้ `{"validateAnnouncementToken": false}`
+
+### Reverse Engineering ผล
+
+**AES Key**: `"RDCrypto"` (CryptoJS passphrase, EVP_BytesToKey MD5)
+
+**Token Generation Flow (ไม่ต้อง Auth!):**
+```
+1. key = encryptData(encryptData({projectId}))
+   encryptData(obj) = URL_encode(AES_CBC_encrypt(JSON.stringify(obj), "RDCrypto"))
+2. POST /egp-atpj27-service/pb/a-egp-allt-project/announcement/generateToken
+   Body: {"key": key}
+   Headers: noToken:noToken, noDataProfile:noDataProfile
+3. Response: {"data": "<token>"} → token valid 30 minutes
+```
+
+**Endpoints ที่ทำงานได้ (ใช้ X-Announcement-Token header):**
+- `GET /egp-atpj27-service/pb/a-egp-allt-project/announcement/getProjectDetail?projectId=X`
+  → stepId, flowSeqno, announceType, projectStatus
+- `GET /egp-atpj27-service/pb/a-egp-allt-project/announcement/getProcurementDetail?projectId=X`
+  → priceAgree, reportDate, announceDate
+- `GET /egp-atpj27-service/pb/a-egp-allt-project/announcement/getProcureResult?projectId=X`
+  → procureResultList → winner (receiveNameTh, receiveTin, priceAgree, resultFlag)
+
+**Note:** Cloudflare Turnstile ต้องการเฉพาะ Search list endpoint ไม่ใช่ project-detail endpoints
+
+### Implementation
+- `scripts/probe_generate_token.py` — proof of concept สำเร็จ
+- ต้อง integrate เข้า `scripts/process5_http_client.py`
+
+### Followup
+- Integrate token generation เข้า process5_http_client.py
+- Test กับ project IDs ใน target provinces (อ.บ้านแพง, อ.บึงโขงหลง)
+- Token expiry 30 min → cache token per projectId (หรือ share token 1 อัน/รอบ)
+
+---
+
 ## งานที่ N+33: 10-Day Family Beta Sprint Plan (2026-05-28 17:00)
 
 ### สถานะ: 📋 แผน — รอ execute

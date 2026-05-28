@@ -2,7 +2,10 @@
 process5_http_client.py — HTTP-only wrapper สำหรับ eGP process5 API
 
 Discovery 2026-05-19: getProjectDetail / getProcureResult / PDF download
-ผ่าน Cloudflare ได้ด้วย Mozilla UA + Referer โดยไม่ต้อง Chrome เลย
+Discovery 2026-05-28: X-Announcement-Token reverse-engineered
+  - AES key: "RDCrypto" (CryptoJS passphrase)
+  - Flow: double_encryptData(projectId) → POST generateToken → token (30 min TTL)
+  - No auth required (noToken header bypasses Angular interceptor)
 
 Usage:
     from process5_http_client import get_project_detail, get_procure_result, download_pdf
@@ -11,8 +14,20 @@ Usage:
 import sys
 import time
 import random
+import hashlib
+import base64
+import os
+import json
+import urllib.parse
 import requests
 from typing import Optional
+
+try:
+    from Crypto.Cipher import AES
+    from Crypto.Util.Padding import pad
+    _crypto_available = True
+except ImportError:
+    _crypto_available = False
 
 try:
     from Sebastian_Telemetry import record_poll
@@ -41,6 +56,11 @@ sys.stdout.reconfigure(encoding="utf-8")
 PROCESS5_BASE = "https://process5.gprocurement.go.th"
 API_BASE      = f"{PROCESS5_BASE}/egp-atpj27-service/pb/a-egp-allt-project/announcement"
 PDF_BASE      = f"{PROCESS5_BASE}/egp-template-service/dwnt/view-pdf-file"
+GENERATE_TOKEN_URL = f"{API_BASE}/generateToken"
+
+_AES_PASSPHRASE = "RDCrypto"
+_TOKEN_TTL_SEC  = 25 * 60  # ใช้ 25 นาที (token valid 30 นาที)
+_token_cache: dict[str, tuple[str, float]] = {}  # {project_id: (token, expires_at)}
 
 HEADERS = {
     "User-Agent": (
@@ -53,10 +73,79 @@ HEADERS = {
     "Accept-Language": "th-TH,th;q=0.9,en-US;q=0.8,en;q=0.7",
 }
 
+HEADERS_NO_AUTH = {
+    **HEADERS,
+    "Content-Type": "application/json",
+    "noToken": "noToken",
+    "noDataProfile": "noDataProfile",
+}
+
 TIMEOUT     = 15  # วินาที ต่อ request
 MAX_RETRIES = 3
 _RL_BASE    = 30  # exponential backoff base (วินาที)
 _RL_CAP     = 300 # cap สูงสุด (5 นาที)
+
+# ---- Token Generation -------------------------------------------------------
+
+def _evp_bytes_to_key(password: bytes, salt: bytes) -> tuple[bytes, bytes]:
+    """OpenSSL EVP_BytesToKey with MD5 (replicates CryptoJS default)."""
+    d, d_i = b"", b""
+    while len(d) < 48:  # 32 key + 16 iv
+        d_i = hashlib.md5(d_i + password + salt).digest()
+        d += d_i
+    return d[:32], d[32:48]
+
+
+def _cryptojs_encrypt(plain_text: str) -> str:
+    """Replicates CryptoJS.AES.encrypt(text, passphrase).toString() → base64."""
+    if not _crypto_available:
+        raise RuntimeError("pycryptodome not installed: pip install pycryptodome")
+    salt = os.urandom(8)
+    key, iv = _evp_bytes_to_key(_AES_PASSPHRASE.encode(), salt)
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    encrypted = cipher.encrypt(pad(plain_text.encode("utf-8"), AES.block_size))
+    return base64.b64encode(b"Salted__" + salt + encrypted).decode()
+
+
+def _encrypt_data(obj) -> str:
+    """Replicates CryptoLib.encryptData(obj) → URL-encoded AES ciphertext."""
+    json_str = json.dumps(obj, separators=(",", ":"))
+    return urllib.parse.quote(_cryptojs_encrypt(json_str), safe="")
+
+
+def _generate_announcement_key(project_id: str) -> str:
+    """Replicates generateAnnouncementKey(projectId): double-encrypt projectId."""
+    m = _encrypt_data({"projectId": project_id})
+    return _encrypt_data(m)
+
+
+def _fetch_token(project_id: str) -> Optional[str]:
+    """POST generateToken endpoint → raw token string (30 min valid)."""
+    key = _generate_announcement_key(project_id)
+    try:
+        r = requests.post(
+            GENERATE_TOKEN_URL,
+            json={"key": key},
+            headers=HEADERS_NO_AUTH,
+            timeout=TIMEOUT,
+        )
+        if r.ok:
+            return r.json().get("data") or None
+    except Exception:
+        pass
+    return None
+
+
+def _get_token(project_id: str) -> Optional[str]:
+    """Get cached token or generate new one."""
+    now = time.time()
+    cached = _token_cache.get(project_id)
+    if cached and cached[1] > now:
+        return cached[0]
+    token = _fetch_token(project_id)
+    if token:
+        _token_cache[project_id] = (token, now + _TOKEN_TTL_SEC)
+    return token
 
 
 def _rl_sleep(attempt: int):
@@ -65,16 +154,20 @@ def _rl_sleep(attempt: int):
     time.sleep(wait)
 
 
-def _get(url: str, params: dict = None, retries: int = MAX_RETRIES) -> Optional[dict]:
+def _get(url: str, params: dict = None, token: str = None,
+         retries: int = MAX_RETRIES) -> Optional[dict]:
     """
     GET url → JSON dict หรือ None ถ้าล้มเหลวหลัง retry ครบ
-    Rate limit detection: response code 429 หรือ body ที่มี 'Rate limit'
-    Backoff: exponential 30s→60s→120s + jitter แทน fixed 90s
+    token: X-Announcement-Token ถ้ามี
     """
+    hdrs = HEADERS_NO_AUTH.copy() if token else HEADERS.copy()
+    if token:
+        hdrs["X-Announcement-Token"] = token
+
     for attempt in range(1, retries + 1):
         t0 = time.time()
         try:
-            r = requests.get(url, params=params, headers=HEADERS, timeout=TIMEOUT)
+            r = requests.get(url, params=params, headers=hdrs, timeout=TIMEOUT)
             rt_ms = (time.time() - t0) * 1000
             if r.status_code == 429:
                 _record(url, False, rt_ms, 0, 0, "http_429")
@@ -101,7 +194,7 @@ def _get(url: str, params: dict = None, retries: int = MAX_RETRIES) -> Optional[
                 time.sleep(3 * attempt)
                 continue
             return None
-        except Exception as e:
+        except Exception:
             rt_ms = (time.time() - t0) * 1000
             _record(url, False, rt_ms, 0, 0, "unknown_error")
             return None
@@ -117,9 +210,18 @@ def get_project_detail(project_id: str, retry_on_empty: bool = True) -> dict:
       flow_id (str), project_status_raw (str), announce_type (str),
       dept_sub_name (str), method_id (str), type_id (str)
     """
-    body = _get(f"{API_BASE}/getProjectDetail", {"projectId": project_id})
+    token = _get_token(project_id)
+    body = _get(f"{API_BASE}/getProjectDetail", {"projectId": project_id}, token=token)
     if body is None:
         return {"valid": False}
+
+    # validateAnnouncementToken=0 หมายถึง token ไม่ valid → retry ด้วย fresh token
+    if body.get("validateAnnouncementToken") == 0:
+        _token_cache.pop(project_id, None)
+        token = _get_token(project_id)
+        body = _get(f"{API_BASE}/getProjectDetail", {"projectId": project_id}, token=token)
+        if body is None or body.get("validateAnnouncementToken") == 0:
+            return {"valid": False}
 
     data   = body.get("data", {}) or {}
     seqno  = data.get("flowSeqno", 0) or 0
@@ -177,7 +279,8 @@ def get_procure_result(project_id: str) -> dict:
       bidders (list[dict]): receiveNameTh, receiveTin, priceProposal,
                             priceAgree, resultFlag, is_sme, jv_partners, considerDesc
     """
-    body = _get(f"{API_BASE}/getProcureResult", {"projectId": project_id})
+    token = _get_token(project_id)
+    body = _get(f"{API_BASE}/getProcureResult", {"projectId": project_id}, token=token)
     if body is None:
         return {}
 

@@ -152,14 +152,17 @@ def _save_provinces(user_id: str, provinces: list[str]) -> None:
 
 
 def _status_text(display_name: str, provinces: list, tier: str) -> str:
-    prov_str = ", ".join(provinces) if provinces else "(ยังไม่ตั้งค่า)"
+    if provinces:
+        prov_lines = "\n".join("• " + p for p in provinces)
+        prov_block = "ติดตามจังหวัด:\n" + prov_lines
+    else:
+        prov_block = "ยังไม่ได้ตั้งค่าจังหวัดครับ"
     return "\n".join([
         "\U0001f4cb สถานะของคุณ" + display_name,
         "",
-        "จังหวัด: " + prov_str,
-        "แพ็กเกจ: " + tier,
+        prov_block,
         "",
-        "ติดต่อทีมงานเพื่อแก้ไขพื้นที่ครับ",
+        'พิมพ์ "ตั้งค่า" เพื่อเปลี่ยนจังหวัดที่ต้องการติดตาม',
     ])
 
 

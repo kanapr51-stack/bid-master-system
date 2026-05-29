@@ -283,6 +283,8 @@ def get_procurement_detail(project_id: str) -> dict:
         return {"valid": False}
 
     data = body.get("data", {}) or {}
+    lat = data.get("latitude") or []
+    lng = data.get("longtitude") or []
     return {
         "valid":             bool(data),
         "dept_sub_name":     data.get("deptSubName", "") or "",
@@ -291,6 +293,11 @@ def get_procurement_detail(project_id: str) -> dict:
         "report_date":       _parse_iso_to_thai(data.get("reportDate", "")),
         "moi_name":          data.get("moiName", "") or "",
         "plan_project_name": data.get("planProjectName", "") or "",
+        # location fields (added 2026-05-29 — eGP API reverse-engineered)
+        "province_moi_id":   str(data.get("provinceMoiId") or "") or "",
+        "district_moi_id":   str(data.get("districtMoiId") or "") or "",
+        "latitude":          lat[0] if isinstance(lat, list) and lat else "",
+        "longitude":         lng[0] if isinstance(lng, list) and lng else "",
     }
 
 

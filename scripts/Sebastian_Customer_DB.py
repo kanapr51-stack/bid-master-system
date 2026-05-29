@@ -195,7 +195,49 @@ def init_schema():
     _migrate_v15()
     _migrate_v16()
     _migrate_v17()
-    print(f"Schema v1.7 ready: {DB_PATH}")
+    _migrate_v18()
+    print(f"Schema v1.8 ready: {DB_PATH}")
+
+
+def _migrate_v18():
+    """Add project_locations table — canonical location enriched from eGP API.
+
+    Schema design (ChatGPT-confirmed 2026-05-29):
+      - pending   = discovered but not yet enriched (API DOWN or first-seen)
+      - success   = enriched from getProcurementDetail → hard location
+      - failed    = API returned empty/error after MAX_LOCATION_RETRIES
+      location_confidence:
+        hard    = from eGP API (provinceMoiId/districtMoiId/moiName)
+        soft    = from title regex (fallback, not used for notification gating)
+        unknown = pending enrichment
+      next_retry_at: set when API is DOWN — rss-notifier retries on next HEALTHY window
+    """
+    with get_connection() as conn:
+        try:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS project_locations (
+                    project_id          TEXT PRIMARY KEY,
+                    province_moi_id     TEXT,
+                    district_moi_id     TEXT,
+                    moi_name            TEXT,
+                    province_name       TEXT,
+                    latitude            TEXT,
+                    longitude           TEXT,
+                    location_confidence TEXT NOT NULL DEFAULT 'unknown'
+                        CHECK(location_confidence IN ('hard','soft','unknown')),
+                    enrichment_status   TEXT NOT NULL DEFAULT 'pending'
+                        CHECK(enrichment_status IN ('pending','success','failed')),
+                    next_retry_at       TEXT,
+                    enriched_at         TEXT,
+                    created_at          TEXT NOT NULL
+                )
+            """)
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_ploc_status_retry
+                    ON project_locations(enrichment_status, next_retry_at)
+            """)
+        except sqlite3.OperationalError:
+            pass
 
 
 def _migrate_v17():

@@ -34,6 +34,7 @@ TARGET_PROVINCES  = {"นครพนม", "บึงกาฬ"}
 BATCH_SIZE        = 20
 SLEEP_BETWEEN_SEC = 1.5
 RETRY_DELAY_MIN   = 30
+MAX_ATTEMPTS      = 5
 API_STATE_PATH    = Path(__file__).parent.parent / "data" / "api_ingestion_state.json"
 LOG_DIR           = Path(__file__).parent.parent / "logs" / "enrichment_worker"
 TZ_TH             = timezone(timedelta(hours=7))
@@ -93,13 +94,24 @@ def _save_success(project_id: str, loc: dict) -> None:
               now, project_id))
 
 
-def _save_retry(project_id: str) -> None:
+def _save_retry(project_id: str, current_attempts: int) -> bool:
+    """Returns True if marked permanently failed (>= MAX_ATTEMPTS), False if scheduled for retry."""
+    if current_attempts + 1 >= MAX_ATTEMPTS:
+        with get_connection() as conn:
+            conn.execute("""
+                UPDATE project_locations
+                SET enrichment_status='failed',
+                    enrichment_attempts=enrichment_attempts+1
+                WHERE project_id=?
+            """, (project_id,))
+        return True
     with get_connection() as conn:
         conn.execute("""
             UPDATE project_locations
             SET next_retry_at=?, enrichment_attempts=enrichment_attempts+1
             WHERE project_id=?
         """, (_now_plus(RETRY_DELAY_MIN), project_id))
+    return False
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
@@ -155,9 +167,10 @@ def main():
         loc = _enrich(pid)
 
         if not loc:
-            _save_retry(pid)
+            gave_up = _save_retry(pid, row["enrichment_attempts"])
             stats["failed"] += 1
-            log(f"  [{i+1}/{len(rows)}] FAIL {pid} attempts={row['enrichment_attempts']+1}")
+            action = "GIVE_UP" if gave_up else "RETRY"
+            log(f"  [{i+1}/{len(rows)}] {action} {pid} attempts={row['enrichment_attempts']+1}")
         else:
             _save_success(pid, loc)
             stats["enriched"] += 1
@@ -204,6 +217,44 @@ def main():
         f"target_hit={stats['target_hit']} enqueued={stats['enqueued']} "
         f"dedup={stats['dedup']} | queue_remaining={total_pending}"
     )
+
+    # Pass 2: repair success-but-not-enqueued orphans
+    with get_connection() as conn:
+        orphans = conn.execute("""
+            SELECT pl.project_id, pl.province_name, pl.moi_name,
+                   ps.announce_type, ps.budget, ps.project_name, ps.dept_name
+            FROM project_locations pl
+            LEFT JOIN projects_seen ps ON ps.project_id = pl.project_id
+            WHERE pl.enrichment_status = 'success'
+              AND pl.province_name IN ('นครพนม', 'บึงกาฬ')
+              AND pl.project_id NOT IN (
+                  SELECT DISTINCT project_id FROM notification_queue
+              )
+            LIMIT 20
+        """).fetchall()
+    orphans = [dict(r) for r in orphans]
+
+    if orphans:
+        log(f"Pass 2 (repair): {len(orphans)} success-but-not-enqueued orphans")
+        repaired = 0
+        for orphan in orphans:
+            n = store.enqueue_notifications({
+                "project_id":            orphan["project_id"],
+                "province":              orphan["province_name"],
+                "announce_type":         orphan.get("announce_type") or "D0",
+                "budget":                int(orphan.get("budget") or 0),
+                "project_name":          orphan.get("project_name") or "",
+                "dept_name":             orphan.get("dept_name") or "",
+                "extraction_confidence": "high",
+                "is_backfill":           False,
+                "source_stage":          "repair_pass2",
+            }, min_confidence="high")
+            if n > 0:
+                repaired += 1
+        log(f"  repaired={repaired}/{len(orphans)}")
+    else:
+        log("Pass 2 (repair): 0 orphans — OK")
+
     log("=== Enrichment Worker done ===")
 
 

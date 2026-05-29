@@ -183,14 +183,58 @@ def delivery_section() -> str:
     return "\n".join(lines)
 
 
+# ── Enrichment ───────────────────────────────────────────────────────────────
+
+def enrichment_section() -> str:
+    db_path = Path(os.environ.get("BMS_DATA_DIR") or str(BASE / "data")) / "bms_customers.db"
+    if not db_path.exists():
+        return "Enrichment: FAIL  bms_customers.db missing"
+
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+
+    total   = conn.execute("SELECT COUNT(*) n FROM project_locations").fetchone()["n"]
+    pending = conn.execute("SELECT COUNT(*) n FROM project_locations WHERE enrichment_status='pending'").fetchone()["n"]
+    success = conn.execute("SELECT COUNT(*) n FROM project_locations WHERE enrichment_status='success'").fetchone()["n"]
+    failed  = conn.execute("SELECT COUNT(*) n FROM project_locations WHERE enrichment_status='failed'").fetchone()["n"]
+    oldest  = conn.execute(
+        "SELECT MIN(created_at) ts FROM project_locations WHERE enrichment_status='pending'"
+    ).fetchone()["ts"]
+    conn.close()
+
+    if oldest:
+        oldest_dt = _ts(oldest)
+        age_min   = int((NOW - oldest_dt).total_seconds() / 60) if oldest_dt else 0
+        age_str   = f"{age_min}min"
+    else:
+        age_str = "-"
+
+    if failed > 5:
+        sym = "WARN "
+    elif pending > 0 and success == 0:
+        sym = "WARN "
+    else:
+        sym = "PASS "
+
+    lines = [
+        f"Enrichment: {sym}",
+        f"  total={total}  success={success}  pending={pending}  failed={failed}",
+        f"  oldest_pending_age={age_str}",
+    ]
+    if failed > 0:
+        lines.append(f"  ⚠️ {failed} projects permanently failed (>= 5 attempts)")
+    return "\n".join(lines)
+
+
 # ── Tasks ─────────────────────────────────────────────────────────────────────
 
 def tasks_section() -> str:
     today = NOW.strftime("%Y%m%d")
     results = []
     for name, log_path in [
-        ("RSS_Notifier", BASE / "logs" / "rss_notifier" / f"notifier_{today}.log"),
-        ("LINE_Sender",  BASE / "logs" / "line_sender"  / f"sender_{today}.log"),
+        ("RSS_Notifier",    BASE / "logs" / "rss_notifier"     / f"notifier_{today}.log"),
+        ("LINE_Sender",     BASE / "logs" / "line_sender"      / f"sender_{today}.log"),
+        ("Enrich_Worker",   BASE / "logs" / "enrichment_worker" / f"enrichment_{today}.log"),
     ]:
         if not log_path.exists():
             results.append(f"  {name}: FAIL  no log today")
@@ -228,11 +272,12 @@ def system_section() -> str:
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
-    rss  = rss_section()
-    disc = discovery_section()
-    dlv  = delivery_section()
-    task = tasks_section()
-    sys_ = system_section()
+    rss   = rss_section()
+    disc  = discovery_section()
+    enr   = enrichment_section()
+    dlv   = delivery_section()
+    task  = tasks_section()
+    sys_  = system_section()
 
     date_str = NOW.strftime("%Y-%m-%d %H:%M")
     msg = "\n".join([
@@ -241,6 +286,8 @@ def main():
         rss,
         "",
         disc,
+        "",
+        enr,
         "",
         dlv,
         "",

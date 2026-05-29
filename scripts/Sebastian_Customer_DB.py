@@ -1,5 +1,5 @@
 """
-Sebastian_Customer_DB.py — SQLite schema v1.3 + SubscriptionStore abstraction
+Sebastian_Customer_DB.py — SQLite schema v1.11 + SubscriptionStore abstraction
 
 Schema v1.1 (2026-05-28):
   notification_queue  — + sending_at, retry_count, next_retry_at,
@@ -197,7 +197,39 @@ def init_schema():
     _migrate_v17()
     _migrate_v18()
     _migrate_v19()
-    print(f"Schema v1.9 ready: {DB_PATH}")
+    _migrate_v110()
+    _migrate_v111()
+    print(f"Schema v1.11 ready: {DB_PATH}")
+
+
+def _migrate_v111():
+    """Add enrichment_daily_stats table — daily snapshot of enrichment hit rate.
+    Populated by Daily Digest at 08:00 (inserts yesterday's stats).
+    stat_date = 'YYYY-MM-DD' (date the enrichment ran, not the digest date).
+    """
+    with get_connection() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS enrichment_daily_stats (
+                stat_date      TEXT PRIMARY KEY,
+                total_enriched INTEGER NOT NULL DEFAULT 0,
+                target_hits    INTEGER NOT NULL DEFAULT 0,
+                created_at     TEXT NOT NULL
+            )
+        """)
+
+
+def _migrate_v110():
+    """Add is_test_data to customers table — hygiene boundary for test/bootstrap accounts.
+    Mirrors is_test_data pattern in notification_queue/delivery_log (schema v1.6).
+    Production queries: WHERE is_test_data=0 (or no filter if table is already clean).
+    """
+    with get_connection() as conn:
+        try:
+            conn.execute(
+                "ALTER TABLE customers ADD COLUMN is_test_data INTEGER NOT NULL DEFAULT 0"
+            )
+        except sqlite3.OperationalError:
+            pass  # already exists
 
 
 def _migrate_v19():

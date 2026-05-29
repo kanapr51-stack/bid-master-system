@@ -271,7 +271,31 @@ def system_section() -> str:
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
+def _snapshot_enrichment_stats() -> None:
+    """INSERT OR IGNORE yesterday's enrichment stats into enrichment_daily_stats."""
+    db_path = Path(os.environ.get("BMS_DATA_DIR") or str(BASE / "data")) / "bms_customers.db"
+    if not db_path.exists():
+        return
+    yesterday = (NOW - timedelta(hours=24)).strftime("%Y-%m-%d")
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    total = conn.execute("SELECT COUNT(*) n FROM project_locations").fetchone()["n"]
+    hits  = conn.execute(
+        "SELECT COUNT(*) n FROM project_locations "
+        "WHERE province_name IN ('นครพนม','บึงกาฬ') AND enrichment_status='success'"
+    ).fetchone()["n"]
+    conn.execute(
+        "INSERT OR IGNORE INTO enrichment_daily_stats (stat_date, total_enriched, target_hits, created_at) "
+        "VALUES (?,?,?,?)",
+        (yesterday, total, hits, NOW.isoformat(timespec="seconds")),
+    )
+    conn.commit()
+    conn.close()
+
+
 def main():
+    _snapshot_enrichment_stats()
+
     rss   = rss_section()
     disc  = discovery_section()
     enr   = enrichment_section()

@@ -857,7 +857,74 @@ def poll_global_rss(anounce_types: list[str] | None = None,
 
 
 STAGE_ROTATION = list(STAGE_CODES.keys())  # ['P0', 'B0', 'D0', 'D1', 'W0']
-ROTATION_STATE_FILE = DATA_DIR / "rss_stage_rotation.json"
+ROTATION_STATE_FILE  = DATA_DIR / "rss_stage_rotation.json"
+RSS_RUN_STATE_FILE   = DATA_DIR / "rss_run_state.json"
+EMPTY_RUN_THRESHOLD  = 3   # consecutive empty runs before Discord alert (~90 min)
+ALERT_COOLDOWN_SEC   = 7200  # ส่ง alert ซ้ำได้ทุก 2h เท่านั้น
+
+
+def _load_run_state() -> dict:
+    if RSS_RUN_STATE_FILE.exists():
+        try:
+            return json.loads(RSS_RUN_STATE_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return {"consec_empty": 0, "last_alert_at": "", "last_nonempty_at": ""}
+
+
+def _save_run_state(state: dict) -> None:
+    RSS_RUN_STATE_FILE.write_text(
+        json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+
+def _discord_notify(msg: str) -> None:
+    try:
+        from Sebastian_Discord_Notify import load_env, get_credentials, send
+        load_env()
+        token, ch = get_credentials()
+        send(token, ch, msg)
+    except Exception as e:
+        log(f"Discord notify failed: {e}")
+
+
+def check_empty_feed_alert(total_items: int) -> None:
+    """Track consecutive empty runs. Alert Discord when threshold hit; notify recovery."""
+    state = _load_run_state()
+    now = datetime.now().isoformat(timespec="seconds")
+
+    if total_items > 0:
+        was_alerted = state.get("consec_empty", 0) >= EMPTY_RUN_THRESHOLD
+        state["consec_empty"] = 0
+        state["last_nonempty_at"] = now
+        _save_run_state(state)
+        if was_alerted:
+            _discord_notify(f"✅ RSS feed กลับมาแล้ว — {total_items} items ใน run นี้")
+        return
+
+    state["consec_empty"] = state.get("consec_empty", 0) + 1
+    consec = state["consec_empty"]
+    _save_run_state(state)
+
+    if consec < EMPTY_RUN_THRESHOLD:
+        return
+
+    # Cooldown: ส่ง alert ซ้ำได้ทุก 2h เท่านั้น (ไม่ spam)
+    last_alert = state.get("last_alert_at", "")
+    if last_alert:
+        try:
+            elapsed = (datetime.now() - datetime.fromisoformat(last_alert)).total_seconds()
+            if elapsed < ALERT_COOLDOWN_SEC:
+                return
+        except Exception:
+            pass
+
+    state["last_alert_at"] = now
+    _save_run_state(state)
+    _discord_notify(
+        f"⚠️ RSS feed ว่าง {consec} runs ติดต่อกัน (~{consec * 30} นาที)\n"
+        f"ตรวจสอบ: process.gprocurement.go.th หรือ target_deptids.json"
+    )
 
 
 def get_next_stage() -> str:
@@ -946,6 +1013,7 @@ if __name__ == "__main__":
         result = poll_global_rss(anounce_types=["D0", "P0", "W0"], queue_new=args.queue)
         log(f"\nสรุป: items={result['total_items']}, new={result['new_to_rss']}, "
             f"types={result['types_polled']}")
+        check_empty_feed_alert(result["total_items"])
         sys.exit(0)
 
     # ── probe-all mode (ทำก่อน แล้วออก — ไม่รัน normal pipeline) ──
@@ -1009,7 +1077,7 @@ if __name__ == "__main__":
         # probe ทุก rotate รอบ (catalog growth) — ยกเว้นถ้าสั่ง --no-probe
         result = run(queue_new=args.queue, skip_probe=args.no_probe,
                      anounce_type=next_stage, full_poll=args.full_poll)
-
+        check_empty_feed_alert(result.get("total_items", 0))
         sys.exit(0 if not result.get("error") else 1)
     else:
         result = run(queue_new=args.queue, skip_probe=args.no_probe,

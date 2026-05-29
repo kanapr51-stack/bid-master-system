@@ -29,7 +29,10 @@ TZ_TH = timezone(timedelta(hours=7))
 
 LINE_API = "https://api.line.me/v2/bot"
 
-app = FastAPI(title="BMS API Bridge", version="1.2")
+# in-memory conversation state: {user_id: "waiting_province"}
+_conv_state: dict[str, str] = {}
+
+app = FastAPI(title="BMS API Bridge", version="1.3")
 
 
 def _now() -> str:
@@ -102,8 +105,7 @@ def _welcome_text(display_name: str) -> str:
         "",
         "เมื่อมีโครงการใหม่ในพื้นที่ที่คุณสนใจ ผมจะแจ้งเตือนทันทีครับ",
         "",
-        "ทีมงานจะติดต่อเพื่อตั้งค่าพื้นที่ให้คุณเร็วๆ นี้ครับ \U0001f64f",
-        "",
+        "พิมพ์ \U0001f449 ตั้งค่า เพื่อเลือกจังหวัดที่ต้องการติดตามได้เลยครับ",
         "พิมพ์ ช่วย เพื่อดูคำสั่งทั้งหมด",
     ])
 
@@ -112,11 +114,41 @@ def _help_text() -> str:
     return "\n".join([
         "\U0001f4d6 คำสั่งของ Sebastian",
         "",
-        "ช่วย -- แสดงคำสั่งทั้งหมด",
-        "สถานะ -- ดูจังหวัดที่ตั้งค่าไว้",
+        "ช่วย    -- แสดงคำสั่งทั้งหมด",
+        "สถานะ  -- ดูจังหวัดที่ตั้งค่าไว้",
+        "ตั้งค่า -- ตั้งจังหวัดที่ต้องการติดตาม",
         "",
         "การแจ้งเตือนจะส่งเมื่อมีโครงการใหม่ในพื้นที่ของคุณครับ",
     ])
+
+
+def _save_provinces(user_id: str, provinces: list[str]) -> None:
+    """Upsert provinces for existing customer (replaces all existing subscription_provinces)."""
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT id FROM customers WHERE line_user_id=? AND active=1", (user_id,)
+        ).fetchone()
+        if not row:
+            return
+        cid = row["id"]
+        sub = conn.execute(
+            "SELECT id FROM subscriptions WHERE customer_id=? AND active=1", (cid,)
+        ).fetchone()
+        if not sub:
+            conn.execute(
+                "INSERT INTO subscriptions (customer_id, announce_types, min_budget, active, created_at) "
+                "VALUES (?,?,?,1,?)", (cid, "D0", 0, datetime.now(TZ_TH).isoformat(timespec="seconds"))
+            )
+            sub = conn.execute(
+                "SELECT id FROM subscriptions WHERE customer_id=? AND active=1", (cid,)
+            ).fetchone()
+        sid = sub["id"]
+        conn.execute("DELETE FROM subscription_provinces WHERE subscription_id=?", (sid,))
+        for province in provinces:
+            conn.execute(
+                "INSERT INTO subscription_provinces (subscription_id, province) VALUES (?,?)",
+                (sid, province),
+            )
 
 
 def _status_text(display_name: str, provinces: list, tier: str) -> str:
@@ -249,12 +281,29 @@ async def line_webhook(
             reply_token = event.get("replyToken")
             if not reply_token:
                 continue
-            text_in = ((event.get("message") or {}).get("text") or "").strip().lower()
+            text_in = ((event.get("message") or {}).get("text") or "").strip()
+            text_lower = text_in.lower()
 
-            if text_in in ("ช่วย", "help", "?", "คำสั่ง"):
+            # --- state: waiting_province ---
+            if _conv_state.get(user_id) == "waiting_province":
+                _conv_state.pop(user_id, None)
+                provinces = [p.strip() for p in text_in.replace("，", ",").split(",") if p.strip()]
+                if provinces:
+                    _save_provinces(user_id, provinces)
+                    prov_str = ", ".join(provinces)
+                    await reply_message(
+                        reply_token,
+                        f"✅ บันทึกจังหวัด \"{prov_str}\" แล้วครับ\n\nพิมพ์ สถานะ เพื่อตรวจสอบ",
+                    )
+                else:
+                    await reply_message(reply_token, "ไม่พบชื่อจังหวัด กรุณาลองใหม่ครับ")
+                continue
+
+            # --- normal commands ---
+            if text_lower in ("ช่วย", "help", "?", "คำสั่ง"):
                 await reply_message(reply_token, _help_text())
 
-            elif text_in in ("สถานะ", "status"):
+            elif text_lower in ("สถานะ", "status"):
                 info = _get_customer_status(user_id)
                 if info:
                     name, provinces, tier = info
@@ -264,6 +313,13 @@ async def line_webhook(
                         reply_token,
                         "ยังไม่ได้ลงทะเบียนครับ กรุณา follow บัญชีนี้ใหม่อีกครั้ง",
                     )
+
+            elif text_lower in ("ตั้งค่า", "ตั้งค่าจังหวัด", "set", "province"):
+                _conv_state[user_id] = "waiting_province"
+                await reply_message(
+                    reply_token,
+                    "\U0001f4cd กรุณาพิมพ์จังหวัดที่ต้องการติดตามครับ\n\nถ้าหลายจังหวัด คั่นด้วยจุลภาค\nเช่น: นครพนม, บึงกาฬ",
+                )
 
             else:
                 await reply_message(

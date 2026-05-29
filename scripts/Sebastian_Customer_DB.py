@@ -704,23 +704,15 @@ class SubscriptionStore:
 
 
 if __name__ == "__main__":
-    import os
-    # SAFETY GUARD: ต้องผ่าน --reset flag ถึงจะลบ DB
-    # ป้องกัน production data loss จากการรัน script ตรงๆ บน VPS โดยไม่ตั้งใจ
-    if "--reset" in sys.argv:
-        db = DB_PATH
-        if db.exists():
-            os.remove(db)
-            print("Removed old DB")
-    else:
-        print("[smoke-test] running without --reset — skipping DB wipe")
-
+    # Smoke test only — no DB reset, no seed.
+    # To reset + seed a dev DB use: scripts/dev_reset_db.py
     init_schema()
     store = SubscriptionStore()
 
+    # Need a test customer for smoke tests — use INSERT OR IGNORE so safe on existing DB
     cid = store.add_customer("Uxxxxxxxxx_TEST", display_name="ทดสอบ บริษัทก่อสร้าง", tier="trial")
     store.add_subscription(cid, provinces=["นครพนม", "บึงกาฬ"], min_budget=500_000)
-    print(f"Customer id={cid} added")
+    print(f"Customer id={cid} (existing or new)")
 
     # Test 1: high-confidence project → should enqueue
     pid = "69039196328"
@@ -792,4 +784,4 @@ if __name__ == "__main__":
     assert items_back[0]["is_backfill"] == 1, "is_backfill should be 1"
     print(f"Backfill flag: is_backfill={items_back[0]['is_backfill']} (expect 1)")
 
-    print("\nSchema v1.4 smoke test passed ✅")
+    print("\nSchema v1.11 smoke test passed ✅")

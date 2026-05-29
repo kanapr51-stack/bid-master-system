@@ -705,10 +705,15 @@ class SubscriptionStore:
 
 if __name__ == "__main__":
     import os
-    db = DB_PATH
-    if db.exists():
-        os.remove(db)
-        print("Removed old DB")
+    # SAFETY GUARD: ต้องผ่าน --reset flag ถึงจะลบ DB
+    # ป้องกัน production data loss จากการรัน script ตรงๆ บน VPS โดยไม่ตั้งใจ
+    if "--reset" in sys.argv:
+        db = DB_PATH
+        if db.exists():
+            os.remove(db)
+            print("Removed old DB")
+    else:
+        print("[smoke-test] running without --reset — skipping DB wipe")
 
     init_schema()
     store = SubscriptionStore()

@@ -196,7 +196,21 @@ def init_schema():
     _migrate_v16()
     _migrate_v17()
     _migrate_v18()
-    print(f"Schema v1.8 ready: {DB_PATH}")
+    _migrate_v19()
+    print(f"Schema v1.9 ready: {DB_PATH}")
+
+
+def _migrate_v19():
+    """Add enrichment_attempts to project_locations.
+    Distinguishes 'never tried' vs 'tried N times' — debug signal, not retry control.
+    """
+    with get_connection() as conn:
+        try:
+            conn.execute(
+                "ALTER TABLE project_locations ADD COLUMN enrichment_attempts INTEGER NOT NULL DEFAULT 0"
+            )
+        except sqlite3.OperationalError:
+            pass  # already exists
 
 
 def _migrate_v18():

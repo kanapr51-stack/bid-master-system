@@ -283,6 +283,25 @@ def main():
         return "UNKNOWN"
 
     if not dept_name or not budget:
+        # Step 4a-i: cache lookup from projects_seen
+        try:
+            import sqlite3 as _sql
+            from Sebastian_Customer_DB import DB_PATH as _DB
+            _conn = _sql.connect(str(_DB))
+            _row = _conn.execute(
+                "SELECT dept_name, budget FROM projects_seen WHERE project_id=?",
+                (item["project_id"],)
+            ).fetchone()
+            _conn.close()
+            if _row and _row[0]:
+                dept_name = _row[0]
+                budget    = float(_row[1] or 0) or budget
+                log(f"  API enrich: cache hit dept={dept_name[:30]} budget={budget}")
+        except Exception:
+            pass
+
+    if not dept_name or not budget:
+        # Step 4a-ii: live API call (only if cache miss)
         api_state = _api_state()
         if api_state == "HEALTHY":
             try:
@@ -293,7 +312,20 @@ def main():
                     budget      = enriched.get("budget") or budget
                     deliver_day = enriched.get("deliver_day") or 0
                     report_date = enriched.get("report_date") or ""
-                    log(f"  API enrich: dept={dept_name[:30]} budget={budget} days={deliver_day}")
+                    log(f"  API enrich: live dept={dept_name[:30]} budget={budget} days={deliver_day}")
+                    # write back to cache
+                    try:
+                        import sqlite3 as _sql
+                        from Sebastian_Customer_DB import DB_PATH as _DB
+                        _conn = _sql.connect(str(_DB))
+                        _conn.execute(
+                            "UPDATE projects_seen SET dept_name=?, budget=? WHERE project_id=?",
+                            (dept_name, budget, item["project_id"])
+                        )
+                        _conn.commit()
+                        _conn.close()
+                    except Exception:
+                        pass
             except Exception as e:
                 log(f"  API enrich failed (non-fatal): {e}")
         else:

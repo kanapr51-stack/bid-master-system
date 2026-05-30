@@ -199,7 +199,8 @@ def ingest(records: list[dict]) -> tuple[int, int]:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--token", default=os.environ.get("BMS_ANNOUNCEMENT_TOKEN", ""))
+    ap.add_argument("--token", default="", help="ใส่ token ตรงๆ (= ManualProvider)")
+    ap.add_argument("--provider", default="", help="manual|chrome9222|playwright (default: env BMS_TOKEN_PROVIDER)")
     ap.add_argument("--moi", action="append", help="moiId (default: ทุกจังหวัดเป้าหมาย)")
     ap.add_argument("--budget-year", default="2569")
     ap.add_argument("--filter-amphoe", action="store_true", help="กรองเฉพาะ อ.เป้าหมาย")
@@ -207,9 +208,18 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="ไม่เขียน DB แค่รายงาน")
     args = ap.parse_args()
 
-    if not args.token:
-        print("❌ ต้องมี token: --token <value> หรือ env BMS_ANNOUNCEMENT_TOKEN")
+    # token ผ่าน Token Service (single writer) — provider สลับได้โดยไม่แตะ discovery
+    from token_service import TokenService, make_provider
+    provider = (make_provider("manual", token=args.token) if args.token
+                else make_provider(args.provider))
+    svc = TokenService(provider)
+    token = svc.get_valid_token()
+    if not token:
+        h = svc.health()
+        print(f"❌ ไม่ได้ token (provider={provider.name}, state={h['state']}, err={h.get('last_error')})")
+        print("   ใส่ --token <value> หรือ env BMS_ANNOUNCEMENT_TOKEN หรือ --provider chrome9222")
         sys.exit(1)
+    print(f"🔑 token OK (provider={svc.health()['provider']}, เหลือ {svc.health()['remaining_sec']}s)")
 
     moi_ids = args.moi or list(PROVINCE_MOI.keys())
     print(f"🔍 Province Discovery — budgetYear={args.budget_year}, จังหวัด={[PROVINCE_MOI.get(m,m) for m in moi_ids]}")
@@ -217,7 +227,7 @@ def main():
     all_recs = []
     for moi in moi_ids:
         province = PROVINCE_MOI.get(moi, moi)
-        items = fetch_all_d0(args.token, moi, args.budget_year)
+        items = fetch_all_d0(token, moi, args.budget_year)
         recs = [normalize(it, province) for it in items]
         all_recs.extend(recs)
 

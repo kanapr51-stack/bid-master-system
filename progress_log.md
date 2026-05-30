@@ -2841,8 +2841,33 @@ backup: backups/all_jobs_province_*.json
 - ingest → projects_seen (source='province_api', province รู้แน่นอน) → notifier เดิม pick up
 
 ### ⚠️ Sanity flags (ต้องสืบก่อน production)
-- **บึงกาฬ pagination:** count=420 แต่ดึงจริงได้ 110 (หน้า 12+ คืน empty) — นครพนม 849→849 ปกติ
+- **บึงกาฬ pagination:** ✅ resolved — เป็น rate limit (throttle หลัง ~100 req) ไม่ใช่ data bug. fix: cooldown 30s ทุก 50 req. verify บึงกาฬเดี่ยว = 420/306 active ครบ
 - ส่วนใหญ่ของ 21 งานเป็น announce เก่า (6810-6904) → ถ้า ingest ต้องจัดการ backfill ไม่ให้ blast LINE
+
+## งานที่ N+30: Token Service (Discovery Plane Control Plane) (2026-05-30)
+
+### สถานะ: ✅ foundation เสร็จ+test — เหลือ Chrome9222 live test + Playwright canary
+
+### Decision (ChatGPT + Claude converged)
+หลัก: **"obtain ≥1 usable token before discovery deadline"** ไม่ใช่ per-request success rate
+- KPI = Discovery Readiness Probability = P(token acquired within window), วัด acquisition latency P50/P95/P99
+- beta: primary=Chrome9222 (residential IP), fallback=Manual, experimental=Playwright VPS (canary)
+- canary ต้องเลียนแบบ production cadence (4-6 burst/วัน) ไม่ใช่ทุก 15 นาที (กัน measurement perturbation)
+- B's dependency จริง = browser availability ไม่ใช่ user account (endpoint public ไม่ต้อง login)
+
+### Build (scripts/token_service.py — tested)
+- `ITokenProvider` abstraction → สลับ provider ไม่แตะ discovery
+- `ManualProvider` (env/file), `Chrome9222Provider` (CDP harvest — built, ยังไม่ test live), `PlaywrightProvider` (stub)
+- `TokenService`: single-writer atomic cache + state machine VALID/EXPIRING/REFRESHING/FAILED/EXPIRED
+- token parse expiry ในตัว (EGP-ANNOUNCEMENT-KEY:TS_ms:HMAC, TTL 30 นาที)
+- telemetry ndjson: time_to_token_ms, refresh_count/failures, provider, state_before
+- `Sebastian_Province_Discovery.py` wired → `TokenService.get_valid_token()`
+- test: parse/state machine/manual/expired/telemetry ✅, graceful no-token ✅
+
+### Followup
+- [ ] Chrome9222 live test (คุณกัญจน์เปิด Chrome --remote-debugging-port=9222)
+- [ ] Playwright canary บน VPS (4-6 burst/วัน, เก็บ acquisition latency)
+- [ ] digest sender (21 เก่า ย่อ + กรอง deadline / ใหม่ เต็ม) — รอ confirm format
 
 ### Root cause ที่นำมาสู่การค้นพบ
 RSS เห็นแต่หน่วยงานกลาง (76 deptId active = central gov ทั้งหมด, reverse-map 1/76 match target)

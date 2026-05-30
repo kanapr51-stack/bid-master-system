@@ -39,11 +39,14 @@ def _now() -> float:
 # ── Result / state ──────────────────────────────────────────────────────────────
 
 class DeadlineOutcome(Enum):
-    RESOLVED = "resolved"        # ได้ deadline จริง
-    NO_DOCUMENT = "no_document"  # หา document linkage ไม่ได้ (greenBook ว่าง)
-    PARSE_FAILED = "parse_failed"  # ได้ PDF แต่ parse deadline ไม่ได้
-    PROVIDER_ERROR = "provider_error"  # provider ล้มเหลว (network/WAF/timeout)
+    RESOLVED = "resolved"              # ได้ deadline จริง
+    NO_DOCUMENT = "no_document"        # template_not_found (infoProcureDocAnnounZip ไม่มี buildName2)
+    DOWNLOAD_FAILED = "download_failed"  # ได้ templateId แต่ view-pdf ล้มเหลว
+    PARSE_FAILED = "parse_failed"      # ได้ PDF แต่ pdfplumber extract text ไม่ได้
+    DEADLINE_NOT_FOUND = "deadline_not_found"  # ได้ text แต่ไม่เจอ date keyword
+    PROVIDER_ERROR = "provider_error"  # network/WAF/timeout/exception
     NOT_APPLICABLE = "not_applicable"  # Null provider / ไม่รองรับ
+    # staged failure (Caveat 2) — telemetry แยก stage บอกตรงไหนพัง
 
 
 @dataclass
@@ -132,13 +135,12 @@ class DeadlineService:
 
 def make_deadline_provider(name: str = "") -> IDeadlineProvider:
     name = name or os.environ.get("BMS_DEADLINE_PROVIDER", "null")
-    # GreenBook/CDP providers จะ register ที่นี่เมื่อพร้อม
-    if name == "greenbook":
+    if name == "doczip":
         try:
-            from deadline_provider_greenbook import GreenBookDeadlineProvider
-            return GreenBookDeadlineProvider()
-        except Exception:
-            pass
+            from deadline_provider_doczip import DocZipPdfDeadlineProvider
+            return DocZipPdfDeadlineProvider()
+        except Exception as e:
+            print(f"⚠️ DocZip provider load ล้มเหลว ({e}) → fallback Null", file=sys.stderr)
     return NullDeadlineProvider()
 
 

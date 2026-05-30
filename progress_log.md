@@ -3082,3 +3082,26 @@ FALLBACK: 7.CDP click-through
 DO NOT: rewrite parser / invent extraction / couple pipeline to browser UI
 
 ### หลัก: "ปัญหาคือ finding the PDF ไม่ใช่ extract deadline" → bounded change, reuse proven parser
+
+## งานที่ N+36: Qualification schema migration (steps 1-3) (2026-05-30)
+
+### สถานะ: ✅ เสร็จ (offline, ระหว่าง WAF back off)
+
+### ทำ (VPS DB, backup ก่อน)
+1. backup: backups/bms_customers_20260530_103357_pre_epoch_schema.db (995KB)
+2. **source_epochs table** + province_api epoch = 2026-05-30T10:34:33Z (UTC, ตรง format first_seen_at)
+   → **suppress backlog**: backlog(<epoch)=730, new(>=epoch)=0 ✓
+   → dual-epoch (Q4): province=table, RSS=txt เดิม
+3. **project_locations generalize** (Q3 reuse): +source(default 'rss') +need_location(default 1) +qualification_status
+   → 287 rows เดิม = rss/need_location=1 (ไม่กระทบ enrichment worker เดิม)
+
+### artifact
+- scripts/deadline_service.py (commit 1854c06): IDeadlineProvider + NullDeadlineProvider (fail-closed)
+- scripts/migrate_qualification_schema.py: idempotent migration (versioned, reproducible)
+
+### ค้าง (step 4 — รอ confirm)
+- Qualification Worker: epoch gate + DeadlineService.resolve() + fail-closed (ครอบ Pass1+Pass2)
+- insert province_api target rows เข้า project_locations (source=province_api, need_location=0, qualification_status=pending)
+
+### WAF incident
+brute-sweep greenBook → eGP WAF block → back off. greenBook capture + discovery รอ WAF เคลียร์

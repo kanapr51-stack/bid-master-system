@@ -229,13 +229,16 @@ def main():
     ap.add_argument("--filter-amphoe", action="store_true", help="กรองเฉพาะ อ.เป้าหมาย")
     ap.add_argument("--ingest", action="store_true", help="เขียนลง projects_seen")
     ap.add_argument("--dry-run", action="store_true", help="ไม่เขียน DB แค่รายงาน")
+    ap.add_argument("--worker", action="store_true",
+                    help="read-only: อ่าน token จาก cache ไม่ harvest (สำหรับ VPS)")
     args = ap.parse_args()
 
-    # token ผ่าน Token Service (single writer) — provider สลับได้โดยไม่แตะ discovery
+    # token ผ่าน Token Service — VPS เป็น worker (allow_refresh=False) อ่าน token ที่ Windows push มา
     from token_service import TokenService, make_provider
+    worker = args.worker or os.environ.get("BMS_TOKEN_WORKER") == "1"
     provider = (make_provider("manual", token=args.token) if args.token
                 else make_provider(args.provider))
-    svc = TokenService(provider)
+    svc = TokenService(provider, allow_refresh=not worker)
     token = svc.get_valid_token()
     if not token:
         h = svc.health()

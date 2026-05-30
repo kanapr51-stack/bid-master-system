@@ -2,6 +2,32 @@
 
 ---
 
+## งานที่ N+42: P1(rel) — Graceful Rate-Limit Handling (fetch_page abort, no balloon) (2026-05-31 ~02:30)
+
+### สถานะ: ✅ เสร็จ
+
+### Root cause (จาก diagnostic 2026-05-31)
+discovery timeout 15 นาที = **eGP rate-limit ที่ search endpoint** (count_d0/fetch_page ได้ "rate limit"). เดิม `fetch_page` swallow RateLimited → return [] → fetch_all_d0 เห็นว่าง → พัก 30s/หน้า → **balloon ทุกหน้าที่เหลือ** → ชน systemd timeout 15 นาที → SIGTERM → **heartbeat ไม่เขียน (silent failure)**
+(eGP rate-limit แยกต่อ endpoint — resolver ทำงานได้ขณะ search โดน → ดู [[project_national_scaling]])
+
+### Fix (Sebastian_Province_Discovery.py — 4 จุด)
+1. `MAX_CONSEC_EMPTY=3` constant
+2. `fetch_page`: ปล่อย RateLimited propagate (ไม่ swallow)
+3. `fetch_all_d0`: count rate-limit → **raise** (ไม่ return [] ปล่อยจังหวัดถัดไปโดนซ้ำ); page loop → catch RateLimited = **abort ทันที**; empty page → retry ครั้งเดียว + **circuit breaker** (ว่างติดกัน 3 → abort) แทน balloon ไม่จำกัด
+4. `main`: try/except RateLimited → `_write_heartbeat("no_data", reason="rate_limited")` + exit clean → **dead-man DISCOVERY_NODATA จับได้ ไม่เงียบ**
+
+### Test (verified)
+- local 4 paths: T1 count-abort, T2 page-abort, T3 circuit-breaker (abort หลัง 5 fetch, bounded), T4 normal ได้ครบ ไม่ raise ✅
+- VPS syntax OK + live บึงกาฬ dry-run: 420 fetched, heartbeat status=ok (ไม่ regress) ✅
+
+### ผล
+failure mode "rate-limit → balloon → timeout → SIGTERM → silent" → **bounded abort + observable** (heartbeat → dead-man alert ภายใน 15 นาที, cooldown 60 นาที). worst case ตอน rate-limit = abort ใน ~60-90s ไม่ใช่ 15 นาที
+
+### ลำดับถัดไป (locked 2026-05-31 — ดู [[project_beta_golive_strategy]])
+P2 feedback capture → P3 incremental discovery → P4 token TTL tripwire → P5 mid-sweep refresh
+
+---
+
 ## งานที่ N+41: P1 — Dead-Man Switch (Protect Live System) (2026-05-31 ~00:10)
 
 ### สถานะ: ✅ เสร็จ

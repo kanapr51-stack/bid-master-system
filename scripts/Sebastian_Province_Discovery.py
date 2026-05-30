@@ -61,6 +61,7 @@ TIMEOUT = 15
 PAGE_SLEEP = 1.5         # เคารพ rate limit (~100 req / 120s)
 COOLDOWN_EVERY = 50      # ทุก 50 req
 COOLDOWN_SEC = 30        # พัก 30s (กัน throttle — bug บึงกาฬ 2026-05-30)
+MAX_CONSEC_EMPTY = 3     # หน้าว่างติดกัน N → abort (กัน balloon จน systemd timeout — P1 2026-05-31)
 
 _req_count = 0           # นับ req ข้ามทุกจังหวัด (rate limit เป็น global)
 
@@ -136,13 +137,11 @@ def count_d0(token: str, moi_id: str, budget_year: str) -> tuple[int, int]:
 
 
 def fetch_page(token: str, moi_id: str, budget_year: str, page: int) -> list[dict]:
-    try:
-        body = _get(token, {
-            "budgetYear": budget_year, "moiId": moi_id,
-            "announceType": ANNOUNCE_TYPE_D0, "page": str(page),
-        })
-    except RateLimited:
-        return []   # ให้ empty→cooldown→retry ใน fetch_all_d0 จัดการ
+    # P1: ปล่อย RateLimited propagate (ไม่ swallow) → fetch_all_d0 abort ทันที กัน balloon
+    body = _get(token, {
+        "budgetYear": budget_year, "moiId": moi_id,
+        "announceType": ANNOUNCE_TYPE_D0, "page": str(page),
+    })
     if not body:
         return []
     data = body.get("data") or {}
@@ -158,22 +157,35 @@ def fetch_all_d0(token: str, moi_id: str, budget_year: str) -> list[dict]:
         time.sleep(COOLDOWN_SEC)
         total, pages = count_d0(token, moi_id, budget_year)
     if total == -2:
-        print(f"  ❌ {province}: ยัง rate limited — ข้าม (รัน provinces น้อยลง/เพิ่ม cooldown)")
-        return []
+        # P1: abort ทันที (ไม่ return [] แล้วปล่อยจังหวัดถัดไปโดนซ้ำ) → main เขียน heartbeat+alert
+        raise RateLimited(f"{province}: count rate-limited (ยังโดนหลัง retry)")
     if total < 0:
         print(f"  ❌ {province}: token reject (validateCfTurnTile) — token หมดอายุ/ผิด")
         return []
     print(f"  {province} (moiId={moi_id}): {total} โครงการ / {pages} หน้า")
     out = []
+    consec_empty = 0
     for p in range(1, pages + 1):
-        items = fetch_page(token, moi_id, budget_year, p)
-        _rate_limit_tick()
-        # empty แต่ยังไม่ถึงปลาย → น่าจะโดน throttle → retry หลัง cooldown
-        if not items and len(out) < total:
-            print(f"    ⚠️ หน้า {p} ว่าง (น่าจะ throttle) — พัก {COOLDOWN_SEC}s แล้ว retry")
-            time.sleep(COOLDOWN_SEC)
+        try:
             items = fetch_page(token, moi_id, budget_year, p)
+        except RateLimited:
+            raise RateLimited(f"{province}: หน้า {p} rate-limited — abort (กัน balloon)")
+        _rate_limit_tick()
+        # empty แต่ยังไม่ถึงปลาย → อาจ silent throttle → retry ครั้งเดียว + circuit breaker
+        if not items and len(out) < total:
+            consec_empty += 1
+            if consec_empty >= MAX_CONSEC_EMPTY:
+                raise RateLimited(
+                    f"{province}: หน้าว่างติดกัน {consec_empty} (silent throttle) — abort กัน balloon")
+            print(f"    ⚠️ หน้า {p} ว่าง — พัก {COOLDOWN_SEC}s retry ({consec_empty}/{MAX_CONSEC_EMPTY})")
+            time.sleep(COOLDOWN_SEC)
+            try:
+                items = fetch_page(token, moi_id, budget_year, p)
+            except RateLimited:
+                raise RateLimited(f"{province}: หน้า {p} retry rate-limited — abort")
             _rate_limit_tick()
+        if items:
+            consec_empty = 0
         out.extend(items)
         if p % 10 == 0 or p == pages:
             print(f"    หน้า {p}/{pages} — สะสม {len(out)} รายการ")
@@ -264,11 +276,18 @@ def main():
     print(f"🔍 Province Discovery — budgetYear={args.budget_year}, จังหวัด={[PROVINCE_MOI.get(m,m) for m in moi_ids]}")
 
     all_recs = []
-    for moi in moi_ids:
-        province = PROVINCE_MOI.get(moi, moi)
-        items = fetch_all_d0(token, moi, args.budget_year)
-        recs = [normalize(it, province) for it in items]
-        all_recs.extend(recs)
+    try:
+        for moi in moi_ids:
+            province = PROVINCE_MOI.get(moi, moi)
+            items = fetch_all_d0(token, moi, args.budget_year)
+            recs = [normalize(it, province) for it in items]
+            all_recs.extend(recs)
+    except RateLimited as e:
+        # P1: rate-limit → abort sweep แบบ bounded + heartbeat ให้ dead-man จับ
+        # (ไม่ปล่อยให้ retry loop balloon จน systemd timeout → SIGTERM → heartbeat หาย เงียบๆ)
+        print(f"\n⚠️ rate-limited — abort sweep: {e}")
+        _write_heartbeat("no_data", reason="rate_limited", partial=len(all_recs))
+        sys.exit(2)
 
     if not all_recs:
         print("\n⚠️ ไม่ได้ข้อมูล — ตรวจ token (อาจหมดอายุ 30 นาที)")

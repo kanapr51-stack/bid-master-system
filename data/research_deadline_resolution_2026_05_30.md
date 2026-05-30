@@ -79,3 +79,21 @@ capture จริง: `greenBook?mode=LINK&methodId=<projMethodId>&tempProjectId
 3. ถ้า populate → fetch PDF → pdfplumber (patch_deadlines) → deadline → GreenBookDeadlineProvider
 4. ถ้า null อีก → greenBook ไม่พก invitation doc → fallback CDP click-through
 ⚠️ ห้าม brute param รัวๆ (trip WAF) — capture browser call หรือยิงทีละ call ห่างๆ
+
+## greenBook Tier A — FALSIFIED (2026-05-30, ทดสอบ invitation จริง)
+ทดสอบ invitation 69059341206 (ประกวดราคา, search announceType=D0, getProjectDetail=B0, methodId=16):
+- greenBook(mode=LINK, pageAnnounceType=B0) → DTO 3 entries (B0/BOQ/D0, templateType D1/D2)
+  **แต่ partFile/filePath/attachName/token = null หมด** → ไม่มี PDF file link
+- greenBook(mode=VIEW, pageAnnounceType=D0) → alProcurePriceAndReceiveResponce=null, processData...=null
+  → **ไม่มี deadline เป็น JSON**
+→ greenBook คืนแค่ metadata (announce types ที่มี + announceDate) — เอกสารจริง render ที่ process3 (session-gated)
+→ **Tier A (greenBook→templateId→PDF) ตัน** — document linkage ไม่ expose
+
+## UPDATED RESUME DIRECTION (greenBook ออก)
+ตามแผน ChatGPT (timebox fail → promote): เหลือ
+- **Tier B: CDP click-through** — replicate flow process5 detail → click ดูประกาศ → process3 render → extract deadline
+  (fragile UI automation แต่ proven-renderable-by-human)
+- หรือ investigate: capture FULL process3 request sequence (ตัวที่ตั้ง session/pid context ก่อน ShowHTMLFile)
+  → ถ้าเป็น request เดียว replicate ด้วย requests.Session ได้ = scriptable
+- **ควร loop ChatGPT** ก่อน commit Tier B (direction change — greenBook falsified)
+- pipeline พร้อมแล้ว (NullProvider fail-closed) → เสียบ provider ทีหลังด้วย env BMS_DEADLINE_PROVIDER

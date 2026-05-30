@@ -3132,3 +3132,28 @@ RSS path เดิม enqueue โดยไม่มี deadline gate + ทำง
 ### ค้าง (B — รอ WAF เคลียร์)
 - greenBook RE → templateId → PROVEN PDF path → GreenBookDeadlineProvider (แทน NullProvider)
 - เมื่อ provider จริงมา: BMS_DEADLINE_PROVIDER=greenbook → pipeline ส่งจริง (ไม่แตะ worker)
+
+## 📍 CHECKPOINT (2026-05-30 ~17:50 ไทย) — คุณกัญจน์เดินทาง จะมาทำต่อ
+
+### สิ่งที่เสร็จแล้ววันนี้ (commits)
+- Chrome9222 token provider + automation (Windows harvest 25นาที → VPS worker 3×/วัน) + ingest 730 rows
+- Delivery-wiring architecture LOCKED (ChatGPT+Claude 100% — 4 รอบ)
+- **Qualification Pipeline skeleton 1-5 ครบ + deployed + SAFE** (db69f70):
+  deadline_service(Null/fail-closed) + schema(epoch suppress 730) + worker Pass 3 (epoch+deadline gate)
+  → beta เงียบปลอดภัย (ไม่มีทางส่งงานปิดประมูล) จนกว่า resolver จริงมา
+
+### กำลังทำค้าง: B = greenBook RE (resolver จริง)
+- ✅ crack param: `greenBook?mode=LINK&methodId=<proj>&tempProjectId=<pid>&pageAnnounceType=<announceCode>`
+- ✅ DTO มี field document-link: partFile/filePath/attachName/token (W0 winner = null หมด)
+- ⏳ **ยังไม่ทดสอบ invitation (ประกาศเชิญชวน D0)** — ดู RESUME POINT ใน data/research_deadline_resolution_2026_05_30.md
+
+### Resume ทำอะไรต่อ (ลำดับ)
+1. หา invitation announceType code (งาน stepId M*/S* ประกวดราคา) → เรียก greenBook ด้วย pageAnnounceType=code นั้น
+2. ดู partFile/filePath/token populate ไหม = templateId/PDF link
+3. ถ้าได้ → fetch PDF → pdfplumber (patch_deadlines) → deadline → สร้าง GreenBookDeadlineProvider
+4. สลับ provider: env BMS_DEADLINE_PROVIDER=greenbook (ไม่แตะ worker) → pipeline ส่งจริง → preview Discord ก่อนส่ง LINE family
+⚠️ ห้าม brute param (trip WAF แล้ว 1 ครั้ง) — capture browser หรือยิงทีละ call
+
+### Infra state
+- Windows Task BMS_TokenHarvest (25นาที) ทำงาน | VPS timer province-discovery (07/13/19น.) + enrichment(2นาที, มี Pass 3)
+- WAF เคลียร์แล้ว | Chrome debug 9222 เปิดอยู่ (profile C:/chrome_debug_profile)

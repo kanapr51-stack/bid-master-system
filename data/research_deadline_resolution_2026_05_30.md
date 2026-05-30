@@ -39,3 +39,25 @@ GET egp-template-service/dwnt/view-pdf-file?templateId=<UUID>
 ## สรุป
 deadline มีจริง (HTML process3 / อาจใน greenBook JSON) แต่ยังดึง server-side สะอาดไม่ได้
 ทางที่เหลือ: (A) crack greenBook param, (B) browser-render process3 ผ่าน Chrome เดิม, (C) build pipeline ก่อน เสียบ resolver ทีหลัง
+
+## Experiment 1 (CDP Renderability) — NEGATIVE (2026-05-30)
+ทดสอบ 8 invitation projects (stepId M03/S01), CDP navigate ตรงไป process3 ShowHTMLFile:
+- ทุกงาน render = **0 ตัวอักษร** (body ว่าง)
+- diagnostic: final URL ไม่ redirect, title='', outerHTML=39 ('<html><head></head><body></body></html>'), frames=0
+→ **cold CDP navigate ไม่ render** (เหมือน cold HTTP fetch) = ต้อง session state จาก click-through flow
+→ Exp2 deadline_presence_rate วัดไม่ได้ (เพราะ render ไม่ออก)
+
+**สรุป Exp1:** BrowserDeadlineProvider แบบ "navigate ตรง" = ตกทันที
+human click-through ได้ (process5 detail → คลิกดูประกาศ → process3 render) แต่ replicate = ต้อง
+automate click-through flow (DOM interaction + cross-window) = fragile/ช้า — หรือ capture request ที่ตั้ง session ก่อน ShowHTMLFile
+
+## ทางที่เหลือ (resolver)
+1. greenBook RE — mode=VIEW มี greenBookAnnouncementTypeLinkDto (อาจคืน templateId → ใช้ PROVEN PDF path!) แต่ methodId ยังผิด (16 ว่าง, winner ใช้ 19)
+2. full click-through CDP automation (fragile)
+3. NullDeadlineProvider + fail-closed ก่อน (pipeline deploy ได้, beta เงียบ — agreed)
+
+## ⚠️ Lesson: greenBook brute-sweep trip WAF (2026-05-30)
+ลอง brute methodId×mode×page (~360 req รัวๆ) → eGP WAF "Request Rejected (support ID)"
+= error คลาสเดียวกับ throttle ก่อนหน้า (hammering). ❌ ห้าม brute param space รัวๆ
+→ วิธีถูก: **capture call จริงของ browser ครั้งเดียว** (full URL + response body) ตอนดู INVITATION announcement
+  = 1 call ไม่ใช่ 360, ผ่าน UI ปกติ ไม่ trip WAF, ได้ทั้ง param ที่ถูก + response จริง

@@ -93,3 +93,4 @@ data/bms_customers.db
 
 # ── Large legacy archives ──
 archives/
+data/deadline_resolution_log.ndjson

@@ -146,7 +146,11 @@
       "PowerShell(python C:\\\\Bid-Master-System\\\\scripts\\\\seed_self_notify.py --project-id 68012345678 --province กรุงเทพ --budget 2500000 --dry-run 2>&1)",
       "PowerShell(python C:\\\\Bid-Master-System\\\\scripts\\\\seed_self_notify.py --project-id 68012345678 --province กรุงเทพ --budget 2500000 2>&1)",
       "PowerShell(python C:\\\\Bid-Master-System\\\\scripts\\\\seed_self_notify.py --line-id Utest9999 --provinces กรุงเทพ --project-id 68012345678 --province กรุงเทพ --budget 2500000 2>&1)",
-      "PowerShell($q = Get-Content data\\\\rss_queue.json | ConvertFrom-Json; Write-Host \"Queue: $\\($q.Count\\)\")"
+      "PowerShell($q = Get-Content data\\\\rss_queue.json | ConvertFrom-Json; Write-Host \"Queue: $\\($q.Count\\)\")",
+      "PowerShell($token = \\(Get-Content \"C:\\\\Bid-Master-System\\\\.env\" | Where-Object { $_ -match \"^LINE_CHANNEL_ACCESS_TOKEN=\" }\\) -replace \"^LINE_CHANNEL_ACCESS_TOKEN=\", \"\"; $r = Invoke-WebRequest -Uri \"https://api.line.me/v2/bot/info\" -Headers @{\"Authorization\"=\"Bearer $token\"} -UseBasicParsing; Write-Host \"HTTP: $\\($r.StatusCode\\)\")",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri \"http://localhost:9222/json/version\" -TimeoutSec 3 -UseBasicParsing; \"OPEN: \" + $r.Content } catch { \"CLOSED: \" + $_.Exception.Message })",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri \"http://localhost:9222/json/version\" -TimeoutSec 3 -UseBasicParsing; \"OPEN: \" + \\($r.Content | ConvertFrom-Json\\).Browser } catch { \"CLOSED: \" + $_.Exception.Message })",
+      "PowerShell($cands = @\\('C:\\\\Users\\\\Ace\\\\AppData\\\\Local\\\\Python\\\\pythoncore-3.14-64\\\\python.exe'\\); foreach \\($p in $cands\\) { if \\(Test-Path $p\\) { \"$p -> \" + \\(& $p --version 2>&1\\) } else { \"$p -> MISSING\" } }; \"--- harvest import test with pythoncore ---\"; & 'C:\\\\Users\\\\Ace\\\\AppData\\\\Local\\\\Python\\\\pythoncore-3.14-64\\\\python.exe' -c \"import requests, websocket; print\\('deps OK'\\)\")"
     ]
   }
 }

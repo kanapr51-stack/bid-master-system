@@ -61,3 +61,21 @@ automate click-through flow (DOM interaction + cross-window) = fragile/ช้า
 = error คลาสเดียวกับ throttle ก่อนหน้า (hammering). ❌ ห้าม brute param space รัวๆ
 → วิธีถูก: **capture call จริงของ browser ครั้งเดียว** (full URL + response body) ตอนดู INVITATION announcement
   = 1 call ไม่ใช่ 360, ผ่าน UI ปกติ ไม่ trip WAF, ได้ทั้ง param ที่ถูก + response จริง
+
+## greenBook breakthrough (param ถูก) — 2026-05-30
+capture จริง: `greenBook?mode=LINK&methodId=<projMethodId>&tempProjectId=<pid>&pageAnnounceType=<announceTypeCode>`
+- param ที่ขาดคือ **pageAnnounceType** (= announceType text code เช่น W0) ไม่ใช่ pageAnnounce
+- responseCode 0, `greenBookAnnouncementTypeLinkDto` = list มีจริง (3 entries สำหรับ W0 winner)
+- DTO[0] fields: projectId, announceType, seqNo, **attachSumulate, partFile, attachName** (=document link, null สำหรับ W0 นี้),
+  announceDate, methodId, typeId, templateType=W2, announceFlag, no, **filePath**(null), **token**(null), announceTypeName
+→ field ที่น่าจะเป็น document linkage: **partFile / filePath / attachName / token** (W0 เฉพาะเจาะจง = null หมด)
+→ **ยังไม่ได้ทดสอบ INVITATION (ประกาศเชิญชวน D0)** — user คลิกโดน winner ทุกรอบ
+
+## RESUME POINT (ต่อจากนี้)
+1. หา invitation announceType code: getProjectDetail/search ของงาน ประกวดราคา ที่ stepId active (M*/S*)
+   → announceType text code ของมัน (ไม่ใช่ W0/B0)
+2. เรียก greenBook(mode=LINK, methodId=<proj>, tempProjectId=<pid>, pageAnnounceType=<invitation code>)
+   → ดูว่า partFile/filePath/attachName/token populate ไหม = templateId/PDF link
+3. ถ้า populate → fetch PDF → pdfplumber (patch_deadlines) → deadline → GreenBookDeadlineProvider
+4. ถ้า null อีก → greenBook ไม่พก invitation doc → fallback CDP click-through
+⚠️ ห้าม brute param รัวๆ (trip WAF) — capture browser call หรือยิงทีละ call ห่างๆ

@@ -3062,3 +3062,23 @@ deadline_resolution_success_rate, provider_used, resolution_latency, parse_failu
 
 ### หลักการ
 "Characterize before optimize" → กรณีนี้ "**Characterize before building the dependency**"
+
+## งานที่ N+35: Resolver Direction LOCKED + Exp1 result (2026-05-30)
+
+### Exp1 (CDP renderability) = NEGATIVE → falsified BrowserDeadlineProvider(navigate)
+process3 ShowHTMLFile = session-dependent UI artifact (cold navigate/fetch = empty body)
+→ ไม่ใช่ resource URL, replicate ต้อง click-through flow (fragile) → ลดเป็น emergency fallback
+
+### Resolver ranking (ChatGPT+Claude 100% converged)
+- **Tier A (do first): greenBook → templateId → PROVEN PDF path** (egp-template-service + pdfplumber เดิม)
+  → unknown เดียว = "greenBook expose document linkage ได้ reliably ไหม"
+- Tier B: CDP click-through automation = emergency fallback (UI fragility)
+- Tier C: new extraction (OCR/new endpoint) = ไม่มี evidence อย่าลงทุน
+
+### Build order LOCKED
+NOW: 1.IDeadlineProvider 2.NullDeadlineProvider 3.Qualification pipeline 4.Epoch suppression 5.Fail-closed (deploy ก่อน resolver = operational skeleton)
+PARALLEL: 6.greenBook RE (highest priority, information-based timebox ~4-8h)
+FALLBACK: 7.CDP click-through
+DO NOT: rewrite parser / invent extraction / couple pipeline to browser UI
+
+### หลัก: "ปัญหาคือ finding the PDF ไม่ใช่ extract deadline" → bounded change, reuse proven parser

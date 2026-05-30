@@ -2,6 +2,39 @@
 
 ---
 
+## งานที่ N+39: P2 — บึงกาฬ Full Ingest + Recency-Gated Qualification (2026-05-30 ~21:45)
+
+### สถานะ: ✅ เสร็จ
+
+### Root cause / สิ่งที่ทำ
+ก่อนหน้า: projects_seen มีแต่ นครพนม (730 province_api) — **บึงกาฬ = 0 rows** ทั้งที่อยู่ใน PROVINCE_MOI (380000) แล้ว → coverage gap จังหวัดที่ 2 ของ family beta (อ.บึงโขงหลง)
+
+flow: harvest token สด (Chrome9222, 1798s) → push VPS → dry-run นับ → ingest → recency-gated qualification
+
+### Decision: เปลี่ยนจาก "epoch suppress ทั้งหมด" → "recency-gated" (evidence-based)
+- นครพนม 730 ถูก suppress เพราะ ingest **ก่อน** epoch (first_seen 06:46Z < epoch 10:34Z) — wholesale
+- บึงกาฬ 347 ingest **หลัง** epoch → ถ้าปล่อย worker จะ qualify ทั้ง 347 (resolve PDF 347 ครั้ง = เปลือง + WAF risk)
+- **evidence:** projectId prefix (BE YYMM) distribution → แค่ ~25 ตัว (≥6904) อาจยังเปิด, 322 ตัว (≤6903) เกือบแน่ปิดแล้ว
+- **วิธี:** pre-insert project_locations เอง — recent(≥6904)→`pending`, เก่า→`suppressed_backlog` (terminal). seed query skip ทั้งหมด (NOT IN) → งานใหม่อนาคต qualify ปกติ **ไม่แตะ epoch** (นครพนม ไม่กระทบ)
+
+### Fix / ผล
+- ingest: **+347 บึงกาฬ** (420 total − 73 ยกเลิก), 0 dup
+- qualification: 322 suppressed_backlog + 12 suppressed_expired + 4 **preview_held** + 9 pending (drain ต่อ)
+- **resolver ทำงานบนบึงกาฬด้วย (2nd province validated): failed=0** บน 16 ตัวที่ resolve
+- **4 งานบึงกาฬเปิดจริง** surface เข้า Discord preview (mode=preview, **ไม่มี LINE หาครอบครัว**):
+  - 69049214773 แขวงทางหลวงชนบทบึงกาฬ ฿12M (สะพาน+ถนน) deadline 2026-06-10
+  - 69059480101 รพ.บึงกาฬ ฿1.3M (เลเซอร์รักษาตา) deadline 2026-06-08
+  - 69059447656 พาณิชย์จังหวัดบึงกาฬ ฿1.87M (จัดงานแสดงสินค้า) deadline 2026-06-05
+  - 69059255961 อบต.นาก... ฿1.32M (ถนน คสล.) deadline 2026-06-04
+- sanity: projects_seen 1,077 total, dup=0, notification_queue ไม่เปลี่ยน (7, pending 0, province_qualified 0) ✓
+
+### Followup
+- 9 pending (5 ยังไม่ process + 4 retry transient) → enrichment timer drain เอง
+- **go-live config note:** preview เป็น จ.บึงกาฬ ทั้งจังหวัด ไม่ใช่เฉพาะ อ.บึงโขงหลง (18 ตัวใน dry-run) — ต้องตัดสินใจตอน go-live ว่า subscribe ระดับจังหวัดหรืออำเภอ (P0 checklist)
+- 4 preview_held = candidate จริงสำหรับ P0 go-live 5-item checklist
+
+---
+
 ## งานที่ N+38: Post-Incident Hardening — Daily Backup + Test Harness Separation (2026-05-29 ~23:00)
 
 ### สถานะ: ✅ เสร็จ

@@ -128,12 +128,14 @@ def _help_text() -> str:
 
 # -- Feedback capture (P2, 2026-05-31) ---------------------------------------
 # keyword reply → ผูกกับงานล่าสุดที่ส่งให้ user (locked spec: ไม่ใช่ NLP/portal)
+# ลำดับสำคัญ: negative/compound ก่อน bare positive — กัน substring ชน
+# ("ไม่สนใจ" มี "สนใจ" → ถ้าเช็ค "สนใจ" ก่อนจะกลายเป็น useful ตรงข้ามความหมาย)
 FB_KEYWORDS = [
-    ("\U0001f44d", "useful"), ("สนใจ", "useful"), ("useful", "useful"),
     ("\U0001f44e", "not_relevant"), ("ไม่เกี่ยว", "not_relevant"), ("ไม่สนใจ", "not_relevant"),
     ("\U0001f195", "never_seen"), ("ไม่เคยเห็น", "never_seen"), ("ใหม่", "never_seen"),
     ("\U0001f4de", "action_taken"), ("โทรแล้ว", "action_taken"),
     ("ติดต่อแล้ว", "action_taken"), ("จะติดต่อ", "action_taken"), ("ติดต่อ", "action_taken"),
+    ("\U0001f44d", "useful"), ("สนใจ", "useful"), ("useful", "useful"),
 ]
 FB_LABEL = {
     "useful": "\U0001f44d สนใจ", "not_relevant": "\U0001f44e ไม่เกี่ยว",

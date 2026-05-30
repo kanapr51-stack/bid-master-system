@@ -94,3 +94,6 @@ data/bms_customers.db
 # ── Large legacy archives ──
 archives/
 data/deadline_resolution_log.ndjson
+data/_test_invitation*.pdf
+data/session_flow_capture.ndjson
+data/deadline_presence_sample.json

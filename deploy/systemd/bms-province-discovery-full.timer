@@ -1,0 +1,10 @@
+[Unit]
+Description=Weekly BMS Province FULL sweep (Sun 00:30 UTC = 07:30 Thai)
+
+[Timer]
+OnCalendar=Sun *-*-* 00:30:00
+Persistent=true
+Unit=bms-province-discovery-full.service
+
+[Install]
+WantedBy=timers.target

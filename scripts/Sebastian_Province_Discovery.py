@@ -81,6 +81,15 @@ def _db_path() -> str:
     return os.path.join(os.environ.get("BMS_DATA_DIR", "/opt/bms/data"), "bms_customers.db")
 
 
+def _all_known_ids() -> set:
+    """project_id ทั้งหมดใน projects_seen (สำหรับ incremental stop — dedup เป็น global)"""
+    conn = sqlite3.connect(_db_path())
+    try:
+        return {r[0] for r in conn.execute("SELECT project_id FROM projects_seen").fetchall()}
+    finally:
+        conn.close()
+
+
 def _utc_now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -148,9 +157,13 @@ def fetch_page(token: str, moi_id: str, budget_year: str, page: int) -> list[dic
     return data.get("data") or []
 
 
-def fetch_all_d0(token: str, moi_id: str, budget_year: str) -> list[dict]:
-    """ดึงทุกหน้าของจังหวัด — paginate ตาม totalPages"""
+def fetch_all_d0(token: str, moi_id: str, budget_year: str,
+                 known_ids: set | None = None) -> list[dict]:
+    """ดึงหน้าของจังหวัด (เรียง announceDate ใหม่→เก่า).
+    incremental (known_ids != None): หยุดเมื่อเจอหน้าที่ project_id รู้จักทั้งหมด
+    (หน้าถัดไปเก่ากว่า = ingest แล้ว) → ลด req ~90% (P3 2026-05-31)"""
     province = PROVINCE_MOI.get(moi_id, moi_id)
+    incremental = known_ids is not None
     total, pages = count_d0(token, moi_id, budget_year)
     if total == -2:
         print(f"  ⚠️ {province}: rate limited — พัก {COOLDOWN_SEC}s แล้ว retry count")
@@ -162,7 +175,8 @@ def fetch_all_d0(token: str, moi_id: str, budget_year: str) -> list[dict]:
     if total < 0:
         print(f"  ❌ {province}: token reject (validateCfTurnTile) — token หมดอายุ/ผิด")
         return []
-    print(f"  {province} (moiId={moi_id}): {total} โครงการ / {pages} หน้า")
+    mode_tag = " [incremental]" if incremental else ""
+    print(f"  {province} (moiId={moi_id}): {total} โครงการ / {pages} หน้า{mode_tag}")
     out = []
     consec_empty = 0
     for p in range(1, pages + 1):
@@ -187,6 +201,14 @@ def fetch_all_d0(token: str, moi_id: str, budget_year: str) -> list[dict]:
         if items:
             consec_empty = 0
         out.extend(items)
+        # incremental: หน้านี้รู้จักทั้งหมด → หน้าถัดไปเก่ากว่า/รู้แล้ว → หยุด
+        if incremental and items:
+            new_in_page = sum(
+                1 for it in items if str(it.get("projectId") or "") not in known_ids)
+            if new_in_page == 0:
+                print(f"    ⏹ {province}: หน้า {p} รู้จักทั้งหมด — หยุด "
+                      f"(incremental, ข้าม {pages - p} หน้า)")
+                break
         if p % 10 == 0 or p == pages:
             print(f"    หน้า {p}/{pages} — สะสม {len(out)} รายการ")
     return out
@@ -256,6 +278,8 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="ไม่เขียน DB แค่รายงาน")
     ap.add_argument("--worker", action="store_true",
                     help="read-only: อ่าน token จาก cache ไม่ harvest (สำหรับ VPS)")
+    ap.add_argument("--full", action="store_true",
+                    help="full re-paginate (ปิด incremental — สำหรับ backfill/safety sweep)")
     args = ap.parse_args()
 
     # token ผ่าน Token Service — VPS เป็น worker (allow_refresh=False) อ่าน token ที่ Windows push มา
@@ -275,11 +299,17 @@ def main():
     moi_ids = args.moi or list(PROVINCE_MOI.keys())
     print(f"🔍 Province Discovery — budgetYear={args.budget_year}, จังหวัด={[PROVINCE_MOI.get(m,m) for m in moi_ids]}")
 
+    # incremental เมื่อ ingest จริง + ไม่ --full (dry-run/full = paginate เต็มเพื่อเห็นทั้งหมด)
+    incremental = args.ingest and not args.dry_run and not args.full
+    known = _all_known_ids() if incremental else None
+    if incremental:
+        print(f"⚡ incremental mode — known projects: {len(known)} (หยุดเมื่อเจอหน้าที่รู้แล้ว, ใส่ --full ปิด)")
+
     all_recs = []
     try:
         for moi in moi_ids:
             province = PROVINCE_MOI.get(moi, moi)
-            items = fetch_all_d0(token, moi, args.budget_year)
+            items = fetch_all_d0(token, moi, args.budget_year, known_ids=known)
             recs = [normalize(it, province) for it in items]
             all_recs.extend(recs)
     except RateLimited as e:

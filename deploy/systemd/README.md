@@ -16,6 +16,15 @@ scp deploy/systemd/bms-deadman.* root@VPS:/etc/systemd/system/
 systemctl daemon-reload && systemctl enable --now bms-deadman.timer
 ```
 
+## bms-province-discovery-full (P3 safety net — 2026-05-31)
+Weekly FULL re-paginate (Sun 00:30 UTC) กัน incremental discovery พลาดงาน.
+discovery ปกติ (07/13/19) = incremental (หยุดเมื่อเจอหน้าที่รู้แล้ว, ~98% req น้อยลง);
+full sweep = paginate ครบ TimeoutStartSec=1800. ใส่ --full บังคับ full ด้วยมือได้
+```
+scp deploy/systemd/bms-province-discovery-full.* root@VPS:/etc/systemd/system/
+systemctl daemon-reload && systemctl enable --now bms-province-discovery-full.timer
+```
+
 ## Live timers อื่นบน VPS (ยังไม่ version-controlled)
-bms-province-discovery (07/13/19) · bms-enrichment-worker (2 นาที) · bms-line-sender ·
-bms-daily-digest (08:00) · bms-backup (03:00) · bms-rss-scraper / bms-rss-notifier (จะ RETIRE ใน P5)
+bms-province-discovery (07/13/19, incremental) · bms-enrichment-worker (2 นาที) · bms-line-sender ·
+bms-daily-digest (08:00 UTC=15:00 ไทย) · bms-backup (03:00) · bms-rss-scraper / bms-rss-notifier (จะ RETIRE ใน P5)

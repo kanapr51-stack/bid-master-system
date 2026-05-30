@@ -2,6 +2,33 @@
 
 ---
 
+## งานที่ N+45: P3 — Incremental Discovery (ลด req ~98%, reliability+scale) (2026-05-31 ~03:20)
+
+### สถานะ: ✅ เสร็จ — deployed + live verified
+
+### ทำไม
+เดิม discovery full re-paginate ทุกรอบ (~115 หน้า 2 จังหวัด) ทั้งที่ 99% งานเดิม → เปลือง req + เสี่ยง rate-limit/timeout. incremental = lever ที่แก้ทั้ง reliability (ลด rate-limit exposure) + scale (ดู [[project_national_scaling]])
+
+### รากฐาน (ยืนยันก่อนสร้าง)
+pagination เรียง announceDate **ใหม่→เก่า strict** (ยืนยัน 5 หน้า: หน้า1 05-29, หน้า42 ก.ย.2025) → หยุดได้เมื่อเจอหน้าที่ project_id รู้จักทั้งหมด (หน้าถัดไปเก่ากว่า = ingest แล้ว)
+
+### สิ่งที่ทำ
+- `Sebastian_Province_Discovery.py`: `fetch_all_d0(..., known_ids)` — incremental หยุดเมื่อ new_in_page==0; `_all_known_ids()` (global dedup set); main: incremental เป็น default เมื่อ --ingest (ไม่ --dry-run/--full), `--full` flag บังคับ full
+- **safety: weekly full-sweep** `bms-province-discovery-full` (Sun 00:30 UTC, --full, TimeoutStartSec=1800) กัน incremental พลาด → โครงสร้าง: ถี่=incremental(เร็ว), สัปดาห์ละครั้ง=full(ครบ)
+- units ใน git (deploy/systemd/)
+
+### Test (verified)
+- local 4: T1 หยุดหน้า1, T2 หยุดหน้า2(new1), T3 full ครบ, T4 known ว่าง=ไม่หยุด ✅
+- **live บึงกาฬ ingest: 420/42 หน้า → fetch หน้า1 (รู้หมด) หยุด ข้าม 41 หน้า → 10 แทน 420 (~98% ลด)** ✅
+
+### ผล
+scheduled discovery (07/13/19) = incremental อัตโนมัติ → เร็ว (~1-2 หน้า/จังหวัด) = **ไม่ชน 15-min timeout อีก** (แก้ root ของ N+42 finding เชิงโครงสร้าง). req ปกติ ~98% น้อยลง
+
+### ลำดับถัดไป (locked)
+P4 token TTL tripwire → P5 mid-sweep refresh
+
+---
+
 ## งานที่ N+44: P2.5 — Feedback Summary ใน Daily Digest (เติมเต็ม measurement loop) (2026-05-31 ~03:10)
 
 ### สถานะ: ✅ เสร็จ — deployed VPS

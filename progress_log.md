@@ -2,6 +2,32 @@
 
 ---
 
+## งานที่ N+46: P3 Hardening — ordering ไม่เชื่อ assumption ครั้งเดียว (2026-05-31 ~04:00)
+
+### สถานะ: ✅ เสร็จ — deployed + live verified
+
+### ทำไม (คำถามคุณกัญจน์: "verify ordering ครั้งเดียวเชื่อได้จริงมั้ย")
+ตอบตรง: ไม่ — verify ครั้งเดียว = หลักฐานดี ไม่ใช่พิสูจน์. ความเสี่ยง: eGP เปลี่ยน sort / announceDate ย้อนหลัง / ties คร่อมหน้า → incremental พลาดเงียบ. เปลี่ยนจาก "เชื่อ assumption" → "วัด assumption ต่อเนื่อง"
+
+### 3 hardening (ทำครบ)
+1. **Daily full sweep** (weekly→daily, 00:30 UTC) = ground truth จับ miss ใน ≤24h (timer แก้แล้ว)
+2. **Look-ahead margin** `INCR_KNOWN_STOP=2` — หยุดเมื่อรู้หมด 2 หน้า "ติดกัน" (กัน ties/boundary) ไม่ใช่หน้าเดียว
+3. **Reconciliation** — full sweep เจองานใหม่ announceDate < today-2วัน = incremental น่าจะพลาด → Discord alert (พิสูจน์ ordering ด้วย evidence ทุกวัน). หลัง 2-4 สัปดาห์พลาด 0 → ผ่อนกลับ weekly ได้
+
+### 🐛 Bug เจอจาก live test (สำคัญ)
+incremental รอบแรก fetch 38/42 หน้า (ไม่ใช่ 2)! เพราะ **งานยกเลิก (status=R) ไม่เคย ingest → ไม่อยู่ใน known → ทุกหน้าที่มีงานยกเลิกนับเป็น new → ไม่หยุด**. fix: นับ new เฉพาะงาน active(≠R) ที่ไม่รู้จัก (งานยกเลิก = รู้ว่าข้าม ไม่นับ)
+→ unit test ด้วย mock active-only ไม่เจอ — **live test เท่านั้นที่เจอ** (บทเรียน: ต้อง verify จริง)
+
+### Test (verified)
+- local: margin K=2 (T1 ไม่หยุด/T2 หยุดหน้า2/T3 คั่นไม่หยุด/T4 full) + cancelled-job ignored ✅
+- **live: incremental บึงกาฬ → หยุดหน้า 2 (fetch 20, ข้าม 40 หน้า ~95% ลด)** ✅
+- **live: full sweep → "reconcile: ไม่มีงานเก่าที่พลาด (assumption ยังถือ)"** ✅
+
+### ลำดับถัดไป (locked)
+P4 token TTL tripwire / P5 mid-sweep refresh — **incremental ทำให้แทบไม่จำเป็น** (sweep สั้นมาก) → เหลือ measure ยืนยัน
+
+---
+
 ## งานที่ N+45: P3 — Incremental Discovery (ลด req ~98%, reliability+scale) (2026-05-31 ~03:20)
 
 ### สถานะ: ✅ เสร็จ — deployed + live verified

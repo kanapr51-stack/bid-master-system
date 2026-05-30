@@ -62,6 +62,8 @@ PAGE_SLEEP = 1.5         # เคารพ rate limit (~100 req / 120s)
 COOLDOWN_EVERY = 50      # ทุก 50 req
 COOLDOWN_SEC = 30        # พัก 30s (กัน throttle — bug บึงกาฬ 2026-05-30)
 MAX_CONSEC_EMPTY = 3     # หน้าว่างติดกัน N → abort (กัน balloon จน systemd timeout — P1 2026-05-31)
+INCR_KNOWN_STOP = 2      # incremental หยุดเมื่อเจอหน้าที่รู้หมด N หน้า "ติดกัน" (margin กัน ties/boundary)
+RECONCILE_DAYS = 2       # full sweep: งานใหม่ announceDate เก่ากว่านี้ = incremental น่าจะพลาด → alert
 
 _req_count = 0           # นับ req ข้ามทุกจังหวัด (rate limit เป็น global)
 
@@ -82,12 +84,23 @@ def _db_path() -> str:
 
 
 def _all_known_ids() -> set:
-    """project_id ทั้งหมดใน projects_seen (สำหรับ incremental stop — dedup เป็น global)"""
+    """project_id ทั้งหมดใน projects_seen (สำหรับ incremental stop / full reconcile — dedup global)"""
     conn = sqlite3.connect(_db_path())
     try:
         return {r[0] for r in conn.execute("SELECT project_id FROM projects_seen").fetchall()}
     finally:
         conn.close()
+
+
+def _discord(msg: str) -> None:
+    """ส่ง Discord (guarded — ไม่ให้ discovery ล้มถ้า Discord พัง)"""
+    try:
+        from Sebastian_Discord_Notify import load_env, get_credentials, send
+        load_env()
+        t, ch = get_credentials()
+        send(t, ch, msg)
+    except Exception:
+        pass
 
 
 def _utc_now() -> str:
@@ -179,6 +192,7 @@ def fetch_all_d0(token: str, moi_id: str, budget_year: str,
     print(f"  {province} (moiId={moi_id}): {total} โครงการ / {pages} หน้า{mode_tag}")
     out = []
     consec_empty = 0
+    consec_known = 0
     for p in range(1, pages + 1):
         try:
             items = fetch_page(token, moi_id, budget_year, p)
@@ -201,14 +215,21 @@ def fetch_all_d0(token: str, moi_id: str, budget_year: str,
         if items:
             consec_empty = 0
         out.extend(items)
-        # incremental: หน้านี้รู้จักทั้งหมด → หน้าถัดไปเก่ากว่า/รู้แล้ว → หยุด
+        # incremental: หยุดเมื่อเจอหน้าที่รู้หมด INCR_KNOWN_STOP หน้า "ติดกัน" (margin กัน ties)
+        # นับเฉพาะงาน active(≠R) ที่ไม่รู้จัก — งานยกเลิกไม่เคย ingest จึงไม่อยู่ใน known (อย่านับเป็น new)
         if incremental and items:
             new_in_page = sum(
-                1 for it in items if str(it.get("projectId") or "") not in known_ids)
+                1 for it in items
+                if (it.get("projectStatus") or "") != "R"
+                and str(it.get("projectId") or "") not in known_ids)
             if new_in_page == 0:
-                print(f"    ⏹ {province}: หน้า {p} รู้จักทั้งหมด — หยุด "
-                      f"(incremental, ข้าม {pages - p} หน้า)")
-                break
+                consec_known += 1
+                if consec_known >= INCR_KNOWN_STOP:
+                    print(f"    ⏹ {province}: หน้า {p} (รู้หมด {consec_known} หน้าติดกัน) — หยุด "
+                          f"(incremental, ข้าม {pages - p} หน้า)")
+                    break
+            else:
+                consec_known = 0
         if p % 10 == 0 or p == pages:
             print(f"    หน้า {p}/{pages} — สะสม {len(out)} รายการ")
     return out
@@ -301,15 +322,19 @@ def main():
 
     # incremental เมื่อ ingest จริง + ไม่ --full (dry-run/full = paginate เต็มเพื่อเห็นทั้งหมด)
     incremental = args.ingest and not args.dry_run and not args.full
-    known = _all_known_ids() if incremental else None
+    # โหลด known เสมอเมื่อ ingest จริง: incremental ใช้หยุด, full ใช้ reconcile (snapshot ก่อนรัน)
+    known = _all_known_ids() if (args.ingest and not args.dry_run) else None
     if incremental:
-        print(f"⚡ incremental mode — known projects: {len(known)} (หยุดเมื่อเจอหน้าที่รู้แล้ว, ใส่ --full ปิด)")
+        print(f"⚡ incremental mode — known {len(known)} (หยุดเมื่อรู้หมด {INCR_KNOWN_STOP} หน้าติดกัน, --full ปิด)")
+    elif args.full and known is not None:
+        print(f"\U0001f504 full sweep — known {len(known)} (paginate ครบ + reconcile incremental)")
 
     all_recs = []
     try:
         for moi in moi_ids:
             province = PROVINCE_MOI.get(moi, moi)
-            items = fetch_all_d0(token, moi, args.budget_year, known_ids=known)
+            items = fetch_all_d0(token, moi, args.budget_year,
+                                 known_ids=(known if incremental else None))
             recs = [normalize(it, province) for it in items]
             all_recs.extend(recs)
     except RateLimited as e:
@@ -326,6 +351,21 @@ def main():
 
     active = [r for r in all_recs if r["project_status"] != "R"]
     print(f"\n📊 รวม {len(all_recs)} รายการ ({len(active)} active, {len(all_recs)-len(active)} ยกเลิก)")
+
+    # reconciliation (full sweep เท่านั้น): งานใหม่ announceDate เก่า = incremental น่าจะพลาด → alert
+    if args.full and known is not None:
+        from datetime import date as _date, timedelta as _td
+        cutoff = (_date.today() - _td(days=RECONCILE_DAYS)).isoformat()
+        missed = [r for r in active if r["project_id"] not in known
+                  and r["announce_date"] and r["announce_date"] < cutoff]
+        if missed:
+            sample = ", ".join(f"{m['project_id']}({m['announce_date']})" for m in missed[:5])
+            msg = (f"⚠️ BMS reconcile: full sweep เจอ {len(missed)} งานใหม่ announceDate < {cutoff} "
+                   f"= incremental น่าจะพลาด → ตรวจ ordering assumption!\n{sample}")
+            print(msg)
+            _discord(msg)
+        else:
+            print("✅ reconcile: ไม่มีงานเก่าที่ incremental พลาด (ordering assumption ยังถือ)")
 
     target = [r for r in active if in_target_amphoe(r)]
     print(f"🎯 ในอำเภอเป้าหมาย: {len(target)} รายการ")

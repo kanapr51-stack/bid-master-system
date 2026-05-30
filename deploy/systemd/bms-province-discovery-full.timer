@@ -1,8 +1,8 @@
 [Unit]
-Description=Weekly BMS Province FULL sweep (Sun 00:30 UTC = 07:30 Thai)
+Description=Daily BMS Province FULL sweep (00:30 UTC = 07:30 Thai) — reconcile incremental
 
 [Timer]
-OnCalendar=Sun *-*-* 00:30:00
+OnCalendar=*-*-* 00:30:00
 Persistent=true
 Unit=bms-province-discovery-full.service
 

@@ -16,10 +16,12 @@ scp deploy/systemd/bms-deadman.* root@VPS:/etc/systemd/system/
 systemctl daemon-reload && systemctl enable --now bms-deadman.timer
 ```
 
-## bms-province-discovery-full (P3 safety net — 2026-05-31)
-Weekly FULL re-paginate (Sun 00:30 UTC) กัน incremental discovery พลาดงาน.
-discovery ปกติ (07/13/19) = incremental (หยุดเมื่อเจอหน้าที่รู้แล้ว, ~98% req น้อยลง);
-full sweep = paginate ครบ TimeoutStartSec=1800. ใส่ --full บังคับ full ด้วยมือได้
+## bms-province-discovery-full (P3 safety net + reconcile — 2026-05-31)
+**Daily** FULL re-paginate (00:30 UTC=07:30 ไทย) — ground truth กัน incremental พลาด + reconcile.
+discovery ปกติ (07/13/19) = incremental (หยุดเมื่อรู้หมด 2 หน้าติดกัน = margin กัน ties, ~95-98% req น้อยลง);
+full sweep = paginate ครบ TimeoutStartSec=1800 + **reconciliation**: ถ้าเจองานใหม่ announceDate เก่ากว่า 2 วัน
+= incremental น่าจะพลาด → Discord alert (พิสูจน์ ordering assumption ด้วย evidence ทุกวัน).
+หลัง 2-4 สัปดาห์พลาด 0 → ผ่อนกลับ weekly ได้. ใส่ --full บังคับ full ด้วยมือได้
 ```
 scp deploy/systemd/bms-province-discovery-full.* root@VPS:/etc/systemd/system/
 systemctl daemon-reload && systemctl enable --now bms-province-discovery-full.timer

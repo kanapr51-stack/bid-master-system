@@ -3157,3 +3157,27 @@ RSS path เดิม enqueue โดยไม่มี deadline gate + ทำง
 ### Infra state
 - Windows Task BMS_TokenHarvest (25นาที) ทำงาน | VPS timer province-discovery (07/13/19น.) + enrichment(2นาที, มี Pass 3)
 - WAF เคลียร์แล้ว | Chrome debug 9222 เปิดอยู่ (profile C:/chrome_debug_profile)
+
+## งานที่ N+38: 🎯 Deadline Resolver พบ + roadmap LOCKED (2026-05-30)
+
+### BREAKTHROUGH (B-2 success, ดีกว่าคาด)
+capture cross-tab → เจอ process5 doc-download API (ไม่ใช่ process3 session):
+```
+infoProcureDocAnnounZip?projectId=X → data.buildName2 = templateId
+POST egp-template-service/dant/view-pdf?templateId=X {} → JSON.data = base64(PDF)
+base64 → pdfplumber → regex → deadline
+```
+พิสูจน์: invitation 69059341206 → "เสนอราคา...วันที่ ๕ มิถุนายน ๒๕๖๙" = deadline 5 มิ.ย.2569 ✅
+- ใช้ AES generateToken (server-side, ไม่ต้อง browser/process3/Turnstile) → รัน VPS ได้
+- infoProcureDocAnnounZip = projectId→templateId ที่หามาทั้งวัน (greenBook = แค่ metadata)
+- กลับสู่ PROVEN PDF path (pdfplumber+patch_deadlines) → blast radius ต่ำ
+
+### Roadmap LOCKED (ChatGPT+Claude 100%)
+- Phase 1: DocZipPdfDeadlineProvider (track 4 stage แยก: template/download/parse/deadline)
+- Phase 2: Presence characterization 20→50 samples หลายหน่วยงาน
+  metrics: template_resolution_rate, pdf_download_rate, pdf_parse_rate, deadline_extraction_rate (+by announce_type/method_id/step_id = type-drift check)
+- Phase 3: strict fail-closed production enable (Q4 Beta Override = ยกเลิก, ไม่ต้องแล้ว)
+- Phase 4: cache (project_deadlines table) + circuit-breaker (429/403 spike→degrade) + coverage analytics
+
+### Caveats ที่ต้อง design
+cache (resolve once read many) | multi-stage failure reason | circuit-breaker (กัน WAF) | document-type drift (buildName2 อาจชี้คนละ doc ต่อชนิด)

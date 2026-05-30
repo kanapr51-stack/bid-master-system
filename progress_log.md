@@ -3035,3 +3035,30 @@ Province Discovery → projects_seen
 ### Implementation risks ที่ต้องระวัง
 - Pass 2 repair (Enrichment_Worker.py:221-241) enqueue orphan → deadline gate ต้องครอบ ไม่งั้น province_api หลุดผ่าน
 - province_api insert project_locations: location รู้แล้ว (province จาก moiId) → อย่าให้ enrichment_status='success' trigger Pass2 ก่อนผ่าน deadline gate
+
+---
+
+## งานที่ N+34: Deadline Resolution — Phase 0 Characterization (ChatGPT+Claude 100% converged 2026-05-30)
+
+### สถานะ: ✅ decision locked — เริ่ม Experiment 1 (CDP renderability)
+
+### การปรับสำคัญ: BrowserDeadlineProvider = candidate ไม่ใช่ proven
+พิสูจน์แล้วจริง: (1) human browser → process3 → เห็น deadline, (2) RSS templateId → PDF → parse ได้
+**ยังไม่พิสูจน์:** (1) CDP automate process3 extraction, (2) invitation announcements มี deadline เสมอ
+→ BrowserDeadlineProvider ยังเป็น **hypothesis** จนกว่า experiment ผ่าน
+
+### Build order (informational leverage สูงสุด)
+1. `IDeadlineProvider` abstraction + `NullDeadlineProvider` (mirror ITokenProvider)
+2. Qualification pipeline + epoch suppression + fail-closed (deploy ได้เลยด้วย NullProvider)
+3. **Experiment 1: CDP Renderability Probe** ← highest leverage, ทำก่อน
+   - คำถาม: CDP reproduce สิ่งที่ human เห็นได้ไหม (navigate process3 → extract HTML → find deadline)
+   - วัด: renderability (ไม่ใช่ deadline). failure modes: session/cross-window/postback/JS-timing/anti-automation
+4. **Experiment 2: Deadline Presence** — sample 10-20 invitation projects, วัด deadline_presence_rate
+5. ถ้าผ่านทั้งคู่ → BrowserDeadlineProvider
+6. GreenBook RE = parallel research track (ไม่ block production)
+
+### Metrics ที่จะเก็บ (DeadlineProvider)
+deadline_resolution_success_rate, provider_used, resolution_latency, parse_failures
+
+### หลักการ
+"Characterize before optimize" → กรณีนี้ "**Characterize before building the dependency**"

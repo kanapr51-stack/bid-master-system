@@ -2,6 +2,82 @@
 
 ---
 
+## งานที่ N+38: Post-Incident Hardening — Daily Backup + Test Harness Separation (2026-05-29 ~23:00)
+
+### สถานะ: ✅ เสร็จ
+
+### Root cause / สิ่งที่ทำ
+Incident: Claude รัน `python Sebastian_Customer_DB.py` ตรงๆ บน VPS → `__main__` block มี `os.remove(db)` → ลบ production DB → customers 5 → 1
+Recovery: grep LINE IDs จาก sender logs → re-seed 4 customers ภายใน 5 นาที
+**delivery_log history: accept data loss** (3 วัน, 2-3 users, ไม่คุ้มกับ reconstruct)
+
+### Fix / ผล
+- `scripts/backup_db.py` — daily backup 03:00, 14-day retention, `/opt/bms/backups/`
+- `scripts/dev_reset_db.py` — destructive reset แยกออกจาก production module, production guard
+- `Sebastian_Customer_DB.py __main__` — smoke test only, ไม่มี DB wipe
+- `bms-backup.timer` active บน VPS, ทดสอบ manual: `bms_20260529.db` (108 KB) ✅
+- Commits: `935f226` (--reset guard), `71109d5` (backup + separation)
+
+### Followup
+- schema_version tracking → defer (ยังไม่จำเป็นสำหรับ family beta)
+- project_locations จะ repopulate อัตโนมัติจาก RSS Notifier ครั้งถัดไป
+
+---
+
+## งานที่ N+37: Real User Onboarding — ณฐมน ธงยศ + Mr.suvit (2026-05-29 ~22:00)
+
+### สถานะ: ✅ เสร็จ
+
+### Root cause / สิ่งที่ทำ
+- ณฐมน ธงยศ: self-onboard ผ่าน LINE OA → follow → ตั้งค่า → นครพนม+บึงกาฬ ✅
+- Mr.suvit: follow แต่ไม่พิมพ์ตั้งค่า → Claude insert provinces ใน DB + ส่ง proactive onboarding message
+- Test notification inject → delivered 4/5 (1 ล้มเหลวเพราะ fake LINE ID ของ test account)
+
+### Fix / ผล
+- 2 real users active ใน production system
+- Mr.suvit ได้รับ welcome message พร้อมคำสั่งทั้งหมด
+
+---
+
+## งานที่ N+36: Enrichment Worker fixes + Daily Digest enrichment section (2026-05-29 ~17:45)
+
+### สถานะ: ✅ เสร็จ — deployed บน VPS
+
+### Root cause / สิ่งที่ทำ
+- `_save_retry` เพิ่ม MAX_ATTEMPTS=5 → ถ้า attempts >= 5 mark `enrichment_status='failed'` แทน retry ไปเรื่อยๆ
+- Pass 2 repair: หลัง batch loop ทุกรอบ — SELECT success+target+not-in-queue → re-enqueue (prevent success-but-never-notified)
+- Daily Digest เพิ่ม `enrichment_section()`: total/success/pending/failed + oldest_pending_age + failed threshold warning
+- tasks_section เพิ่ม Enrich_Worker log check
+
+### Fix / ผล
+- Commit `170be62` pushed + deployed บน VPS
+- VPS git pulled สำเร็จ (reset untracked Sebastian_Enrichment_Worker.py ก่อน)
+- 232 pending items มี next_retry_at=17:53-17:55 → timer จะ drain อัตโนมัติ
+
+### Followup
+- Monitor enrichment drain: คาดว่า 232 → 0 ภายใน 2026-05-29 ~19:30 (ขึ้นอยู่กับ WAF uptime)
+- ถ้า target province hit → จะมี LINE notification จริงๆ
+- Day 5-7: verify 5 readiness criteria ก่อน onboard พ่อ-แม่
+
+---
+
+## งานที่ N+35: Discovery/Enrichment Plane Separation + eGP Location Enrichment (2026-05-29 ~17:30)
+
+### สถานะ: ✅ เสร็จ
+
+### Root cause / สิ่งที่ทำ
+- เดิม Notifier v2 ทำทั้ง discovery + enrichment → rate limit ทำให้ 232/260 fail
+- แยก Notifier v3 (discovery only, ไม่ call API) + Enrichment Worker (batch 20, sleep 1.5s)
+- eGP `getProcurementDetail` return `provinceMoiId` → MOI_PROVINCE_MAP prefix 2 digits → province_name
+- `project_locations` table: hard/unknown confidence, pending/success/failed status
+
+### Fix / ผล
+- Commits: `e2d020c` (plane separation) + `385038e` (location enrichment)
+- 7 timers active บน VPS รวม bms-enrichment-worker (every 2 min)
+- 28 projects enriched สำเร็จ (ยังไม่ใช่ target province)
+
+---
+
 ## งานที่ N+34: X-Announcement-Token Reverse Engineering สำเร็จ (2026-05-28 ~21:00)
 
 ### สถานะ: ✅ เสร็จ — พร้อม integrate
@@ -2751,3 +2827,54 @@ backup: backups/all_jobs_province_*.json
 
 ### Followup
 - Portal Recon Sprint หลัง Universe B confirm
+
+---
+
+## งานที่ N+29: 🎯 Province Search API ค้นพบ + ยืนยัน + Discovery script (2026-05-30)
+
+### สถานะ: ✅ endpoint+auth+discovery พิสูจน์ end-to-end แล้ว — เหลือ token automation + ingest confirm
+
+### ผล end-to-end (scripts/Sebastian_Province_Discovery.py, dry-run)
+- ดึง 959 งาน D0 (นครพนม 849 + บึงกาฬ 110) → filter เหลือ **21 งานในอำเภอเป้าหมาย**
+- เช่น รพ.บ้านแพง ฿1.8M, อบต.นางัว ฿5.67M, เทศบาลบึงโขงหลง ฿1.4M, วท.บ้านแพง ฿4.52M, รพ.บึงโขงหลง
+- token pluggable (--token / env BMS_ANNOUNCEMENT_TOKEN), --dry-run/--ingest/--filter-amphoe
+- ingest → projects_seen (source='province_api', province รู้แน่นอน) → notifier เดิม pick up
+
+### ⚠️ Sanity flags (ต้องสืบก่อน production)
+- **บึงกาฬ pagination:** count=420 แต่ดึงจริงได้ 110 (หน้า 12+ คืน empty) — นครพนม 849→849 ปกติ
+- ส่วนใหญ่ของ 21 งานเป็น announce เก่า (6810-6904) → ถ้า ingest ต้องจัดการ backfill ไม่ให้ blast LINE
+
+### Root cause ที่นำมาสู่การค้นพบ
+RSS เห็นแต่หน่วยงานกลาง (76 deptId active = central gov ทั้งหมด, reverse-map 1/76 match target)
+→ อบต./เทศบาล/รพ.สต./โรงเรียน **มองไม่เห็นทาง RSS เลย** → target_hit=0 มาตลอด
+
+### สิ่งที่ค้นพบ (Chrome DevTools บน process5)
+Province Search endpoint คืนหน่วยงานท้องถิ่นได้จริง:
+```
+GET /egp-atpj27-service/pb/a-egp-allt-project/announcement
+    ?budgetYear=2569&moiId=480000&announceType=2&page=1   (announceType=2 = D0)
+GET .../announcement/sumProjectMoneyAndCount?budgetYear=2569&moiId=480000&announceType=2
+```
+- **นครพนม (480000) D0 ปี2569 = 849 โครงการ / 85 หน้า** (10/หน้า) — RSS เห็น ~0
+- **บึงกาฬ (380000) D0** = มีข้อมูล (อบต./เทศบาล/รพ.บึงกาฬ)
+- ตัวอย่าง: อบต.หนองซน, เทศบาลตำบลนาหว้า, รพ.สต.เทศบาล
+- announceType numeric (2=D0) ไม่ใช่ text "D0"
+- recordsTotal ใน /announcement = 0 เสมอ (lazy) → ต้องใช้ sumProjectMoneyAndCount นับ
+- announcementTodayFlag=true ใช้ date range (announceSDate/EDate) แต่ขัดกับ moiId → ไม่ใช้
+
+### Token finding (สำคัญ)
+- format: `EGP-ANNOUNCEMENT-KEY:TIMESTAMP:HMAC-SHA256(base64)` → ทั้งหมด base64 อีกชั้น
+- **STANDALONE**: ใช้ได้โดยไม่ต้องมี cookies/XSRF/session (proved: token-only call works จาก VPS)
+- TTL ~30 นาที, token เดียวใช้ได้หลาย moiId (ไม่ผูก query)
+- ❌ ไม่ได้สร้างใน agpc01-web JS (search 25 chunks + scripts.js)
+- ❌ ไม่มี interceptor ใส่ X-Announcement-Token (มีแค่ X-Xsrf)
+- ❌ generateToken endpoint คืนแต่ AES blob ("Salted__") ไม่ใช่ HMAC format
+- ❌ ไม่มี endpoint token/getToken/getAnnouncementToken (404)
+- HMAC key brute-force (RDCrypto/egp/etc x msg variants) → ไม่ match
+
+### Followup (เรียงตาม priority)
+- [ ] **หา token mint** — capture network ตอนโหลดหน้า search (page-load XHR) เพื่อดูว่า server-mint หรือ client-mint
+- [ ] ถ้า client-mint → หา chunk/shell ที่ยังไม่ได้ crawl (micro-frontend shell)
+- [ ] Fallback: browser token-farming (Playwright VPS หรือ Chrome debug port 9222 บนเครื่องคุณกัญจน์)
+- [ ] หลัง token แก้ได้ → build Sebastian_Province_Discovery.py แทน RSS discovery
+- [ ] map 843 target orgs → getProcurementDetail deptId+deptSubId → infoDeptSub province confirm

@@ -2,6 +2,29 @@
 
 ---
 
+## งานที่ N+44: P2.5 — Feedback Summary ใน Daily Digest (เติมเต็ม measurement loop) (2026-05-31 ~03:10)
+
+### สถานะ: ✅ เสร็จ — deployed VPS
+
+### ทำไม
+P2 capture feedback ลง table แต่ **ไม่มีตัวอ่านไปใช้** = สร้างไม่เสร็จครึ่ง (capture without reporting). P2.5 เติม reporting → feedback ใช้ได้จริงรายสัปดาห์
+
+### สิ่งที่ทำ
+- `Sebastian_Daily_Digest.py`: เพิ่ม `feedback_section()` (7 วันล่าสุด) — counts 👍useful/👎not_relevant/🆕never_seen/📞action_taken + total_all + **⭐ North-Star highlight** (โชว์ชื่องานที่ never_seen/action_taken) + wire เข้า main (หลัง delivery section)
+- table feedback ไม่มี → graceful "(table not yet created)"
+
+### Test (verified)
+- local + VPS syntax OK
+- feedback_section: empty → "(no feedback this week)"; 2 temp rows (never_seen+useful) → counts ถูก + highlight โชว์ชื่องาน → cleanup ✅
+
+### ผล
+digest 08:00 (timer) จะรวม section นี้อัตโนมัติ → คุณกัญจน์เห็น "สัปดาห์นี้มี never_seen/action_taken กี่งาน" = วัด North-Star ได้จริง (ยังไม่ทำ auto-tune relevance — volume น้อยเกิน, premature)
+
+### ลำดับถัดไป (locked)
+P3 incremental discovery → P4 token TTL tripwire → P5 mid-sweep refresh
+
+---
+
 ## งานที่ N+43: P2 — Feedback Capture Loop (LINE keyword → งานล่าสุด) (2026-05-31 ~02:40)
 
 ### สถานะ: ✅ เสร็จ — deployed VPS

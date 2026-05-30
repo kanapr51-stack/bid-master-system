@@ -226,6 +226,59 @@ def enrichment_section() -> str:
     return "\n".join(lines)
 
 
+# ── Feedback (P2.5) ─────────────────────────────────────────────────────────────
+
+def feedback_section() -> str:
+    """สรุป feedback 7 วัน — เปลี่ยน row ดิบ → สัญญาณ measurement (North-Star)"""
+    from datetime import timedelta
+    db_path = Path(os.environ.get("BMS_DATA_DIR") or str(BASE / "data")) / "bms_customers.db"
+    if not db_path.exists():
+        return "Feedback: FAIL  bms_customers.db missing"
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    has = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='feedback'"
+    ).fetchone()
+    if not has:
+        conn.close()
+        return "Feedback: (table not yet created)"
+
+    cutoff = (NOW - timedelta(days=7)).isoformat(timespec="seconds")
+    rows = conn.execute(
+        "SELECT action, COUNT(*) n FROM feedback WHERE created_at >= ? GROUP BY action",
+        (cutoff,),
+    ).fetchall()
+    total_all = conn.execute("SELECT COUNT(*) n FROM feedback").fetchone()["n"]
+    highlights = conn.execute(
+        "SELECT f.action, ps.project_name FROM feedback f "
+        "LEFT JOIN projects_seen ps ON ps.project_id = f.project_id "
+        "WHERE f.created_at >= ? AND f.action IN ('never_seen','action_taken') "
+        "ORDER BY f.created_at DESC LIMIT 5",
+        (cutoff,),
+    ).fetchall()
+    conn.close()
+
+    c = {r["action"]: r["n"] for r in rows}
+    useful, notrel = c.get("useful", 0), c.get("not_relevant", 0)
+    never, action = c.get("never_seen", 0), c.get("action_taken", 0)
+    week = useful + notrel + never + action
+
+    sym = "PASS " if week > 0 else "---- "
+    lines = [
+        f"Feedback (7d): {sym}",
+        f"  \U0001f44d{useful}  \U0001f44e{notrel}  \U0001f195{never}(never_seen)  "
+        f"\U0001f4de{action}(action)  total_all={total_all}",
+    ]
+    if never or action:
+        lines.append("  ⭐ North-Star signals:")
+        for h in highlights:
+            nm = (h["project_name"] or "?")[:32]
+            lines.append(f"    [{h['action']}] {nm}")
+    elif week == 0:
+        lines.append("  (no feedback this week)")
+    return "\n".join(lines)
+
+
 # ── Tasks ─────────────────────────────────────────────────────────────────────
 
 def tasks_section() -> str:
@@ -300,6 +353,7 @@ def main():
     disc  = discovery_section()
     enr   = enrichment_section()
     dlv   = delivery_section()
+    fb    = feedback_section()
     task  = tasks_section()
     sys_  = system_section()
 
@@ -314,6 +368,8 @@ def main():
         enr,
         "",
         dlv,
+        "",
+        fb,
         "",
         task,
         "",

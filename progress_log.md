@@ -3105,3 +3105,30 @@ DO NOT: rewrite parser / invent extraction / couple pipeline to browser UI
 
 ### WAF incident
 brute-sweep greenBook → eGP WAF block → back off. greenBook capture + discovery รอ WAF เคลียร์
+
+## งานที่ N+37: Qualification Worker Pass 3 (step 4) — DEPLOYED + SAFE (2026-05-30)
+
+### สถานะ: ✅ build order 1-5 ครบ — pipeline ครบวงจร, beta เงียบปลอดภัย (fail-closed)
+
+### ทำ (Sebastian_Enrichment_Worker.py + deadline_service.py deployed)
+เพิ่ม `qualify_province_api()` (Pass 3) ใน enrichment worker — single-plane (ไม่สร้าง parallel path):
+```
+candidate = province_api projects_seen post-epoch + subscribed province + ยังไม่ qualify
+  → DeadlineService.resolve() [NullProvider = fail-closed ตอนนี้]
+  → enqueue เฉพาะ deadline resolved + ยังเปิดยื่นซอง (>= today)
+  → audit row enrichment_status='qualified' (RSS Pass1/Pass2 ไม่แตะ — กัน blast 730)
+```
+วางก่อน RSS batch + independent (ไม่ skip แม้ RSS queue ว่าง)
+
+### Verify (production)
+- direct test: 0 candidates, notification_queue 7→7, project_locations 0→0 = SAFE ✅
+- full service run: exit 0, "Province qual: 0 post-epoch candidates", RSS flow ไม่กระทบ ✅
+- epoch suppression: 730 backlog → 0 candidates ✓
+
+### Decision: deadline gate ครอบ province_api ก่อน, RSS ทีหลัง
+RSS path เดิม enqueue โดยไม่มี deadline gate + ทำงานอยู่ → ตามหลัก "อย่า rewrite stable path"
+→ province_api รับ gate ก่อน (path ใหม่), RSS migrate เข้า gate = future task
+
+### ค้าง (B — รอ WAF เคลียร์)
+- greenBook RE → templateId → PROVEN PDF path → GreenBookDeadlineProvider (แทน NullProvider)
+- เมื่อ provider จริงมา: BMS_DEADLINE_PROVIDER=greenbook → pipeline ส่งจริง (ไม่แตะ worker)

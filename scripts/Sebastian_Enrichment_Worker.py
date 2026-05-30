@@ -35,6 +35,7 @@ BATCH_SIZE        = 20
 SLEEP_BETWEEN_SEC = 1.5
 RETRY_DELAY_MIN   = 30
 MAX_ATTEMPTS      = 5
+PROVINCE_QUAL_BATCH = 20   # Pass 3 (province_api qualification) batch
 API_STATE_PATH    = Path(__file__).parent.parent / "data" / "api_ingestion_state.json"
 LOG_DIR           = Path(__file__).parent.parent / "logs" / "enrichment_worker"
 TZ_TH             = timezone(timedelta(hours=7))
@@ -114,6 +115,93 @@ def _save_retry(project_id: str, current_attempts: int) -> bool:
     return False
 
 
+# ── Pass 3: province_api qualification (deadline gate, fail-closed) ─────────────
+
+def _province_epoch():
+    """epoch_ts ของ province_api (suppress backlog ก่อน epoch นี้)"""
+    with get_connection() as conn:
+        r = conn.execute(
+            "SELECT epoch_ts FROM source_epochs WHERE source='province_api'").fetchone()
+    return r[0] if r else None
+
+
+def qualify_province_api(store, log) -> None:
+    """
+    province_api → notification: Epoch Gate (primary) → Deadline Gate (secondary) → fail-closed
+    (ChatGPT+Claude converged 2026-05-30 — ดู memory/project_delivery_wiring_decision.md)
+
+    - candidate = post-epoch + subscribed province + ยังไม่ qualify
+    - deadline = DeadlineService (NullProvider ตอนนี้ → fail-closed = ไม่ส่งจนกว่า resolver จริงมา)
+    - enqueue เฉพาะ deadline resolved + ยังเปิดยื่นซอง (deadline >= today)
+    - province_api ใช้ enrichment_status='qualified' → RSS Pass1/Pass2 ไม่แตะ (กัน blast)
+    """
+    epoch = _province_epoch()
+    if not epoch:
+        log("Province qual: ไม่มี epoch — skip")
+        return
+    try:
+        from deadline_service import DeadlineService, make_deadline_provider
+    except Exception as e:
+        log(f"Province qual: import deadline_service ล้มเหลว ({e}) — skip")
+        return
+    dsvc = DeadlineService(make_deadline_provider())
+    now = _now()
+    with get_connection() as conn:
+        cands = conn.execute("""
+            SELECT ps.project_id, ps.province, ps.announce_type, ps.budget,
+                   ps.project_name, ps.dept_name
+            FROM projects_seen ps
+            WHERE ps.source = 'province_api'
+              AND ps.first_seen_at >= ?
+              AND ps.province IN ('นครพนม', 'บึงกาฬ')
+              AND ps.project_id NOT IN (
+                  SELECT project_id FROM project_locations WHERE source = 'province_api')
+            ORDER BY ps.first_seen_at ASC
+            LIMIT ?
+        """, (epoch, PROVINCE_QUAL_BATCH)).fetchall()
+    cands = [dict(r) for r in cands]
+    if not cands:
+        log("Province qual: 0 post-epoch candidates — OK (backlog suppressed)")
+        return
+    log(f"Province qual: {len(cands)} candidates (post-epoch)")
+
+    stats = {"enqueued": 0, "expired": 0, "failed": 0}
+    for c in cands:
+        pid = c["project_id"]
+        res = dsvc.resolve(pid)
+        if not res.success:
+            status = f"failed_{res.outcome.value}"; stats["failed"] += 1
+        elif not res.is_open():
+            status = "suppressed_expired"; stats["expired"] += 1
+        else:
+            status = "enqueued"
+        # audit row — enrichment_status='qualified' กัน RSS Pass1/Pass2 แตะ
+        with get_connection() as conn:
+            conn.execute("""
+                INSERT OR IGNORE INTO project_locations
+                  (project_id, province_name, location_confidence, enrichment_status,
+                   created_at, source, need_location, qualification_status)
+                VALUES (?,?,?,?,?,?,?,?)
+            """, (pid, c["province"], "hard", "qualified", now,
+                  "province_api", 0, status))
+        if status == "enqueued":
+            n = store.enqueue_notifications({
+                "project_id":            pid,
+                "province":              c["province"],
+                "announce_type":         c.get("announce_type") or "D0",
+                "budget":                int(c.get("budget") or 0),
+                "project_name":          c.get("project_name") or "",
+                "dept_name":             c.get("dept_name") or "",
+                "extraction_confidence": "high",
+                "is_backfill":           False,
+                "source_stage":          "province_qualified",
+            }, min_confidence="high")
+            if n > 0:
+                log(f"  → ENQUEUED {pid} province={c['province']} deadline={res.deadline}")
+    log(f"Province qual done — enqueued={stats['enqueued']} "
+        f"expired={stats['expired']} failed_closed={stats['failed']}")
+
+
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
@@ -137,6 +225,13 @@ def main():
     init_schema()
     store = SubscriptionStore()
     now   = _now()
+
+    # Pass 3: province_api qualification (epoch + deadline gate, fail-closed)
+    # รันก่อน RSS batch + independent (ไม่ skip แม้ RSS queue ว่าง)
+    try:
+        qualify_province_api(store, log)
+    except Exception as e:
+        log(f"Province qual ERROR: {type(e).__name__}: {e}")
 
     # Take batch of pending items
     with get_connection() as conn:

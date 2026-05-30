@@ -2,6 +2,26 @@
 
 ---
 
+## 📍 CHECKPOINT — 2026-05-31 ~04:10 (go-live + reliability sprint เสร็จ)
+
+**สรุป:** คืนนี้ทำ 15 commits — go-live(16/16 ถึง family) + reliability hardening ครบ. ระบบ **live + automation เต็ม**
+
+**สถานะระบบ:** VPS 8 services active · mode=live(doczip) · customers 5(4จริง) · projects_seen 1,368 · delivery sent 21 · บึงกาฬ qual: enqueued4+backlog319+expired24 · feedback 0 · token valid · heartbeat ok
+
+**Pipeline ครบวงจร + hardened:**
+- Discovery: province_api **incremental** (~95% req ลด, margin 2 หน้า) + daily full-sweep reconcile + dead-man heartbeat
+- Qualification: epoch + deadline gate (doczip 95%) + graceful rate-limit (abort ไม่ balloon→silent)
+- Delivery: live LINE + dead-man switch (token/discovery monitor ทุก 15 นาที)
+- Feedback: LINE keyword (👍/👎/ใหม่/โทรแล้ว) → digest summary (North-Star measurement)
+
+**🔴 Pending ด่วน:** `git push` 30 commits ค้าง (รอ confirm) · digest tz 15:00→08:00 ไทย
+
+**Defer:** P4/P5 token TTL (incremental ทำให้แทบไม่จำเป็น) · retire RSS
+
+รายละเอียดดูงานที่ N+40..N+46 ด้านล่าง
+
+---
+
 ## งานที่ N+46: P3 Hardening — ordering ไม่เชื่อ assumption ครั้งเดียว (2026-05-31 ~04:00)
 
 ### สถานะ: ✅ เสร็จ — deployed + live verified

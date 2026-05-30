@@ -48,7 +48,9 @@ def _now() -> float:
 
 def parse_token_expiry(token_b64: str) -> Optional[float]:
     """
-    decode EGP-ANNOUNCEMENT-KEY:TS_ms:HMAC → expiry epoch seconds (TS/1000 + TTL)
+    decode EGP-ANNOUNCEMENT-KEY:TS_ms:HMAC → expiry epoch seconds
+    *** TS_ms = เวลา"หมดอายุ" ของ token (issue + 30 นาที) ไม่ใช่เวลาออก ***
+    (verified 2026-05-30: live token มี TS อยู่อนาคต ~29.5 นาที = TTL พอดี)
     คืน None ถ้า parse ไม่ได้
     """
     if not token_b64:
@@ -66,7 +68,7 @@ def parse_token_expiry(token_b64: str) -> Optional[float]:
         ts_ms = int(parts[1])
     except ValueError:
         return None
-    return ts_ms / 1000.0 + TOKEN_TTL_SEC
+    return ts_ms / 1000.0   # TS = expiry epoch (ไม่บวก TTL ซ้ำ)
 
 
 # ── State machine ──────────────────────────────────────────────────────────────
@@ -165,15 +167,18 @@ class Chrome9222Provider(ITokenProvider):
         import websocket  # websocket-client
 
         # เปิด tab ใหม่ที่หน้า announcement
-        r = requests.put(f"{self.debug_url}/json/new?{self.page_url}", timeout=10) \
-            if False else requests.get(f"{self.debug_url}/json/new?{self.page_url}", timeout=10)
+        # Chrome 111+ บังคับ PUT สำหรับ /json/new (GET → "unsafe HTTP verb")
+        r = requests.put(f"{self.debug_url}/json/new?{self.page_url}", timeout=10)
         tab = r.json()
         ws_url = tab["webSocketDebuggerUrl"]
         tab_id = tab["id"]
         token_box = {"token": None}
 
         try:
-            ws = websocket.create_connection(ws_url, timeout=self.timeout)
+            # suppress_origin: ไม่ส่ง Origin header — Chrome 111+ บล็อก ws ที่มี Origin
+            # นอก allowlist (ทางเลือกแทน --remote-allow-origins ตอน launch)
+            ws = websocket.create_connection(ws_url, timeout=self.timeout,
+                                             suppress_origin=True)
             mid = {"n": 0}
 
             def send(method, params=None):

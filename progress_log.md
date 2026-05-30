@@ -2903,3 +2903,45 @@ GET .../announcement/sumProjectMoneyAndCount?budgetYear=2569&moiId=480000&announ
 - [ ] Fallback: browser token-farming (Playwright VPS หรือ Chrome debug port 9222 บนเครื่องคุณกัญจน์)
 - [ ] หลัง token แก้ได้ → build Sebastian_Province_Discovery.py แทน RSS discovery
 - [ ] map 843 target orgs → getProcurementDetail deptId+deptSubId → infoDeptSub province confirm
+
+---
+
+## งานที่ N+31: Chrome9222 Token Provider — live test ผ่าน + แก้ 3 bugs (2026-05-30)
+
+### สถานะ: ✅ เสร็จ — end-to-end harvest→search พิสูจน์แล้ว
+
+### สิ่งที่ทำ
+เปิด Chrome `--remote-debugging-port=9222 --user-data-dir=C:/chrome_debug_profile`
+→ test `Chrome9222Provider` harvest token จริง → ยิง search API พิสูจน์ token ใช้ได้
+
+### Bugs ที่เจอ + แก้ (token_service.py)
+1. **`/json/new` ใช้ GET ไม่ได้** — Chrome 111+ บังคับ PUT (`"unsafe HTTP verb GET"`)
+   → ลบ `if False else GET` เหลือ `requests.put`
+2. **WebSocket handshake 403** — Chrome 111+ บล็อก ws ที่ส่ง Origin นอก allowlist
+   → `websocket.create_connection(..., suppress_origin=True)` (ไม่ต้อง relaunch ใส่ `--remote-allow-origins`)
+3. **`parse_token_expiry` +TTL ซ้ำ** — TS_ms ใน token = เวลา**หมดอายุ** (issue+30นาที) ไม่ใช่เวลาออก
+   → ลบ `+ TOKEN_TTL_SEC` (verified: live token TS อยู่อนาคต 1,774s ≈ TTL พอดี)
+   → กันใช้ token หมดอายุใน 30 นาทีสุดท้าย (ผิดกฎ deadline)
+
+### ผลพิสูจน์ (single clean request)
+```
+sumProjectMoneyAndCount?moiId=480000&announceType=2
+→ {"response":{"responseCode":"0"},"data":{"totalPages":85,"recordsTotal":849}}
+```
+**นครพนม D0 = 849/85หน้า ตรงกับ memory** → Chrome9222 token ใช้ search ได้ 100%
+harvest auto (Turnstile auto-pass residential), time_to_token ~9s, ไม่ต้องคลิกค้นหาเอง
+
+### Bug ที่เจอเพิ่ม (Sebastian_Province_Discovery.py)
+- discovery แปล rate-limit (plain text "Rate limit exceeded") เป็น "token reject" → วินิจฉัยผิด
+  → เพิ่ม `class RateLimited`, _get raise แยก, count_d0 sentinel -2, fetch_all_d0 backoff+retry
+
+### บทเรียน (lesson learned)
+- ❌ รัน 2 discovery เต็ม (2 จังหวัด × ~127หน้า) พร้อมกัน → IP throttle หนัก (>200s ไม่ใช่ 120s)
+- ❌ loop ยิงซ้ำตอนโดน ban = **ยืด ban** → ต้องหยุดยิงสนิท รอเงียบ แล้วยิงครั้งเดียว
+- ✅ test provider = ต้องพิสูจน์ token "ใช้ได้จริงกับ API" ไม่ใช่แค่ "harvest ได้รูปแบบถูก"
+
+### Followup
+- [ ] รัน discovery จริง (จังหวัดเดียวก่อน, ระวัง rate limit) → ingest projects_seen
+- [ ] wire เข้า cron/systemd (token harvest ทุก ~25 นาที)
+- [ ] digest sender (21 เก่า ย่อ+กรอง deadline / ใหม่ เต็ม) — รอ confirm format
+- [ ] Playwright canary บน VPS

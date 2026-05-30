@@ -84,23 +84,36 @@ def _utc_now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+class RateLimited(Exception):
+    """eGP ตอบ plain text 'Rate limit exceeded' — แยกจาก token reject"""
+
+
 def _get(token: str, params: dict, path: str = "") -> dict | None:
     url = API + path
     hdrs = {**HEADERS, "X-Announcement-Token": token}
     try:
         r = requests.get(url, params=params, headers=hdrs, timeout=TIMEOUT)
+        # rate limit = plain text ไม่ใช่ JSON → อย่าตีความเป็น token reject
+        if "rate limit" in (r.text or "").lower():
+            raise RateLimited()
         if not r.ok:
             return None
         return r.json()
+    except RateLimited:
+        raise
     except Exception:
         return None
 
 
 def count_d0(token: str, moi_id: str, budget_year: str) -> tuple[int, int]:
-    """คืน (recordsTotal, totalPages) จาก sumProjectMoneyAndCount"""
-    body = _get(token, {
-        "budgetYear": budget_year, "moiId": moi_id, "announceType": ANNOUNCE_TYPE_D0,
-    }, path="/sumProjectMoneyAndCount")
+    """คืน (recordsTotal, totalPages) จาก sumProjectMoneyAndCount
+    sentinel: (-1,-1)=token reject/error, (-2,-2)=rate limited"""
+    try:
+        body = _get(token, {
+            "budgetYear": budget_year, "moiId": moi_id, "announceType": ANNOUNCE_TYPE_D0,
+        }, path="/sumProjectMoneyAndCount")
+    except RateLimited:
+        return -2, -2
     if not body:
         return -1, -1
     d = body.get("data") or {}
@@ -110,10 +123,13 @@ def count_d0(token: str, moi_id: str, budget_year: str) -> tuple[int, int]:
 
 
 def fetch_page(token: str, moi_id: str, budget_year: str, page: int) -> list[dict]:
-    body = _get(token, {
-        "budgetYear": budget_year, "moiId": moi_id,
-        "announceType": ANNOUNCE_TYPE_D0, "page": str(page),
-    })
+    try:
+        body = _get(token, {
+            "budgetYear": budget_year, "moiId": moi_id,
+            "announceType": ANNOUNCE_TYPE_D0, "page": str(page),
+        })
+    except RateLimited:
+        return []   # ให้ empty→cooldown→retry ใน fetch_all_d0 จัดการ
     if not body:
         return []
     data = body.get("data") or {}
@@ -124,6 +140,13 @@ def fetch_all_d0(token: str, moi_id: str, budget_year: str) -> list[dict]:
     """ดึงทุกหน้าของจังหวัด — paginate ตาม totalPages"""
     province = PROVINCE_MOI.get(moi_id, moi_id)
     total, pages = count_d0(token, moi_id, budget_year)
+    if total == -2:
+        print(f"  ⚠️ {province}: rate limited — พัก {COOLDOWN_SEC}s แล้ว retry count")
+        time.sleep(COOLDOWN_SEC)
+        total, pages = count_d0(token, moi_id, budget_year)
+    if total == -2:
+        print(f"  ❌ {province}: ยัง rate limited — ข้าม (รัน provinces น้อยลง/เพิ่ม cooldown)")
+        return []
     if total < 0:
         print(f"  ❌ {province}: token reject (validateCfTurnTile) — token หมดอายุ/ผิด")
         return []

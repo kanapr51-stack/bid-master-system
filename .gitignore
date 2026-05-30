@@ -49,6 +49,9 @@ chrome_profile/
 
 # ── Runtime data + logs + downloads ──
 data/bms_telemetry.db
+data/token_state.json
+data/token_harvest_log.ndjson
+data/manual_token.txt
 logs/
 downloads/
 data/archive/

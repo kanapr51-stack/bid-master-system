@@ -2,6 +2,33 @@
 
 ---
 
+## งานที่ N+40: 🎉 P0 GO-LIVE — Notification จริงครั้งแรกถึงครอบครัว (2026-05-30 ~23:05)
+
+### สถานะ: ✅ เสร็จ — MILESTONE
+
+### Root cause / สิ่งที่ทำ
+หลัง P2 + Q1 เสร็จ → report ChatGPT → converged Q2 (P0 ก่อน P1 ทันที, "analysis paralysis = ความเสี่ยงใหญ่กว่า feedback missing สำหรับ 5 family users"). คุณกัญจน์อนุมัติ ส่ง province-wide พร้อมเงื่อนไข "Controlled ≠ Blind → ผ่าน checklist ก่อน"
+
+### Checklist 5/5 ผ่าน (4 งานบึงกาฬเปิดจริง)
+① จังหวัด ✓ (hard/moiId=380000) · ② location ✓ (แขวงทางหลวง/รพ.บึงกาฬ/พาณิชย์จังหวัด/อบต.นากั้ง) · ③ deadline>now ✓ (4-10 มิ.ย.) · ④ link/PDF ✓ (templateId resolve) · ⑤ format ✓ (mobile-first)
+
+### กลไก + ผล
+1. backup `.env` → flip `BMS_PROVINCE_NOTIFY_MODE=preview→live`
+2. reset 4 preview_held → pending → worker (mode=live) → **enqueue 4** (× 5 subs = 20)
+3. LINE sender (BATCH_SIZE=1, drive ทีละตัว) → **delivered 16/16 ถึง 4 user จริง** (กัญจน์/Hong/ณฐมน/Mr.suvit คนละ 4 งาน), 4 fail = test account (fake LINE ID ตามคาด)
+- subscription = province-level นครพนม+บึงกาฬ ทั้ง 5 คน (ตรง Q3)
+
+### 🎯 North-Star prerequisite
+"Has a real user received a real notification yet?" → **YES (ครั้งแรกของ BMS)**
+
+### Followup / สถานะใหม่
+- **mode=live (preview gate ปิด) = automation เต็ม** — งานใหม่ที่ qualify (นครพนม+บึงกาฬ) จะส่ง LINE อัตโนมัติ ไม่ผ่าน preview แล้ว (ตาม procedure "ผ่าน 3 งาน → เอา gate ออก")
+- **P1 feedback loop** = priority ถัดไป (👍/👎/ใหม่/โทรแล้ว) — วัด value (Useful Rate / Discovery / Action)
+- เฝ้าดู reaction ครอบครัว 30 วัน → North-Star "ไม่เคยเห็น + นำไปทำต่อ"
+- ถ้าต้องการกลับ preview: flip env กลับ + restore `.env.bak.*`
+
+---
+
 ## งานที่ N+39: P2 — บึงกาฬ Full Ingest + Recency-Gated Qualification (2026-05-30 ~21:45)
 
 ### สถานะ: ✅ เสร็จ

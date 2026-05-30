@@ -84,6 +84,19 @@ def _utc_now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _write_heartbeat(status: str, **counts) -> None:
+    """dead-man switch heartbeat — เขียนทุกครั้งที่ discovery รัน (P1 observability).
+    status: 'ok' (ได้ข้อมูล) | 'no_data' (token reject/empty — ต้องสงสัย)"""
+    try:
+        hb = {"ts": _utc_now(), "status": status, **counts}
+        path = os.path.join(os.environ.get("BMS_DATA_DIR", "/opt/bms/data"),
+                            "last_discovery_run.json")
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(hb, f, ensure_ascii=False)
+    except Exception:
+        pass
+
+
 class RateLimited(Exception):
     """eGP ตอบ plain text 'Rate limit exceeded' — แยกจาก token reject"""
 
@@ -259,6 +272,7 @@ def main():
 
     if not all_recs:
         print("\n⚠️ ไม่ได้ข้อมูล — ตรวจ token (อาจหมดอายุ 30 นาที)")
+        _write_heartbeat("no_data", total=0)
         sys.exit(2)
 
     active = [r for r in all_recs if r["project_status"] != "R"]
@@ -270,11 +284,13 @@ def main():
         print(f"   - {r['project_id']} | {r['dept_name'][:28]:28} | ฿{r['budget']:>12,} | {r['project_name'][:45]}")
 
     chosen = target if args.filter_amphoe else active
+    ingested = 0
     if args.ingest and not args.dry_run:
-        new, skipped = ingest(chosen)
-        print(f"\n💾 ingest: +{new} ใหม่, {skipped} มีอยู่แล้ว (source=province_api)")
+        ingested, skipped = ingest(chosen)
+        print(f"\n💾 ingest: +{ingested} ใหม่, {skipped} มีอยู่แล้ว (source=province_api)")
     else:
         print(f"\n(dry-run — จะ ingest {len(chosen)} รายการ ถ้าใส่ --ingest)")
+    _write_heartbeat("ok", total=len(all_recs), active=len(active), ingested=ingested)
 
 
 if __name__ == "__main__":

@@ -2,6 +2,42 @@
 
 ---
 
+## งานที่ N+41: P1 — Dead-Man Switch (Protect Live System) (2026-05-31 ~00:10)
+
+### สถานะ: ✅ เสร็จ
+
+### Root cause / สิ่งที่ทำ
+ระบบ live แล้ว → failure mode อันตรายสุด = **silent failure** (เจอจริง: harvest report success แต่ VPS token stale). ChatGPT+Claude converged: dead-man switch (P1) ก่อน root cause (P3) — เปลี่ยน silent→observable ก่อน
+
+### Implementation
+- `scripts/Sebastian_Province_Discovery.py`: เพิ่ม `_write_heartbeat()` — เขียน `last_discovery_run.json` ทุกรอบ (status=ok/no_data + counts)
+- `scripts/health_deadman.py`: ตรวจทุก 15 นาที (VPS timer `bms-deadman`)
+  - TOKEN_EXPIRED / HARVEST_STALE (>40 นาที ไม่ refresh) = CRITICAL [fast, ~35 นาที detect]
+  - DISCOVERY_STALE (>14 ชม. เผื่อ overnight gap 12 ชม.) / DISCOVERY_NODATA = WARN
+  - cooldown 60 นาที/issue กัน spam, **exit 0 เสมอ** (ไม่ทำให้ systemd fail)
+- `deploy/systemd/bms-deadman.{service,timer}` + README — version-controlled (units อื่นยังอยู่บน VPS เท่านั้น)
+
+### ทดสอบ (verified)
+- detection logic ครบ 4 เคส (fixture stale token) ✅
+- Discord alert ยิงจริง + cooldown กัน spam ✅
+- healthy path: "✅ dead-man: healthy" exit 0 ✅
+- heartbeat code: seed สำเร็จ `{status:ok, total:420}` ✅
+
+### 🔴 Finding ใหม่ระหว่างทำ: discovery service timeout
+- `bms-province-discovery.service` รัน **ทั้ง 2 จังหวัด timeout ที่ 15 นาที** (Result=timeout, killed) → heartbeat ไม่ถูกเขียน
+- น่าจะ throttle-induced (ยิง API หนักทั้ง session: harvest/re-resolve/reclassify หลายรอบ) → empty-page retry 30s ballooning
+- **สมมติฐาน: อาจเป็นสาเหตุบึงกาฬเคย=0** (รอบ schedule ทำนครพนมก่อน → timeout ก่อนถึงบึงกาฬ)
+- **ยังไม่แก้ config** (ไม่แน่ใจว่า standing problem หรือ transient) → followup: monitor รอบ schedule 00:00 UTC; ถ้า recur → bump TimeoutStartSec + แก้ page-retry ballooning
+- dead-man จับ timeout ได้ทางอ้อม (discovery_stale 14h) แต่ช้า — ควรพิจารณา check systemd Result โดยตรงภายหลัง
+
+### Followup (priority หลัง P1 — ChatGPT converged)
+- P2: feedback loop (👍/👎/ใหม่/โทรแล้ว) — fresh signal window จาก 16 ข้อความ
+- P3: token harvest root cause (success-but-stale) + discovery timeout
+- P4: เพิ่มอำเภอ+ตำบล (getProcurementDetail moiName+districtMoiId)
+- P5: retire RSS (disable scheduler+alert, เก็บ code)
+
+---
+
 ## งานที่ N+40: 🎉 P0 GO-LIVE — Notification จริงครั้งแรกถึงครอบครัว (2026-05-30 ~23:05)
 
 ### สถานะ: ✅ เสร็จ — MILESTONE

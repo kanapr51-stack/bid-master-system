@@ -118,8 +118,66 @@ def _help_text() -> str:
         "สถานะ  -- ดูจังหวัดที่ตั้งค่าไว้",
         "ตั้งค่า -- ตั้งจังหวัดที่ต้องการติดตาม",
         "",
+        "เมื่อได้รับแจ้งเตือน ตอบกลับบอกเราได้เลยครับ:",
+        "\U0001f44d สนใจ / \U0001f44e ไม่เกี่ยว / ใหม่ (ไม่เคยเห็น) / โทรแล้ว",
+        "(จะนับกับงานที่เพิ่งแจ้งเตือนล่าสุด)",
+        "",
         "การแจ้งเตือนจะส่งเมื่อมีโครงการใหม่ในพื้นที่ของคุณครับ",
     ])
+
+
+# -- Feedback capture (P2, 2026-05-31) ---------------------------------------
+# keyword reply → ผูกกับงานล่าสุดที่ส่งให้ user (locked spec: ไม่ใช่ NLP/portal)
+FB_KEYWORDS = [
+    ("\U0001f44d", "useful"), ("สนใจ", "useful"), ("useful", "useful"),
+    ("\U0001f44e", "not_relevant"), ("ไม่เกี่ยว", "not_relevant"), ("ไม่สนใจ", "not_relevant"),
+    ("\U0001f195", "never_seen"), ("ไม่เคยเห็น", "never_seen"), ("ใหม่", "never_seen"),
+    ("\U0001f4de", "action_taken"), ("โทรแล้ว", "action_taken"),
+    ("ติดต่อแล้ว", "action_taken"), ("จะติดต่อ", "action_taken"), ("ติดต่อ", "action_taken"),
+]
+FB_LABEL = {
+    "useful": "\U0001f44d สนใจ", "not_relevant": "\U0001f44e ไม่เกี่ยว",
+    "never_seen": "\U0001f195 ไม่เคยเห็น", "action_taken": "\U0001f4de จะติดต่อ",
+}
+
+
+def _match_feedback(text_in: str):
+    """คืน action ถ้าข้อความเป็น feedback keyword (ข้อความสั้น กัน false match). ไม่งั้น None"""
+    t = (text_in or "").strip()
+    if not t or len(t) > 25:   # feedback reply สั้น
+        return None
+    low = t.lower()
+    for kw, action in FB_KEYWORDS:
+        if kw in t or kw in low:
+            return action
+    return None
+
+
+def _record_feedback(user_id: str, action: str, raw_text: str):
+    """บันทึก feedback กับงานล่าสุดที่ส่งให้ user. คืน (project_name, project_id) | None"""
+    with get_conn() as conn:
+        cust = conn.execute(
+            "SELECT id FROM customers WHERE line_user_id=?", (user_id,)
+        ).fetchone()
+        if not cust:
+            return None
+        cid = cust["id"]
+        last = conn.execute(
+            "SELECT project_id FROM delivery_log WHERE customer_id=? AND status='sent' "
+            "ORDER BY attempted_at DESC LIMIT 1", (cid,)
+        ).fetchone()
+        pid = last["project_id"] if last else None
+        if not pid:
+            return None
+        name_row = conn.execute(
+            "SELECT project_name FROM projects_seen WHERE project_id=?", (pid,)
+        ).fetchone()
+        pname = (name_row["project_name"] if name_row else "") or pid
+        conn.execute(
+            "INSERT INTO feedback (customer_id, project_id, action, raw_text, created_at) "
+            "VALUES (?,?,?,?,?)", (cid, pid, action, (raw_text or "")[:200], _now())
+        )
+    return pname, pid
 
 
 def _save_provinces(user_id: str, provinces: list[str]) -> None:
@@ -300,6 +358,26 @@ async def line_webhook(
                     )
                 else:
                     await reply_message(reply_token, "ไม่พบชื่อจังหวัด กรุณาลองใหม่ครับ")
+                continue
+
+            # --- feedback (P2): 👍/👎/ใหม่/โทรแล้ว → งานล่าสุดที่ส่งให้ ---
+            fb_action = _match_feedback(text_in)
+            if fb_action:
+                res = _record_feedback(user_id, fb_action, text_in)
+                if res:
+                    short = res[0][:40]
+                    if fb_action == "never_seen":
+                        msg = ("\U0001f195 รับทราบครับ! บันทึกว่า \"" + short +
+                               "\" เป็นงานที่ไม่เคยเห็นมาก่อน \U0001f64f ข้อมูลนี้มีค่ามากสำหรับเรา")
+                    else:
+                        msg = ("✅ บันทึก " + FB_LABEL[fb_action] + " สำหรับ \"" + short +
+                               "\" แล้วครับ ขอบคุณที่ช่วยให้ Sebastian ฉลาดขึ้น \U0001f64f")
+                    await reply_message(reply_token, msg)
+                else:
+                    await reply_message(
+                        reply_token,
+                        "ยังไม่มีงานที่ส่งให้ล่าสุดครับ — feedback จะนับกับงานที่เพิ่งแจ้งเตือน",
+                    )
                 continue
 
             # --- normal commands ---

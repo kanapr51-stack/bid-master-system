@@ -2,6 +2,33 @@
 
 ---
 
+## งานที่ N+43: P2 — Feedback Capture Loop (LINE keyword → งานล่าสุด) (2026-05-31 ~02:40)
+
+### สถานะ: ✅ เสร็จ — deployed VPS
+
+### สิ่งที่ทำ (locked spec: keyword reply, ไม่ใช่ NLP/portal)
+วัด value จาก go-live ชุดแรก (16 ข้อความ, fresh signal window). user ตอบกลับ LINE → ผูกกับงานล่าสุดที่ส่งให้
+- `scripts/migrate_feedback_schema.py`: table `feedback` (customer_id, project_id, action, raw_text, created_at) idempotent
+- `bms_api.py` (เสียบใน webhook `/webhook/line` ที่มีอยู่):
+  - `_match_feedback()` — keyword: 👍/สนใจ→useful, 👎/ไม่เกี่ยว→not_relevant, 🆕/ใหม่/ไม่เคยเห็น→never_seen, 📞/โทรแล้ว/ติดต่อ→action_taken (กัน false match: ข้อความ >25 ตัวไม่นับ)
+  - `_record_feedback()` — หา latest delivery_log(status=sent) ของ user → ผูก project_id → insert + คืนชื่องาน
+  - reply ยืนยันบอกชื่องาน (never_seen = ข้อความพิเศษ = North-Star signal)
+  - `_help_text` เพิ่ม section feedback
+
+### Test (verified)
+- local: _match_feedback 12/12 (emoji/ไทย/never_seen variants/commands ไม่ false match/ข้อความยาวไม่ match) ✅
+- VPS syntax + bms-api restart active (import ผ่าน) ✅
+- **end-to-end signed webhook POST "👍"** → HTTP 200 → feedback row action=useful project_id=69059255961 (ผูกงานล่าสุดถูก) → cleanup ✅
+
+### ข้อจำกัด (acceptable beta)
+- feedback ผูก **งานล่าสุด** ที่ส่งให้ (ถ้า user ได้ 4 งานแล้วตอบ 👍 = นับงานที่ 4) — reply บอกชื่องานให้เห็นว่าผูกงานไหน. precision per-job (quick-reply buttons) = อนาคตถ้าจำเป็น
+- North-Star metric อยู่ใน feedback.action='never_seen'
+
+### ลำดับถัดไป (locked)
+P3 incremental discovery → P4 token TTL tripwire → P5 mid-sweep refresh
+
+---
+
 ## งานที่ N+42: P1(rel) — Graceful Rate-Limit Handling (fetch_page abort, no balloon) (2026-05-31 ~02:30)
 
 ### สถานะ: ✅ เสร็จ

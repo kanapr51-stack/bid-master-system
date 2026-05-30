@@ -17,9 +17,10 @@ Design (ChatGPT-confirmed 2026-05-29):
 Run: every 2 min via systemd timer (bms-enrichment-worker)
 """
 import json
+import os
 import sys
 import time
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -36,6 +37,8 @@ SLEEP_BETWEEN_SEC = 1.5
 RETRY_DELAY_MIN   = 30
 MAX_ATTEMPTS      = 5
 PROVINCE_QUAL_BATCH = 20   # Pass 3 (province_api qualification) batch
+MAX_QUAL_ATTEMPTS   = 5    # macro-retry transient (provider error) จน MAX แล้ว fail
+CIRCUIT_BREAK       = 5    # provider errors ติดกัน → หยุด batch (กัน WAF/outage)
 API_STATE_PATH    = Path(__file__).parent.parent / "data" / "api_ingestion_state.json"
 LOG_DIR           = Path(__file__).parent.parent / "logs" / "enrichment_worker"
 TZ_TH             = timezone(timedelta(hours=7))
@@ -117,6 +120,15 @@ def _save_retry(project_id: str, current_attempts: int) -> bool:
 
 # ── Pass 3: province_api qualification (deadline gate, fail-closed) ─────────────
 
+def _discord_safe(msg: str) -> None:
+    """ส่ง Discord แบบ best-effort (preview/circuit-breaker alert) — ไม่ throw"""
+    try:
+        import Sebastian_Discord_Notify as dn
+        dn.load_env(); tok, ch = dn.get_credentials(); dn.send(tok, ch, msg)
+    except Exception:
+        pass
+
+
 def _province_epoch():
     """epoch_ts ของ province_api (suppress backlog ก่อน epoch นี้)"""
     with get_connection() as conn:
@@ -140,66 +152,110 @@ def qualify_province_api(store, log) -> None:
         log("Province qual: ไม่มี epoch — skip")
         return
     try:
-        from deadline_service import DeadlineService, make_deadline_provider
+        from deadline_service import DeadlineService, make_deadline_provider, DeadlineOutcome
     except Exception as e:
         log(f"Province qual: import deadline_service ล้มเหลว ({e}) — skip")
         return
-    dsvc = DeadlineService(make_deadline_provider())
+    mode = os.environ.get("BMS_PROVINCE_NOTIFY_MODE", "preview")   # preview (go-live gate) | live
+    dsvc = DeadlineService(make_deadline_provider())               # doczip ถ้า env BMS_DEADLINE_PROVIDER set
     now = _now()
+
+    # (1) seed: projects_seen ใหม่ (post-epoch, subscribed) → project_locations(qualification_status='pending')
+    #     enrichment_status='failed': constraint อนุญาตแค่ pending/success/failed; เลือก 'failed'
+    #     เพราะ RSS Pass1(='pending')/Pass2(='success') ไม่แตะ (zero RSS-path change) —
+    #     สถานะจริงของ province_api อยู่ใน qualification_status
+    with get_connection() as conn:
+        conn.execute("""
+            INSERT OR IGNORE INTO project_locations
+              (project_id, province_name, location_confidence, enrichment_status,
+               created_at, source, need_location, qualification_status, enrichment_attempts)
+            SELECT ps.project_id, ps.province, 'hard', 'failed', ?, 'province_api', 0, 'pending', 0
+            FROM projects_seen ps
+            WHERE ps.source='province_api' AND ps.first_seen_at >= ?
+              AND ps.province IN ('นครพนม','บึงกาฬ')
+              AND ps.project_id NOT IN (SELECT project_id FROM project_locations WHERE source='province_api')
+        """, (now, epoch))
+
+    # (2) process pending (รวม retry transient — attempts < MAX)
     with get_connection() as conn:
         cands = conn.execute("""
-            SELECT ps.project_id, ps.province, ps.announce_type, ps.budget,
-                   ps.project_name, ps.dept_name
-            FROM projects_seen ps
-            WHERE ps.source = 'province_api'
-              AND ps.first_seen_at >= ?
-              AND ps.province IN ('นครพนม', 'บึงกาฬ')
-              AND ps.project_id NOT IN (
-                  SELECT project_id FROM project_locations WHERE source = 'province_api')
-            ORDER BY ps.first_seen_at ASC
+            SELECT pl.project_id, pl.enrichment_attempts, ps.province, ps.announce_type,
+                   ps.budget, ps.project_name, ps.dept_name
+            FROM project_locations pl
+            LEFT JOIN projects_seen ps ON ps.project_id = pl.project_id
+            WHERE pl.source='province_api' AND pl.qualification_status='pending'
+              AND pl.enrichment_attempts < ?
+            ORDER BY pl.created_at ASC
             LIMIT ?
-        """, (epoch, PROVINCE_QUAL_BATCH)).fetchall()
+        """, (MAX_QUAL_ATTEMPTS, PROVINCE_QUAL_BATCH)).fetchall()
     cands = [dict(r) for r in cands]
     if not cands:
-        log("Province qual: 0 post-epoch candidates — OK (backlog suppressed)")
+        log("Province qual: 0 pending candidates — OK (backlog suppressed)")
         return
-    log(f"Province qual: {len(cands)} candidates (post-epoch)")
+    log(f"Province qual: {len(cands)} pending (mode={mode})")
 
-    stats = {"enqueued": 0, "expired": 0, "failed": 0}
+    TRANSIENT = (DeadlineOutcome.PROVIDER_ERROR, DeadlineOutcome.DOWNLOAD_FAILED)
+    stats = {"enqueued": 0, "preview": 0, "expired": 0, "failed": 0, "retry": 0}
+    consec_err = 0
     for c in cands:
         pid = c["project_id"]
         res = dsvc.resolve(pid)
-        if not res.success:
-            status = f"failed_{res.outcome.value}"; stats["failed"] += 1
-        elif not res.is_open():
-            status = "suppressed_expired"; stats["expired"] += 1
+
+        # circuit breaker (Caveat 3) — provider error ติดกัน = WAF/outage → หยุด ไม่ยิงรัว
+        if res.outcome in TRANSIENT:
+            consec_err += 1
+            if consec_err >= CIRCUIT_BREAK:
+                log(f"⚡ circuit breaker: {consec_err} provider errors ติดกัน — abort batch")
+                _discord_safe(f"⚡ BMS deadline resolver degraded — {consec_err} errors ติดกัน หยุด batch (อาจ WAF/outage/token)")
+                break
         else:
-            status = "enqueued"
-        # audit row — enrichment_status='qualified' กัน RSS Pass1/Pass2 แตะ
+            consec_err = 0
+
+        # transient → macro-retry (คง pending รอบหน้า จน MAX)
+        if res.outcome in TRANSIENT:
+            new_att = c["enrichment_attempts"] + 1
+            st = f"failed_{res.outcome.value}" if new_att >= MAX_QUAL_ATTEMPTS else "pending"
+            stats["failed" if st.startswith("failed") else "retry"] += 1
+            with get_connection() as conn:
+                conn.execute("UPDATE project_locations SET qualification_status=?, enrichment_attempts=? WHERE project_id=?",
+                             (st, new_att, pid))
+            continue
+
+        # terminal outcomes
+        if res.outcome == DeadlineOutcome.RESOLVED and res.is_open():
+            if mode == "live":
+                n = store.enqueue_notifications({
+                    "project_id": pid, "province": c["province"],
+                    "announce_type": c.get("announce_type") or "D0",
+                    "budget": int(c.get("budget") or 0),
+                    "project_name": c.get("project_name") or "",
+                    "dept_name": c.get("dept_name") or "",
+                    "extraction_confidence": "high", "is_backfill": False,
+                    "source_stage": "province_qualified",
+                }, min_confidence="high")
+                status = "enqueued" if n > 0 else "enqueued_dedup"
+                if n > 0:
+                    stats["enqueued"] += 1
+                    log(f"  → ENQUEUED {pid} {c['province']} deadline={res.deadline}")
+            else:  # preview go-live gate — ส่ง Discord แทน LINE, ไม่ enqueue
+                _discord_safe(
+                    f"🔎 [PREVIEW] province_api candidate (ยังไม่ส่ง LINE)\n"
+                    f"{pid} | {c['province']} | ฿{int(c.get('budget') or 0):,}\n"
+                    f"{(c.get('project_name') or '')[:60]}\n"
+                    f"deadline={res.deadline} (เหลือ {(res.deadline - date.today()).days} วัน)")
+                status = "preview_held"; stats["preview"] += 1
+                log(f"  → PREVIEW {pid} deadline={res.deadline} (held, mode=preview)")
+        elif res.outcome == DeadlineOutcome.RESOLVED:
+            status = "suppressed_expired"; stats["expired"] += 1
+        else:  # NO_DOCUMENT / PARSE_FAILED / DEADLINE_NOT_FOUND → terminal fail-closed
+            status = f"failed_{res.outcome.value}"; stats["failed"] += 1
+
         with get_connection() as conn:
-            conn.execute("""
-                INSERT OR IGNORE INTO project_locations
-                  (project_id, province_name, location_confidence, enrichment_status,
-                   created_at, source, need_location, qualification_status)
-                VALUES (?,?,?,?,?,?,?,?)
-            """, (pid, c["province"], "hard", "qualified", now,
-                  "province_api", 0, status))
-        if status == "enqueued":
-            n = store.enqueue_notifications({
-                "project_id":            pid,
-                "province":              c["province"],
-                "announce_type":         c.get("announce_type") or "D0",
-                "budget":                int(c.get("budget") or 0),
-                "project_name":          c.get("project_name") or "",
-                "dept_name":             c.get("dept_name") or "",
-                "extraction_confidence": "high",
-                "is_backfill":           False,
-                "source_stage":          "province_qualified",
-            }, min_confidence="high")
-            if n > 0:
-                log(f"  → ENQUEUED {pid} province={c['province']} deadline={res.deadline}")
-    log(f"Province qual done — enqueued={stats['enqueued']} "
-        f"expired={stats['expired']} failed_closed={stats['failed']}")
+            conn.execute("UPDATE project_locations SET qualification_status=? WHERE project_id=?",
+                         (status, pid))
+
+    log(f"Province qual done — enqueued={stats['enqueued']} preview={stats['preview']} "
+        f"expired={stats['expired']} failed={stats['failed']} retry={stats['retry']}")
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────

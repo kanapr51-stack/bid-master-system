@@ -28,7 +28,36 @@ from deadline_service import IDeadlineProvider, DeadlineResult, DeadlineOutcome
 
 INFO_URL = "https://process5.gprocurement.go.th/egp-approval-service/apv-common/infoProcureDocAnnounZip"
 VIEWPDF_URL = "https://process5.gprocurement.go.th/egp-template-service/dant/view-pdf"
-TIMEOUT = 30
+TIMEOUT = 20
+RETRY_ATTEMPTS = 3      # Layer 1 micro-retry (transient: timeout/conn/5xx)
+RETRY_SLEEP = 2.0
+
+
+def _req_retry(method: str, url: str, **kw):
+    """micro-retry transient (timeout/connection/5xx). rate-limit body → ไม่ retry (raise)"""
+    last = None
+    for a in range(1, RETRY_ATTEMPTS + 1):
+        try:
+            r = requests.request(method, url, **kw)
+            if "rate limit" in (r.text or "").lower():
+                raise _RateLimited()
+            if r.status_code >= 500:
+                last = f"http_{r.status_code}"
+                if a < RETRY_ATTEMPTS:
+                    time.sleep(RETRY_SLEEP * a); continue
+            return r
+        except _RateLimited:
+            raise
+        except (requests.Timeout, requests.ConnectionError) as e:
+            last = type(e).__name__
+            if a < RETRY_ATTEMPTS:
+                time.sleep(RETRY_SLEEP * a); continue
+            raise
+    raise requests.RequestException(last or "retry exhausted")
+
+
+class _RateLimited(Exception):
+    pass
 
 _THAI_MONTH = {
     "มกราคม": 1, "กุมภาพันธ์": 2, "มีนาคม": 3, "เมษายน": 4,
@@ -103,17 +132,15 @@ class DocZipPdfDeadlineProvider(IDeadlineProvider):
             if not token:
                 return done(DeadlineOutcome.PROVIDER_ERROR, err="no AES token")
             # 1) projectId → templateId
-            r = requests.get(INFO_URL, params={"projectId": project_id},
-                             headers=self._hdrs(token), timeout=TIMEOUT)
-            if "rate limit" in (r.text or "").lower():
-                return done(DeadlineOutcome.PROVIDER_ERROR, err="rate_limited")
+            r = _req_retry("GET", INFO_URL, params={"projectId": project_id},
+                           headers=self._hdrs(token), timeout=TIMEOUT)
             data = (r.json().get("data") or {}) if r.ok else {}
             tid = data.get("buildName2")
             if not tid:
                 return done(DeadlineOutcome.NO_DOCUMENT, err="no buildName2 (templateId)")
             # 2) templateId → PDF (base64 ใน JSON.data)
-            rp = requests.post(VIEWPDF_URL, params={"templateId": tid}, json={},
-                               headers=self._hdrs(token), timeout=TIMEOUT)
+            rp = _req_retry("POST", VIEWPDF_URL, params={"templateId": tid}, json={},
+                            headers=self._hdrs(token), timeout=TIMEOUT)
             if not rp.ok:
                 return done(DeadlineOutcome.DOWNLOAD_FAILED, tid=tid, err=f"http_{rp.status_code}")
             b64 = (rp.json().get("data") or "")
@@ -130,6 +157,8 @@ class DocZipPdfDeadlineProvider(IDeadlineProvider):
             if stage in ("no_text", "pdf_error"):
                 return done(DeadlineOutcome.PARSE_FAILED, tid=tid, err=stage)
             return done(DeadlineOutcome.DEADLINE_NOT_FOUND, tid=tid, err="no date near keyword")
+        except _RateLimited:
+            return done(DeadlineOutcome.PROVIDER_ERROR, err="rate_limited")
         except Exception as e:
             return done(DeadlineOutcome.PROVIDER_ERROR, err=f"{type(e).__name__}: {e}")
 

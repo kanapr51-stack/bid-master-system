@@ -3181,3 +3181,27 @@ base64 → pdfplumber → regex → deadline
 
 ### Caveats ที่ต้อง design
 cache (resolve once read many) | multi-stage failure reason | circuit-breaker (กัน WAF) | document-type drift (buildName2 อาจชี้คนละ doc ต่อชนิด)
+
+## งานที่ N+39: Phase 3 — Production Enable (preview mode) DEPLOYED + verified (2026-05-30)
+
+### สถานะ: ✅ pipeline ครบวงจร + resolver จริง + preview go-live gate
+
+### ทำ (ChatGPT+Claude Phase 3 plan)
+- **Provider retry (Layer 1)**: deadline_provider_doczip — micro-retry 3x (timeout/conn/5xx), rate-limit แยก
+- **Worker (Layer 2) Sebastian_Enrichment_Worker qualify_province_api rewrite**:
+  - seed projects_seen(post-epoch) → project_locations(qualification_status='pending')
+    (enrichment_status='failed' = constraint อนุญาต + RSS Pass1/Pass2 ไม่แตะ, zero RSS change)
+  - macro-retry: provider_error/download_failed → คง pending จน MAX_QUAL_ATTEMPTS(5)
+  - circuit breaker: 5 provider errors ติดกัน → abort batch + Discord alert (กัน WAF/outage)
+  - **preview mode** (BMS_PROVINCE_NOTIFY_MODE=preview): RESOLVED+open → Discord preview + status=preview_held (ไม่ enqueue LINE) = controlled go-live gate
+- env VPS: BMS_DEADLINE_PROVIDER=doczip, BMS_PROVINCE_NOTIFY_MODE=preview
+
+### Verify (production)
+- 0 candidates (backlog suppressed) → exit 0, RSS ไม่กระทบ
+- provider VPS: resolve 69059341206 → 2026-06-05 (4.3s)
+- **preview gate test**: insert งานเปิด → PREVIEW Discord + preview_held + nq ไม่เปลี่ยน (ไม่ enqueue) ✅
+- เจอ+แก้ latent bug: enrichment_status CHECK constraint (pending/success/failed) — ใช้ 'failed'
+
+### ค้าง (go-live)
+- งานใหม่ post-epoch จริง (discovery รอบหน้า) → preview Discord → คุณกัญจน์ review 1-3 งาน → flip BMS_PROVINCE_NOTIFY_MODE=live → ส่ง LINE จริง
+- Phase 4 (deferred): cache project_deadlines, full circuit-breaker analytics

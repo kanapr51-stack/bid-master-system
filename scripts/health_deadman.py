@@ -62,37 +62,37 @@ def check() -> list:
     now = _now()
 
     # --- token checks ---
+    # หลักการ: alert = อาการ (ตัวเลข/fact) เท่านั้น — ไม่เดาสาเหตุ (กัน confirmation bias)
+    # สาเหตุที่เป็นไปได้ + วิธีแก้ ดู deploy/RUNBOOK.md
     tok = _load_json(TOKEN_FILE)
     if not tok:
-        issues.append(("token_missing", "CRITICAL", "token_state.json อ่านไม่ได้/หาย"))
+        issues.append(("token_missing", "CRITICAL", "TOKEN_STATE หาย/อ่านไม่ได้"))
     else:
         exp = tok.get("expires_at") or 0
         last_refresh = tok.get("last_refresh_attempt") or 0
         if now >= exp:
             mins = int((now - exp) / 60)
             issues.append(("token_expired", "CRITICAL",
-                           f"VPS token หมดอายุ {mins} นาทีแล้ว → discovery ดึงงานใหม่ไม่ได้ "
-                           f"(harvest pipeline พัง — ต้อง re-harvest บน Windows)"))
+                           f"TOKEN EXPIRED — หมดอายุ {mins} นาที (TTL remaining: 0)"))
         if last_refresh and (now - last_refresh) > HARVEST_STALE_SEC:
             mins = int((now - last_refresh) / 60)
             issues.append(("harvest_stale", "CRITICAL",
-                           f"ไม่มี harvest refresh attempt {mins} นาที "
-                           f"(Windows task หยุด/เครื่องดับ?)"))
+                           f"NO REFRESH — ไม่มี harvest refresh attempt {mins} นาที"))
 
     # --- discovery heartbeat checks ---
     hb = _load_json(HEARTBEAT_FILE)
     if hb is None:
         issues.append(("discovery_no_heartbeat", "WARN",
-                       "ไม่มี heartbeat discovery (ยังไม่เคยรันหลัง deploy?)"))
+                       "NO HEARTBEAT — ไม่มี heartbeat discovery"))
     else:
         ts = _iso_to_epoch(hb.get("ts"))
         if ts and (now - ts) > DISCOVERY_STALE_SEC:
             hrs = round((now - ts) / 3600, 1)
             issues.append(("discovery_stale", "WARN",
-                           f"discovery ไม่ได้รัน {hrs} ชม. (timer หยุด?)"))
+                           f"DISCOVERY STALE — ไม่มี discovery run {hrs} ชม."))
         if hb.get("status") == "no_data":
             issues.append(("discovery_nodata", "WARN",
-                           "discovery รอบล่าสุดได้ 0 รายการ (token reject / API ผิดปกติ?)"))
+                           "DISCOVERY NO_DATA — discovery รอบล่าสุดได้ 0 รายการ"))
 
     return issues
 
@@ -130,7 +130,8 @@ def main() -> int:
         crit = [m for k, s, m in to_alert if s == "CRITICAL"]
         warn = [m for k, s, m in to_alert if s == "WARN"]
         head = "🔴 BMS DEAD-MAN ALERT" if crit else "🟠 BMS health warning"
-        body = head + "\n" + "\n".join(f"• {m}" for m in (crit + warn))
+        body = (head + "\n" + "\n".join(f"• {m}" for m in (crit + warn))
+                + "\n📋 สาเหตุที่เป็นไปได้ + วิธีแก้: deploy/RUNBOOK.md")
         try:
             from Sebastian_Discord_Notify import load_env, get_credentials, send
             load_env()

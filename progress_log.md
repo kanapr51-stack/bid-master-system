@@ -48,6 +48,13 @@
 - Windows task config (interval) ไม่ได้อยู่ใน git — บันทึกที่นี่
 - นี่คือ blind spot #2-adjacent (token SPOF) ที่ ChatGPT review — ตอนนี้ gap หายแล้ว แต่ SPOF (1 เครื่อง/Chrome) ยังอยู่ (อนาคต: cloud harvester)
 
+### Addendum: Alert = Symptoms (post-incident ChatGPT review converged)
+- dead-man alert เดาสาเหตุผิด ("Windows ดับ?") ทั้งที่เป็น refresh logic → anchor ผิดทาง (confirmation bias)
+- **fix:** `health_deadman.py` alert message = อาการเท่านั้น (TOKEN EXPIRED / NO REFRESH / DISCOVERY STALE...) + footer ชี้ `deploy/RUNBOOK.md`
+- สร้าง `deploy/RUNBOOK.md` — hypotheses + วิธีแก้ ต่อ alert (refresh logic อยู่อันดับ 1 ของ TOKEN EXPIRED)
+- lesson บันทึก [[feedback_learn_from_mistakes]] Lesson 6 (state assumptions ต้อง validate ด้วย telemetry)
+- **Tag milestone รอ 24h stable** (ChatGPT: Go-Live เกิดแล้ว แต่ Go-Live Stable ยังไม่เกิด)
+
 ---
 
 ## งานที่ N+46: P3 Hardening — ordering ไม่เชื่อ assumption ครั้งเดียว (2026-05-31 ~04:00)

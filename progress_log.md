@@ -22,6 +22,28 @@
 
 ---
 
+## งานที่ N+48: Discovery Catch-Up on Reconnect (เปิดเครื่อง → รัน slot ที่พลาดทันที) (2026-05-31 ~15:15)
+
+### สถานะ: ✅ เสร็จ — deployed + e2e verified
+
+### โจทย์ (คุณกัญจน์)
+ปิดเครื่องช่วง slot (เช่น 12:00-14:00 คร่อม 13:00) → เปิดมา 14:00 → "รู้ว่าพลาด 13:00 แล้วรันให้ทันที"
+
+### สิ่งที่ทำ
+- `scripts/discovery_catchup.py` (VPS): slot-based missed detection — last_ok discovery < slot ล่าสุดที่ผ่าน (07/13/19 ไทย) + token valid → รัน incremental ทันที. no-op ถ้าไม่พลาด/ไม่มี token
+- `harvest_and_push.py`: หลัง push token → `trigger_catchup()` SSH รัน catchup บน VPS (best-effort, utf-8)
+- `deploy/windows/BMS_HarvestOnLogon.vbs` → Startup folder → login → harvest+catchup ทันที (task trigger แก้ไม่ได้ ต้อง admin → ใช้ vbs)
+
+### Test (verified)
+- local logic: not-missed→skip / missed→run / no-token→skip ✅
+- **e2e จริง:** catchup เจอ heartbeat=no_data (จาก full-sweep rate-limit) → ถือว่าพลาด → รัน discovery → heartbeat=ok กู้คืน ✅
+- โบนัส: auto-recovery — discovery รอบไหน fail catchup รอบถัดไป retry
+
+### หมายเหตุ
+- ยัง stopgap (เปิดเครื่องช่วง slot) — permanent = ย้าย harvest ไปอุปกรณ์บ้าน (รอตัดสินใจ)
+
+---
+
 ## งานที่ N+47: 🔴 Token Harvest Reliability Fix (dead-man ยิงจริง → แก้ root cause) (2026-05-31 ~13:40)
 
 ### สถานะ: ✅ เสร็จ — dead-man healthy

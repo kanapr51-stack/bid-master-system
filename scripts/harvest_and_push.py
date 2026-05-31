@@ -103,6 +103,23 @@ def push_to_vps(state_path: str) -> bool:
     return False
 
 
+def trigger_catchup() -> None:
+    """หลัง push token สด → ให้ VPS เช็คว่าพลาด discovery slot ไหม (catch-up on reconnect).
+    best-effort — ไม่ให้ harvest ล้มถ้า catchup error"""
+    cmd = ["ssh", "-i", VPS_KEY, "-o", "StrictHostKeyChecking=accept-new",
+           "-o", "ConnectTimeout=15", VPS_HOST,
+           "sudo -u bms BMS_DATA_DIR=/opt/bms/data /opt/bms/venv/bin/python "
+           "/opt/bms/app/scripts/discovery_catchup.py"]
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True,
+                           encoding="utf-8", errors="replace", timeout=180)
+        last = [l for l in (r.stdout or "").strip().splitlines() if l.strip()]
+        if last:
+            _log("catchup → " + last[-1])
+    except Exception as e:
+        _log(f"catchup trigger ล้มเหลว (ไม่กระทบ harvest): {e}")
+
+
 def main() -> int:
     if not ensure_chrome():
         return 1
@@ -119,6 +136,8 @@ def main() -> int:
     _log(f"🔑 token OK (state={h['state']}, เหลือ {h['remaining_sec']}s, "
          f"refresh={h['refresh_count']}/fail={h['refresh_failures']})")
     ok = push_to_vps(svc.state_path)
+    if ok:
+        trigger_catchup()   # เปิดเครื่องมา → เช็ค+รัน discovery ที่พลาดทันที
     return 0 if ok else 3
 
 

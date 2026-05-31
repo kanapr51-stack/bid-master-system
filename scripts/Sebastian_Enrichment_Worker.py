@@ -158,6 +158,14 @@ def qualify_province_api(store, log) -> None:
         return
     mode = os.environ.get("BMS_PROVINCE_NOTIFY_MODE", "preview")   # preview (go-live gate) | live
     dsvc = DeadlineService(make_deadline_provider())               # doczip ถ้า env BMS_DEADLINE_PROVIDER set
+    # matching layer (keyword + tambon) — shadow (log only) | enforce (กรองจริง) | off
+    try:
+        import job_matcher as jm
+        mcfg = jm.load_config()
+        mmode = os.environ.get("BMS_MATCHING_MODE", "shadow")
+    except Exception as e:
+        jm = None; mcfg = None; mmode = "off"
+        log(f"Province qual: matcher load fail ({e}) — matching off")
     now = _now()
 
     # (1) seed: projects_seen ใหม่ (post-epoch, subscribed) → project_locations(qualification_status='pending')
@@ -195,7 +203,8 @@ def qualify_province_api(store, log) -> None:
     log(f"Province qual: {len(cands)} pending (mode={mode})")
 
     TRANSIENT = (DeadlineOutcome.PROVIDER_ERROR, DeadlineOutcome.DOWNLOAD_FAILED)
-    stats = {"enqueued": 0, "preview": 0, "expired": 0, "failed": 0, "retry": 0}
+    stats = {"enqueued": 0, "preview": 0, "expired": 0, "failed": 0, "retry": 0,
+             "filtered": 0, "soft": 0}
     consec_err = 0
     for c in cands:
         pid = c["project_id"]
@@ -223,6 +232,23 @@ def qualify_province_api(store, log) -> None:
 
         # terminal outcomes
         if res.outcome == DeadlineOutcome.RESOLVED and res.is_open():
+            # matching layer (keyword + tambon + soft-include) — shadow log / enforce apply
+            src_stage = "province_qualified"
+            if jm is not None and mmode != "off":
+                tb = jm.resolve_tambon(pid, c.get("dept_name") or "", c.get("project_name") or "")
+                decision, mdet = jm.match_job(c.get("project_name") or "", c["province"], tb,
+                                              c.get("dept_name") or "", cfg=mcfg)
+                log(f"  match[{mmode}] {pid}: {decision} (tb={tb or '-'}, {mdet.get('reason')})")
+                if mmode == "enforce":
+                    if decision == "cut":
+                        with get_connection() as conn:
+                            conn.execute("UPDATE project_locations SET qualification_status='filtered_no_match' WHERE project_id=?", (pid,))
+                        stats["filtered"] += 1
+                        log(f"  → ✂️ FILTERED {pid} (ไม่ตรง: {mdet.get('reason')})")
+                        continue
+                    if decision == "soft_include":
+                        src_stage = "province_soft_location"
+                        stats["soft"] += 1
             if mode == "live":
                 n = store.enqueue_notifications({
                     "project_id": pid, "province": c["province"],
@@ -231,12 +257,12 @@ def qualify_province_api(store, log) -> None:
                     "project_name": c.get("project_name") or "",
                     "dept_name": c.get("dept_name") or "",
                     "extraction_confidence": "high", "is_backfill": False,
-                    "source_stage": "province_qualified",
+                    "source_stage": src_stage,
                 }, min_confidence="high")
                 status = "enqueued" if n > 0 else "enqueued_dedup"
                 if n > 0:
                     stats["enqueued"] += 1
-                    log(f"  → ENQUEUED {pid} {c['province']} deadline={res.deadline}")
+                    log(f"  → ENQUEUED {pid} {c['province']} deadline={res.deadline} [{src_stage}]")
             else:  # preview go-live gate — ส่ง Discord แทน LINE, ไม่ enqueue
                 _discord_safe(
                     f"🔎 [PREVIEW] province_api candidate (ยังไม่ส่ง LINE)\n"
@@ -255,7 +281,8 @@ def qualify_province_api(store, log) -> None:
                          (status, pid))
 
     log(f"Province qual done — enqueued={stats['enqueued']} preview={stats['preview']} "
-        f"expired={stats['expired']} failed={stats['failed']} retry={stats['retry']}")
+        f"expired={stats['expired']} failed={stats['failed']} retry={stats['retry']} "
+        f"| match[{mmode}] filtered={stats['filtered']} soft={stats['soft']}")
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────

@@ -46,6 +46,38 @@ def extract_road_code(name: str) -> str:
     return m.group(0).strip() if m else ""
 
 
+def tambon_from_dept(dept_name: str) -> str:
+    """ตำบลจากชื่อหน่วยงานท้องถิ่น (ฟรี) — อบต./เทศบาลตำบล"""
+    d = dept_name or ""
+    for pat in ("องค์การบริหารส่วนตำบล", "เทศบาลตำบล"):
+        if pat in d:
+            return d.split(pat)[-1].strip()
+    return ""
+
+
+def tambon_from_api(project_id: str) -> str:
+    """getProcurementDetail moiName (= ตำบลที่ทำงานจริง). graceful — คืน '' ถ้า error"""
+    try:
+        import process5_http_client as p
+        import requests
+        tok = p._get_token(project_id)
+        h = p.HEADERS_NO_AUTH.copy()
+        h["X-Announcement-Token"] = tok
+        url = ("https://process5.gprocurement.go.th/egp-atpj27-service/"
+               "pb/a-egp-allt-project/announcement/getProcurementDetail")
+        d = (requests.get(url, params={"projectId": project_id}, headers=h, timeout=15)
+             .json() or {}).get("data") or {}
+        return d.get("moiName") or ""
+    except Exception:
+        return ""
+
+
+def resolve_tambon(project_id: str, dept_name: str = "", project_name: str = "") -> str:
+    """ตำบลของงาน: dept_name (ฟรี, local dept) → getProcurementDetail (API). '' = ระบุไม่ได้"""
+    tb = tambon_from_dept(dept_name)
+    return tb if tb else tambon_from_api(project_id)
+
+
 def match_job(project_name: str, province: str, tambon_field: str = "",
               dept_name: str = "", cfg: dict = None) -> Tuple[str, dict]:
     """คืน (decision, detail). decision ∈ {'send','cut','soft_include'}"""

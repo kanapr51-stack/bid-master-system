@@ -178,6 +178,8 @@ def format_notification(project_id: str, province: str = "",
 
     if source_stage == "rss_provisional":
         lines.append("📡 ข้อมูลเบื้องต้นจาก RSS")
+    elif source_stage == "province_soft_location":
+        lines.append("⚠️ พื้นที่ไม่ชัด — โปรดตรวจสอบว่าอยู่ในเขตที่รับงาน")
 
     return "\n".join(lines)
 

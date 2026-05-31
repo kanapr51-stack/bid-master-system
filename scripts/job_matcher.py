@@ -59,6 +59,9 @@ def match_job(project_name: str, province: str, tambon_field: str = "",
     kw = next((k for k in cfg.get("keywords", []) if k in name), None)
     if not kw:
         return "cut", {"reason": "no_keyword"}
+    neg = next((n for n in cfg.get("negative_keywords", []) if n in name), None)
+    if neg:
+        return "cut", {"keyword": kw, "negative": neg, "reason": "negative_keyword"}
 
     # location resolution
     loc, src = "", ""

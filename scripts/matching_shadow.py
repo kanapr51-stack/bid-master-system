@@ -74,12 +74,14 @@ def main() -> int:
     examples = {"send": [], "cut": [], "soft_include": []}
     out = open(SHADOW_LOG, "w", encoding="utf-8")
     for r in rows:
-        tb = tambon_from_dept(r["dept_name"])
-        tsrc = "dept_name" if tb else ""
-        if not tb and not args.no_api:
+        tb, tsrc = "", ""
+        if not args.no_api:                          # API ก่อน = ground truth (ตรงกับ prod resolve_tambon)
             tb = tambon_from_api(r["project_id"])
             tsrc = "api" if tb else ""
             time.sleep(1.0)
+        if not tb:                                    # fallback: dept_name (ตำบลสำนักงาน)
+            tb = tambon_from_dept(r["dept_name"])
+            tsrc = "dept_name" if tb else tsrc
         dec, detail = jm.match_job(r["project_name"], r["province"], tb, r["dept_name"], cfg=cfg)
         stats[dec] += 1
         src_stats[detail.get("location_source", tsrc or "none")] += 1

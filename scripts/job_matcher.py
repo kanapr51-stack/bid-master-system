@@ -73,9 +73,10 @@ def tambon_from_api(project_id: str) -> str:
 
 
 def resolve_tambon(project_id: str, dept_name: str = "", project_name: str = "") -> str:
-    """ตำบลของงาน: dept_name (ฟรี, local dept) → getProcurementDetail (API). '' = ระบุไม่ได้"""
-    tb = tambon_from_dept(dept_name)
-    return tb if tb else tambon_from_api(project_id)
+    """ตำบลของงาน: getProcurementDetail moiName (ground truth งานจริง) → dept_name (fallback).
+    API ก่อน = แม่นกว่า (dept = ตำบลที่ตั้งสำนักงาน proxy). '' = ระบุไม่ได้"""
+    tb = tambon_from_api(project_id)
+    return tb if tb else tambon_from_dept(dept_name)
 
 
 def match_job(project_name: str, province: str, tambon_field: str = "",

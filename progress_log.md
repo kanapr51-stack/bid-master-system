@@ -2,6 +2,21 @@
 
 ---
 
+## 📍 CHECKPOINT — 2026-06-01 (matching engine เสร็จ, รอ enforce)
+
+**สรุป:** go-live + reliability (15 commits 05-31) + **Step 2 matching engine** (keyword+tambon+soft-include) เสร็จ+shadow validated. ระบบ live (province-wide), matching ยัง shadow ยังไม่ enforce
+
+**สถานะ:** VPS 8 active · dead-man healthy · token สด · customers 5 · delivery 21 · feedback 0 · matching shadow: 30 งานล่าสุด send=4(target เป๊ะ)/cut=26
+
+**Pending ด่วน:** เช็ค no_keyword cuts → wire pipeline shadow → validate soft-include → flip enforce · push 2 commits · tag milestone-go-live (ครบ 24h stable)
+
+**Defer:** keyword refine · digest tz · qualification drift alert · permanent token harvest · portal(Step6)
+
+ดู matching design: memory/project_matching_design · งานล่าสุด N+49
+
+---
+
+
 ## งานที่ N+49: Matching Engine (keyword + tambon + soft-include) — Step 2 (2026-05-31 ~18:30)
 
 ### สถานะ: ✅ matcher logic เสร็จ+เทส (ยังไม่ wire production)

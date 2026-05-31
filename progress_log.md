@@ -2,6 +2,30 @@
 
 ---
 
+## งานที่ N+49: Matching Engine (keyword + tambon + soft-include) — Step 2 (2026-05-31 ~18:30)
+
+### สถานะ: ✅ matcher logic เสร็จ+เทส (ยังไม่ wire production)
+
+### สิ่งที่ทำ (ดู design: memory/project_matching_design)
+- `config/matching_preferences.json`: 34 keywords (เพิ่ม ซ่อมสร้าง + บำรุงทางหลวง จาก test) + 20 ตำบล + soft_include block (label B: "⚠️ พื้นที่ไม่ชัด · ถนนสาย {code}")
+- `scripts/job_matcher.py`: `match_job()` → 3 decisions (send/cut/soft_include) + extract_road_code + location_source. pure function
+- decision: keyword✓ + (field/name tambon ∈ 20 ตำบล → send) | (รู้ตำบล ∉ → cut) | (ระบุไม่ได้ + งานถนน → soft_include + ป้ายรหัสถนน)
+
+### Test (verified)
+- 4 งานจริงที่ส่งเมื่อคืน → ตัดถูกหมด (2 ผิดประเภท, 2 ถูกประเภทผิดตำบล=อ.เมือง)
+- soft-include road-code → ป้าย "⚠️ พื้นที่ไม่ชัด · ถนนสาย นพ.4036/บก.4017" ✅
+- เจอ + แก้ keyword gap: "ซ่อมสร้าง" หาย (25 งาน, 16 พลาด) → เพิ่มแล้ว → ซ่อมสร้างนาทม ส่งถูก
+
+### Experiment (PDF location — ChatGPT แนะให้วัดก่อน)
+PDF target-match บนงานถนน = **3/12 (25%)** ไม่ใช่ 80-90% → ถนนเป็น corridor ไม่ระบุตำบลเดียว → **soft-include = path หลักของงานถนน** (ไม่ใช่ safety net เล็ก). PDF เก็บเป็น bonus ทีหลัง
+
+### เหลือ (Step 2 ต่อ — production-touching)
+- **Location enrichment**: ดึง tambon ต่องาน (getProcurementDetail moiName / name) — +1 API/งาน
+- **Wire เข้า enqueue** (qualify_province_api): run matcher ก่อน enqueue → cut ไม่ส่ง / soft เพิ่มป้าย. ระวัง mode=live
+- location_source audit + วัด send/cut/soft rate
+
+---
+
 ## 📍 CHECKPOINT — 2026-05-31 ~04:10 (go-live + reliability sprint เสร็จ)
 
 **สรุป:** คืนนี้ทำ 15 commits — go-live(16/16 ถึง family) + reliability hardening ครบ. ระบบ **live + automation เต็ม**

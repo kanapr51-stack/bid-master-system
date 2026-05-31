@@ -22,6 +22,34 @@
 
 ---
 
+## งานที่ N+47: 🔴 Token Harvest Reliability Fix (dead-man ยิงจริง → แก้ root cause) (2026-05-31 ~13:40)
+
+### สถานะ: ✅ เสร็จ — dead-man healthy
+
+### Trigger: dead-man alert ยิงบ่อย (ตอนคุณกัญจน์ตื่น)
+"VPS token หมดอายุ 17 นาที + ไม่มี refresh 47 นาที" ซ้ำๆ ~ทุก 60 นาที (cooldown) = dead-man ทำงานถูก (จับ silent failure ได้จริง)
+
+### Root cause (วินิจฉัยจาก harvest log + token_service)
+- harvest task รันทุก 25 นาที **แต่ refresh สำเร็จทุก ~50 นาที** (state_before=expired ทุกครั้ง)
+- เหตุ: `get_valid_token` (writer) **refresh เฉพาะตอน EXPIRING/EXPIRED** (token_service:334 VALID→return เลย). refresh_margin เล็ก → รอบกลาง (token เหลือ ~5 นาที) = VALID → **reuse ไม่ push สด**
+- → push token เหลือ ~16 นาที ทุก 25 นาที → **หมดก่อนรอบถัดไป = gap ~20 นาที ทุก ~50 นาที** (ไม่ใช่ Turnstile/เครื่องดับ)
+
+### Fix (P3-original token root cause)
+- `harvest_and_push.py`: `TokenService(..., refresh_margin=22*60)` → writer refresh เชิงรุก (push token เกือบเต็ม 30 นาทีทุกรอบ)
+- Windows task `BMS_TokenHarvest` interval **25→15 นาที** (2 รอบต่อ TTL → รอด 1 harvest fail)
+- → VPS token สดเสมอ (push ทุก 15 นาที, token 30 นาที = overlap เพียงพอ)
+
+### Verified
+- harvest manual: refresh สด (count 32→33, token 1797s) → VPS 1794s ✅
+- dead-man: "✅ healthy (token + discovery OK)" ✅
+- task interval = PT15M ✅
+
+### หมายเหตุ
+- Windows task config (interval) ไม่ได้อยู่ใน git — บันทึกที่นี่
+- นี่คือ blind spot #2-adjacent (token SPOF) ที่ ChatGPT review — ตอนนี้ gap หายแล้ว แต่ SPOF (1 เครื่อง/Chrome) ยังอยู่ (อนาคต: cloud harvester)
+
+---
+
 ## งานที่ N+46: P3 Hardening — ordering ไม่เชื่อ assumption ครั้งเดียว (2026-05-31 ~04:00)
 
 ### สถานะ: ✅ เสร็จ — deployed + live verified

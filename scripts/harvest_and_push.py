@@ -106,7 +106,11 @@ def push_to_vps(state_path: str) -> bool:
 def main() -> int:
     if not ensure_chrome():
         return 1
-    svc = TokenService(make_provider("chrome9222"), allow_refresh=True)
+    # refresh เชิงรุก: refresh_margin สูง (22 นาที) → push token สดเกือบเต็ม TTL ทุกรอบ
+    # กัน gap "token เหลือ 5 นาที ถูก reuse แล้วหมดก่อนรอบถัดไป" (root cause 2026-05-31)
+    # คู่กับ harvest interval 15 นาที (task) → VPS token สดเสมอ + รอด 1 harvest fail
+    svc = TokenService(make_provider("chrome9222"), allow_refresh=True,
+                       refresh_margin=22 * 60)
     token = svc.get_valid_token()
     h = svc.health()
     if not token:

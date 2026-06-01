@@ -23,13 +23,7 @@ Set-Location "$ScriptDir"
 
 python scripts\cgd_discovery.py --provinces "นครพนม" --max-calls 600 2>&1 | Tee-Object -FilePath `$LogFile
 
-# Commit + push ถ้ามีการเปลี่ยนแปลง
-git add data\winner_cache_bootstrap.json data\cgd_discovery_seen.json data\cgd_discovery_cursor.json 2>>`$LogFile
-`$staged = git diff --staged --name-only 2>>`$LogFile
-if (`$staged) {
-    git commit -m "chore: cgd-discovery local `$(Get-Date -Format 'yyyy-MM-dd HH:mm') [skip ci]" 2>>`$LogFile
-    git push origin main 2>>`$LogFile
-}
+# [P1 deploy-debt 2026-06-01] ไม่ push data ลง git (กัน conflict กับ VPS) — state เขียน local เท่านั้น
 
 # เก็บ log 7 วัน
 Get-ChildItem "$LogDir\cgd_*.log" | Sort-Object CreationTime | Select-Object -SkipLast 7 | Remove-Item -Force

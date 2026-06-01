@@ -228,19 +228,11 @@ $history | ConvertTo-Json | Set-Content $historyFile -Encoding UTF8
 $healthOut = & $Python "scripts\queue_health.py" 2>&1
 Log "queue_health: $($healthOut -join '')"
 
-# Step 6: commit updated queue + winner cache + health snapshot
-$gitAdd = git add data/rss_queue.json data/winner_cache_bootstrap.json data/rss_seen_ids.json data/api_ingestion_state.json data/queue_health_snapshot.json data/ingestion_run_history.json 2>&1
-Log "git add: $($gitAdd -join ' | ')"
-
-$null = git diff --staged --quiet 2>&1
-if ($LASTEXITCODE -ne 0) {
-    $ts = (Get-Date -Format "yyyy-MM-dd HH:mm")
-    $commitOut = git commit -m "chore: queue-processor $ts [skip ci]" 2>&1
-    Log "git commit: $($commitOut -join ' | ')"
-    $pushOut = git push origin main 2>&1
-    Log "git push: $($pushOut -join ' | ')"
-} else {
-    Log "nothing to commit"
-}
+# Step 6: [P1 deploy-debt 2026-06-01] หยุด commit/push data ลง git
+# runtime state เขียน local เท่านั้น — กัน conflict กับ VPS ที่ mutate ไฟล์เดียวกัน.
+# VPS notification path ไม่พึ่ง data จาก Windows (rss_queue VPS generate เอง,
+# winner_cache/all_jobs VPS active ไม่ consume). ดู progress_log งานที่ N+52.
+# ถ้าต้อง sync จริงทีหลัง → ใช้ mechanism อื่น ไม่ใช่ git push data.
+Log "git data-push disabled (P1 deploy-debt) — runtime state stays local"
 
 Log "=== Queue Processor done ==="

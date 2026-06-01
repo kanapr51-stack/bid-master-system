@@ -8,7 +8,12 @@ Invariant (ChatGPT + กัญจน์ + Claude converged):
 บางตัว BMS_DATA_DIR → 2 write path = git conflict ทุก deploy + เสี่ยง split-brain
 (reader อ่าน dir นึง / writer เขียนอีก dir). helper นี้บังคับ runtime write ที่เดียว.
 
-ดู: progress_log.md งานที่ N+5x (P1 deploy-debt), memory/project_matching_design
+ดู: progress_log.md งานที่ N+5x (P1 deploy-debt), memory/project_deploy_debt
+
+⚠️ STATUS 2026-06-01: DORMANT INFRASTRUCTURE — reserved for future canonical path migration.
+ยังไม่มี caller (full migration step 2-9 = DEFERRED, ดู tripwires ใน memory/project_deploy_debt).
+interim fix (Windows หยุด push data) แก้ deploy conflict แล้ว → ไม่จำเป็นเร่ง. ห้ามถอน
+(tested + fail-loud + no caller = near-zero risk; "สะพานที่สร้างไว้แต่ยังไม่เปิดจราจร").
 """
 import os
 import sys

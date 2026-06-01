@@ -273,6 +273,10 @@ def _migrate_v18():
                         CHECK(location_confidence IN ('hard','soft','unknown')),
                     enrichment_status   TEXT NOT NULL DEFAULT 'pending'
                         CHECK(enrichment_status IN ('pending','success','failed')),
+                        -- ⚠️ source='province_api' ตั้ง 'failed' เป็น SENTINEL จงใจ (ไม่ได้ enrich พังจริง):
+                        --    เป็นค่าเดียวใน 3 ค่าที่ RSS path (WHERE ='pending'/'success') ไม่แตะ → กัน blast.
+                        --    สถานะจริงของ province_api อยู่ที่ qualification_status (enqueued/suppressed_*).
+                        --    METRIC: วัด province_api ด้วย qualification_status เสมอ ห้ามใช้ enrichment_status
                     next_retry_at       TEXT,
                     enriched_at         TEXT,
                     created_at          TEXT NOT NULL

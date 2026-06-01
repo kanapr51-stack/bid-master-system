@@ -1,0 +1,10 @@
+[Unit]
+Description=BMS Cross-Province Probe — daily 08:30 Thai
+
+[Timer]
+OnCalendar=*-*-* 08:30:00 Asia/Bangkok
+Persistent=true
+Unit=bms-crossprobe.service
+
+[Install]
+WantedBy=timers.target

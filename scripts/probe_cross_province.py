@@ -50,26 +50,61 @@ def main():
         time.sleep(1.5)
 
     bkk = res.get("กรุงเทพ", "?")
+    cnx = res.get("เชียงใหม่", "?")
     nkp = res.get("นครพนม", "?")
     bk = res.get("บึงกาฬ", "?")
-    ours_max = max([x for x in (nkp, bk) if x and x[0].isdigit()] or ["?"])
 
-    egp_moved = bkk[0].isdigit() and bkk > BASELINE
-    ours_moved = ours_max != "?" and ours_max > BASELINE
+    def _isdate(x): return bool(x) and x[0].isdigit()
+    # control = กทม/เชียงใหม่ (เมืองใหญ่ มีงานเกือบทุกวันทำการ) — ใช้วัด "เราเรียก API ได้ไหม"
+    control_ok = _isdate(bkk) or _isdate(cnx)
+    national = max([x for x in (bkk, cnx) if _isdate(x)] or ["?"])   # eGP-wide latest
 
-    if egp_moved and ours_moved:
-        verdict = "✅ HEALTHY — eGP ขึ้นงานสัปดาห์ใหม่ + นพ/บก ตามทัน (lag resolve, ระบบถูกต้อง)"
-    elif egp_moved and not ours_moved:
-        verdict = "⚠️ ALERT — กทมขยับแต่ นพ/บก ยังค้าง 05-29 → เริ่มมีกลิ่น เจาะด่วน"
+    # streak state (BMS_DATA_DIR) — track วันที่ eGP เงียบ (กทมไม่ขยับ) ติดกัน
+    st_file = Path(os.environ.get("BMS_DATA_DIR", "/opt/bms/data")) / "crossprobe_state.json"
+    try:
+        st = json.loads(st_file.read_text(encoding="utf-8"))
+    except Exception:
+        st = {}
+    prev_national = st.get("national_latest", BASELINE)
+    streak = int(st.get("quiet_streak", 0))
+
+    if not control_ok:
+        # กรณี (ก) — เรียก API ไม่ได้ทั้ง control → ระบบพังเงียบ รับงานทั้งประเทศไม่ได้
+        verdict = ("🔴 CRITICAL — เรียก eGP ไม่ได้ทั้ง control (กทม+เชียงใหม่ ERR)\n"
+                   "= ระบบเราพังเงียบ รับงานทั้งประเทศไม่ได้ (token/endpoint) → เจาะด่วน!")
+        # ไม่แตะ streak (คนละแกน — นี่ระบบ ไม่ใช่ตลาด)
+    elif _isdate(national) and national > prev_national:
+        # eGP ขยับ (มีงานใหม่ทั้งประเทศ) → reset streak
+        streak = 0
+        if _isdate(max(nkp, bk)) and max(nkp, bk) >= prev_national and max(nkp, bk) > BASELINE:
+            verdict = f"✅ HEALTHY — eGP ขึ้นงานใหม่ (ชาติ {national}) + นพ/บก ตามทัน ({max(nkp,bk)}) = ระบบถูกต้อง"
+        else:
+            verdict = (f"🟠 เช็ค — กทม/ชม มีงานใหม่ ({national}) แต่ นพ/บก ยัง {max(nkp,bk)}\n"
+                       "= อาจ นพ/บก ไม่มีงานช่วงนี้จริง (จังหวัดเล็ก) หรือเราพลาด → ดูรอบหน้า/probe ซ้ำ")
+        prev_national = national
     else:
-        verdict = "🟡 eGP ยังไม่ขึ้นงานสัปดาห์ใหม่ทั้งประเทศ (กทมยังค้าง) — lag ต่อ ยังไม่ใช่ปัญหาเรา"
+        # control เรียกได้ แต่ eGP ไม่ขยับ → กรณี (ข) eGP ไม่มีงานใหม่จริง
+        streak += 1
+        if streak >= 3:
+            verdict = (f"⚠️ เริ่มมีกลิ่น — eGP เงียบทั้งประเทศ {streak} วันติด (control เรียกได้ แต่ไม่มีงานใหม่)\n"
+                       "3-4 วันขึ้นไป = ผิดปกติ → เช็ค eGP เปลี่ยน endpoint/budgetYear หรือ subtle fail")
+        else:
+            verdict = (f"🟡 eGP ไม่มีงานใหม่ (control เรียกได้ = เราไม่พัง) — เงียบ {streak} วัน "
+                       "= ตลาดเงียบจริง ยังปกติ")
+
+    # save state
+    try:
+        from datetime import datetime as _dt, timezone as _tz, timedelta as _td
+        st_file.write_text(json.dumps({
+            "national_latest": prev_national, "quiet_streak": streak,
+            "last_probe": _dt.now(_tz(_td(hours=7))).isoformat(),
+        }, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception:
+        pass
 
     msg = (
-        f"🔭 Cross-Province Probe (เทียบ baseline {BASELINE})\n"
-        f"  กรุงเทพ:  {bkk}\n"
-        f"  เชียงใหม่: {res.get('เชียงใหม่','?')}\n"
-        f"  นครพนม:   {nkp}\n"
-        f"  บึงกาฬ:   {bk}\n"
+        f"🔭 Cross-Province Probe\n"
+        f"  กรุงเทพ:  {bkk}\n  เชียงใหม่: {cnx}\n  นครพนม:   {nkp}\n  บึงกาฬ:   {bk}\n"
         f"\n{verdict}"
     )
     load_env(); t, ch = get_credentials()

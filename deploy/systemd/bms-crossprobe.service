@@ -1,0 +1,14 @@
+[Unit]
+Description=BMS Cross-Province Probe (baseline sanity + quiet-streak)
+After=network.target
+
+[Service]
+Type=oneshot
+User=bms
+Group=bms
+WorkingDirectory=/opt/bms/app
+EnvironmentFile=/opt/bms/app/.env
+ExecStart=/opt/bms/venv/bin/python /opt/bms/app/scripts/probe_cross_province.py
+Nice=10
+StandardOutput=journal
+StandardError=journal

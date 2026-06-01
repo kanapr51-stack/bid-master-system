@@ -2,15 +2,60 @@
 
 ---
 
-## 📍 CHECKPOINT — 2026-06-01 (matching engine เสร็จ, รอ enforce)
+## 📍 CHECKPOINT — 2026-06-01 (matching ENFORCE live ✅)
 
-**สรุป:** go-live + reliability (15 commits 05-31) + **Step 2 matching engine** (keyword+tambon+soft-include) เสร็จ+shadow validated. ระบบ live (province-wide), matching ยัง shadow ยังไม่ enforce
+**สรุป:** go-live + reliability + **Step 2 matching engine ENFORCE แล้ว** (keyword AND tambon + soft-include + API-first tambon resolve). ระบบ live (province-wide) + matching กรองจริง
 
-**สถานะ:** VPS 8 active · dead-man healthy · token สด · customers 5 · delivery 21 · feedback 0 · matching shadow: 30 งานล่าสุด send=4(target เป๊ะ)/cut=26
+**สถานะ:** VPS 8 active · dead-man healthy · token สด · customers 5 · delivery 21 · feedback 0 · matching=**enforce** (HEAD 0e4e268) · shadow 30 งานล่าสุด send=5(API-verified target)/cut=25/soft=0
 
-**Pending ด่วน:** เช็ค no_keyword cuts → wire pipeline shadow → validate soft-include → flip enforce · push 2 commits · tag milestone-go-live (ครบ 24h stable)
+**Pending ด่วน:** รองานใหม่ชิ้นแรก → ดู match[enforce] ใน log · เพิ่ม metrics (matched/wk, new_D0/day, feedback_rate) ใน digest · tag milestone-go-live (ครบ 24h stable)
 
-**Defer:** keyword refine · digest tz · qualification drift alert · permanent token harvest · portal(Step6)
+### งานที่ N+50: Wire enforce + API-first tambon resolve (2026-06-01 ~03:20)
+- **enforce wired** (Enrichment_Worker): BMS_MATCHING_MODE shadow/enforce/off. cut→qualification_status=filtered_no_match+skip, soft→source_stage=province_soft_location, send→enqueue ปกติ. LINE_Sender ป้าย ⚠️ พื้นที่ไม่ชัด
+- **resolve_tambon API-first** (0e4e268): getProcurementDetail moiName (ground truth) ก่อน → dept_name fallback. กัน false-cut จาก อบต.ข้ามตำบล. matching_shadow aligned
+- **deploy VPS**: pull 71109d5→0e4e268. แก้ divergence: untracked stale scripts (backup tar) + 3 tracked scripts (stale subset, backup+checkout) + live data 2 files (api_ingestion_state/egp_deptid_catalog → backup+restore, live state win). HEAD=0e4e268
+- **flip enforce**: .env BMS_MATCHING_MODE=enforce (backup env_before_enforce.bak). flip ตอน 0 pending = ปลอดภัยสุด. worker run clean. matcher setup รันก่อน 0-candidate return → mmode=enforce ยืนยัน
+- **validate**: shadow 30 งานจริง send=5 ทั้งหมด API-verified target tambon (บุ่งคล้า/ดงบัง/โพธิ์หมากแข้ง), cut=25 legit (no_keyword + tambon_not_target), soft=0. ไม่มี false-cut
+
+### งานที่ N+51: Cross-source dedup gap + matcher non-target detection (2026-06-01 ~13:00)
+- **🐛 พบ Source Authority Violation** (ChatGPT framing): RSS (จังหวัดว่าง, ส่งไม่ได้) suppress province_api (จังหวัดชัด, ส่งได้) ใน discovery known set (1368=1077+291 รวมทุก source) → งาน relevant ตกหล่น ไม่เคยส่ง
+- **verify scale** (sample 30 RSS-only keyword-match → getProcurementDetail provinceMoiId): valid 14 = 12 จังหวัดทั่วประเทศ (เชียงใหม่/กระบี่/สงขลา/กทม...) → **RSS = nationwide feed**, target_province_rate ≈ 0% → ChatGPT Case 2 (small edge case, ไม่สร้าง subsystem)
+- **decision** (ChatGPT+Claude agree): ไม่ทำ Option B subsystem (overkill ~2-3 งาน) / ไม่ทำ C (refactor) → targeted fix เฉพาะงาน confirmed
+- **อุดงานจริง**: 2 คอนกรีตผสมเสร็จ คส.ชป.7 (ชื่อบอกตำบลชัด): หนองซน(อ.นาทม,5.71M)→matching send→**ส่ง LINE 4/4 real users** ✅ · นาแก(5.85M)→ถอน (กัญจน์: ทิ้ง, นอก target)
+- **🔧 matcher fix** (7bd981c): `tambon_from_name()` parse "ตำบล X" จากชื่อ → chain field→target-in-name(ชนะก่อน)→explicit "ตำบล X"(non-target→cut)→soft. แก้ over-include งานชื่อระบุตำบลนอก target (เดิมได้ soft). test 6/6, shadow ไม่ regress (5/25/0)
+- **finding แยก**: customer 1 = test account (Uxxx_TEST) → delivery fail เสมอ (ignorable, real users=4)
+- **deploy debt ย้ำ**: data/*.json (egp_deptid_catalog ฯลฯ) track ใน git + mutate หลายที่ → ทุก deploy conflict ต้อง backup+restore มือ → ควร gitignore+rm --cached
+
+### งานที่ N+52: P1 deploy-debt — single runtime authority (2026-06-01 ~14:00-15:00)
+- **consult ChatGPT 3 รอบ** (cross-source→deploy-debt→inventory) ทุกจุด agree, downgrade Option B subsystem→targeted (verify→Case2)
+- **diagnosis เลื่อน 2 ชั้น**: "state ใน git" → "state routing inconsistency" (2 data dir: app/data tracked vs /opt/bms/data runtime, scripts ปน) → **"Windows tasks git push data"** (root จริง)
+- **inventory** (git ls-files data/ 70 ไฟล์): Class A runtime (api_ingestion_state/rss_queue/rss_seen_ids/rss_stage_rotation/cgd_discovery_seen) · B cache (egp_deptid_catalog) · C config/seed (keep). tier: เกือบทั้งหมด regenerable, critical=rss_notifier_epoch.txt เดียว (province epoch อยู่ SQLite)
+- **characterize split-brain**: api_ingestion_state canonical=app/data (writer+reader ตรงกัน, ไม่ dangerous), /opt/bms/data=stale legacy
+- **evidence "legacy ไหม"**: VPS systemd ไม่มี queue-processor/cgd · VPS rss-scraper generate rss_queue เอง · winner_cache/all_jobs VPS active ไม่ consume → **Windows 2 tasks = แยกระบบ VPS ไม่พึ่ง**
+- **step 1** (1c54581): `scripts/bms_paths.py` — runtime_path()/asset_path(), fail-loud ถ้า BMS_DATA_DIR ไม่ตั้ง, split-brain guard. test 4 cases
+- **🔧 INTERIM FIX** (52258f6): เอา git add/commit/push data ออกจาก Windows ps1 (run_queue_processor + _run_cgd_discovery + setup template). **พิสูจน์: VPS pull code-only → ff สำเร็จ แม้ data M 5 ไฟล์** = deploy conflict หายด้วย fix 8 บรรทัด
+- **⏸ full migration defer** (step 2-9: VPS scripts __file__/../data→runtime_path + git rm --cached): cleanup ถาวร ไม่เร่ง (deploy ราบรื่นแล้ว). plan + helper พร้อม ทำต่อเมื่อต้องการ
+
+### งานที่ N+53: P2 RSS anomaly guard + quick wins (2026-06-01 ~15:00)
+- **B** (6dd4fb1): `rss_local_candidate_section()` ใน Daily_Digest — log RSS-only+keyword+ชื่อมีตำบลเป้าหมาย (observable guard, ChatGPT). test live = **ZERO** (clean) · interim fix ยืนยัน FF อีกรอบ
+- **D2**: tag `milestone-go-live` @ 616f0f0 (go-live+reliability+24h stable)
+- **D3**: digest timer 08:00 UTC → **08:00 Asia/Bangkok** (next 06-02 08:00 ไทย)
+- **test account fix** (c9e3ec5): enqueue propagate `c.is_test_data` → queue/delivery (เดิม test customer 1 line ปลอม → 8 failed นับเป็น production false-alarm). backfill 9 delivery+8 queue → is_test_data=1. production failed 8→**0**. ไม่ disable (proper)
+- **metrics digest** (2a28cbf,1d6c296): WeeklyMetrics section — matched_jobs(7d)=5, **new_D0 by day** (honest, เลี่ยง mean ที่ bulk 05-30 บิดเบือน — เห็น 05-30=1077 bulk, ไม่มีวันอื่น=ตลาดเงียบจริง), feedback_rate. ChatGPT volume-illusion guard
+- **interim fix ยืนยัน FF รวม 5 รอบ** = deploy ราบรื่นสม่ำเสมอ
+
+### งานที่ N+54: VPS self-canary — แก้ api_state frozen (2026-06-01 ~15:15)
+- **พบจาก /checkpoint**: api_ingestion_state frozen ตั้งแต่ 05-29 (ทั้ง Windows+VPS). root = `BidMaster_WAF_Pulse` + `Queue_Processor` Windows tasks **DISABLED** (canary ไม่รัน) + interim fix ตัด git sync → VPS ไม่เห็น update
+- **ผล**: Enrichment_Worker gate (line 303 "skip if api_state!=HEALTHY") frozen HEALTHY = ตายเงียบ. **ไม่ active harm** (API healthy จริง + own circuit breaker/RateLimited abort คุ้ม) แต่ latent risk (ไม่ skip ล่วงหน้าถ้า WAF block)
+- **fix** (9dc8aab, 757b264, กัญจน์เลือก VPS self-canary): `scripts/vps_canary.py` — probe count_d0(นครพนม) → HEALTHY/BLOCKED/UNKNOWN → เขียน api_ingestion_state ที่ **app/data** (path ที่ worker gate อ่าน). `bms-canary.timer` ทุก 30 นาที (User=bms, chown state). **ตัด Windows dependency**
+- **verified**: canary HEALTHY→last_canary สด 15:14 · worker gate อ่าน HEALTHY สด · timer NEXT 15:44
+
+### งานที่ N+55: Discovery notify ทุกรอบ + cross-province sanity (กัญจน์ขอ 2026-06-01 ~17:30)
+- **discovery Discord notify** (06bfd26): ทุกรอบ incremental 7/13/19 → เจองานใหม่=รายการ+target / ไม่เจอ=ยืนยันตรวจแล้ว+scan/active/announce ล่าสุด. ไม่รวม full-sweep. test ส่งสำเร็จ
+- **cross-province probe** (e26a429→f5311f7): เทียบ announceDate กทม/เชียงใหม่(control) vs นพ/บก. **กัญจน์ชี้ 🟡 มี 2 กรณี** → แยก: control ERR=🔴 ระบบพังเรียก API ไม่ได้ / control ok+eGP ไม่ขยับ=🟡 eGP เงียบจริง(เราไม่พัง). **quiet_streak 3+ วัน=⚠️ เริ่มมีกลิ่น**. daily 08:30 (bms-crossprobe.timer)
+- finding (control test): ทั้งประเทศ latest=05-29 (กทม 18977 งานก็ยังไม่มี 06-01) → ระบบเราไม่พลาด, จันทร์ lag ทั้งประเทศ
+
+**Defer:** keyword refine · qualification drift alert · permanent token harvest · portal(Step6) · **P1 full migration (DEFERRED — tripwires)** · cross-source unify Option C · Windows tasks disabled (ส่วนใหญ่ migrate VPS แล้ว N+54; dashboard/ETL=legacy ลบได้, all_jobs=ดู on-demand) · DB→Postgres เมื่อ scale (project_db_strategy)
 
 ดู matching design: memory/project_matching_design · งานล่าสุด N+49
 
@@ -3633,3 +3678,39 @@ cache (resolve once read many) | multi-stage failure reason | circuit-breaker (�
 - progress_log.md (งานที่ N+29..N+39 + checkpoint นี้)
 - memory: project_delivery_wiring_decision.md, project_province_search_api.md
 - data/research_deadline_resolution_2026_05_30.md (probe ทั้งหมด)
+
+## งานที่ N+56: RSS global-feed degraded — แก้ false-alarm spam (2026-06-01)
+
+### สถานะ: ✅ เสร็จ
+
+### Root cause
+คุณกัญจน์เห็น Discord alert "RSS feed ว่าง 131 runs". วินิจฉัย:
+- consec_empty=131 (×30min ≈ 65h ตั้งแต่ 05-29 16:44 UTC, last_nonempty)
+- VPS เรียก RSS ได้ (curl 200, breaker CLOSED — ไม่ใช่ block/network)
+- feed **รายกรม** (ระบุ deptId) ทำงาน: 0307=2, 0708=2 items
+- feed **global** (ไม่ระบุ deptId, ที่ scraper `--global` ใช้) → **200 แต่ 0 items**
+- = eGP เปลี่ยนพฤติกรรม global no-deptId feed ฝั่งเซิร์ฟเวอร์ ~05-29
+
+### กระทบ product: ❌ ไม่
+นพ/บก รับงานผ่าน province_api (primary, HEALTHY). RSS = plane รอง legacy.
+คนละเรื่องกับ cross-province "ตลาดเงียบ" (feed รายกรม*มี*งานวันนี้).
+
+### Fix (commit e2e5bc5)
+- `poll_global_rss`: เพิ่ม `reachable` (any HTTP 200) แยก degraded จาก timeout
+- `check_empty_feed_alert(total, reachable)`:
+  - reachable+0 → "ℹ️ global feed degraded" แจ้ง**ครั้งเดียว** (flag degraded_notified) ไม่ spam
+  - unreachable/None+0 → "⚠️ เรียกไม่ได้" alert ซ้ำ cooldown 2h (คงไว้)
+  - items>0 → reset ทั้ง consec_empty + degraded_notified + "✅ กลับมาแล้ว"
+- decision (กัญจน์): "เงียบ alert + defer" — ไม่ resurrect global RSS, รอ scale ทั้ง ปท. ค่อยสลับ per-dept poll
+
+### Verify
+- VPS รัน --global 2 รอบ: รอบ 1 ส่ง ℹ️ ครั้งเดียว (degraded_notified=true), รอบ 2 **เงียบ** (ไม่ส่งซ้ำ) ✓
+- counter reset 131→0 บน VPS
+
+### Deploy note (deploy-debt อาการใหม่)
+VPS git pull ติด `.git/objects` permission + ไฟล์ scripts เป็น root:root (dir เป็น bms)
+→ deploy ด้วย rm ไฟล์เดิม (dir bms-writable) + scp ใหม่ → ไฟล์เป็น bms:bms. git VPS ยัง diverged (defer).
+
+### Followup
+- [ ] (defer) VPS git ownership/permission cleanup — รวมใน P1 full migration
+- [ ] (defer) ถ้า scale ทั้ง ปท. → สลับ scraper global → per-dept targeted poll (path ที่ยังทำงาน)

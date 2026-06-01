@@ -521,7 +521,8 @@ class SubscriptionStore:
 
         with get_connection() as conn:
             rows = conn.execute("""
-                SELECT s.customer_id, s.announce_types, s.min_budget, c.line_user_id, c.tier
+                SELECT s.customer_id, s.announce_types, s.min_budget, c.line_user_id,
+                       c.tier, c.is_test_data
                 FROM subscriptions s
                 JOIN customers c ON c.id = s.customer_id
                 JOIN subscription_provinces sp ON sp.subscription_id = s.id
@@ -543,7 +544,7 @@ class SubscriptionStore:
                     "VALUES (?,?,?,?,?,?,?,?,?,?)",
                     (row["customer_id"], project_id, "pending", now,
                      province or None, project_name, dept_name, is_backfill, source_stage,
-                     is_test_data),
+                     1 if (is_test_data or row["is_test_data"]) else 0),  # project synthetic OR test customer
                 )
                 if cur.lastrowid:
                     count += 1

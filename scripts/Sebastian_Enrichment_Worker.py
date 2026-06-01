@@ -163,8 +163,11 @@ def qualify_province_api(store, log) -> None:
         import job_matcher as jm
         mcfg = jm.load_config()
         mmode = os.environ.get("BMS_MATCHING_MODE", "shadow")
+        # keyword-first: กรอง keyword ก่อน resolve deadline/tambon (= ก่อน API call แพง)
+        # off=ไม่ทำ · shadow=log เฉยๆ ไม่ skip (วัด API ที่จะประหยัด) · enforce=skip resolve จริง
+        kwmode = os.environ.get("BMS_KEYWORD_FIRST_MODE", "off")
     except Exception as e:
-        jm = None; mcfg = None; mmode = "off"
+        jm = None; mcfg = None; mmode = "off"; kwmode = "off"
         log(f"Province qual: matcher load fail ({e}) — matching off")
     now = _now()
 
@@ -204,10 +207,24 @@ def qualify_province_api(store, log) -> None:
 
     TRANSIENT = (DeadlineOutcome.PROVIDER_ERROR, DeadlineOutcome.DOWNLOAD_FAILED)
     stats = {"enqueued": 0, "preview": 0, "expired": 0, "failed": 0, "retry": 0,
-             "filtered": 0, "soft": 0}
+             "filtered": 0, "soft": 0, "kw_skip": 0}
     consec_err = 0
     for c in cands:
         pid = c["project_id"]
+
+        # ── keyword-first pre-filter: กรองก่อน resolve (deadline PDF + tambon = 2 API call) ──
+        if jm is not None and kwmode != "off":
+            kw_pass, kw_reason = jm.passes_keyword(c.get("project_name") or "", mcfg)
+            if not kw_pass:
+                stats["kw_skip"] += 1
+                if kwmode == "enforce":
+                    with get_connection() as conn:
+                        conn.execute("UPDATE project_locations SET qualification_status='filtered_no_keyword' WHERE project_id=?", (pid,))
+                    log(f"  → ✂️ KW-FILTERED {pid} ({kw_reason}) — skip resolve (ประหยัด 2 API)")
+                    continue
+                else:  # shadow — log อย่างเดียว ไม่ skip (resolve ต่อตามปกติ เพื่อไม่เปลี่ยน production)
+                    log(f"  [kw-first SHADOW] {pid}: would SKIP ({kw_reason}) → ประหยัด deadline+tambon API")
+
         res = dsvc.resolve(pid)
 
         # circuit breaker (Caveat 3) — provider error ติดกัน = WAF/outage → หยุด ไม่ยิงรัว
@@ -282,7 +299,8 @@ def qualify_province_api(store, log) -> None:
 
     log(f"Province qual done — enqueued={stats['enqueued']} preview={stats['preview']} "
         f"expired={stats['expired']} failed={stats['failed']} retry={stats['retry']} "
-        f"| match[{mmode}] filtered={stats['filtered']} soft={stats['soft']}")
+        f"| match[{mmode}] filtered={stats['filtered']} soft={stats['soft']} "
+        f"| kw-first[{kwmode}] skip={stats['kw_skip']} (= API call ที่ประหยัดได้ตอน enforce)")
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────

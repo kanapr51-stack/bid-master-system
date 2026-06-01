@@ -89,6 +89,22 @@ def resolve_tambon(project_id: str, dept_name: str = "", project_name: str = "")
     return tb if tb else tambon_from_dept(dept_name)
 
 
+def passes_keyword(project_name: str, cfg: dict = None) -> Tuple[bool, str]:
+    """Pre-filter ฟรี (ไม่เรียก API): keyword ผ่าน + ไม่ติด negative ไหม.
+    ใช้ทำ keyword-first — กรองก่อน resolve deadline/tambon (ซึ่งแพง = API call).
+    คืน (True, kw) ถ้าผ่าน · (False, reason) ถ้าไม่ผ่าน → skip resolve ได้เลย.
+    logic ตรงกับ keyword/negative ใน match_job (consistency)."""
+    cfg = cfg if cfg is not None else load_config()
+    name = project_name or ""
+    kw = next((k for k in cfg.get("keywords", []) if k in name), None)
+    if not kw:
+        return False, "no_keyword"
+    neg = next((n for n in cfg.get("negative_keywords", []) if n in name), None)
+    if neg:
+        return False, f"negative:{neg}"
+    return True, kw
+
+
 def match_job(project_name: str, province: str, tambon_field: str = "",
               dept_name: str = "", cfg: dict = None) -> Tuple[str, dict]:
     """คืน (decision, detail). decision ∈ {'send','cut','soft_include'}"""

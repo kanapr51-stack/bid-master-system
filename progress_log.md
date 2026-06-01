@@ -3714,3 +3714,32 @@ VPS git pull ติด `.git/objects` permission + ไฟล์ scripts เป�
 ### Followup
 - [ ] (defer) VPS git ownership/permission cleanup — รวมใน P1 full migration
 - [ ] (defer) ถ้า scale ทั้ง ปท. → สลับ scraper global → per-dept targeted poll (path ที่ยังทำงาน)
+
+## งานที่ N+57: Daily User Summary — LINE heartbeat ให้ user (2026-06-01)
+
+### สถานะ: ✅ เสร็จ
+
+### สิ่งที่ทำ
+กัญจน์: "อยากให้ discovery แจ้งผ่าน LINE Sebastian ให้ user เห็นด้วย"
+flag 2 เรื่องก่อนยิงหา user จริง: (1) "งานใหม่" discovery = ระดับจังหวัด ≠ งานที่ match,
+(2) ส่ง "ไม่มีงาน" 3 รอบ/วัน = spam → กัญจน์เลือก "สรุปวันละ 1 ครั้ง รอบเย็น"
+
+- `scripts/Sebastian_Daily_User_Summary.py` — heartbeat รายบุคคล, นับ delivery_log sent วันไทย (ไม่นับ test)
+- M>0 "เจองาน N งาน (ส่งแล้ว)" / M=0 "ยังไม่มีงาน ผมเฝ้าให้ตลอด"
+- ส่งเฉพาะ active real (is_test_data=0); reuse send_line_push + _load_line_token
+- systemd `bms-daily-user-summary.timer` → 20:00 ไทย (13:00 UTC), enabled
+- งานที่ match ยังส่งแยกตาม pipeline เดิม (heartbeat = engagement ไม่ใช่ delivery)
+
+### Sanity check (จับ bug ได้ก่อน deploy)
+manual dry-run เห็น 2 customers stale + matched=0 → split-brain 2-data-dir:
+manual run ไม่มี BMS_DATA_DIR → DB_PATH ชี้ app/data (DB เก่า) แทน /opt/bms/data.
+รัน dry-run **พร้อม .env** → 4 real customers + matched_today=1 ตรง production ✓.
+systemd service มี EnvironmentFile=/opt/bms/app/.env → ตอน timer รันจริง env ถูกตัว.
+
+### Deploy
+root SSH (root@45.76.156.166 key เดียวกับ bms) วาง systemd unit ได้ (bms ไม่มี passwordless sudo).
+commit 75fbde5. รอบแรกยิง 20:00 ไทยวันนี้.
+
+### Followup
+- [ ] ดูผลรอบแรก 20:00 — user 4 คนได้ heartbeat "เจอ 1 งาน (หนองซน)"
+- [ ] (defer) อาจเพิ่มปุ่ม feedback ใน heartbeat ภายหลัง (link North-Star feedback loop)

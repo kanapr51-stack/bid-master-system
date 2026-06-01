@@ -1,0 +1,14 @@
+[Unit]
+Description=BMS Daily User Summary — LINE heartbeat ให้ user (สรุปวันละครั้ง รอบเย็น)
+After=network.target
+
+[Service]
+Type=oneshot
+User=bms
+Group=bms
+WorkingDirectory=/opt/bms/app
+EnvironmentFile=/opt/bms/app/.env
+ExecStart=/opt/bms/venv/bin/python /opt/bms/app/scripts/Sebastian_Daily_User_Summary.py
+Nice=10
+StandardOutput=journal
+StandardError=journal

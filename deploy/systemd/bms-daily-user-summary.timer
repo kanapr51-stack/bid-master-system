@@ -1,0 +1,10 @@
+[Unit]
+Description=BMS Daily User Summary — ทุกวัน 20:00 ไทย (หลัง discovery รอบ 19:00 + buffer pipeline)
+
+[Timer]
+OnCalendar=*-*-* 20:00:00 Asia/Bangkok
+Persistent=true
+Unit=bms-daily-user-summary.service
+
+[Install]
+WantedBy=timers.target

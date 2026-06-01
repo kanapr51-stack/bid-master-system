@@ -1,0 +1,10 @@
+[Unit]
+Description=BMS VPS Self-Canary — every 30 min
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=30min
+Unit=bms-canary.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,14 @@
+[Unit]
+Description=BMS VPS Self-Canary (api_state probe)
+After=network.target
+
+[Service]
+Type=oneshot
+User=bms
+Group=bms
+WorkingDirectory=/opt/bms/app
+EnvironmentFile=/opt/bms/app/.env
+ExecStart=/opt/bms/venv/bin/python /opt/bms/app/scripts/vps_canary.py
+Nice=10
+StandardOutput=journal
+StandardError=journal

@@ -346,11 +346,45 @@ def _snapshot_enrichment_stats() -> None:
     conn.close()
 
 
+def rss_local_candidate_section() -> str:
+    """[P2 guard 2026-06-01] RSS-only งานที่ keyword match + ชื่อมีตำบลเป้าหมาย
+    → อาจตกหล่นจาก province_api path (cross-source dedup gap). observable เฉยๆ ไม่ enqueue.
+    ChatGPT: ถ้า 30 วัน เห็น 0 → ลบ concern ได้. ดู memory/project_deploy_debt, matching_design."""
+    db_path = Path(os.environ.get("BMS_DATA_DIR") or str(BASE / "data")) / "bms_customers.db"
+    if not db_path.exists():
+        return "RSS_LOCAL_CANDIDATE: SKIP  db missing"
+    try:
+        import job_matcher as jm
+        cfg = jm.load_config()
+        kws = cfg.get("keywords", [])
+        tambons = [t for v in cfg.get("target_tambons", {}).values() for t in v]
+    except Exception as e:
+        return f"RSS_LOCAL_CANDIDATE: SKIP  matcher ({e})"
+    conn = sqlite3.connect(db_path); conn.row_factory = sqlite3.Row
+    rows = conn.execute("""
+        SELECT project_id, project_name FROM projects_seen
+        WHERE source='rss'
+          AND project_id NOT IN (SELECT project_id FROM projects_seen WHERE source='province_api')
+          AND project_id NOT IN (SELECT project_id FROM notification_queue)
+    """).fetchall()
+    conn.close()
+    hits = [(r["project_id"], r["project_name"] or "") for r in rows
+            if any(k in (r["project_name"] or "") for k in kws)
+            and any(t in (r["project_name"] or "") for t in tambons)]
+    if not hits:
+        return "RSS_LOCAL_CANDIDATE: ZERO  (RSS ไม่มีงานเป้าหมายตกหล่น)"
+    out = [f"RSS_LOCAL_CANDIDATE: WARN  {len(hits)} งาน RSS-only ชื่อมีตำบลเป้าหมาย (เช็คว่าตกหล่นไหม)"]
+    for pid, nm in hits[:5]:
+        out.append(f"  {pid} | {nm[:46]}")
+    return "\n".join(out)
+
+
 def main():
     _snapshot_enrichment_stats()
 
     rss   = rss_section()
     disc  = discovery_section()
+    rssloc = rss_local_candidate_section()
     enr   = enrichment_section()
     dlv   = delivery_section()
     fb    = feedback_section()
@@ -364,6 +398,8 @@ def main():
         rss,
         "",
         disc,
+        "",
+        rssloc,
         "",
         enr,
         "",

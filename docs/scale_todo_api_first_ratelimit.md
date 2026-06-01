@@ -18,15 +18,20 @@
 | **คอขวดจริง = `generateToken`** (ไม่ใช่ getProcurementDetail!) | ชนที่ **~30 calls/รอบ** |
 | getProcurementDetail (ตัว detail) | ยิงได้ ≥29 calls ไม่ชน — **ยังไม่เจอเพดาน** (สูงกว่า generateToken) |
 | **generateToken cooldown** | **ฟื้นช้า >2 นาที** หลัง burst (น่าจะ penalty ยิงรัว) ⚠️ ชนแล้วแพง |
-| **token reuse ข้าม project** | ⏳ _รอ probe เสร็จ — จะเติม (ตัวชี้ขาด feasibility)_ |
+| **token reuse ข้าม project** | ❌ **ผูก project** — token ข้าม project 0/6 valid, control (token ตรง project) 3/3 valid |
 
 **ทำไมคอขวดอยู่ที่ generateToken:** `tambon_from_api` / `_enrich` ต้อง mint AES token **per-project** (key = encrypt projectId) ทุกครั้ง → resolve N งานใหม่ = generateToken N ครั้ง → ชนที่ ~30
 
 ---
 
-## 🧭 Design ขึ้นกับผล token-reuse
-- **ถ้า token ใช้ข้าม project ได้** → cache 1 token (30 นาที) ใช้ทุกงาน → generateToken แทบไม่ถูกเรียก → **คอขวดหาย "API 100%" ทำได้สบาย** ✅
-- **ถ้า token ผูก project** → generateToken เป็นเพดานจริง ~30 งาน/รอบ → ต้อง throttle ที่ **generateToken** (ไม่ใช่ getProcurementDetail) + conservative มาก (cooldown ยาว)
+## 🧭 Design — สรุปจากผล probe (token ผูก project)
+**token ใช้ข้ามไม่ได้ → cache 1 token แก้ไม่ได้ → generateToken เป็นเพดานจริง ~30 งานใหม่/รอบ + cooldown >2 นาที**
+→ ทางแก้:
+1. **Cache `moiName` per-project ลง DB** — resolve ครั้งเดียว/งาน, ไม่ mint token ซ้ำงานเดิม (ลด generateToken เฉพาะงานใหม่)
+2. **Throttle ที่ generateToken** (ไม่ใช่ getProcurementDetail) — conservative เพราะ cooldown ยาว · shared ข้าม process
+3. **Queue + priority** — resolve ~30 งานใหม่/รอบ, เกินนั้นเลื่อนรอบถัดไป (deadline ใกล้ก่อน)
+
+> Capacity คร่าว: ~30 generate ต่อ ~window แล้ว cooldown >2 นาที → throughput ~ตามด้านล่าง ต้อง probe window/cooldown แม่นเพิ่มถ้าจะ implement (probe รอบนี้ recover-test ค้างเพราะ ssh hang ยังไม่ได้ค่า window เป๊ะ)
 
 ---
 

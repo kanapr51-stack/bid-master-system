@@ -895,38 +895,40 @@ def _discord_notify(msg: str) -> None:
 def check_empty_feed_alert(total_items: int, reachable: bool | None = None) -> None:
     """Track consecutive empty runs. แยก 2 กรณีตาม reachability:
 
-      reachable=True + 0 items  → eGP global feed degraded (200 แต่ empty; eGP เปลี่ยน
-                                   พฤติกรรมฝั่งเซิร์ฟเวอร์ ~2026-06). feed รายกรมยังใช้ได้,
-                                   province_api (primary) ไม่กระทบ → แจ้ง "ครั้งเดียว" ไม่ spam.
+      reachable=True + 0 items  → global feed ว่าง = "ไม่มีประกาศใหม่ในรอบนี้" (ปกติช่วง
+                                   weekend/นอกเวลาราชการ; global feed มี diurnal+weekly
+                                   pattern). RSS จะจับทันทีเมื่อมีงานใหม่ → แจ้ง "ครั้งเดียว" ไม่ spam.
       reachable=False/None + 0  → feed เรียกไม่ได้จริง (timeout/error) → แจ้งซ้ำได้ (cooldown 2h).
     """
     state = _load_run_state()
     now = datetime.now().isoformat(timespec="seconds")
+    # backward-compat: เคยใช้ key "degraded_notified" (wording เก่าผิด) → migrate เป็น empty_notified
+    _was_notified = state.get("empty_notified") or state.get("degraded_notified")
 
     if total_items > 0:
-        was_alerted = (state.get("consec_empty", 0) >= EMPTY_RUN_THRESHOLD
-                       or state.get("degraded_notified"))
+        was_alerted = (state.get("consec_empty", 0) >= EMPTY_RUN_THRESHOLD or _was_notified)
         state["consec_empty"] = 0
         state["last_nonempty_at"] = now
-        state["degraded_notified"] = False
+        state["empty_notified"] = False
+        state.pop("degraded_notified", None)
         _save_run_state(state)
         if was_alerted:
-            _discord_notify(f"✅ RSS feed กลับมาแล้ว — {total_items} items ใน run นี้")
+            _discord_notify(f"✅ RSS global feed มีงานใหม่แล้ว — {total_items} items ใน run นี้")
         return
 
     state["consec_empty"] = state.get("consec_empty", 0) + 1
     consec = state["consec_empty"]
 
-    # ── กรณี A: feed reachable แต่คืน 0 items = eGP global feed degraded (รู้สาเหตุแล้ว) ──
+    # ── กรณี A: feed reachable แต่คืน 0 items = ไม่มีประกาศใหม่ (ปกติ weekend/นอกเวลาราชการ) ──
     if reachable is True:
-        if not state.get("degraded_notified"):
-            state["degraded_notified"] = True
+        if not _was_notified:
+            state["empty_notified"] = True
+            state.pop("degraded_notified", None)
             _save_run_state(state)
             _discord_notify(
-                "ℹ️ RSS global feed คืนค่าว่าง (200/0 items) — eGP เปลี่ยนพฤติกรรม "
-                "ฝั่งเซิร์ฟเวอร์ (feed รายกรมยังใช้ได้)\n"
-                "ไม่กระทบ user: นพ/บก รับงานผ่าน province_api (primary) ปกติ — "
-                "RSS เป็น plane รอง legacy, defer ไว้ตอน scale ทั้งประเทศ"
+                "ℹ️ RSS global feed ว่าง (200/0 items) — ไม่มีประกาศใหม่ในรอบนี้ "
+                "(ปกติช่วง weekend/นอกเวลาราชการ)\n"
+                "ไม่กระทบ user: นพ/บก รับงานผ่าน province_api + RSS จะจับทันทีเมื่อมีงานใหม่"
             )
         else:
             _save_run_state(state)   # เงียบ — แจ้งไปแล้ว

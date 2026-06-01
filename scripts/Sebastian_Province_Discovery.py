@@ -381,6 +381,30 @@ def main():
         print(f"\n(dry-run — จะ ingest {len(chosen)} รายการ ถ้าใส่ --ingest)")
     _write_heartbeat("ok", total=len(all_recs), active=len(active), ingested=ingested)
 
+    # Discord notify ทุกรอบ incremental (7/13/19) — เจอ/ไม่เจองานใหม่ + รายละเอียด (กัญจน์ขอ 2026-06-01)
+    # ไม่รวม full-sweep (safety net เงียบ — มี reconcile alert แยกถ้าเจอปัญหา)
+    if args.ingest and not args.dry_run and not args.full:
+        from datetime import datetime as _dt, timezone as _tz, timedelta as _td2
+        now_th = _dt.now(_tz(_td2(hours=7))).strftime("%H:%M")
+        prov_latest = {}
+        for r in all_recs:
+            p, ad = r["province"], r["announce_date"]
+            if ad and (p not in prov_latest or ad > prov_latest[p]):
+                prov_latest[p] = ad
+        latest_str = " · ".join(f"{p} {dt}" for p, dt in prov_latest.items()) or "—"
+        new_recs = [r for r in chosen if known is not None and r["project_id"] not in known]
+        if ingested > 0:
+            lines = [f"🆕 Discovery {now_th} — เจอ {ingested} งานใหม่!",
+                     f"scan {len(all_recs)} ({len(active)} active) · ในอำเภอเป้าหมาย {len(target)}",
+                     f"announce ล่าสุด: {latest_str}", "งานใหม่:"]
+            for r in new_recs[:8]:
+                lines.append(f"  • {r['province']} | ฿{r['budget']:,} | {r['project_name'][:42]}")
+            _discord("\n".join(lines))
+        else:
+            _discord(f"✅ Discovery {now_th} — ตรวจแล้วไม่มีงานใหม่\n"
+                     f"scan {len(all_recs)} ({len(active)} active, {len(all_recs)-len(active)} ยกเลิก) · known ครบ\n"
+                     f"announce ล่าสุด: {latest_str} (ตลาดตามนี้)")
+
 
 if __name__ == "__main__":
     main()

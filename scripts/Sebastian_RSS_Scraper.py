@@ -818,10 +818,13 @@ def poll_global_rss(anounce_types: list[str] | None = None,
     rss_seen = load_seen(RSS_SEEN_FILE)
     all_items: list[dict] = []
     types_ok: list[str] = []
+    any_200 = False   # เซิร์ฟเวอร์ตอบ 200 อย่างน้อย 1 type = reachable (แยกจาก timeout)
 
     for atype in anounce_types:
         status, items = fetch_dept("", anounce_type=atype, timeout=12, retries=1,
                                    record_telemetry=True)
+        if status == 200:
+            any_200 = True
         if status == 200 and items:
             for it in items:
                 it["deptId"] = ""
@@ -852,6 +855,7 @@ def poll_global_rss(anounce_types: list[str] | None = None,
         "total_items": len(all_items),
         "new_to_rss": len(new_to_rss),
         "types_polled": types_ok,
+        "reachable": any_200,
         "breaker": final_breaker,
     }
 
@@ -888,15 +892,23 @@ def _discord_notify(msg: str) -> None:
         log(f"Discord notify failed: {e}")
 
 
-def check_empty_feed_alert(total_items: int) -> None:
-    """Track consecutive empty runs. Alert Discord when threshold hit; notify recovery."""
+def check_empty_feed_alert(total_items: int, reachable: bool | None = None) -> None:
+    """Track consecutive empty runs. แยก 2 กรณีตาม reachability:
+
+      reachable=True + 0 items  → eGP global feed degraded (200 แต่ empty; eGP เปลี่ยน
+                                   พฤติกรรมฝั่งเซิร์ฟเวอร์ ~2026-06). feed รายกรมยังใช้ได้,
+                                   province_api (primary) ไม่กระทบ → แจ้ง "ครั้งเดียว" ไม่ spam.
+      reachable=False/None + 0  → feed เรียกไม่ได้จริง (timeout/error) → แจ้งซ้ำได้ (cooldown 2h).
+    """
     state = _load_run_state()
     now = datetime.now().isoformat(timespec="seconds")
 
     if total_items > 0:
-        was_alerted = state.get("consec_empty", 0) >= EMPTY_RUN_THRESHOLD
+        was_alerted = (state.get("consec_empty", 0) >= EMPTY_RUN_THRESHOLD
+                       or state.get("degraded_notified"))
         state["consec_empty"] = 0
         state["last_nonempty_at"] = now
+        state["degraded_notified"] = False
         _save_run_state(state)
         if was_alerted:
             _discord_notify(f"✅ RSS feed กลับมาแล้ว — {total_items} items ใน run นี้")
@@ -904,12 +916,27 @@ def check_empty_feed_alert(total_items: int) -> None:
 
     state["consec_empty"] = state.get("consec_empty", 0) + 1
     consec = state["consec_empty"]
-    _save_run_state(state)
 
+    # ── กรณี A: feed reachable แต่คืน 0 items = eGP global feed degraded (รู้สาเหตุแล้ว) ──
+    if reachable is True:
+        if not state.get("degraded_notified"):
+            state["degraded_notified"] = True
+            _save_run_state(state)
+            _discord_notify(
+                "ℹ️ RSS global feed คืนค่าว่าง (200/0 items) — eGP เปลี่ยนพฤติกรรม "
+                "ฝั่งเซิร์ฟเวอร์ (feed รายกรมยังใช้ได้)\n"
+                "ไม่กระทบ user: นพ/บก รับงานผ่าน province_api (primary) ปกติ — "
+                "RSS เป็น plane รอง legacy, defer ไว้ตอน scale ทั้งประเทศ"
+            )
+        else:
+            _save_run_state(state)   # เงียบ — แจ้งไปแล้ว
+        return
+
+    # ── กรณี B: feed เรียกไม่ได้จริง (timeout/error) → แจ้งซ้ำได้ (cooldown 2h) ──
+    _save_run_state(state)
     if consec < EMPTY_RUN_THRESHOLD:
         return
 
-    # Cooldown: ส่ง alert ซ้ำได้ทุก 2h เท่านั้น (ไม่ spam)
     last_alert = state.get("last_alert_at", "")
     if last_alert:
         try:
@@ -922,8 +949,8 @@ def check_empty_feed_alert(total_items: int) -> None:
     state["last_alert_at"] = now
     _save_run_state(state)
     _discord_notify(
-        f"⚠️ RSS feed ว่าง {consec} runs ติดต่อกัน (~{consec * 30} นาที)\n"
-        f"ตรวจสอบ: process.gprocurement.go.th หรือ target_deptids.json"
+        f"⚠️ RSS feed เรียกไม่ได้ {consec} runs ติดต่อกัน (~{consec * 30} นาที, timeout/error)\n"
+        f"ตรวจสอบ: process.gprocurement.go.th หรือ network VPS"
     )
 
 
@@ -1013,7 +1040,7 @@ if __name__ == "__main__":
         result = poll_global_rss(anounce_types=["D0", "P0", "W0"], queue_new=args.queue)
         log(f"\nสรุป: items={result['total_items']}, new={result['new_to_rss']}, "
             f"types={result['types_polled']}")
-        check_empty_feed_alert(result["total_items"])
+        check_empty_feed_alert(result["total_items"], reachable=result.get("reachable"))
         sys.exit(0)
 
     # ── probe-all mode (ทำก่อน แล้วออก — ไม่รัน normal pipeline) ──

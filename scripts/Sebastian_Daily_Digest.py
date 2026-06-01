@@ -379,6 +379,36 @@ def rss_local_candidate_section() -> str:
     return "\n".join(out)
 
 
+def weekly_metrics_section() -> str:
+    """[P3 2026-06-01] metrics รายสัปดาห์ — กัน 'volume illusion' (ส่งน้อย = ตลาดเงียบ
+    ไม่ใช่ matching แคบ). matched_jobs/wk, new_D0/day, feedback_rate. ChatGPT แนะ."""
+    db_path = Path(os.environ.get("BMS_DATA_DIR") or str(BASE / "data")) / "bms_customers.db"
+    if not db_path.exists():
+        return "WeeklyMetrics: SKIP  db missing"
+    conn = sqlite3.connect(db_path); conn.row_factory = sqlite3.Row
+    wk = (NOW - timedelta(days=7)).isoformat()
+    def _n(sql, *a):
+        try:
+            return conn.execute(sql, a).fetchone()["n"]
+        except Exception:
+            return -1
+    matched = _n("SELECT COUNT(DISTINCT project_id) n FROM notification_queue "
+                 "WHERE source_stage IN ('province_qualified','province_soft_location') "
+                 "AND is_test_data=0 AND created_at >= ?", wk)
+    new_d0 = _n("SELECT COUNT(*) n FROM projects_seen WHERE source='province_api' "
+                "AND first_seen_at >= ?", wk)
+    sent = _n("SELECT COUNT(*) n FROM delivery_log WHERE status='sent' AND is_test_data=0 "
+              "AND attempted_at >= ?", wk)
+    fb = _n("SELECT COUNT(*) n FROM feedback WHERE created_at >= ?", wk)
+    conn.close()
+    rate = f"{fb}/{sent}" if sent > 0 else f"{max(fb,0)}/0"
+    perday = f"{new_d0/7:.1f}" if new_d0 >= 0 else "?"
+    return ("WeeklyMetrics (7d):\n"
+            f"  matched_jobs: {matched}\n"
+            f"  new_D0/day: {perday} ({new_d0}/7d)\n"
+            f"  feedback_rate: {rate} (feedback/sent)")
+
+
 def main():
     _snapshot_enrichment_stats()
 
@@ -387,6 +417,7 @@ def main():
     rssloc = rss_local_candidate_section()
     enr   = enrichment_section()
     dlv   = delivery_section()
+    wmet  = weekly_metrics_section()
     fb    = feedback_section()
     task  = tasks_section()
     sys_  = system_section()
@@ -404,6 +435,8 @@ def main():
         enr,
         "",
         dlv,
+        "",
+        wmet,
         "",
         fb,
         "",

@@ -27,6 +27,9 @@ CONFIG_PATH = os.path.join(
 # รหัสถนน: บก./นพ. + เลข 3-4 หลัก (ไทย/อารบิก) เช่น "นพ.4036", "บก ๓๐๙"
 _ROAD_CODE_RE = re.compile(r"(?:บก|นพ)\.?\s?[๐-๙\d]{3,4}")
 
+# ตำบลที่ระบุชัดในชื่องาน เช่น "ตำบลนาแก", "ต.หนองซน" → จับชื่อตำบล (อักษรไทยต่อเนื่อง)
+_TAMBON_NAME_RE = re.compile(r"(?:ตำบล|ต\.)\s*([ก-๙]+)")
+
 
 def load_config(path: str = CONFIG_PATH) -> dict:
     with open(path, encoding="utf-8") as f:
@@ -44,6 +47,13 @@ def _norm_tambon(s: str) -> str:
 def extract_road_code(name: str) -> str:
     m = _ROAD_CODE_RE.search(name or "")
     return m.group(0).strip() if m else ""
+
+
+def tambon_from_name(name: str) -> str:
+    """ตำบลที่ระบุชัดในชื่องาน ('ตำบล X' / 'ต.X') → ชื่อตำบล. '' ถ้าไม่มี.
+    ใช้ตัดสิน non-target: ถ้าชื่อบอกตำบลชัด + ตำบลนั้นไม่อยู่ใน target → cut (ไม่ใช่ soft)"""
+    m = _TAMBON_NAME_RE.search(name or "")
+    return m.group(1).strip() if m else ""
 
 
 def tambon_from_dept(dept_name: str) -> str:
@@ -104,7 +114,11 @@ def match_job(project_name: str, province: str, tambon_field: str = "",
     else:
         hit = next((t for t in targets if t in name), None)
         if hit:
-            loc, src = hit, "name"                   # ชื่องานมี target tambon
+            loc, src = hit, "name"                   # ชื่องานมี target tambon (ชนะก่อน — งานเชื่อมหลายตำบล)
+        else:
+            explicit = tambon_from_name(name)        # ไม่มี target ในชื่อ → ลองหา "ตำบล X" ชัดๆ
+            if explicit:
+                loc, src = explicit, "name_explicit"  # ระบุตำบลชัด + ไม่ใช่ target → จะ cut
 
     if loc and loc in targets:
         return "send", {"keyword": kw, "tambon": loc, "location_source": src,

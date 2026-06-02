@@ -3766,3 +3766,28 @@ commit 75fbde5. รอบแรกยิง 20:00 ไทยวันนี้.
 ### Followup (ตื่นมา)
 - [ ] review shadow log (discovery 07:00+ seed pending → worker log kw-first SHADOW)
 - [ ] ตัดสิน cutover: flip BMS_KEYWORD_FIRST_MODE=enforce → verify filtered_no_keyword ถูก
+
+## งานที่ N+59: แก้ full sweep safety net (กัญจน์ค้นเจอ) (2026-06-02)
+
+### สถานะ: ✅ เสร็จ + verified 2 จังหวัด
+
+### Bug (กัญจน์ค้นเจอจากคำถาม "RSS เพดาน 20 → พลาดไหม")
+full sweep paginate 2 จังหวัด = 128 หน้า > 99 req limit (bearer token province search)
+→ ชน rate limit บึงกาฬหน้า 14 → sys.exit(2) ก่อน reconcile (บรรทัด 355)
+→ safety net ไม่เคยทำงาน + บึงกาฬหน้า 15-43 ไม่เคย full scan
+
+### Fix A+B (commit 231b143)
+- A: rate-limit abort → ไม่ทิ้ง! partial_abort flag → reconcile/ingest งานที่ paginate ได้
+- B: split per-province — bms-province-discovery-full-{nkp,bkg} (07:30/08:30, แต่ละ <99 req)
+  disable bms-province-discovery-full.timer เดิม
+
+### Verified (test 2 จังหวัด)
+- นครพนม: ครบ 85 หน้า ไม่ชน + reconcile "ไม่พลาด" ✅
+- บึงกาฬ: ครบ 43 หน้า (ครั้งแรก!) + reconcile "ไม่พลาด" ✅ — 18 งานเป้าหมายอยู่ใน known หมด (RSS จับครบ)
+
+### คำตอบคำถามต้นทาง
+บึงกาฬ**ไม่พลาดงาน** — RSS poll ถี่ (5 นาที) + incremental ครอบคลุม. RSS เพดาน 20/snapshot ไม่ทำให้พลาด (งานใหม่/รอบ < 20). safety net ตอนนี้ verify ได้ทุกวัน (เมื่อก่อนตาบอด)
+
+### Followup
+- [ ] ดู nkp/bkg timer พรุ่งนี้ 07:30/08:30 — reconcile รันครบทั้ง 2 จังหวัด
+- [ ] (สังเกต) incremental report "เป้าหมาย 0" ≠ ไม่มีงาน (หยุดเร็ว) — RSS/full คุ้มกัน

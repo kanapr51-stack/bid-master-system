@@ -95,6 +95,19 @@ async def reply_message(reply_token: str, text: str) -> None:
         pass
 
 
+async def reply_raw(reply_token: str, messages: list) -> None:
+    """Reply ด้วย messages ดิบ (รองรับ flex). reply ฟรี ไม่กิน quota."""
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            await client.post(
+                LINE_API + "/message/reply",
+                headers={**_line_headers(), "Content-Type": "application/json"},
+                json={"replyToken": reply_token, "messages": messages},
+            )
+    except Exception:
+        pass
+
+
 # -- Message text helpers (ASCII quotes only, no smart/curly quotes) ----------
 
 def _welcome_text(display_name: str) -> str:
@@ -201,6 +214,96 @@ def _record_feedback_by_project(user_id: str, action: str, project_id: str):
         ).fetchone()
         pname = (name_row["project_name"] if name_row else "") or project_id
     return pname, project_id
+
+
+# -- Feedback flex (postback): ตอบกลับรายละเอียดงาน + ปุ่มแก้ไข -----------------
+FB_FULL_LABEL = {
+    "interested":   "\U0001f44d สนใจ/น่าติดตาม",
+    "relevant_low": "\U0001f914 เกี่ยวข้องแต่ไม่น่าสนใจ",
+    "irrelevant":   "\U0001f44e ไม่เกี่ยวข้องเลย",
+}
+
+
+def _fmt_budget_th(budget) -> str:
+    if not budget:
+        return "ไม่ระบุ"
+    if budget >= 1_000_000:
+        return f"{budget / 1_000_000:.1f} ล้านบาท"
+    return f"{int(budget):,} บาท"
+
+
+def _project_detail(project_id: str) -> dict:
+    """ดึงรายละเอียดงานจาก projects_seen สำหรับแสดงตอนตอบ feedback"""
+    try:
+        with get_conn() as conn:
+            row = conn.execute(
+                "SELECT project_name, budget, dept_name, province "
+                "FROM projects_seen WHERE project_id=?", (project_id,)
+            ).fetchone()
+    except Exception:
+        row = None
+    if not row:
+        return {"project_name": project_id, "budget": 0, "dept_name": "", "province": ""}
+    return {
+        "project_name": row["project_name"] or project_id,
+        "budget": row["budget"] or 0,
+        "dept_name": row["dept_name"] or "",
+        "province": row["province"] or "",
+    }
+
+
+def _detail_info_line(d: dict) -> str:
+    parts = []
+    if d.get("province"):
+        parts.append("\U0001f4cd " + d["province"])
+    parts.append("\U0001f4b0 " + _fmt_budget_th(d.get("budget")))
+    if d.get("dept_name"):
+        parts.append("\U0001f3e2 " + d["dept_name"])
+    return "  ".join(parts)
+
+
+def _confirm_flex(action: str, project_id: str, d: dict) -> dict:
+    """bubble: ✅ บันทึกแล้ว + label + รายละเอียดงาน + ปุ่ม ✏️ แก้ไข feedback"""
+    label = FB_FULL_LABEL.get(action, "")
+    return {
+        "type": "bubble",
+        "body": {"type": "box", "layout": "vertical", "contents": [
+            {"type": "text", "text": "✅ บันทึก feedback แล้ว",
+             "weight": "bold", "size": "md", "color": "#1DB446"},
+            {"type": "text", "text": label, "size": "sm", "margin": "sm", "wrap": True},
+            {"type": "separator", "margin": "md"},
+            {"type": "text", "text": "\U0001f3d7️ " + d.get("project_name", project_id)[:300],
+             "size": "sm", "margin": "md", "wrap": True, "weight": "bold"},
+            {"type": "text", "text": _detail_info_line(d),
+             "size": "xs", "color": "#888888", "margin": "sm", "wrap": True},
+        ]},
+        "footer": {"type": "box", "layout": "vertical", "contents": [
+            {"type": "button", "style": "secondary", "height": "sm",
+             "action": {"type": "postback", "label": "✏️ แก้ไข feedback",
+                        "data": "fbedit:" + project_id, "displayText": "แก้ไข feedback"}},
+        ]},
+    }
+
+
+def _choose_flex(project_id: str, d: dict) -> dict:
+    """bubble: เลือก feedback ใหม่ (3 ปุ่ม fb:action:project)"""
+    footer_btns = []
+    for act, label in FB_FULL_LABEL.items():
+        footer_btns.append({
+            "type": "button", "style": "secondary", "height": "sm",
+            "action": {"type": "postback", "label": label,
+                       "data": f"fb:{act}:{project_id}", "displayText": label},
+        })
+    return {
+        "type": "bubble",
+        "body": {"type": "box", "layout": "vertical", "contents": [
+            {"type": "text", "text": "เลือก feedback ใหม่สำหรับงานนี้",
+             "weight": "bold", "size": "sm", "wrap": True},
+            {"type": "text", "text": "\U0001f3d7️ " + d.get("project_name", project_id)[:300],
+             "size": "xs", "color": "#888888", "margin": "sm", "wrap": True},
+        ]},
+        "footer": {"type": "box", "layout": "vertical", "spacing": "sm", "contents": footer_btns},
+    }
 
 
 def _save_provinces(user_id: str, provinces: list[str]) -> None:
@@ -432,22 +535,33 @@ async def line_webhook(
                 )
 
         elif event.get("type") == "postback":
-            # ปุ่ม feedback จาก flex message: data = fb:<action>:<project_id>
             reply_token = event.get("replyToken")
             data = ((event.get("postback") or {}).get("data") or "")
-            parsed = None
+
+            # กด "แก้ไข feedback" → ส่งการ์ด 3 ปุ่มเลือกใหม่: fbedit:<project_id>
+            if data.startswith("fbedit:"):
+                project_id = data.split(":", 1)[1]
+                if project_id and reply_token:
+                    d = _project_detail(project_id)
+                    await reply_raw(reply_token, [{
+                        "type": "flex", "altText": "แก้ไข feedback",
+                        "contents": _choose_flex(project_id, d),
+                    }])
+                continue
+
+            # เลือก feedback: fb:<action>:<project_id>
             if data.startswith("fb:"):
                 parts = data.split(":", 2)
                 if len(parts) == 3 and parts[1] in ("interested", "relevant_low", "irrelevant") and parts[2]:
-                    parsed = (parts[1], parts[2])
-            if not parsed:
+                    action, project_id = parts[1], parts[2]
+                    _record_feedback_by_project(user_id, action, project_id)
+                    if reply_token:
+                        d = _project_detail(project_id)
+                        await reply_raw(reply_token, [{
+                            "type": "flex", "altText": "บันทึก feedback แล้ว",
+                            "contents": _confirm_flex(action, project_id, d),
+                        }])
                 continue
-            action, project_id = parsed
-            _record_feedback_by_project(user_id, action, project_id)
-            if reply_token:
-                label = {"interested": "👍 สนใจ", "relevant_low": "🤔 รับทราบ",
-                         "irrelevant": "👎 ไม่เกี่ยว"}.get(action, "")
-                await reply_message(reply_token, f"บันทึกแล้วครับ {label} ขอบคุณครับ 🎩")
 
     return {"ok": True}
 

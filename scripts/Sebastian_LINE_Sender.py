@@ -74,13 +74,13 @@ def build_job_flex(project_id: str, title: str, detail: str, doc_url: str = "") 
     """สร้าง flex bubble: งาน (body) + 3 ปุ่ม feedback postback (footer).
     คืน contents dict (ใส่ใน message type=flex)"""
     body_contents = [
-        {"type": "text", "text": "🏗️ " + title[:160], "wrap": True, "weight": "bold", "size": "sm"},
+        {"type": "text", "text": "🏗️ " + title[:300], "wrap": True, "weight": "bold", "size": "sm"},
         {"type": "text", "text": detail[:1000], "wrap": True, "size": "sm", "color": "#444444", "margin": "md"},
     ]
     if doc_url:
         body_contents.append({
             "type": "button", "style": "link", "height": "sm", "margin": "md",
-            "action": {"type": "uri", "label": "📎 ดูเอกสาร", "uri": doc_url},
+            "action": {"type": "uri", "label": "📋 ดูรายละเอียดงาน", "uri": doc_url},
         })
     footer_btns = []
     for action, label in FB_ACTIONS.items():
@@ -128,8 +128,8 @@ def _lookup_pdf_url_from_rss(project_id: str) -> str:
     return ""
 
 
-def _shorten_project_name(name: str, max_len: int = 60) -> str:
-    """ตัดชื่อโครงการ — ลบ prefix ที่ไม่มีความหมายออก"""
+def _clean_project_name(name: str) -> str:
+    """ลบ prefix/suffix ที่ไม่มีความหมายออก — คืน 'ชื่อเต็ม' (ไม่ตัดความยาว)"""
     prefixes = [
         "ประกวดราคาจ้างก่อสร้าง", "ประกวดราคาจ้าง", "ประกวดราคาซื้อ",
         "ซื้อ", "จ้าง", "จ้างก่อสร้าง", "ประกวดราคา",
@@ -144,6 +144,12 @@ def _shorten_project_name(name: str, max_len: int = 60) -> str:
                    " โดยวิธีเฉพาะเจาะจง", " ด้วยวิธีคัดเลือก"]:
         if result.endswith(suffix):
             result = result[:-len(suffix)].rstrip()
+    return result or name
+
+
+def _shorten_project_name(name: str, max_len: int = 60) -> str:
+    """เวอร์ชันย่อ (ใช้ที่ digest/log) — clean แล้วตัดความยาว"""
+    result = _clean_project_name(name)
     if len(result) > max_len:
         result = result[:max_len] + "..."
     return result or name[:max_len]
@@ -197,7 +203,7 @@ def format_notification(project_id: str, province: str = "",
     v2 Mobile-first format — optimize สำหรับ 3-second decision scan
     ลำดับ: geography → project → money → agency → DEADLINE → timeline → announced
     """
-    short_name = _shorten_project_name(project_name) if project_name else project_id
+    # ชื่องาน (เต็ม) แสดงเป็น header ของการ์ด flex แล้ว — body ไม่ต้องซ้ำ
     lines = []
 
     if is_backfill:
@@ -206,7 +212,6 @@ def format_notification(project_id: str, province: str = "",
         lines.append("🔔 พบโครงการใหม่")
 
     lines.append(f"📍 {province or 'ไม่ระบุจังหวัด'}")
-    lines.append(f"🏗 {short_name}")
     lines.append(f"💰 ราคากลาง {_fmt_budget(budget)}")
 
     if dept_name:
@@ -468,13 +473,15 @@ def main():
         return
 
     # Step 5: send live — flex message + ปุ่ม feedback (postback)
+    full_name = _clean_project_name(item.get("project_name") or "") or item["project_id"]
     flex = build_job_flex(
         project_id=item["project_id"],
-        title=_shorten_project_name(item.get("project_name") or ""),
+        title=full_name,
         detail=text,
         doc_url=pdf_url,
     )
-    success, error_type, error_msg = send_line_flex(token, item["line_user_id"], text[:200], flex)
+    alt_text = (full_name + " | " + text)[:400]
+    success, error_type, error_msg = send_line_flex(token, item["line_user_id"], alt_text, flex)
 
     # Step 6: mark result
     store.mark_delivery_result(

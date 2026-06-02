@@ -170,3 +170,22 @@ W03 → awarded = avg 7 days
 **Why:** BMS จะตอบได้ว่า "งานประเภทนี้ปกติประกาศผู้ชนะภายในกี่วัน" — procurement intelligence moat
 
 ---
+
+---
+
+## [STRATEGIC] LINE-first → LIFF/Web Portal → แอพ native (2026-06-02)
+
+คำถามคุณกัญจน์: "จะทำเป็นแอพเลยดีมั้ย" (ถามไว้ก่อน)
+
+### ข้อสรุป: แอพ native ยังไม่คุ้มตอนนี้ — ลำดับที่ควรเดิน
+1. **LINE OA (now)** — user อยู่ใน LINE อยู่แล้ว, zero install friction, push cost แค่ 0.4% รายได้
+2. **LIFF / Web Portal เปิดในLINE** — rich UX (dashboard, ติดดาวงาน, คลังเอกสาร, filter) โดยไม่ต้องโหลดแอพ
+3. **แอพ native** — เฉพาะเมื่อชน limit จริง (offline, background scan, push หนัก, user ขอเอง)
+
+### เหตุผลไม่ทำแอพก่อนพิสูจน์ value
+- ผู้รับเหมาต่างจังหวัด/สูงวัย = friction โหลดแอพสูง → user หาย
+- dev cost iOS+Android+store+maintenance สูง
+- retention แอพที่ไม่เปิด = ถูกลบ
+
+### LINE OA pricing reference (ไทย, ส.ค.2024)
+Free 300 / Basic 1,280บ 15,000 / Pro 1,780บ 35,000 / เกิน +0.10บ/ข้อความ. นับ per-recipient. carousel = lever ลดจำนวนข้อความ

@@ -3817,3 +3817,24 @@ commits 430db1a..93feef1
 
 ### Defer (YAGNI)
 portal ติดดาว (👍→saved) · auto-tune matching · budget filter (🤔)
+
+## งานที่ N+61: ปรับการ์ด LINE — ชื่อเต็ม + ปุ่มดูรายละเอียด + reply feedback มีรายละเอียด+ปุ่มแก้ไข (2026-06-02)
+
+### สถานะ: ✅ เสร็จ
+
+### สิ่งที่ทำ (ตามคำขอกัญจน์)
+1. **ส่งชื่อเต็มของงาน** แทนชื่อย่อ — แยก `_clean_project_name` (ลบ prefix/suffix ไม่ตัดความยาว) จาก `_shorten_project_name`. header การ์ด flex = ชื่อเต็ม, ลบบรรทัด `🏗` ใน body กันซ้ำ, altText มีชื่อ
+2. **ปุ่มลิงก์งาน** = PDF ประกาศเดิม (public link เดียวที่ eGP เปิด — probe แล้วไม่มี HTML deep-link by projectId), เปลี่ยนป้าย "📎 ดูเอกสาร" → "📋 ดูรายละเอียดงาน"
+3. **ตอบกลับ feedback** = flex confirm: ✅ บันทึก + label เต็ม + ชื่องาน + จังหวัด/งบ/หน่วยงาน (ดึงจาก projects_seen)
+4. **ปุ่มแก้ไข feedback** — LINE แก้การ์ดเดิมไม่ได้ → reply confirm แนบปุ่ม "✏️ แก้ไข feedback" (postback `fbedit:<pid>`) → กดแล้ว reply การ์ด 3 ปุ่มเลือกใหม่ → upsert
+
+### ไฟล์
+- `scripts/Sebastian_LINE_Sender.py` — `_clean_project_name`, build_job_flex (title 300, ป้ายปุ่ม), format_notification (ลบ 🏗), call site (ชื่อเต็ม+altText)
+- `scripts/bms_api.py` — `reply_raw` (flex), `_project_detail`, `_fmt_budget_th`, `_detail_info_line`, `_confirm_flex`, `_choose_flex`, postback handler รองรับ `fbedit:`
+
+### Sanity
+- py_compile ผ่านทั้ง 2 ไฟล์
+- unit test: _clean (ชื่อเต็ม 98 ตัว ไม่ตัด), flex header/ปุ่ม/footer, format_notification ไม่มี 🏗, confirm/choose flex postback data ถูกต้อง
+
+### Followup
+- งานเก่าที่ส่งไปแล้วยังมีฟอร์แมตเดิม (LINE แก้ย้อนหลังไม่ได้) — เฉพาะงานใหม่ได้ฟอร์แมตใหม่. แต่กดปุ่มงานเก่าก็ได้ reply ใหม่ (handler รองรับทุก fb:)

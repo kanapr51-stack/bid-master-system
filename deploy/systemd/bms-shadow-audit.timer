@@ -1,0 +1,9 @@
+[Unit]
+Description=BMS RSS Shadow Audit — 21:00 ไทย (14:00 UTC) รายวัน
+
+[Timer]
+OnCalendar=*-*-* 14:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

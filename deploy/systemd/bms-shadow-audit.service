@@ -1,0 +1,10 @@
+[Unit]
+Description=BMS RSS Shadow Audit (รายงาน gap รายวัน)
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=bms
+WorkingDirectory=/opt/bms/app
+Environment=BMS_DATA_DIR=/opt/bms/data
+ExecStart=/opt/bms/venv/bin/python /opt/bms/app/scripts/Sebastian_Shadow_Audit.py

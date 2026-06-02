@@ -70,6 +70,33 @@ def parse_postback_data(data: str):
     return action, project_id
 
 
+def build_job_flex(project_id: str, title: str, detail: str, doc_url: str = "") -> dict:
+    """สร้าง flex bubble: งาน (body) + 3 ปุ่ม feedback postback (footer).
+    คืน contents dict (ใส่ใน message type=flex)"""
+    body_contents = [
+        {"type": "text", "text": "🏗️ " + title[:160], "wrap": True, "weight": "bold", "size": "sm"},
+        {"type": "text", "text": detail[:120], "wrap": True, "size": "xs", "color": "#666666", "margin": "md"},
+    ]
+    if doc_url:
+        body_contents.append({
+            "type": "button", "style": "link", "height": "sm", "margin": "md",
+            "action": {"type": "uri", "label": "📎 ดูเอกสาร", "uri": doc_url},
+        })
+    footer_btns = []
+    for action, label in FB_ACTIONS.items():
+        footer_btns.append({
+            "type": "button", "style": "secondary", "height": "sm",
+            "action": {"type": "postback", "label": label,
+                       "data": build_postback_data(action, project_id),
+                       "displayText": label},
+        })
+    return {
+        "type": "bubble",
+        "body": {"type": "box", "layout": "vertical", "contents": body_contents},
+        "footer": {"type": "box", "layout": "vertical", "spacing": "sm", "contents": footer_btns},
+    }
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _load_line_token() -> str:

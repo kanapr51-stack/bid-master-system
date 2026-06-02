@@ -3791,3 +3791,29 @@ full sweep paginate 2 จังหวัด = 128 หน้า > 99 req limit (b
 ### Followup
 - [ ] ดู nkp/bkg timer พรุ่งนี้ 07:30/08:30 — reconcile รันครบทั้ง 2 จังหวัด
 - [ ] (สังเกต) incremental report "เป้าหมาย 0" ≠ ไม่มีงาน (หยุดเร็ว) — RSS/full คุ้มกัน
+
+## งานที่ N+60: ระบบ feedback ปุ่มกดใน LINE (North-Star P1) (2026-06-02)
+
+### สถานะ: ✅ เสร็จ + integration ผ่าน (brainstorm→spec→plan→execute ครบ flow)
+
+### สิ่งที่ทำ
+3 ปุ่ม postback บน flex message: สนใจ/น่าติดตาม · เกี่ยวข้องแต่ไม่น่าสนใจ · ไม่เกี่ยวข้องเลย
+- LINE_Sender: build_job_flex + send_line_flex (text→flex+ปุ่ม)
+- bms_api: postback handler + _record_feedback_by_project (project ตรง, upsert)
+- Daily_Digest: feedback_section รวม postback (👍 North-Star / 👎 matching ต้องดู)
+- feedback action: interested/relevant_low/irrelevant (postback data fb:<action>:<project_id>)
+
+### หลักการ (insight กัญจน์)
+เฉพาะ 👎 = matching ผิด (กัญจน์ปรับ) · 🤔 = business judgment (งบไม่คุ้ม) ไม่แตะ matching · 👍 = value
+
+### Verified (กัญจน์กดปุ่มจริง)
+- 69059075454 → interested→relevant_low (upsert ทับ) · 69059297571 → irrelevant
+- digest: 👍1 (North-Star) · 👎1 (matching ต้องดู: 69059297571) · total 2 rows (upsert)
+
+### docs (superpowers flow)
+spec: docs/superpowers/specs/2026-06-02-line-feedback-design.md
+plan: docs/superpowers/plans/2026-06-02-line-feedback.md
+commits 430db1a..93feef1
+
+### Defer (YAGNI)
+portal ติดดาว (👍→saved) · auto-tune matching · budget filter (🤔)

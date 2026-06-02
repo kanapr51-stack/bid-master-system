@@ -43,6 +43,22 @@ API_STATE_PATH    = Path(__file__).parent.parent / "data" / "api_ingestion_state
 LOG_DIR           = Path(__file__).parent.parent / "logs" / "enrichment_worker"
 TZ_TH             = timezone(timedelta(hours=7))
 
+# RSS Shadow Mode: gate RSS path enqueue ด้วย discovery_confirmed (reversible ด้วย env)
+BMS_RSS_NOTIFY = os.environ.get("BMS_RSS_NOTIFY", "on").strip().lower()
+
+
+def _rss_gate_ok(pid: str) -> bool:
+    """RSS path enqueue gate.
+    BMS_RSS_NOTIFY=on  → ผ่านเสมอ (พฤติกรรมเดิม)
+    BMS_RSS_NOTIFY=off → ผ่านเฉพาะงานที่ Discovery ประทับตราแล้ว (discovery_confirmed=1)"""
+    if BMS_RSS_NOTIFY != "off":
+        return True
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT discovery_confirmed FROM project_locations WHERE project_id=?", (pid,)
+        ).fetchone()
+    return bool(row and row[0])
+
 MOI_PROVINCE_MAP = {
     "38": "บึงกาฬ",
     "48": "นครพนม",
@@ -380,23 +396,26 @@ def main():
                 budget        = int(row.get("budget") or 0)
                 project_name  = row.get("project_name") or ""
 
-                n = store.enqueue_notifications({
-                    "project_id":           pid,
-                    "province":             province,
-                    "announce_type":        announce_type,
-                    "budget":               budget,
-                    "project_name":         project_name,
-                    "dept_name":            row.get("dept_name") or "",
-                    "extraction_confidence": "high",
-                    "is_backfill":          False,
-                    "source_stage":         "api_enriched",
-                }, min_confidence="high")
-
-                if n > 0:
-                    stats["enqueued"] += 1
-                    log(f"    → ENQUEUED {n}x province={province} tambon={tambon}")
+                if not _rss_gate_ok(pid):
+                    log(f"    ⏸ SHADOW: {pid} match {province} แต่ Discovery ยังไม่ประทับตรา → ไม่ส่ง (audit)")
                 else:
-                    stats["dedup"] += 1
+                    n = store.enqueue_notifications({
+                        "project_id":           pid,
+                        "province":             province,
+                        "announce_type":        announce_type,
+                        "budget":               budget,
+                        "project_name":         project_name,
+                        "dept_name":            row.get("dept_name") or "",
+                        "extraction_confidence": "high",
+                        "is_backfill":          False,
+                        "source_stage":         "api_enriched",
+                    }, min_confidence="high")
+
+                    if n > 0:
+                        stats["enqueued"] += 1
+                        log(f"    → ENQUEUED {n}x province={province} tambon={tambon}")
+                    else:
+                        stats["dedup"] += 1
 
         # Rate limit guard
         if i < len(rows) - 1:
@@ -434,6 +453,8 @@ def main():
         log(f"Pass 2 (repair): {len(orphans)} success-but-not-enqueued orphans")
         repaired = 0
         for orphan in orphans:
+            if not _rss_gate_ok(orphan["project_id"]):
+                continue  # SHADOW: Discovery ยังไม่ประทับตรา → ไม่ repair-enqueue
             n = store.enqueue_notifications({
                 "project_id":            orphan["project_id"],
                 "province":              orphan["province_name"],

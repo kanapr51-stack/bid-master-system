@@ -385,6 +385,18 @@ def main():
     if partial_abort:
         print("⚠️ partial sweep (ชน rate limit) — reconcile/ingest ทำกับจังหวัดที่ paginate ได้แล้ว")
 
+    # full sweep marker per-province (ให้ discovery_catchup รู้ว่า full รอบนี้สำเร็จครบ)
+    # เขียนเฉพาะ full + 1 จังหวัด + ครบ (ไม่ partial) → ถ้า partial/พลาด catchup จะ retry
+    if args.full and len(moi_ids) == 1 and args.ingest and not args.dry_run and not partial_abort:
+        try:
+            fmpath = os.path.join(os.environ.get("BMS_DATA_DIR", "/opt/bms/data"),
+                                  f"last_fullsweep_{moi_ids[0]}.json")
+            with open(fmpath, "w", encoding="utf-8") as f:
+                json.dump({"ts": _utc_now(), "moi": moi_ids[0]}, f, ensure_ascii=False)
+            print(f"📍 full sweep marker เขียนแล้ว: {moi_ids[0]}")
+        except Exception:
+            pass
+
     # Discord notify ทุกรอบ incremental (7/13/19) — เจอ/ไม่เจองานใหม่ + รายละเอียด (กัญจน์ขอ 2026-06-01)
     # ไม่รวม full-sweep (safety net เงียบ — มี reconcile alert แยกถ้าเจอปัญหา)
     if args.ingest and not args.dry_run and not args.full:

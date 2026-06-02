@@ -104,18 +104,19 @@ def push_to_vps(state_path: str) -> bool:
 
 
 def trigger_catchup() -> None:
-    """หลัง push token สด → ให้ VPS เช็คว่าพลาด discovery slot ไหม (catch-up on reconnect).
-    best-effort — ไม่ให้ harvest ล้มถ้า catchup error"""
+    """หลัง push token สด → ให้ VPS เช็ค+รัน discovery/full sweep ที่พลาด (catch-up on reconnect).
+    spawn background (nohup) บน VPS — full sweep catch-up ใช้เวลานานกว่า ssh timeout
+    (discovery + 2 full sweep + cooldown) จึงไม่ block harvest. best-effort.
+    ดู log: VPS:/tmp/bms_catchup.log"""
+    remote = ("nohup sudo -u bms BMS_DATA_DIR=/opt/bms/data /opt/bms/venv/bin/python "
+              "/opt/bms/app/scripts/discovery_catchup.py "
+              "> /tmp/bms_catchup.log 2>&1 < /dev/null &")
     cmd = ["ssh", "-i", VPS_KEY, "-o", "StrictHostKeyChecking=accept-new",
-           "-o", "ConnectTimeout=15", VPS_HOST,
-           "sudo -u bms BMS_DATA_DIR=/opt/bms/data /opt/bms/venv/bin/python "
-           "/opt/bms/app/scripts/discovery_catchup.py"]
+           "-o", "ConnectTimeout=15", VPS_HOST, remote]
     try:
-        r = subprocess.run(cmd, capture_output=True, text=True,
-                           encoding="utf-8", errors="replace", timeout=180)
-        last = [l for l in (r.stdout or "").strip().splitlines() if l.strip()]
-        if last:
-            _log("catchup → " + last[-1])
+        subprocess.run(cmd, capture_output=True, text=True,
+                       encoding="utf-8", errors="replace", timeout=25)
+        _log("catchup → spawned background บน VPS (ดู /tmp/bms_catchup.log)")
     except Exception as e:
         _log(f"catchup trigger ล้มเหลว (ไม่กระทบ harvest): {e}")
 

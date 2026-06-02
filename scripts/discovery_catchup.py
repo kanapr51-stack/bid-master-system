@@ -51,6 +51,24 @@ def _most_recent_slot(now_dt: datetime) -> float:
     return max(passed) if passed else 0.0
 
 
+# full sweep slots (UTC) per-province — ตรงกับ bms-province-discovery-full-{nkp,bkg}.timer
+FULL_SLOTS_UTC = {"480000": [(0, 30), (12, 30)],   # นครพนม 07:30/19:30 ไทย
+                  "380000": [(1, 30), (13, 30)]}   # บึงกาฬ 08:30/20:30 ไทย
+PROV_NAME = {"480000": "นครพนม", "380000": "บึงกาฬ"}
+COOLDOWN_FULL = 150   # วินาที — กัน rate limit ระหว่างรัน full sweep แต่ละจังหวัด
+
+
+def _most_recent_slot_hm(now_dt: datetime, slots) -> float:
+    """slot ล่าสุดที่ผ่านมาแล้ว (slots = [(hour, minute)] UTC)"""
+    cands = []
+    for d in (0, 1):
+        day = now_dt - timedelta(days=d)
+        for (h, m) in slots:
+            cands.append(day.replace(hour=h, minute=m, second=0, microsecond=0))
+    passed = [c.timestamp() for c in cands if c.timestamp() <= now_dt.timestamp()]
+    return max(passed) if passed else 0.0
+
+
 def _discord(msg):
     try:
         from Sebastian_Discord_Notify import load_env, get_credentials, send
@@ -71,25 +89,45 @@ def main() -> int:
         print("catchup: ไม่มี token valid — skip")
         return 0
 
-    # 2) พลาด slot ไหม? (last successful discovery < slot ล่าสุดที่ผ่านมา)
+    script = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                          "Sebastian_Province_Discovery.py")
+    PY = "/opt/bms/venv/bin/python"
+    base_env = {**os.environ, "BMS_DATA_DIR": DATA}
+    ran_heavy = False   # รัน job ที่ยิง API ไปแล้วไหม → cooldown ก่อนตัวถัดไป (กัน rate limit)
+
+    # 2) discovery slot (incremental) — พลาดไหม?
     hb = _load(HB_FILE)
     last_ok = _iso_to_epoch(hb.get("ts", "")) if (hb and hb.get("status") == "ok") else 0.0
     slot = _most_recent_slot(now_dt)
-    if slot == 0 or last_ok >= slot - SLACK_SEC:
-        print(f"catchup: ไม่พลาด slot (last_ok={int(now-last_ok)}s ago) — skip")
-        return 0
+    if slot != 0 and last_ok < slot - SLACK_SEC:
+        thai = (datetime.fromtimestamp(slot, timezone.utc) + timedelta(hours=7)).strftime("%H:%M")
+        print(f"catchup: 🔄 พลาด discovery slot {thai} ไทย → รัน incremental")
+        _discord(f"🔄 BMS catch-up: พลาด discovery รอบ {thai} ไทย → รันให้ทันที")
+        r = subprocess.run([PY, script, "--worker", "--ingest"], cwd="/opt/bms/app", env=base_env)
+        print(f"catchup: discovery exit={r.returncode}")
+        ran_heavy = True
+    else:
+        print(f"catchup: ไม่พลาด discovery slot (last_ok={int(now-last_ok)}s ago)")
 
-    # 3) MISSED → รัน discovery ทันที (incremental)
-    missed_dt = datetime.fromtimestamp(slot, timezone.utc)
-    thai = (missed_dt + timedelta(hours=7)).strftime("%H:%M")
-    print(f"catchup: 🔄 พลาด slot {thai} ไทย → รัน discovery ทันที")
-    _discord(f"🔄 BMS catch-up: เครื่องกลับมา + พบว่าพลาด discovery รอบ {thai} ไทย → กำลังรันให้ทันที")
+    # 3) full sweep slots (per-province) — พลาดไหม? (safety net catch-up)
+    for moi, slots in FULL_SLOTS_UTC.items():
+        fm = _load(os.path.join(DATA, f"last_fullsweep_{moi}.json"))
+        last_full = _iso_to_epoch(fm.get("ts", "")) if fm else 0.0
+        fslot = _most_recent_slot_hm(now_dt, slots)
+        if fslot == 0 or last_full >= fslot - SLACK_SEC:
+            print(f"catchup: ไม่พลาด full sweep {PROV_NAME.get(moi, moi)}")
+            continue
+        if ran_heavy:
+            print(f"catchup: cooldown {COOLDOWN_FULL}s ก่อน full sweep (กัน rate limit)")
+            time.sleep(COOLDOWN_FULL)
+        thai = (datetime.fromtimestamp(fslot, timezone.utc) + timedelta(hours=7)).strftime("%H:%M")
+        print(f"catchup: 🔄 พลาด full sweep {PROV_NAME.get(moi, moi)} slot {thai} → รัน --full --moi {moi}")
+        _discord(f"🔄 BMS catch-up: พลาด full sweep {PROV_NAME.get(moi, moi)} รอบ {thai} → รันให้ทันที")
+        r = subprocess.run([PY, script, "--worker", "--ingest", "--full", "--moi", moi],
+                           cwd="/opt/bms/app", env=base_env)
+        print(f"catchup: full sweep {PROV_NAME.get(moi, moi)} exit={r.returncode}")
+        ran_heavy = True
 
-    script = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                          "Sebastian_Province_Discovery.py")
-    r = subprocess.run(["/opt/bms/venv/bin/python", script, "--worker", "--ingest"],
-                       cwd="/opt/bms/app", env={**os.environ, "BMS_DATA_DIR": DATA})
-    print(f"catchup: discovery exit={r.returncode}")
     return 0
 
 

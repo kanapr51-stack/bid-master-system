@@ -63,3 +63,13 @@
 ## ⏰ Timing
 - Phase 0 (probe) + capacity check: ทำได้เลย (low-risk)
 - Phase 1-3: **scale-todo** — beta 5 users ยังไม่ชน · หยิบทำเมื่อขยายจังหวัด/volume สูง
+
+---
+
+## ✅ Phase 2 Progress (2026-06-02 ข้ามคืน — scope A)
+- **keyword-first shadow: DEPLOYED** (env `BMS_KEYWORD_FIRST_MODE=shadow` บน VPS)
+  - `job_matcher.passes_keyword()` + worker pre-check ก่อน resolve deadline/tambon
+  - **shadow validation (static, งานจริง 1077): skip 363 = 33% → ประหยัด ~726 API call (~33%)**
+  - shadow = log เฉยๆ ไม่แตะ production decision
+- **defer:** cache moiName (value ต่ำ — งานละ 1 resolve อยู่แล้ว) · shared rate limiter (ไม่ต้องจน enforce) · window probe (เสี่ยง hammer)
+- **เหลือก่อน cutover:** review shadow log (เมื่อมีงานใหม่จาก discovery) → flip `BMS_KEYWORD_FIRST_MODE=enforce` → observe ว่า filtered_no_keyword ถูกต้อง (ไม่ตัดงานถนน target)

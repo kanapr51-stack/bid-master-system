@@ -3743,3 +3743,26 @@ commit 75fbde5. รอบแรกยิง 20:00 ไทยวันนี้.
 ### Followup
 - [ ] ดูผลรอบแรก 20:00 — user 4 คนได้ heartbeat "เจอ 1 งาน (หนองซน)"
 - [ ] (defer) อาจเพิ่มปุ่ม feedback ใน heartbeat ภายหลัง (link North-Star feedback loop)
+
+## งานที่ N+58: keyword-first shadow (API-first scale Phase 2) (2026-06-02 ข้ามคืน)
+
+### สถานะ: ✅ เสร็จ (shadow) — cutover รอ review
+
+### สิ่งที่ทำ (กัญจน์ approve scope A, นอนรอ)
+- Phase 0 probe (ก่อนหน้า): คอขวด = generateToken ~30/รอบ, token ผูก project, ไม่พึ่ง harvest
+- Phase 2: keyword-first pre-filter — กรอง keyword ก่อน resolve deadline+tambon (2 API)
+  - job_matcher.passes_keyword() + worker pre-check (env BMS_KEYWORD_FIRST_MODE: off/shadow/enforce)
+  - deploy shadow VPS (rm root + scp, env=shadow)
+
+### Validation (static, ปลอดภัย — ไม่ touch production)
+งานจริง 1077: keyword PASS 714 (66%) / SKIP 363 (33%) → keyword-first ลด API ~33%
+(honest: ไม่ใช่ ~3× ที่เคยเดา — งานท้องถิ่น 2/3 เป็นถนน/ก่อสร้างผ่าน keyword)
+
+### Defer (มีเหตุผล)
+- cache moiName: value ต่ำ (งานละ 1 resolve, retry rare)
+- shared rate limiter: ไม่ต้องจน enforce
+- window probe: เสี่ยง hammer block discovery
+
+### Followup (ตื่นมา)
+- [ ] review shadow log (discovery 07:00+ seed pending → worker log kw-first SHADOW)
+- [ ] ตัดสิน cutover: flip BMS_KEYWORD_FIRST_MODE=enforce → verify filtered_no_keyword ถูก

@@ -199,7 +199,22 @@ def init_schema():
     _migrate_v19()
     _migrate_v110()
     _migrate_v111()
-    print(f"Schema v1.11 ready: {DB_PATH}")
+    _migrate_v112()
+    print(f"Schema v1.12 ready: {DB_PATH}")
+
+
+def _migrate_v112():
+    """Add discovery_confirmed to project_locations — RSS Shadow Mode (2026-06-03).
+    1 = Discovery/full sweep ยืนยันเห็น project นี้ (claim ได้แม้ RSS เจอก่อน).
+    แยกจาก source (provenance บริสุทธิ์) — gate: RSS path enqueue เฉพาะ =1 เมื่อ BMS_RSS_NOTIFY=off.
+    """
+    with get_connection() as conn:
+        try:
+            conn.execute(
+                "ALTER TABLE project_locations ADD COLUMN discovery_confirmed INTEGER NOT NULL DEFAULT 0"
+            )
+        except sqlite3.OperationalError:
+            pass  # already exists
 
 
 def _migrate_v111():

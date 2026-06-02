@@ -1,0 +1,20 @@
+[Unit]
+Description=BMS Province FULL sweep — นครพนม (480000) per-province กัน rate-limit abort
+After=network.target
+
+[Service]
+Type=oneshot
+User=bms
+Group=bms
+WorkingDirectory=/opt/bms/app
+EnvironmentFile=/opt/bms/app/.env
+ExecStart=/opt/bms/venv/bin/python /opt/bms/app/scripts/Sebastian_Province_Discovery.py --worker --ingest --full --moi 480000
+TimeoutStartSec=1800
+Nice=10
+StandardOutput=journal
+StandardError=journal
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

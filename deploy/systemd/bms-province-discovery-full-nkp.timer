@@ -1,0 +1,10 @@
+[Unit]
+Description=BMS Province FULL sweep นครพนม (00:30 UTC = 07:30 Thai)
+
+[Timer]
+OnCalendar=*-*-* 00:30:00
+Persistent=true
+Unit=bms-province-discovery-full-nkp.service
+
+[Install]
+WantedBy=timers.target

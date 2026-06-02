@@ -330,6 +330,7 @@ def main():
         print(f"\U0001f504 full sweep — known {len(known)} (paginate ครบ + reconcile incremental)")
 
     all_recs = []
+    partial_abort = False
     try:
         for moi in moi_ids:
             province = PROVINCE_MOI.get(moi, moi)
@@ -338,11 +339,11 @@ def main():
             recs = [normalize(it, province) for it in items]
             all_recs.extend(recs)
     except RateLimited as e:
-        # P1: rate-limit → abort sweep แบบ bounded + heartbeat ให้ dead-man จับ
-        # (ไม่ปล่อยให้ retry loop balloon จน systemd timeout → SIGTERM → heartbeat หาย เงียบๆ)
-        print(f"\n⚠️ rate-limited — abort sweep: {e}")
-        _write_heartbeat("no_data", reason="rate_limited", partial=len(all_recs))
-        sys.exit(2)
+        # A (fix 2026-06-02): rate-limit → ไม่ทิ้ง! เก็บ all_recs ที่ paginate ได้แล้ว →
+        # reconcile/ingest ต่อด้วย partial (เดิม sys.exit(2) ทิ้งทั้งหมด = full sweep เสียเปล่า
+        # ทุกวันเพราะ 2 จังหวัด = 128 หน้า > 99 req limit → safety net ไม่เคยทำงาน)
+        partial_abort = True
+        print(f"\n⚠️ rate-limited — paginate ได้ {len(all_recs)} รายการก่อนชน ({e}) → ดำเนินต่อด้วย partial")
 
     if not all_recs:
         print("\n⚠️ ไม่ได้ข้อมูล — ตรวจ token (อาจหมดอายุ 30 นาที)")
@@ -379,7 +380,10 @@ def main():
         print(f"\n💾 ingest: +{ingested} ใหม่, {skipped} มีอยู่แล้ว (source=province_api)")
     else:
         print(f"\n(dry-run — จะ ingest {len(chosen)} รายการ ถ้าใส่ --ingest)")
-    _write_heartbeat("ok", total=len(all_recs), active=len(active), ingested=ingested)
+    _write_heartbeat("ok", total=len(all_recs), active=len(active), ingested=ingested,
+                     partial=partial_abort)
+    if partial_abort:
+        print("⚠️ partial sweep (ชน rate limit) — reconcile/ingest ทำกับจังหวัดที่ paginate ได้แล้ว")
 
     # Discord notify ทุกรอบ incremental (7/13/19) — เจอ/ไม่เจองานใหม่ + รายละเอียด (กัญจน์ขอ 2026-06-01)
     # ไม่รวม full-sweep (safety net เงียบ — มี reconcile alert แยกถ้าเจอปัญหา)

@@ -256,25 +256,37 @@ def feedback_section() -> str:
         "ORDER BY f.created_at DESC LIMIT 5",
         (cutoff,),
     ).fetchall()
+    # 👎 irrelevant (postback ปุ่ม) → project list ให้กัญจน์ดู matching ที่ผิด
+    bad = conn.execute(
+        "SELECT DISTINCT project_id FROM feedback WHERE action='irrelevant' AND created_at >= ? LIMIT 10",
+        (cutoff,),
+    ).fetchall()
     conn.close()
 
     c = {r["action"]: r["n"] for r in rows}
+    # postback (ปุ่มกดใน LINE — P2)
+    interested, relevant_low, irrelevant = c.get("interested", 0), c.get("relevant_low", 0), c.get("irrelevant", 0)
+    # text feedback เดิม (backward compat)
     useful, notrel = c.get("useful", 0), c.get("not_relevant", 0)
     never, action = c.get("never_seen", 0), c.get("action_taken", 0)
-    week = useful + notrel + never + action
+    week = interested + relevant_low + irrelevant + useful + notrel + never + action
 
     sym = "PASS " if week > 0 else "---- "
-    lines = [
-        f"Feedback (7d): {sym}",
-        f"  \U0001f44d{useful}  \U0001f44e{notrel}  \U0001f195{never}(never_seen)  "
-        f"\U0001f4de{action}(action)  total_all={total_all}",
-    ]
+    lines = [f"Feedback (7d): {sym}"]
+    if interested + relevant_low + irrelevant > 0:
+        lines.append(f"  ปุ่ม: \U0001f44d{interested} สนใจ  \U0001f914{relevant_low} ไม่น่าสน  \U0001f44e{irrelevant} ไม่เกี่ยว")
+    if useful + notrel + never + action > 0:
+        lines.append(f"  text: \U0001f44d{useful}  \U0001f44e{notrel}  \U0001f195{never}(never)  \U0001f4de{action}(action)")
+    lines.append(f"  total_all={total_all}")
+    if interested:
+        lines.append(f"  ⭐ North-Star: {interested} งานที่ user สนใจ/น่าติดตาม")
+    if irrelevant and bad:
+        lines.append("  ⚠️ matching ต้องดู (\U0001f44e): " + ", ".join(b["project_id"] for b in bad))
     if never or action:
-        lines.append("  ⭐ North-Star signals:")
         for h in highlights:
             nm = (h["project_name"] or "?")[:32]
             lines.append(f"    [{h['action']}] {nm}")
-    elif week == 0:
+    if week == 0:
         lines.append("  (no feedback this week)")
     return "\n".join(lines)
 

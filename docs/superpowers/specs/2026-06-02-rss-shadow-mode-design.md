@@ -33,18 +33,19 @@
 ```
 RSS Notifier  → project_locations (source=rss, discovery_confirmed=0)
 Discovery     → ประทับ discovery_confirmed=1 ให้ทุก project ที่ scan เจอ
-   ├─ incremental (07:00)      → ประทับเท่าที่เจอ
-   └─ full sweep (19:30/20:30) → ประทับครบทั้งจังหวัด (safety net)
+   ├─ incremental (07:00 / 13:00 / 19:00)  → ประทับเท่าที่เจอ
+   └─ full sweep ครบทั้งจังหวัด (safety net) — นครพนม 07:30+19:30 · บึงกาฬ 08:30+20:30
+        → จบแต่ละรอบ ส่ง Discord report ย่อย (4 ครั้ง/วัน)
         ↓
 Enrichment Worker:
    resolve location + match พื้นที่ (keyword + tambon)
    ├─ discovery_confirmed=1 → enqueue → ส่ง LINE  ✅
    └─ confirmed=0 (RSS-only) → audit เงียบ ไม่ส่ง
         ↓
-Audit job: match พื้นที่ + confirmed=0 + RSS เจอ >24ชม → Discord เตือน "Discovery น่าจะพลาด"
+Audit รายวัน (21:00): รายงานเสมอ — Discovery ส่งกี่งาน + งานที่ RSS เจอแต่ Discovery พลาด >24ชม
 ```
 
-## 5. Components (แก้ 4 จุด)
+## 5. Components (แก้ 5 จุด)
 
 ### 5.1 Schema migration
 - `project_locations` + column `discovery_confirmed INTEGER NOT NULL DEFAULT 0`
@@ -53,7 +54,8 @@ Audit job: match พื้นที่ + confirmed=0 + RSS เจอ >24ชม �
 ### 5.2 `Sebastian_Province_Discovery.py`
 - หลัง scan แต่ละจังหวัด → `UPDATE project_locations SET discovery_confirmed=1 WHERE project_id IN (<project ที่เจอรอบนี้>)`
 - ถ้า project ยังไม่มี row ใน project_locations (Discovery เจอก่อน RSS) → INSERT row (source='province_api', discovery_confirmed=1) — ใช้ pattern เดิมของ enrichment seed
-- ทำทั้ง incremental และ full sweep
+- ทำทั้ง incremental (07:00/13:00/19:00) และ full sweep (4 รอบ)
+- **จบแต่ละ full sweep → ส่ง Discord report ย่อย** (scan เจอ X / ประทับตรา Y / RSS เห็นแต่ Discovery ยังไม่เจอ Z) — รายงานเสมอไม่ว่าเจอ gap หรือไม่. 4 รอบ/วัน (นครพนม 07:30+19:30 · บึงกาฬ 08:30+20:30)
 
 ### 5.3 `Sebastian_Enrichment_Worker.py`
 - เพิ่ม env `BMS_RSS_NOTIFY` (default `on` = พฤติกรรมเดิม)
@@ -63,11 +65,28 @@ Audit job: match พื้นที่ + confirmed=0 + RSS เจอ >24ชม �
   - **Pass 3 (source=province_api):** ไม่เปลี่ยน (งาน Discovery มี confirmed=1 อยู่แล้ว)
 - เมื่อ `BMS_RSS_NOTIFY=on`: Pass 1 enqueue ตามเดิม (ไม่เช็ค confirmed)
 
-### 5.4 Audit job (สคริปต์ใหม่ + systemd timer)
-- scan `project_locations` ที่: match พื้นที่ (qualification ผ่าน) + `discovery_confirmed=0` + RSS first_seen เกิน 24 ชม
-- ส่ง Discord: "⚠️ Discovery น่าจะพลาด N งานที่ RSS เจอ: [project_ids + ชื่อ]"
-- timer วันละครั้ง (เช่น หลัง full sweep รอบดึก — 21:00 ไทย / 14:00 UTC)
-- idempotent: ไม่เตือนซ้ำงานเดิม (เก็บ set ที่เตือนแล้ว หรือเตือนเฉพาะที่เพิ่งครบ 24ชม)
+### 5.4 Audit job รายวัน (สคริปต์ใหม่ + systemd timer)
+- timer วันละครั้ง — **21:00 ไทย (14:00 UTC)** หลัง full sweep รอบเย็นจบครบ
+- **รายงานเสมอ** (ไม่ว่าสำเร็จหรือพบ gap) — heartbeat ว่า audit ยังทำงาน:
+  ```
+  📊 RSS Shadow Audit รายวัน
+  • Discovery ส่ง user วันนี้: A งาน
+  • RSS เห็นแต่ Discovery พลาด >24ชม: B งาน
+  • สถานะ: ✅ Discovery จับครบ  /  ⚠️ พบ gap B งาน [project list]
+  ```
+- เกณฑ์ gap: `project_locations` ที่ match พื้นที่ (qualification ผ่าน) + `discovery_confirmed=0` + RSS first_seen เกิน 24 ชม
+- idempotent: gap ที่เคยเตือนแล้วยังคงนับใน "สถานะ" แต่ไม่สแปม (รายงานรวมวันละครั้งอยู่แล้ว)
+
+### 5.5 Per-sweep report (ใน `Sebastian_Province_Discovery.py`)
+- จบแต่ละ full sweep → ส่ง Discord report ย่อย **รายงานเสมอ** (4 ครั้ง/วัน):
+  ```
+  🔍 Full sweep บึงกาฬ จบ (20:30)
+  • scan เจอ: 347 งาน
+  • ประทับตรา Discovery: 347 (ใหม่ 2)
+  • RSS เห็นแต่ Discovery ยังไม่เจอ: 0 งาน ✅
+  ```
+- ใช้ `_discord()` ที่มีอยู่แล้วใน Province_Discovery
+- รวม Discord ช่วง shadow = **5/วัน** (4 per-sweep + 1 daily audit) — verbose แต่เหมาะช่วงพิสูจน์ value (dev channel). ลด per-sweep ออกได้หลังพิสูจน์เสร็จ
 
 ## 6. Edge cases
 - **งานที่ส่ง LINE ไปแล้วก่อน deploy** → ไม่กระทบ (notification_queue เดิมคงอยู่, ไม่ re-enqueue)
@@ -79,19 +98,20 @@ Audit job: match พื้นที่ + confirmed=0 + RSS เจอ >24ชม �
 ## 7. Testing
 - งาน RSS-only match + confirmed=0 → ไม่ enqueue + ขึ้น audit candidate
 - Discovery ประทับตรา confirmed=1 → enqueue สำเร็จ
-- งานที่ confirmed=0 เกิน 24ชม → Discord เตือน (ทดสอบด้วย mock timestamp)
+- งานที่ confirmed=0 เกิน 24ชม → audit รายวันรายงาน gap (ทดสอบด้วย mock timestamp)
+- per-sweep report ส่ง Discord จบทุก full sweep (รายงานเสมอ แม้ gap=0)
 - env `BMS_RSS_NOTIFY=on` → Pass 1 enqueue ตามเดิม (regression — RSS ยังส่งได้)
 - schema migration idempotent (รัน 2 ครั้งไม่พัง)
 
 ## 8. Rollout
-1. deploy 4 จุด + migration
+1. deploy 5 จุด + migration
 2. ตั้ง `BMS_RSS_NOTIFY=off` บน VPS
 3. สังเกต ~1 สัปดาห์ — เก็บสถิติ: Discovery enqueue กี่งาน, audit เตือนกี่ครั้ง
 4. **เกณฑ์พิสูจน์ value:** audit **ไม่เตือนเลย** (หรือเตือนน้อยมากและอธิบายได้) = Discovery จับครบทุกงานที่ RSS เจอ
 5. ถ้าพิสูจน์สำเร็จ → ตัดสินใจ (คง shadow เป็น safety net ถาวร / หรือพิจารณาปิด RSS ingest) — **อนาคต ไม่อยู่ใน scope นี้**
 
 ## 9. Scope
-**Build ตอนนี้:** 4 components (schema + Discovery ประทับตรา + enqueue gate + audit job) + env toggle
+**Build ตอนนี้:** 5 components (schema + Discovery ประทับตรา + enqueue gate + audit รายวัน + per-sweep report) + env toggle
 **Defer (YAGNI):**
 - ปิด RSS ingest ถาวร (รอผลพิสูจน์ก่อน)
 - Auto-promote latency tuning (ใช้ 24ชม fixed ก่อน)

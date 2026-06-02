@@ -1,8 +1,9 @@
 [Unit]
-Description=BMS Province FULL sweep บึงกาฬ (01:30 UTC = 08:30 Thai)
+Description=BMS Province FULL sweep บึงกาฬ (08:30 + 20:30 Thai)
 
 [Timer]
 OnCalendar=*-*-* 01:30:00
+OnCalendar=*-*-* 13:30:00
 Persistent=true
 Unit=bms-province-discovery-full-bkg.service
 

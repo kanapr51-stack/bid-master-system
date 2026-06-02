@@ -3838,3 +3838,30 @@ portal ติดดาว (👍→saved) · auto-tune matching · budget filter 
 
 ### Followup
 - งานเก่าที่ส่งไปแล้วยังมีฟอร์แมตเดิม (LINE แก้ย้อนหลังไม่ได้) — เฉพาะงานใหม่ได้ฟอร์แมตใหม่. แต่กดปุ่มงานเก่าก็ได้ reply ใหม่ (handler รองรับทุก fb:)
+
+## งานที่ N+62: RSS Shadow Mode — Task 1-4 (code+test) (2026-06-03)
+
+### สถานะ: ✅ เสร็จ Task 1-4 (Task 5 deploy/flip รอพรุ่งนี้)
+
+### สิ่งที่ทำ
+ใช้ superpowers (brainstorm→spec→plan→execute). spec=`docs/superpowers/specs/2026-06-02-rss-shadow-mode-design.md`, plan=`docs/superpowers/plans/2026-06-03-rss-shadow-mode.md`
+
+- **Task 1** (`78421b3`): schema migration `_migrate_v112` → column `discovery_confirmed` ใน project_locations
+- **Task 2** (`fce01e0`): Province_Discovery — `mark_discovery_confirmed()` ประทับตราทุก project ที่ scan เจอ (claim RSS-first) + `count_rss_gap()` + per-sweep Discord report (full sweep, รายงานเสมอ)
+- **Task 3** (`6b8090f`): Enrichment Worker — `_rss_gate_ok()` gate enqueue Pass 1 + Pass 2 ด้วย discovery_confirmed, คุมด้วย env `BMS_RSS_NOTIFY` (on=เดิม/off=shadow)
+- **Task 4** (`f5f8f6f`): `Sebastian_Shadow_Audit.py` audit รายวัน 21:00 + systemd service/timer
+
+### หลักการ (landmine แก้แล้ว)
+`INSERT OR IGNORE` ทำให้ source ติด rss ถาวร → ใช้ `discovery_confirmed` flag แยก (provenance source บริสุทธิ์). Discovery ประทับตรา = claim งานที่ RSS เจอก่อนได้ → ปิด gate แล้ว user ไม่หาย
+
+### Sanity
+- migration idempotent (รัน 2 ครั้ง OK) + column มีจริง
+- mark=1/confirmed=1, gap fn ทำงาน
+- gate: on=pass, off+confirmed0=block, off+confirmed1=pass (ครบ 3 กรณี)
+- audit logic + format ถูก (mock discord ไม่ส่งจริง)
+- py_compile ผ่านทั้ง 4 ไฟล์
+
+### Followup (Task 5 พรุ่งนี้ — กัญจน์เฝ้า)
+- scp 4 scripts + migration VPS + systemd audit timer
+- ⚠️ systemd .service/.timer git เตือน LF→CRLF — ตอน deploy ตรวจ LF (dos2unix ถ้าจำเป็น) ไม่งั้น systemd parse error
+- deploy gate ยัง `on` → flag สะสม 1-2 วัน → flip `off` (drop-in BMS_RSS_NOTIFY=off)

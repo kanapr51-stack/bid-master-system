@@ -43,6 +43,32 @@ TYPE_LABELS = {
     "W0": "ประกาศผลผู้ชนะ",
 }
 
+# ── Feedback postback (P2 — ปุ่มกดใน LINE) ──────────────────────────────────
+# action labels (ตรงกับ feedback table + bms_api postback handler)
+FB_ACTIONS = {
+    "interested":   "👍 สนใจ/น่าติดตาม",
+    "relevant_low": "🤔 เกี่ยวข้องแต่ไม่น่าสนใจ",
+    "irrelevant":   "👎 ไม่เกี่ยวข้องเลย",
+}
+
+
+def build_postback_data(action: str, project_id: str) -> str:
+    """สร้าง postback data string: fb:<action>:<project_id>"""
+    return f"fb:{action}:{project_id}"
+
+
+def parse_postback_data(data: str):
+    """parse 'fb:<action>:<project_id>' → (action, project_id) | None ถ้าผิดรูปแบบ"""
+    if not data or not data.startswith("fb:"):
+        return None
+    parts = data.split(":", 2)
+    if len(parts) != 3:
+        return None
+    _, action, project_id = parts
+    if action not in FB_ACTIONS or not project_id:
+        return None
+    return action, project_id
+
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 

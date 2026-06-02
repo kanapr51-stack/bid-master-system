@@ -182,6 +182,27 @@ def _record_feedback(user_id: str, action: str, raw_text: str):
     return pname, pid
 
 
+def _record_feedback_by_project(user_id: str, action: str, project_id: str):
+    """บันทึก feedback กับ project_id ที่ระบุตรง (จาก postback). upsert: 1 row/customer/project.
+    คืน (project_name, project_id) | None"""
+    with get_conn() as conn:
+        cust = conn.execute("SELECT id FROM customers WHERE line_user_id=?", (user_id,)).fetchone()
+        if not cust:
+            return None
+        cid = cust["id"]
+        # upsert: ลบ feedback เดิมของ project นี้ก่อน (กดใหม่ทับเก่า)
+        conn.execute("DELETE FROM feedback WHERE customer_id=? AND project_id=?", (cid, project_id))
+        conn.execute(
+            "INSERT INTO feedback (customer_id, project_id, action, raw_text, created_at) "
+            "VALUES (?,?,?,?,?)", (cid, project_id, action, "", _now())
+        )
+        name_row = conn.execute(
+            "SELECT project_name FROM projects_seen WHERE project_id=?", (project_id,)
+        ).fetchone()
+        pname = (name_row["project_name"] if name_row else "") or project_id
+    return pname, project_id
+
+
 def _save_provinces(user_id: str, provinces: list[str]) -> None:
     """Upsert provinces for existing customer (replaces all existing subscription_provinces)."""
     with get_conn() as conn:
@@ -409,6 +430,24 @@ async def line_webhook(
                     reply_token,
                     "พิมพ์ ช่วย เพื่อดูคำสั่งที่ใช้ได้ครับ \U0001f916",
                 )
+
+        elif event.get("type") == "postback":
+            # ปุ่ม feedback จาก flex message: data = fb:<action>:<project_id>
+            reply_token = event.get("replyToken")
+            data = ((event.get("postback") or {}).get("data") or "")
+            parsed = None
+            if data.startswith("fb:"):
+                parts = data.split(":", 2)
+                if len(parts) == 3 and parts[1] in ("interested", "relevant_low", "irrelevant") and parts[2]:
+                    parsed = (parts[1], parts[2])
+            if not parsed:
+                continue
+            action, project_id = parsed
+            _record_feedback_by_project(user_id, action, project_id)
+            if reply_token:
+                label = {"interested": "👍 สนใจ", "relevant_low": "🤔 รับทราบ",
+                         "irrelevant": "👎 ไม่เกี่ยว"}.get(action, "")
+                await reply_message(reply_token, f"บันทึกแล้วครับ {label} ขอบคุณครับ 🎩")
 
     return {"ok": True}
 

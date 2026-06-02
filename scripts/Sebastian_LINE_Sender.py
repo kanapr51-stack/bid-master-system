@@ -75,7 +75,7 @@ def build_job_flex(project_id: str, title: str, detail: str, doc_url: str = "") 
     คืน contents dict (ใส่ใน message type=flex)"""
     body_contents = [
         {"type": "text", "text": "🏗️ " + title[:160], "wrap": True, "weight": "bold", "size": "sm"},
-        {"type": "text", "text": detail[:120], "wrap": True, "size": "xs", "color": "#666666", "margin": "md"},
+        {"type": "text", "text": detail[:1000], "wrap": True, "size": "sm", "color": "#444444", "margin": "md"},
     ]
     if doc_url:
         body_contents.append({
@@ -270,6 +270,34 @@ def send_line_push(token: str, line_user_id: str, text: str) -> tuple[bool, str,
         return False, "retryable", str(e)[:200]
 
 
+def send_line_flex(token: str, line_user_id: str, alt_text: str,
+                   flex_contents: dict) -> tuple[bool, str, str]:
+    """ส่ง flex message. Returns (success, error_type, error_msg). โครงเดียวกับ send_line_push"""
+    try:
+        r = req_lib.post(
+            LINE_PUSH_URL,
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            json={"to": line_user_id,
+                  "messages": [{"type": "flex", "altText": alt_text[:400], "contents": flex_contents}]},
+            timeout=10,
+        )
+        if r.status_code == 200:
+            return True, "", ""
+        try:
+            detail = r.json().get("message", r.text[:120])
+        except Exception:
+            detail = r.text[:120]
+        if r.status_code == 429:
+            return False, "retryable", f"HTTP 429 rate_limit: {detail}"
+        if r.status_code >= 500:
+            return False, "retryable", f"HTTP {r.status_code}: {detail}"
+        return False, "terminal", f"HTTP {r.status_code}: {detail}"
+    except req_lib.Timeout:
+        return False, "retryable", "timeout"
+    except Exception as e:
+        return False, "retryable", f"{type(e).__name__}: {e}"
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
@@ -439,8 +467,14 @@ def main():
         log("=== LINE Sender done (dry-run) ===")
         return
 
-    # Step 5: send live
-    success, error_type, error_msg = send_line_push(token, item["line_user_id"], text)
+    # Step 5: send live — flex message + ปุ่ม feedback (postback)
+    flex = build_job_flex(
+        project_id=item["project_id"],
+        title=_shorten_project_name(item.get("project_name") or ""),
+        detail=text,
+        doc_url=pdf_url,
+    )
+    success, error_type, error_msg = send_line_flex(token, item["line_user_id"], text[:200], flex)
 
     # Step 6: mark result
     store.mark_delivery_result(

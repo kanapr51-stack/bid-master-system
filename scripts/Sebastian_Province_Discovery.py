@@ -288,6 +288,42 @@ def ingest(records: list[dict]) -> tuple[int, int]:
     return new, skipped
 
 
+def mark_discovery_confirmed(project_ids: list[str]) -> int:
+    """ประทับ discovery_confirmed=1 ให้ project ที่ Discovery scan เจอ (claim งาน RSS-first).
+    UPDATE เท่านั้น — งานที่มี project_locations row อยู่แล้ว (RSS Notifier insert pending).
+    คืนจำนวน row ที่ประทับ (rowcount)."""
+    if not project_ids:
+        return 0
+    conn = sqlite3.connect(_db_path())
+    try:
+        marked = 0
+        for pid in project_ids:
+            cur = conn.execute(
+                "UPDATE project_locations SET discovery_confirmed=1 "
+                "WHERE project_id=? AND discovery_confirmed=0", (pid,))
+            marked += cur.rowcount
+        conn.commit()
+        return marked
+    finally:
+        conn.close()
+
+
+def count_rss_gap() -> int:
+    """นับงาน RSS-first ที่ resolve เป็นจังหวัดเป้าหมายแล้ว แต่ Discovery ยังไม่ประทับตรา.
+    = สัญญาณ 'Discovery อาจพลาด' (province-level, ใช้ใน per-sweep report)."""
+    conn = sqlite3.connect(_db_path())
+    try:
+        row = conn.execute("""
+            SELECT COUNT(*) FROM project_locations pl
+            JOIN projects_seen ps ON ps.project_id = pl.project_id
+            WHERE ps.source='rss' AND pl.discovery_confirmed=0
+              AND pl.province_name IN ('นครพนม','บึงกาฬ')
+        """).fetchone()
+        return row[0] if row else 0
+    finally:
+        conn.close()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--token", default="", help="ใส่ token ตรงๆ (= ManualProvider)")
@@ -375,9 +411,13 @@ def main():
 
     chosen = target if args.filter_amphoe else active
     ingested = 0
+    marked = 0
     if args.ingest and not args.dry_run:
         ingested, skipped = ingest(chosen)
         print(f"\n💾 ingest: +{ingested} ใหม่, {skipped} มีอยู่แล้ว (source=province_api)")
+        # RSS Shadow Mode: ประทับตรา discovery_confirmed=1 ให้ทุก project ที่ scan เจอ (claim RSS-first)
+        marked = mark_discovery_confirmed([r["project_id"] for r in active])
+        print(f"🏷  ประทับตรา Discovery: {marked} งาน (claim RSS-first)")
     else:
         print(f"\n(dry-run — จะ ingest {len(chosen)} รายการ ถ้าใส่ --ingest)")
     _write_heartbeat("ok", total=len(all_recs), active=len(active), ingested=ingested,
@@ -396,6 +436,21 @@ def main():
             print(f"📍 full sweep marker เขียนแล้ว: {moi_ids[0]}")
         except Exception:
             pass
+
+    # RSS Shadow Mode: per-sweep report (รายงานเสมอ จบทุก full sweep — 4 ครั้ง/วัน)
+    if args.full and args.ingest and not args.dry_run:
+        from datetime import datetime as _dtf, timezone as _tzf, timedelta as _tdf
+        now_th_f = _dtf.now(_tzf(_tdf(hours=7))).strftime("%H:%M")
+        prov_f = PROVINCE_MOI.get(moi_ids[0], moi_ids[0]) if len(moi_ids) == 1 else "ทุกจังหวัด"
+        gap = count_rss_gap()
+        gap_line = (f"RSS เห็นแต่ Discovery ยังไม่เจอ: {gap} งาน "
+                    + ("✅" if gap == 0 else "⚠️ ดู audit รายวัน"))
+        _discord("\n".join([
+            f"🔍 Full sweep {prov_f} จบ ({now_th_f})",
+            f"• scan เจอ: {len(active)} งาน",
+            f"• ประทับตรา Discovery: {marked} งาน (ใหม่ {ingested})",
+            f"• {gap_line}",
+        ]))
 
     # Discord notify ทุกรอบ incremental (7/13/19) — เจอ/ไม่เจองานใหม่ + รายละเอียด (กัญจน์ขอ 2026-06-01)
     # ไม่รวม full-sweep (safety net เงียบ — มี reconcile alert แยกถ้าเจอปัญหา)

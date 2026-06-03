@@ -71,10 +71,17 @@ Audit รายวัน (21:00): รายงานเสมอ — Discovery �
   ```
   📊 RSS Shadow Audit รายวัน
   • Discovery ส่ง user วันนี้: A งาน
+  • Shadow backlog (RSS target, confirmed=0): N งาน  ← leading indicator
+      อายุ: 0-6ชม X · 6-12ชม Y · 12-24ชม Z · >24ชม B
+  • confirmed rate: C% (confirmed=1 / RSS target resolved)
   • RSS เห็นแต่ Discovery พลาด >24ชม: B งาน
   • สถานะ: ✅ Discovery จับครบ  /  ⚠️ พบ gap B งาน [project list]
   ```
-- เกณฑ์ gap: `project_locations` ที่ match พื้นที่ (qualification ผ่าน) + `discovery_confirmed=0` + RSS first_seen เกิน 24 ชม
+- เกณฑ์ gap (lagging): `project_locations` match พื้นที่ + `discovery_confirmed=0` + RSS first_seen เกิน 24 ชม
+- **Leading indicators (ChatGPT review 2026-06-03):** lagging audit (>24ชม) รู้ช้าเกินถ้า Discovery regression (token/rate-limit/incremental bug) — เพิ่ม 3 ตัวเห็นเร็วกว่า:
+  1. **shadow backlog size** = count(RSS target + confirmed=0 + age<24ชม) — ถ้าโตผิดปกติ = Discovery กำลังพลาด เห็นก่อนครบ 24ชม
+  2. **age distribution** (0-6/6-12/12-24/>24ชม) — ดู trend ก่อน alert (ไม่ binary)
+  3. **confirmed rate** = confirmed=1 / RSS-target-resolved — สุขภาพรวมของ claim
 - idempotent: gap ที่เคยเตือนแล้วยังคงนับใน "สถานะ" แต่ไม่สแปม (รายงานรวมวันละครั้งอยู่แล้ว)
 
 ### 5.5 Per-sweep report (ใน `Sebastian_Province_Discovery.py`)
@@ -103,12 +110,19 @@ Audit รายวัน (21:00): รายงานเสมอ — Discovery �
 - env `BMS_RSS_NOTIFY=on` → Pass 1 enqueue ตามเดิม (regression — RSS ยังส่งได้)
 - schema migration idempotent (รัน 2 ครั้งไม่พัง)
 
-## 8. Rollout
-1. deploy 5 จุด + migration
-2. ตั้ง `BMS_RSS_NOTIFY=off` บน VPS
-3. สังเกต ~1 สัปดาห์ — เก็บสถิติ: Discovery enqueue กี่งาน, audit เตือนกี่ครั้ง
-4. **เกณฑ์พิสูจน์ value:** audit **ไม่เตือนเลย** (หรือเตือนน้อยมากและอธิบายได้) = Discovery จับครบทุกงานที่ RSS เจอ
-5. ถ้าพิสูจน์สำเร็จ → ตัดสินใจ (คง shadow เป็น safety net ถาวร / หรือพิจารณาปิด RSS ingest) — **อนาคต ไม่อยู่ใน scope นี้**
+## 8. Rollout — evidence-based gate (ChatGPT review 2026-06-03)
+**Decision (Co-Architect approved 2026-06-03): flip gate ก็ต่อเมื่อ metric สนับสนุน — ห้ามเดา**
+
+1. deploy 5 จุด + migration — **gate ยัง `on`** (ไม่เปลี่ยนพฤติกรรม user)
+2. **48h dry-run** (gate ยัง on): Discovery ประทับตราเดินปกติ + audit เก็บ metric — ยังไม่ตัดงาน
+3. **เกณฑ์ flip (confirmed-rate gate):** วัดหลัง 48h
+   - confirmed rate **≥ ~99%** + backlog age ไม่มี >24ชม ค้าง → **flip `off` ได้** (มั่นใจ Discovery claim ครบ)
+   - confirmed rate **ต่ำ (เช่น ~80%)** หรือมี >24ชม ค้าง → **ห้าม flip** — มี gap ใหญ่ ต้องสืบก่อน
+4. flip `BMS_RSS_NOTIFY=off` → สังเกตต่อ ~1 สัปดาห์ (audit รายวัน + leading metrics)
+5. **เกณฑ์พิสูจน์ value:** audit gap = 0 ต่อเนื่อง + confirmed rate สูง = Discovery จับครบ
+6. ถ้าพิสูจน์สำเร็จ → P4 ตัดสินใจ demote RSS (คง shadow safety net / ปิด ingest) — อนาคต ไม่อยู่ใน scope นี้
+
+**Rollout philosophy:** เปลี่ยนจาก "รอเวลาแล้ว flip" → "flip เมื่อหลักฐาน (confirmed rate) สนับสนุน" — observe before optimize
 
 ## 9. Scope
 **Build ตอนนี้:** 5 components (schema + Discovery ประทับตรา + enqueue gate + audit รายวัน + per-sweep report) + env toggle

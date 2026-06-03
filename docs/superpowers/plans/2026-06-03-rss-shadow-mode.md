@@ -381,6 +381,8 @@ git -C "C:/Bid-Master-System" commit -m "feat(enrichment): gate RSS-path enqueue
 
 ## Task 4: Audit job รายวัน
 
+> **อัปเดต 2026-06-03 (ChatGPT review):** audit ต้องมี **leading indicators** เพิ่ม (ดู spec §5.4 ฉบับ update) — shadow backlog size + age distribution (0-6/6-12/12-24/>24ชม) + confirmed rate. โค้ดด้านล่างเป็นเวอร์ชันแรก (lagging gap เท่านั้น) — ตอน implement จริงให้เพิ่ม 3 metric นี้ก่อน deploy (ใช้สำหรับ confirmed-rate gate ใน Task 5 Step 5)
+
 **Files:**
 - Create: `scripts/Sebastian_Shadow_Audit.py`
 - Create: `deploy/systemd/bms-shadow-audit.service`
@@ -547,7 +549,14 @@ ssh -i $KEY $H 'cd /opt/bms/app && BMS_DATA_DIR=/opt/bms/data BMS_TOKEN_WORKER=1
 ```
 Expected: Discord ขึ้น "📊 RSS Shadow Audit รายวัน …" (รายงานเสมอ)
 
-- [ ] **Step 5: รอ flag สะสม 1-2 วัน → แล้ว flip gate** (manual checkpoint — ยืนยันกับกัญจน์ก่อน)
+- [ ] **Step 5: 48h dry-run → flip เมื่อ confirmed rate สนับสนุน** (ADR-001, manual checkpoint)
+
+**เปลี่ยนจาก "รอเวลาแล้ว flip" → "flip เมื่อหลักฐานสนับสนุน"** (ดู `docs/lessons_learned.md` ADR-001):
+1. gate ยัง `on` 48 ชม — Discovery ประทับตราเดินปกติ + audit เก็บ metric
+2. หลัง 48h ดู audit รายวัน:
+   - **confirmed rate ≥ ~99%** + ไม่มี backlog age >24ชม ค้าง → **flip `off` ได้**
+   - **confirmed rate ต่ำ (~80%)** หรือมี >24ชม ค้าง → **ห้าม flip** — สืบ gap ก่อน (Discovery อาจพลาด)
+3. ยืนยันกับกัญจน์ก่อน flip เสมอ
 
 ตั้ง env ใน service ของ enrichment worker ผ่าน drop-in file (ไม่ใช้ `systemctl edit` — มัน interactive จะ hang ใน ssh):
 ```bash

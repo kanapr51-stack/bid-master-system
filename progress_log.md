@@ -3865,3 +3865,26 @@ portal ติดดาว (👍→saved) · auto-tune matching · budget filter 
 - scp 4 scripts + migration VPS + systemd audit timer
 - ⚠️ systemd .service/.timer git เตือน LF→CRLF — ตอน deploy ตรวจ LF (dos2unix ถ้าจำเป็น) ไม่งั้น systemd parse error
 - deploy gate ยัง `on` → flag สะสม 1-2 วัน → flip `off` (drop-in BMS_RSS_NOTIFY=off)
+
+## งานที่ N+63: RSS investigation + ChatGPT review → evidence-based rollout (2026-06-03)
+
+### สถานะ: ✅ spec/plan/lessons updated (implement metrics + deploy ทีหลัง)
+
+### RSS investigation (systematic-debugging)
+- อาการ: rss_queue หยุด append 06-02 23:38, circuit breaker OPEN, availability log หยุด 05-31, เจอ deploy-debt 2 data dir
+- root cause: **ไม่พบ bug ฝั่ง scraper** — telemetry poll_log: feed คืน HTTP 200 + items=0 ต่อเนื่อง 8 ชม (กลางคืน) + timeout กลางวัน (RSS diurnal down 08-17) → breaker OPEN ทำงานถูกต้อง (กัน hammer)
+- ⚠️ **wording correction (ChatGPT):** "feed คืน 0 items" ≠ "พิสูจน์ว่าไม่มีงานจริง" — hypothesis truncation/generation/partial-outage ยังไม่ตัดออก (ดู docs/lessons_learned.md L-001)
+
+### ChatGPT review (Co-Architect, เห็นด้วยทุกจุด — ไม่มี blocker)
+- เพิ่ม **leading indicators** (shadow backlog size + age distribution + confirmed rate) — spec §5.4
+- **48h dry-run + confirmed-rate gate** ก่อน flip (≥99% flip ได้ / ~80% ห้าม flip) — ADR-001, spec §8
+- **retire** availability log (ไม่ fix perm — telemetry db = single authority)
+- **P3 consolidate** 2 data dir = operational correctness debt (split-brain) หลัง shadow deploy ไม่เลื่อนยาว
+
+### Artifacts
+- `docs/lessons_learned.md` ใหม่ (L-001 telemetry≠external-world + ADR-001 evidence-based gate)
+- spec §5.4/§8 updated · plan Task 4/5 updated
+
+### Followup
+- implement leading metrics ใน Sebastian_Shadow_Audit.py (ก่อน deploy)
+- P3 consolidate data dir หลัง shadow deploy (สัปดาห์นี้)

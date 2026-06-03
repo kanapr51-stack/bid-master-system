@@ -101,8 +101,8 @@
 
 ### L-004 — Canary ต้องวัด business-critical path ไม่ใช่แค่ upstream availability (2026-06-03)
 **Context:** announcement search (upstream) ผ่าน → ดูเหมือน healthy แต่ resolve (business-critical) พัง
-**บทเรียน:** "announcement search canary" ไม่พอ — ต้องมี **qualification canary** (AES canary: generateToken + getProcurementDetail กับ test project ทุก 1-2 ชม) ที่วัด path ที่ธุรกิจพึ่งจริง
-**How to apply:** AES canary (P1) — พิสูจน์ resolve path healthy ไม่ใช่แค่ scan path
+**บทเรียน:** "announcement search canary" ไม่พอ — ต้องมี **qualification canary** ที่วัด path ที่ธุรกิจพึ่งจริง
+**How to apply:** ✅ **DEPLOYED 2026-06-03 (P1)** — เลือก **resolve heartbeat** (worker เขียน `resolve_heartbeat.json`: last_resolve_success_at = business outcome จริง) **แทน active AES canary** เพราะ canary จะยิง generateToken เพิ่ม = เสี่ยง burst + ขัด cooldown (บทเรียน INC-001 Rev3). deadman ตรวจ heartbeat ทุก 15 นาที → RESOLVE_DEAD (>75m+pending+ไม่cooldown) / WORKER_STALE (>12m) / RESOLVE_STUCK (cooldown ค้าง>2h) → Discord. INC-001 จะถูกจับใน ≤75 นาที (เทียบ 1.5 วัน)
 
 ### L-005 — External service กับ unknown limit ต้องมี rate-control envelope ก่อนถือว่า production-ready (2026-06-03, INC-001 Rev 3)
 **Context:** INC-001 Rev 3 — worker ยิง resolve ทุก 2 นาที (timer) << WAF cooldown 30-40 นาที → worker **เติม traffic ก่อน cooldown ครบทุกครั้ง** → block ถูกต่ออายุเอง 1.5 วัน. 1.5-day outage **ไม่ใช่ "WAF ลงโทษ 1.5 วัน" แต่ "worker รักษา block state เองตลอด 1.5 วัน"** (positive feedback loop: burst → block → retry → ยิงซ้ำ → block นานขึ้น)

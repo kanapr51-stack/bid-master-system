@@ -4006,5 +4006,26 @@ BMS assumed `discovery reachable ⇒ resolve reachable` = เท็จ. WAF bloc
 
 ### Followup
 - [ ] **watch 24h** = production characterization → tune throughput envelope (cooldown trip count, resolve success rate)
-- [ ] deploy-debt: VPS git HEAD ค้าง f5311f7 (worker file ใหม่บน disk แต่ git ref ไม่ advance) — fix ตอน single-runtime-authority migration
-- [ ] P1 alerts: AES canary + resolve-success-rate + qualification-throughput (L-003/L-004)
+- [ ] deploy-debt: VPS git HEAD ค้าง f5311f7 (worker+deadman ใหม่บน disk ผ่าน scp แต่ git ref ไม่ advance) — fix ตอน single-runtime-authority migration
+- [x] ~~P1 alerts~~ ✅ **DONE** — resolve heartbeat + deadman 3 checks (ดู N+69)
+
+---
+
+## งานที่ N+69: 🛡️ INC-001 P1 — Resolve-plane dead-man alert (กันพังเงียบ) (2026-06-03)
+
+### สถานะ: ✅ DEPLOYED + tested end-to-end
+
+### Gap ที่ปิด (ต้นเหตุ INC-001 ตายเงียบ 1.5 วัน — L-004)
+- `health_deadman.py` เดิมตรวจ token+discovery แต่**ไม่ตรวจ resolve plane** · `vps_canary.py` ตรวจ announcement (ตอน INC-001 ยัง HEALTHY) ไม่ใช่ resolve path
+- = canary วัด upstream ไม่ใช่ business-critical path
+
+### Design (KISS, ไม่ยิง API เพิ่ม = ไม่เสี่ยง burst)
+- **worker เขียน `resolve_heartbeat.json` ทุกรอบ** — last_resolve_success_at = business outcome จริง (resolve RESOLVED/enriched สำเร็จ), ไม่ใช่ synthetic probe (เลี่ยง active AES canary ที่จะ burst + ขัด cooldown)
+- **deadman +3 checks (ทุก 15 นาที):** WORKER_STALE (>12m timer ตาย) · RESOLVE_DEAD (>75m + pending + ไม่ cooldown = INC-001) · RESOLVE_STUCK (cooldown ค้าง >2h)
+
+### Test: 7 scenarios ผ่านหมด (จับ dead/stuck/worker-dead ได้ + ไม่ false-alarm ตอน healthy/cooldown/no-pending)
+### Deploy: commit 25ebe61 + scp (worker bms, deadman root) + compile OK + heartbeat เขียนจริง + deadman check()=healthy + timer active
+### ผล: INC-001 ถูกจับใน ≤75 นาที (เทียบ 1.5 วัน)
+
+### Followup
+- [ ] P1 ส่วนเสริม (defer): qualification-throughput trend + resolve success-rate % (ตอนนี้มี binary alive/dead พอสำหรับกันพังเงียบ)

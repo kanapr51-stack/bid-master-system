@@ -4050,4 +4050,12 @@ BMS assumed `discovery reachable ⇒ resolve reachable` = เท็จ. WAF bloc
 - forward-only (317 ที่ resolve แล้ว = NULL) · มีผลตั้งแต่ drain resume 00:03 · DB backup ก่อน migrate
 
 ### Followup
-- [ ] verify deadline populate จริงหลัง worker resume (00:03)
+- [x] ~~verify deadline populate~~ ✅ เก็บจริง 318 rows (forward-only ตามคาด)
+
+### ✅ DRAIN COMPLETE (2026-06-04 ~01:15) — INC-001 ปิดสมบูรณ์
+- 730 นครพนม resolve ครบ 100% (pending 0): suppressed_expired 704 + n/a 20 + no-deadline 6 + filtered 1 + **enqueued 0**
+- **0 งานตกหล่น** — ยืนยัน 3 ทาง: forward(0 ใหม่) + cross-check(58/58 ปิดก่อน incident) + drain(0 enqueued)
+- ปิดคำถามดั้งเดิม "ทำไมประทับ 8 งาน" สมบูรณ์ (8 → epoch boundary → re-seed 730 → drain → 0 พลาด)
+- INC-001 ปิดครบ: ✅Recovery ✅Production Restored ✅P1 dead-man ✅re-seed ✅cross-check ✅deadline audit (v1.13)
+- 🔧 cycle พิสูจน์ self-heal: cross-check trip WAF → cooldown → worker auto-skip → ฟื้นเอง → resume → drain ต่อ
+- minor followup (defer): worker auto-clean stale cooldown file · deadline parser quality (failed_deadline_not_found 6)

@@ -338,6 +338,12 @@ def qualify_province_api(store, log) -> int:
                              (st, new_att, pid))
             continue
 
+        # P1 audit: เก็บ deadline ที่ resolve ได้ลง DB (cross-check ฟรี — ดู Customer_DB _migrate_v113)
+        if res.outcome == DeadlineOutcome.RESOLVED and res.deadline:
+            with get_connection() as conn:
+                conn.execute("UPDATE project_locations SET deadline=? WHERE project_id=?",
+                             (str(res.deadline), pid))
+
         # terminal outcomes
         if res.outcome == DeadlineOutcome.RESOLVED and res.is_open():
             # matching layer (keyword + tambon + soft-include) — shadow log / enforce apply

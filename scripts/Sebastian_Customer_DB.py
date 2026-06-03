@@ -200,7 +200,22 @@ def init_schema():
     _migrate_v110()
     _migrate_v111()
     _migrate_v112()
-    print(f"Schema v1.12 ready: {DB_PATH}")
+    _migrate_v113()
+    print(f"Schema v1.13 ready: {DB_PATH}")
+
+
+def _migrate_v113():
+    """Add deadline to project_locations — เก็บ deadline ที่ resolve ได้ (2026-06-03, INC-001 P1 audit).
+    เดิมทิ้ง deadline หลัง gate → cross-check ต้อง re-resolve (แพง + PDF งานปิดหาย).
+    เก็บไว้ → audit ย้อนหลังเป็น SQL query ฟรี. NULL = ยังไม่ resolve / RSS path (ไม่ resolve deadline).
+    """
+    with get_connection() as conn:
+        try:
+            conn.execute(
+                "ALTER TABLE project_locations ADD COLUMN deadline TEXT"
+            )
+        except sqlite3.OperationalError:
+            pass  # already exists
 
 
 def _migrate_v112():

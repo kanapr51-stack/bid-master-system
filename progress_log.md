@@ -3933,3 +3933,21 @@ BMS assumed `discovery reachable ⇒ resolve reachable` = เท็จ. WAF bloc
 ### เรื่อง 730 pre-epoch: pause (pending ค้าง ปลอดภัย) รอแก้ resolve ก่อน
 
 ### Followup: implement P0.0 (manual residential resolve) restore วันนี้
+
+## งานที่ N+66: INC-001 P0.0 finding — residential burst-limit (checkpoint update) (2026-06-03)
+
+### สถานะ: 🔴 INCIDENT recovery (checkpoint updated, รอ Step 1)
+
+### Finding ใหม่ (mental model รอบ 2): residential = finite execution resource
+- P0.0 manual resolve: oldest batch 20 → resolved 14 (ทั้งหมด expired) · newest batch 20 → block ทั้งหมด (no AES token หลัง burst ~40 calls)
+- **residential ก็โดน WAF block หลัง burst ~30 generateToken** → cooldown >2 นาที → ผ่านอีก (VPS=permanent 0 burst)
+- matrix: VPS=permanently blocked · residential=rate-limited regime (ไม่ใช่ trusted unlimited)
+
+### ChatGPT consult (เห็นด้วยทุกจุด — ดู lessons_learned INC-001 Update)
+- B ยัง feasible (beta 0-2 jobs/day << 30/burst) · backfill ช้า=แยกเรื่อง
+- objective lock รอบ 3 = **Validate forward-processing** (KPI=path viability ไม่ใช่ notification count)
+- ADR-002 refine: Worker → **Resolve Queue** (state machine PENDING/READY/COOLDOWN/RETRY/DONE)
+- Severity: Customer Impact=Unknown-to-Low · Systemic Risk=High ("luck ≠ health")
+- RPi unchanged (burst-limit ไม่เปลี่ยน) · Recovery first, characterize ทีหลัง (probe=consume scarce)
+
+### Next: Step 1 forward-processing validation (รอ cooldown → resolve newest batch เล็ก → พิสูจน์ path)

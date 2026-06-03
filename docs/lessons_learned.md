@@ -111,3 +111,22 @@ WAF signature: HTTP 200 + HTML "The requested URL was rejected. Your support ID 
 **Recovery Plan:** P0.0 manual residential resolve (restore) → P0.1 Residential Resolve Worker (B) → P1 AES canary + qualification throughput alert + resolve success-rate alert → P2 measure residential dependency + Windows uptime → P3 Raspberry Pi decision
 
 **Explicitly deferred:** proxy · VPN · ย้าย Discovery ไป residential · 77-province redesign (ยังไม่มี evidence ว่าจำเป็น)
+
+---
+
+### INC-001 Update — P0.0 finding: residential burst-limit (2026-06-03)
+
+**🧠 Mental model change (รอบ 2):** Residential = **finite execution resource** (ไม่ใช่ "trusted unlimited zone")
+- evidence: residential ผ่าน ~30 generateToken/burst → WAF block → cooldown >2 นาที → ผ่านอีก (VPS = permanent block, 0 burst)
+- batch test: oldest 20 → resolved 14 (ทั้งหมด **expired**) · newest 20 → block ทั้งหมด (no AES token, หลัง burst ~40 calls)
+- **architecture consequence:** Worker → **Queue + Capacity Management** (bottleneck = throughput ไม่ใช่ reachability)
+
+**Severity wording (refined):**
+- **Customer Impact = Unknown-to-Low** — open jobs ที่พลาดจริงกี่งาน ยังพิสูจน์ไม่ได้ (backlog ส่วนใหญ่ expired)
+- **Systemic Risk = High** — Enrichment dead 1.5 วัน no alert = พิสูจน์แล้ว ("luck ≠ health": 0 งานใหม่ = incident ช่วง low-volume ไม่ใช่ system healthy)
+
+**ADR-002 refinement:** Residential Resolve **Worker** → **Queue** (state machine: PENDING → READY → COOLDOWN → RETRY → DONE). Explicit assumptions: residential execution available · **rate-limited** · throughput managed by queue · **no assumption of unlimited capacity**
+
+**Objective lock (เปลี่ยนรอบ 3):** Recover backlog → Restore notifications → **Validate forward-processing** (KPI = **path viability** ไม่ใช่ notification count). Step 1 สำเร็จเมื่อ: new candidate → resolve → qualify → enqueue **ทำงานได้** (ไม่จำเป็นต้องมี notification จริง ถ้า evidence บอกไม่มี open job)
+
+**Recovery first · Characterization second** — อย่า probe burst regime ระหว่าง recovery (probe = consume scarce residential resource)

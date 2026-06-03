@@ -51,7 +51,7 @@
 
 ### ADR-002 — Residential Resolve Node (incident response, 2026-06-03)
 
-**Status:** Approved (กัญจน์ + ChatGPT converged 2026-06-03, ระหว่าง INC-001)
+**Status:** ⬇️ **Superseded by ADR-003** (2026-06-03 Rev 3) — downgrade Primary → **Contingency/Fallback**. residential validated จริง (ไม่ผิด) แต่ model ที่สร้าง ADR-002 **ยังไม่ครบ** (สมมติ VPS = permanent block). Rev 3 พบ VPS = burst-limit ฟื้นหลัง cooldown → residential ไม่ใช่ทางหลัก เป็น fallback
 
 **Context:** WAF block `generateToken` + `getProcurementDetail` จาก VPS datacenter IP → resolve พัง (ดู INC-001). ต้องเลือกทางฟื้น: A (token-mint proxy) / B (residential resolve node) / C (proxy/VPN)
 
@@ -63,6 +63,27 @@
 **Rationale:** B = proven path (matrix พิสูจน์ residential ผ่านทุก endpoint วันนี้). C = unproven + เพิ่ม dependency (proxy/VPN/billing/latency). incident → restore ด้วย proven path ก่อน
 
 **Explicitly deferred (ยังไม่มี evidence ว่าจำเป็น):** proxy/VPN · ย้าย Discovery ไป residential (announcement search VPS ยังผ่าน — ตั้ง tripwire แทน) · 77-province redesign
+
+---
+
+### ADR-003 — Rate-Limited Resolve Architecture (INC-001 Rev 3, 2026-06-03)
+
+**Status:** Approved (กัญจน์ + ChatGPT converged 2026-06-03, Rev 3 — supersedes ADR-002)
+
+**Context:** หลัง pause VPS enrichment worker → WAF block หาย → test ยืนยัน VPS resolve กลับมา (generateToken OK + getProcurementDetail 200 moiName=นางัว, blocked=False). พิสูจน์ว่า WAF = **rate/behavior-based ไม่ใช่ permanent IP blacklist**. VPS ถูก block ตลอด 1.5 วันเพราะ worker ยิง resolve ทุก 2 นาทีต่อเนื่อง → burst saturated ไม่หยุด → block ถูก**ต่ออายุเอง**
+
+**Decision:** เปลี่ยนกรอบจาก "External Dependency Failure" (ต้องย้าย node) เป็น **"Rate-Control Failure"** (ต้องคุมจังหวะยิง)
+- **Primary: VPS throttled** — 24/7, single deploy, ไม่ต้อง Windows uptime/harvest sync/Pi. ปัญหาเปลี่ยนจาก *reachability* → *throughput control*
+- **Fallback: Residential** (ADR-002 path) — เก็บไว้เป็น contingency ถ้า VPS throttle ไม่พอ
+- **lock = "Need adaptive rate control"** ไม่ lock ตัวเลข (batch=5/cooldown=30m ยังเป็น observation ไม่ใช่ characterization)
+
+**Rationale:** ปัญหาจริงคือ throughput envelope ไม่ใช่ node location. VPS ง่ายกว่ามาก (ไม่มี dependency เพิ่ม). RPi **defer หนักกว่าเดิม** (เหตุผลเดิม = VPS ใช้ไม่ได้ ตอนนี้ VPS อาจใช้ได้ → ซื้อ Pi ยิ่ง YAGNI)
+
+**Phase A (recovery):** re-enable worker **ultra-conservative + cooldown awareness** (ไม่ใช่แค่ batch เล็ก — ต้อง backoff เมื่อเจอ WAF, interval ยาว, ไม่ retry ทันที). **Success ≠ worker start ได้** แต่ = **worker survives without re-entering block loop**
+
+**Production Restored declared เมื่อ:** new candidate → resolve success → qualification success → no WAF block → worker remains healthy — อย่างน้อย 1 cycle จริง (ไม่ใช่ generateToken ผ่าน 1 ครั้ง)
+
+**Caveat (L-001):** test ผ่าน 1 ครั้ง = observation ไม่ใช่ characterization. ยังไม่รู้ VPS safe sustained throughput → characterize ทีหลัง (Phase A 24h = production characterization)
 
 ---
 
@@ -82,6 +103,15 @@
 **Context:** announcement search (upstream) ผ่าน → ดูเหมือน healthy แต่ resolve (business-critical) พัง
 **บทเรียน:** "announcement search canary" ไม่พอ — ต้องมี **qualification canary** (AES canary: generateToken + getProcurementDetail กับ test project ทุก 1-2 ชม) ที่วัด path ที่ธุรกิจพึ่งจริง
 **How to apply:** AES canary (P1) — พิสูจน์ resolve path healthy ไม่ใช่แค่ scan path
+
+### L-005 — External service กับ unknown limit ต้องมี rate-control envelope ก่อนถือว่า production-ready (2026-06-03, INC-001 Rev 3)
+**Context:** INC-001 Rev 3 — worker ยิง resolve ทุก 2 นาที (timer) << WAF cooldown 30-40 นาที → worker **เติม traffic ก่อน cooldown ครบทุกครั้ง** → block ถูกต่ออายุเอง 1.5 วัน. 1.5-day outage **ไม่ใช่ "WAF ลงโทษ 1.5 วัน" แต่ "worker รักษา block state เองตลอด 1.5 วัน"** (positive feedback loop: burst → block → retry → ยิงซ้ำ → block นานขึ้น)
+**บทเรียน:** external service ใดที่ limit ไม่รู้แน่ (RSS · Province API · Resolve API ล้วนเป็น external) **ต้องมี 3 อย่างก่อนถือว่า production-ready:**
+1. **throughput envelope** — รู้/คุมว่ายิงได้กี่ call ต่อ window (ไม่ยิงไม่จำกัด)
+2. **cooldown state** — รับรู้เมื่อโดน throttle แล้ว**หยุด** (ไม่ retry ทันที)
+3. **recovery state** — กลับมายิงแบบ ramp ไม่ใช่ full-rate ทันที
+**ไม่มี 3 อย่างนี้ = ระบบเป็นคนสร้าง outage เอง** (self-inflicted). Layer นี้คือสิ่งที่ยืด incident จาก *นาที* → *วันครึ่ง*
+**How to apply:** ก่อน deploy worker ที่เรียก external API บน loop — ต้องมี backoff + cooldown awareness + ramp-up ไม่ใช่แค่ fixed-interval timer. ใช้ตอน scale 77 จังหวัด (volume สูง = ชน limit คลาสนี้ซ้ำแน่)
 
 ---
 
@@ -104,7 +134,10 @@ WAF signature: HTTP 200 + HTML "The requested URL was rejected. Your support ID 
 
 **Interpretation:** Discovery endpoint และ Resolve endpoint อยู่ใต้ WAF behavior คนละแบบ → ไม่ได้อยู่ใน trust zone เดียวกัน
 
-**Root Cause:** **Control Plane Assumption Failure** — BMS assumed `discovery reachable ⇒ resolve reachable` ซึ่ง**เป็นเท็จ**. ไม่ใช่ bug แต่เป็น finding เชิง architecture
+**Root Cause (Rev 3 — 2 layers):**
+- **Layer 1 — Incorrect assumption:** `discovery reachable ⇒ resolve reachable` = **เท็จ** (Control Plane Assumption Failure). อธิบายว่า*ทำไม resolve ถึงพัง* แต่ไม่อธิบายว่า*ทำไมพังนาน 1.5 วัน*
+- **Layer 2 — Missing rate-limit adaptation:** worker ไม่มี cooldown awareness / adaptive throttling / sustained throughput envelope → ยิง resolve ทุก 2 นาที << WAF cooldown 30-40 นาที → **block ถูกต่ออายุเอง** (self-sustained). **Layer 2 คือสิ่งที่ทำให้ incident ยืดจากนาที → วันครึ่ง** (ดู L-005)
+- ⚠️ Rev 1-2 เข้าใจว่า "VPS โดน block ถาวร (datacenter IP)". Rev 3 (evidence: VPS ฟื้นหลัง pause) แก้เป็น **rate-control failure** — incident class เปลี่ยนจาก External Dependency Failure → Rate-Control Failure
 
 **สิ่งที่ incident พิสูจน์เพิ่ม:** observability > cleverness — dead-man switch/telemetry (ที่เคยเป็น hypothesis) พิสูจน์คุณค่าจริง: ถ้าไม่มี telemetry เราจะยังเชื่อว่า "ตลาดเงียบ" ทั้งที่ qualification plane dead
 

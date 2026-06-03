@@ -3968,3 +3968,32 @@ BMS assumed `discovery reachable ⇒ resolve reachable` = เท็จ. WAF bloc
 ### Next (ChatGPT reorder): P0.1 Residential Resolve Path (production restore — สำคัญสุด) → P1 alerts → P2 characterize
 - blind spot: P0.1 = Windows uptime dependency (interim) → RPi always-on = แก้ถาวร (P3)
 - milestone = "first new candidate processed automatically after VPS pause"
+
+---
+
+## งานที่ N+68: 🔄🔄 INC-001 Rev 3 — Rate-Control Failure (ล้ม model เดิม, ADR-003) (2026-06-03)
+
+### สถานะ: ✅ Checkpoint locked (knowledge files) → 🚧 Phase A re-enable worker
+
+### Game-changer finding
+หลัง pause VPS worker → **WAF block หาย** → test ยืนยัน VPS resolve กลับมา (generateToken OK + getProcurementDetail 200 moiName=นางัว, blocked=False)
+→ **WAF = rate/behavior-based ไม่ใช่ permanent IP blacklist** (Rev 1-2 เข้าใจผิดว่า datacenter IP โดน block ถาวร)
+
+### Root cause Rev 3 = 2 layers
+- **L1 assumption failure** (discovery⇒resolve) — อธิบาย*ทำไม resolve พัง*
+- **L2 missing rate-limit adaptation** — worker timer 2 นาที << WAF cooldown 30-40 นาที → ยิงเติม traffic ก่อน cooldown ครบ → **block ต่ออายุเอง (positive feedback loop)**. อธิบาย*ทำไมพัง 1.5 วัน*. 1.5 วัน = worker รักษา block เอง ไม่ใช่ WAF ลงโทษ
+- incident class เปลี่ยน: External Dependency Failure → **Rate-Control Failure**
+
+### Decisions locked (กัญจน์ + ChatGPT converged)
+- **ADR-003 Rate-Limited Resolve** (supersedes ADR-002): Primary=**VPS throttled**, Fallback=Residential
+- **L-005:** external service unknown-limit ต้องมี throughput envelope + cooldown state + recovery state ก่อน production-ready
+- lock "need adaptive rate control" **ไม่ lock ตัวเลข** (batch=5/cooldown=30m = observation ไม่ใช่ characterization)
+- RPi defer หนักกว่าเดิม (VPS อาจใช้ได้ → ยิ่ง YAGNI)
+
+### Phase A (กำลังทำ): re-enable worker ultra-conservative + cooldown awareness
+- Success = worker survives **without re-entering block loop** (ไม่ใช่ worker start ได้)
+- Production Restored เมื่อ: new candidate → resolve → qualify → no WAF → worker healthy ≥1 cycle จริง
+
+### Followup
+- [ ] implement backoff/cooldown awareness ใน enrichment worker (ไม่ใช่แค่ batch/interval config)
+- [ ] watch 24h = production characterization → tune throughput envelope

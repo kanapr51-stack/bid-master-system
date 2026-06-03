@@ -4029,3 +4029,25 @@ BMS assumed `discovery reachable ⇒ resolve reachable` = เท็จ. WAF bloc
 
 ### Followup
 - [ ] P1 ส่วนเสริม (defer): qualification-throughput trend + resolve success-rate % (ตอนนี้มี binary alive/dead พอสำหรับกันพังเงียบ)
+
+---
+
+## งานที่ N+70: 🔍 Cross-check bid-window + เก็บ deadline ลง DB (v1.13) (2026-06-03)
+
+### สถานะ: ✅ cross-check สรุป (no miss) + ✅ deadline-storage deployed
+
+### Cross-check INC-001 data integrity (กัญจน์ขอ)
+- **Forward (งานใหม่ช่วง window 06-02→06-03):** 0 งาน target+keyword เพิ่งเห็น = **0 missed** (ฟรี ไม่ resolve)
+- **Backward (63 send+closed jobs):** รอบ 1 INVALID (ผมใช้ system python ไม่มี pdfplumber → parse_failed ปลอม — verify จับได้ก่อน claim) → รอบ 2 venv: **58/58 ปิดก่อน incident · 0 ยังเปิด · 0 ปิดช่วง window** (3 unresolved + 2 ไม่ถึง เพราะ cross-check trip WAF เอง)
+- **cooldown trip (xcheck_waf):** cross-check + worker ยิงรวมเกิน burst → cooldown → **validation ฟรีว่า P1/cooldown ทำงานจริง** (worker auto-skip, ไม่เกิด INC-001 ซ้ำ). drain pause ~45 นาที (ฟื้น 00:03)
+- **สรุป: ไม่มีหลักฐานว่า INC-001 ทำให้พลาดงานเป้าหมาย** เหลือ residual เคส bid-window สั้นพิเศษ (พิสูจน์ไม่ได้เชิงทฤษฎี)
+
+### Lesson (learn-from-mistakes): verify ก่อน claim — system python vs venv (pdfplumber) ทำให้ resolve ผลต่างกันคนละทาง. diagnostic resolve คู่ worker = เกิน envelope → ครั้งหน้า pause worker ก่อน
+
+### Enhancement: เก็บ deadline ลง DB (schema v1.13, commit c68c9dd)
+- `_migrate_v113` + column deadline · worker Pass3 เก็บ str(res.deadline) ตอน RESOLVED
+- → cross-check/audit = SQL query ฟรี (ไม่ re-resolve = ไม่ยิง API ไม่เสี่ยง WAF + แก้ PDF งานปิดหาย)
+- forward-only (317 ที่ resolve แล้ว = NULL) · มีผลตั้งแต่ drain resume 00:03 · DB backup ก่อน migrate
+
+### Followup
+- [ ] verify deadline populate จริงหลัง worker resume (00:03)

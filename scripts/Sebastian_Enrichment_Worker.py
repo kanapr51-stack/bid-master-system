@@ -117,6 +117,37 @@ def _set_resolve_cooldown(reason: str) -> str:
     return until
 
 
+# ── INC-001 P1: Resolve heartbeat (กันพังเงียบ — dead-man switch ตรวจ) ───────────
+# L-004: วัด business-critical path (resolve สำเร็จจริง) ไม่ใช่ synthetic probe (L-002).
+# ไม่ยิง API เพิ่ม → ไม่เสี่ยง burst. last_resolve_success_at = สัญญาณ resolve plane alive.
+RESOLVE_HEARTBEAT_PATH = Path(__file__).parent.parent / "data" / "resolve_heartbeat.json"
+
+
+def _write_resolve_heartbeat(status: str, resolved_ok: int = 0,
+                             pending: int = 0, in_cooldown: bool = False) -> None:
+    """เขียน heartbeat ให้ deadman ตรวจ. last_resolve_success_at update เมื่อ resolve สำเร็จจริง."""
+    prev = {}
+    try:
+        if RESOLVE_HEARTBEAT_PATH.exists():
+            prev = json.loads(RESOLVE_HEARTBEAT_PATH.read_text(encoding="utf-8-sig"))
+    except Exception:
+        prev = {}
+    last_success = prev.get("last_resolve_success_at")
+    if resolved_ok > 0:
+        last_success = _now()
+    try:
+        RESOLVE_HEARTBEAT_PATH.write_text(json.dumps({
+            "last_run_at": _now(),
+            "last_run_status": status,
+            "last_resolve_success_at": last_success,
+            "last_run_resolved_ok": resolved_ok,
+            "pending": pending,
+            "in_cooldown": in_cooldown,
+        }, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+
 def _enrich(project_id: str) -> dict | None:
     try:
         from process5_http_client import get_procurement_detail
@@ -194,8 +225,8 @@ def _province_epoch():
     return r[0] if r else None
 
 
-def qualify_province_api(store, log) -> None:
-    """
+def qualify_province_api(store, log) -> int:
+    """คืนจำนวน resolve สำเร็จ (RESOLVED) สำหรับ resolve heartbeat.
     province_api → notification: Epoch Gate (primary) → Deadline Gate (secondary) → fail-closed
     (ChatGPT+Claude converged 2026-05-30 — ดู memory/project_delivery_wiring_decision.md)
 
@@ -207,12 +238,12 @@ def qualify_province_api(store, log) -> None:
     epoch = _province_epoch()
     if not epoch:
         log("Province qual: ไม่มี epoch — skip")
-        return
+        return 0
     try:
         from deadline_service import DeadlineService, make_deadline_provider, DeadlineOutcome
     except Exception as e:
         log(f"Province qual: import deadline_service ล้มเหลว ({e}) — skip")
-        return
+        return 0
     mode = os.environ.get("BMS_PROVINCE_NOTIFY_MODE", "preview")   # preview (go-live gate) | live
     dsvc = DeadlineService(make_deadline_provider())               # doczip ถ้า env BMS_DEADLINE_PROVIDER set
     # matching layer (keyword + tambon) — shadow (log only) | enforce (กรองจริง) | off
@@ -259,7 +290,7 @@ def qualify_province_api(store, log) -> None:
     cands = [dict(r) for r in cands]
     if not cands:
         log("Province qual: 0 pending candidates — OK (backlog suppressed)")
-        return
+        return 0
     log(f"Province qual: {len(cands)} pending (mode={mode})")
 
     TRANSIENT = (DeadlineOutcome.PROVIDER_ERROR, DeadlineOutcome.DOWNLOAD_FAILED)
@@ -361,6 +392,8 @@ def qualify_province_api(store, log) -> None:
         f"expired={stats['expired']} failed={stats['failed']} retry={stats['retry']} "
         f"| match[{mmode}] filtered={stats['filtered']} soft={stats['soft']} "
         f"| kw-first[{kwmode}] skip={stats['kw_skip']} (= API call ที่ประหยัดได้ตอน enforce)")
+    # resolved_ok = outcome RESOLVED (deadline provider สำเร็จ = generateToken+doczip ผ่าน)
+    return stats["enqueued"] + stats["preview"] + stats["expired"]
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
@@ -380,6 +413,7 @@ def main():
 
     if api != "HEALTHY":
         log("API not HEALTHY — skip run")
+        _write_resolve_heartbeat("skip_api")   # P1: worker ยังมีชีวิต (timer ไม่ตาย) แต่ skip
         log("=== Enrichment Worker done (skipped) ===")
         return
 
@@ -387,6 +421,7 @@ def main():
     in_cd, until = _resolve_in_cooldown()
     if in_cd:
         log(f"Resolve plane in COOLDOWN until {until} (INC-001 Rev3 backoff) — skip run")
+        _write_resolve_heartbeat("skip_cooldown", in_cooldown=True)
         log("=== Enrichment Worker done (cooldown) ===")
         return
 
@@ -396,8 +431,9 @@ def main():
 
     # Pass 3: province_api qualification (epoch + deadline gate, fail-closed)
     # รันก่อน RSS batch + independent (ไม่ skip แม้ RSS queue ว่าง)
+    qual_ok = 0
     try:
-        qualify_province_api(store, log)
+        qual_ok = qualify_province_api(store, log)
     except Exception as e:
         log(f"Province qual ERROR: {type(e).__name__}: {e}")
 
@@ -405,6 +441,7 @@ def main():
     in_cd, until = _resolve_in_cooldown()
     if in_cd:
         log(f"Cooldown set by Pass 3 (until {until}) — skip RSS passes")
+        _write_resolve_heartbeat("skip_cooldown_pass3", resolved_ok=qual_ok, in_cooldown=True)
         log("=== Enrichment Worker done (cooldown set) ===")
         return
 
@@ -426,6 +463,12 @@ def main():
 
     if not rows:
         log("No pending items — exit")
+        with get_connection() as conn:
+            qp = conn.execute(
+                "SELECT COUNT(*) FROM project_locations WHERE source='province_api' "
+                "AND qualification_status='pending' AND enrichment_attempts < ?",
+                (MAX_QUAL_ATTEMPTS,)).fetchone()[0]
+        _write_resolve_heartbeat("ok", resolved_ok=qual_ok, pending=qp)
         log("=== Enrichment Worker done ===")
         return
 
@@ -494,6 +537,14 @@ def main():
         total_pending = conn.execute(
             "SELECT COUNT(*) FROM project_locations WHERE enrichment_status='pending'"
         ).fetchone()[0]
+        qual_pending = conn.execute(
+            "SELECT COUNT(*) FROM project_locations WHERE source='province_api' "
+            "AND qualification_status='pending' AND enrichment_attempts < ?",
+            (MAX_QUAL_ATTEMPTS,)).fetchone()[0]
+
+    # P1 resolve heartbeat: resolved_ok = qual RESOLVED + RSS enriched (business outcome จริง)
+    _write_resolve_heartbeat("ok", resolved_ok=qual_ok + stats["enriched"],
+                             pending=total_pending + qual_pending)
 
     log(
         f"Done — enriched={stats['enriched']} failed={stats['failed']} "

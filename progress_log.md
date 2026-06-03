@@ -3905,3 +3905,31 @@ portal ติดดาว (👍→saved) · auto-tune matching · budget filter 
 - รอ full sweep auto (นครพนม 19:30 + บึงกาฬ 20:30) ประทับตราครบ → confirmed rate ควร ~100%
 - 48h dry-run → ดู confirmed rate → flip เมื่อ ≥99% (ADR-001)
 - P3 consolidate data dir (หลัง shadow stable)
+
+## งานที่ N+65: 🚨 INC-001 Control Plane Assumption Failure — Production down 1.5 วัน (2026-06-03)
+
+### สถานะ: 🔴 INCIDENT (checkpoint ก่อน implement recovery)
+
+### สรุป (เจอโดยบังเอิญ ระหว่าง debug "ทำไมประทับ 8")
+debugging chain: ประทับ 8 → epoch boundary → re-seed 730 → trigger → "no AES token" → WAF block generateToken → **เจอว่า production resolve พัง 1.5 วัน** (delivery ล่าสุด 06-02 00:09, ไม่มี alert)
+
+### Root Cause: Control Plane Assumption Failure (ไม่ใช่ bug)
+BMS assumed `discovery reachable ⇒ resolve reachable` = เท็จ. WAF block resolve endpoints (generateToken + getProcurementDetail) จาก VPS datacenter IP แต่ announcement search (Discovery) ผ่าน
+
+### Evidence matrix (test จริง)
+- residential (Windows): generateToken ✅ getProcurementDetail ✅ announcement ✅
+- VPS (datacenter): generateToken ❌ getProcurementDetail ❌ announcement ✅
+- WAF: "Request Rejected" support ID (BIG-IP/Imperva)
+
+### Plane status: Discovery=Healthy · Enrichment=Failed · Delivery=starved
+
+### ChatGPT consult (เห็นด้วยทุกจุด — ดู docs/lessons_learned.md INC-001 + ADR-002)
+- เลือก B (Residential Resolve Node) — A ตกไป (getProcurementDetail VPS ก็ block), C (proxy) unproven defer
+- P0.0 manual restore แยกจาก P0.1 worker (time-to-recovery > elegance)
+- detection gap = แก่นจริง (observability failure) → L-002/3/4
+
+### Recovery Plan: P0.0 manual resolve → P0.1 residential worker → P1 canary+alerts → P2 measure → P3 RPi
+### Deferred: proxy/VPN · ย้าย Discovery · 77-province redesign
+### เรื่อง 730 pre-epoch: pause (pending ค้าง ปลอดภัย) รอแก้ resolve ก่อน
+
+### Followup: implement P0.0 (manual residential resolve) restore วันนี้

@@ -7,12 +7,14 @@ Role: Take pending project_locations → enrich via eGP API → enqueue notifica
   THIS WORKER   → getProcurementDetail → hard location → enqueue if target province
   LINE Sender   → deliver notification
 
-Design (ChatGPT-confirmed 2026-05-29):
-  - Batch: 20 items/run to stay within eGP rate limit (100 req/120s)
+Design (ChatGPT-confirmed 2026-05-29 · revised INC-001 Rev 3 2026-06-03):
+  - Batch: env-tunable, default 5/pass (ADR-003 throughput envelope < burst ~30)
   - Sleep: 1.5s between projects → 2 calls/1.5s ≈ 1.3 req/s/type, safe
-  - No retry ladder yet — enrichment_attempts tracks debug signal only
   - Enrich ALL projects (not just target) — build canonical intelligence layer
   - WAF downtime: skip run when api_state != HEALTHY
+  - INC-001 Rev 3: resolve-plane COOLDOWN — circuit-break (Pass1/Pass3) ตั้ง cooldown
+    ข้าม run (default 45m > WAF cooldown) กัน positive feedback loop (worker timer
+    2นาที << WAF cooldown 30-40นาที → ต่ออายุ block เอง). ดู docs/lessons_learned.md L-005
 
 Run: every 2 min via systemd timer (bms-enrichment-worker)
 """
@@ -32,13 +34,20 @@ if sys.stdout and hasattr(sys.stdout, "reconfigure"):
 # ── Config ────────────────────────────────────────────────────────────────────
 
 TARGET_PROVINCES  = {"นครพนม", "บึงกาฬ"}
-BATCH_SIZE        = 20
-SLEEP_BETWEEN_SEC = 1.5
+# INC-001 Rev 3 (ADR-003 Rate-Limited Resolve): throughput envelope เล็กลง + env-tunable
+# (กัญจน์ lock "need adaptive rate control" ไม่ lock ตัวเลข → default conservative, ปรับผ่าน env)
+# รวม 3 pass/run ต้อง < burst ~30 generateToken: default 5+5+5=15 projects << 30
+BATCH_SIZE        = int(os.environ.get("BMS_ENRICH_BATCH", "5"))      # Pass 1 (RSS)
+SLEEP_BETWEEN_SEC = float(os.environ.get("BMS_ENRICH_SLEEP", "1.5"))
 RETRY_DELAY_MIN   = 30
 MAX_ATTEMPTS      = 5
-PROVINCE_QUAL_BATCH = 20   # Pass 3 (province_api qualification) batch
+PROVINCE_QUAL_BATCH = int(os.environ.get("BMS_QUAL_BATCH", "5"))   # Pass 3 (province_api)
 MAX_QUAL_ATTEMPTS   = 5    # macro-retry transient (provider error) จน MAX แล้ว fail
 CIRCUIT_BREAK       = 5    # provider errors ติดกัน → หยุด batch (กัน WAF/outage)
+# INC-001 Rev 3: cross-run cooldown — เมื่อตรวจพบ WAF/circuit-break → หยุดทั้ง plane
+# กัน positive feedback loop (worker timer 2นาที << WAF cooldown 30-40นาที → ต่ออายุ block เอง 1.5 วัน)
+RESOLVE_COOLDOWN_MIN = int(os.environ.get("BMS_RESOLVE_COOLDOWN_MIN", "45"))  # > observed WAF cooldown
+RESOLVE_STATE_PATH   = Path(__file__).parent.parent / "data" / "resolve_plane_state.json"
 API_STATE_PATH    = Path(__file__).parent.parent / "data" / "api_ingestion_state.json"
 LOG_DIR           = Path(__file__).parent.parent / "logs" / "enrichment_worker"
 TZ_TH             = timezone(timedelta(hours=7))
@@ -74,6 +83,38 @@ def _api_state() -> str:
     except Exception:
         pass
     return "UNKNOWN"
+
+
+# ── INC-001 Rev 3: Resolve-plane cooldown (L-005 cooldown + recovery state) ──────
+# Resolve plane มี health signal ของตัวเอง (L-003) แยกจาก Discovery api_state
+
+def _resolve_in_cooldown() -> tuple[bool, str]:
+    """True ถ้า resolve plane อยู่ใน cooldown (เพิ่งโดน WAF/circuit-break) → skip run.
+    กัน positive feedback loop: worker ยิงก่อน WAF cooldown ครบ → ต่ออายุ block เอง.
+    เทียบ ISO string (รูปแบบเดียวกับ next_retry_at — sortable)."""
+    try:
+        if RESOLVE_STATE_PATH.exists():
+            d = json.loads(RESOLVE_STATE_PATH.read_text(encoding="utf-8-sig"))
+            until = d.get("cooldown_until")
+            if until and _now() < until:
+                return True, until
+    except Exception:
+        pass
+    return False, ""
+
+
+def _set_resolve_cooldown(reason: str) -> str:
+    """ตั้ง cooldown หลังตรวจพบ WAF/circuit-break (recovery state: หยุดยาว > WAF cooldown
+    แล้วค่อยกลับมายิง). คืน timestamp ที่จะพ้น cooldown."""
+    until = _now_plus(RESOLVE_COOLDOWN_MIN)
+    try:
+        RESOLVE_STATE_PATH.write_text(
+            json.dumps({"cooldown_until": until, "reason": reason, "set_at": _now()},
+                       ensure_ascii=False),
+            encoding="utf-8")
+    except Exception:
+        pass
+    return until
 
 
 def _enrich(project_id: str) -> dict | None:
@@ -247,8 +288,11 @@ def qualify_province_api(store, log) -> None:
         if res.outcome in TRANSIENT:
             consec_err += 1
             if consec_err >= CIRCUIT_BREAK:
-                log(f"⚡ circuit breaker: {consec_err} provider errors ติดกัน — abort batch")
-                _discord_safe(f"⚡ BMS deadline resolver degraded — {consec_err} errors ติดกัน หยุด batch (อาจ WAF/outage/token)")
+                cd_until = _set_resolve_cooldown(f"pass3_circuit_break_{consec_err}_provider_errors")
+                log(f"⚡ circuit breaker: {consec_err} provider errors ติดกัน — abort + cooldown ถึง {cd_until}")
+                _discord_safe(
+                    f"⚡ BMS resolve plane WAF/outage — {consec_err} errors ติดกัน\n"
+                    f"→ COOLDOWN ถึง {cd_until} (INC-001 Rev3 backoff กัน self-sustained loop)")
                 break
         else:
             consec_err = 0
@@ -339,6 +383,13 @@ def main():
         log("=== Enrichment Worker done (skipped) ===")
         return
 
+    # INC-001 Rev 3: resolve-plane cooldown gate (กัน positive feedback loop)
+    in_cd, until = _resolve_in_cooldown()
+    if in_cd:
+        log(f"Resolve plane in COOLDOWN until {until} (INC-001 Rev3 backoff) — skip run")
+        log("=== Enrichment Worker done (cooldown) ===")
+        return
+
     init_schema()
     store = SubscriptionStore()
     now   = _now()
@@ -349,6 +400,13 @@ def main():
         qualify_province_api(store, log)
     except Exception as e:
         log(f"Province qual ERROR: {type(e).__name__}: {e}")
+
+    # ถ้า Pass 3 ตั้ง cooldown (circuit-break) → หยุดทันที ไม่ยิง RSS passes ต่อ (กัน burst)
+    in_cd, until = _resolve_in_cooldown()
+    if in_cd:
+        log(f"Cooldown set by Pass 3 (until {until}) — skip RSS passes")
+        log("=== Enrichment Worker done (cooldown set) ===")
+        return
 
     # Take batch of pending items
     with get_connection() as conn:
@@ -372,6 +430,7 @@ def main():
         return
 
     stats = {"enriched": 0, "failed": 0, "target_hit": 0, "enqueued": 0, "dedup": 0}
+    consec_fail = 0   # INC-001 Rev 3: Pass 1 circuit breaker (RSS path กัน WAF hammer)
 
     for i, row in enumerate(rows):
         pid = row["project_id"]
@@ -379,11 +438,20 @@ def main():
         loc = _enrich(pid)
 
         if not loc:
+            consec_fail += 1
             gave_up = _save_retry(pid, row["enrichment_attempts"])
             stats["failed"] += 1
             action = "GIVE_UP" if gave_up else "RETRY"
             log(f"  [{i+1}/{len(rows)}] {action} {pid} attempts={row['enrichment_attempts']+1}")
+            if consec_fail >= CIRCUIT_BREAK:
+                cd_until = _set_resolve_cooldown(f"pass1_circuit_break_{consec_fail}_consec_fail")
+                log(f"⚡ Pass1 circuit breaker: {consec_fail} fails ติดกัน — abort + cooldown ถึง {cd_until}")
+                _discord_safe(
+                    f"⚡ BMS resolve plane (RSS path) WAF/outage — {consec_fail} fails ติดกัน\n"
+                    f"→ COOLDOWN ถึง {cd_until} (INC-001 Rev3 backoff)")
+                break
         else:
+            consec_fail = 0
             _save_success(pid, loc)
             stats["enriched"] += 1
             province = loc["province_name"]

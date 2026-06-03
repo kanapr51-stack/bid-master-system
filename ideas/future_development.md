@@ -189,3 +189,28 @@ W03 → awarded = avg 7 days
 
 ### LINE OA pricing reference (ไทย, ส.ค.2024)
 Free 300 / Basic 1,280บ 15,000 / Pro 1,780บ 35,000 / เกิน +0.10บ/ข้อความ. นับ per-recipient. carousel = lever ลดจำนวนข้อความ
+
+---
+
+## [FEATURE] P0 Advance-Notice — แจ้งเตือนแผนจัดซื้อล่วงหน้า (2026-06-04)
+
+ที่มา: กัญจน์ถาม "เราแจ้งเตือน D0 อย่างเดียวใช่มั้ย" → ใช่ (verify: RSS `NOTIFY_TYPES={"D0"}` + province discovery `announceType=2`)
+
+### แนวคิด
+ปัจจุบัน notify เฉพาะ **D0 = ประกาศเชิญชวน** (เปิดให้ยื่นซองแล้ว). **P0 = ประกาศแผนจัดซื้อจัดจ้าง** (หน่วยงานประกาศแผนก่อนเปิดงานจริง)
+→ แจ้ง P0 = ผู้รับเหมารู้ว่า**งานกำลังจะมาในพื้นที่ ก่อนเปิดประมูล** → เตรียมราคา/วัสดุ/คน/เอกสารล่วงหน้า ก่อนคู่แข่ง
+
+### Value
+- **competitive moat** — รู้ก่อน เตรียมก่อน (G-LEAD ขายจุด advance intelligence นี้)
+- ผู้รับเหมารายเล็กได้เปรียบรายใหญ่ = ไม่ตกขบวนงานในพื้นที่
+- เพิ่ม stickiness (เหตุผลเปิด LINE ทุกวัน ไม่ใช่แค่ตอนมี D0)
+
+### ข้อมูลพร้อมอยู่แล้ว (low-cost implement)
+- RSS scraper **ดึง P0 เก็บใน rss_queue อยู่แล้ว** (2342 total รวม P0/W0) — แค่ไม่ notify
+- implement ≈ เพิ่ม "P0" ใน NOTIFY_TYPES + **template แยก** (P0=แผน ไม่มี deadline ยื่น ≠ D0) + filter พื้นที่+keyword เหมือน D0
+- ต่อยอด: map P0→D0 (track ว่าแผนไหนเปิดจริงเมื่อไหร่ → procurement intelligence)
+
+### ข้อควรระวัง
+- P0 ไม่มี deadline ยื่นซอง (ยังไม่เปิด) → ห้ามใช้ template "ยื่นภายใน X วัน" (จะสับสน)
+- volume P0 อาจเยอะ → filter พื้นที่+keyword สำคัญ (ไม่งั้น spam)
+- **defer จน beta D0 พิสูจน์ value ก่อน** (ตาม roadmap — D0 core ต้องนิ่งก่อน)

@@ -3951,3 +3951,20 @@ BMS assumed `discovery reachable ⇒ resolve reachable` = เท็จ. WAF bloc
 - RPi unchanged (burst-limit ไม่เปลี่ยน) · Recovery first, characterize ทีหลัง (probe=consume scarce)
 
 ### Next: Step 1 forward-processing validation (รอ cooldown → resolve newest batch เล็ก → พิสูจน์ path)
+
+## งานที่ N+67: INC-001 Step 1 ปิด — Customer Impact LOW (saturated) + P0 containment (2026-06-03)
+
+### สถานะ: 🟡 Recovery Partial (Production Restored = No, รอ P0.1)
+
+### P0 Containment (เสร็จ): pause bms-enrichment-worker.timer (VPS auto-resolve หยุด burn attempts)
+- snapshot evidence: VPS เผา 9 งาน→terminal (failed_provider_error) + 11 ใกล้ MAX (attempts 3-4)
+
+### Step 1 Customer Impact = LOW (saturated, 5 sample converge open=0)
+- backlog oldest 14 + newest 10 = expired · incident RSS 60 = resolve แล้ว (1 ส่ง=งานกัญจน์ 69059075454, 59 non-target) · province_api ใหม่ 1 = filtered · failed_provider_error 9 = **Case A pre-epoch backlog (ไม่ใช่ incident)**
+- → ไม่มีงานเปิดพลาดช่วง incident จริง (งานใหม่ resolve+ส่งก่อน WAF block 00:09)
+
+### INC-001 status: Impact Low🟢 · RootCause Confirmed🟢 · Containment Complete🟢 · Recovery Partial🟡 · Production Restored No🔴
+
+### Next (ChatGPT reorder): P0.1 Residential Resolve Path (production restore — สำคัญสุด) → P1 alerts → P2 characterize
+- blind spot: P0.1 = Windows uptime dependency (interim) → RPi always-on = แก้ถาวร (P3)
+- milestone = "first new candidate processed automatically after VPS pause"

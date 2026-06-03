@@ -4079,3 +4079,11 @@ BMS assumed `discovery reachable ⇒ resolve reachable` = เท็จ. WAF bloc
 - แยก infra (data.go.th) ไม่กระทบ D0
 
 ### Lesson: SA ไม่มี Drive quota → สร้าง spreadsheet ใหม่ไม่ได้ ต้องเขียน tab ใน sheet ที่ user owns + SA shared
+
+### Phase 2 ✅ COMPLETE — 8,799 งาน (2026-06-04)
+- CGD fetch 10,084 (awarded+keyword, 72 calls << quota) → merge → **8,799 total** (นครพนม 6,612 + บึงกาฬ 2,187) รวม 8.5B
+- 🚨 **เจอ CGD column-shift** (sanity check จับ): field ชื่อ "ชื่อผู้ชนะ" จริงๆ เก็บ**วันที่** (100%!) · winner จริงอยู่ field 'ละติจูดโครงการ' (shift จาก block พิกัด)
+- **แก้: adaptive extraction** (หา field ที่มี company marker ยกเว้นชื่องาน/หน่วยงาน) → winner ถูก 100% (8,798/8,799) · price validate (ตกลง≤กลาง×1.5) 100%
+- drop column ที่ shift (อำเภอ/วันที่สัญญา) · prices/ชื่องาน/จังหวัด ใน field ชื่อตรง = เชื่อถือได้
+- **verify-before-claim รอบ 3 ของ session** (system-python pdfplumber → page-size → CGD shift) — sanity check ก่อนประกาศทุกครั้ง
+- minor: ปีงบ inconsistent (CGD=2568 พ.ศ. / eGP-track=2026 ค.ศ.) — followup เล็ก

@@ -22,6 +22,16 @@
 
 **How to apply:** เวลารายงาน root cause — แยก "observed (ระบบทำอะไร)" ออกจาก "inferred (โลกเป็นอย่างไร)" และระบุ hypothesis ที่ยังไม่ตัดออกเสมอ
 
+### L-006 — external dataset: field LABEL ≠ field CONTENT (verify ค่าจริง ไม่ใช่แค่ชื่อ field) (2026-06-04)
+
+**Context:** ดึง winner ย้อนหลังจาก CGD `egp-contract-2568` (data.go.th). field ชื่อ `"ชื่อผู้ชนะ"` → map ตรงตามชื่อ. sanity check พบ **100% ของค่าใน field นั้นเป็นวันที่** (ไม่ใช่ชื่อบริษัท). winner จริงอยู่ field `'ละติจูดโครงการ'` — dataset มี **column shift** (เลื่อนจาก block พิกัด/coordinate ที่มี variable-length)
+
+**บทเรียน:** external dataset (CKAN/open data/CSV) — **ชื่อ column ไม่การันตีว่าเนื้อหาตรง**. ต้อง verify ค่าจริงของ sample (ไม่ใช่แค่ดู field names ว่ามี field ที่ต้องการ). การ map by field-name ตรงๆ = เสี่ยง garbage เงียบ
+
+**วิธีแก้ (adaptive extraction):** หาค่าจาก **pattern ของเนื้อหา** ไม่ใช่ตำแหน่ง/ชื่อ field — winner = field แรกที่ค่ามี company marker (บริษัท/ห้าง/หจก/กิจการร่วมค้า) ยกเว้น field ชื่องาน/หน่วยงาน. + validate (price: ตกลง≤กลาง×1.5). กู้ได้ 86% ถูก 100%
+
+**How to apply:** ก่อน map external dataset → print sample values ของทุก field เทียบ label. ถ้า shift → extract by content-pattern (adaptive) + validate. อย่า trust field name. (= ญาติของ "ห้าม assume API response format โดยไม่ probe จริง" ใน CLAUDE.md)
+
 ---
 
 ## Architecture Decision Records (ADR)

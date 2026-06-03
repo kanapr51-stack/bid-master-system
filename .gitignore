@@ -97,3 +97,7 @@ data/deadline_resolution_log.ndjson
 data/_test_invitation*.pdf
 data/session_flow_capture.ndjson
 data/deadline_presence_sample.json
+
+data/_winner_history_156.json
+data/_target_pids.json
+data/_cgd_winners_raw.json

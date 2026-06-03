@@ -4059,3 +4059,23 @@ BMS assumed `discovery reachable ⇒ resolve reachable` = เท็จ. WAF bloc
 - INC-001 ปิดครบ: ✅Recovery ✅Production Restored ✅P1 dead-man ✅re-seed ✅cross-check ✅deadline audit (v1.13)
 - 🔧 cycle พิสูจน์ self-heal: cross-check trip WAF → cooldown → worker auto-skip → ฟื้นเอง → resume → drain ต่อ
 - minor followup (defer): worker auto-clean stale cooldown file · deadline parser quality (failed_deadline_not_found 6)
+
+---
+
+## งานที่ N+71: 📊 Winner Data ย้อนหลัง → Google Sheet (2026-06-04, autonomous)
+
+### สถานะ: 🚧 Phase 1 ✅ (Sheet 156) · Phase 2 🔄 (CGD merge)
+
+### ที่มา: กัญจน์ขอผลประมูลย้อนหลังในพื้นที่ "ทำต่อกันไปเลย" (ไปนอน)
+
+### Phase 1 ✅ — winner_cache → Sheet
+- winner_cache_bootstrap.json = 31,998 (eGP getProcureResult) ไม่มี province → intersect กับ projects_seen (นครพนม/บึงกาฬ target)
+- **156 งานนครพนม มีผู้ชนะ** (บึงกาฬ 0 — เพิ่ง track) · รวม 820M บาท
+- tab "ผลประมูลย้อนหลัง" ใน Sebastian Master Database (SA สร้าง spreadsheet ใหม่ไม่ได้ = Drive quota → ใช้ tab ใน spreadsheet หลัก)
+
+### Phase 2 🔄 — CGD egp-contract-2568 merge
+- **แหล่งที่ใช่ = egp-contract-2568** (ไม่ใช่ egpwinner ที่มีแค่ TIN→ชื่อ): มี จังหวัด+อำเภอ+ตำบล + ชื่อผู้ชนะ + ราคาตกลง + ราคากลาง (นครพนม 5,757/file)
+- fetch awarded+keyword 2 จังหวัด (quota-aware 350 calls cap) → merge by projectId (156 precedence, CGD เติมใหม่+บึงกาฬ) → rewrite tab
+- แยก infra (data.go.th) ไม่กระทบ D0
+
+### Lesson: SA ไม่มี Drive quota → สร้าง spreadsheet ใหม่ไม่ได้ ต้องเขียน tab ใน sheet ที่ user owns + SA shared

@@ -3994,6 +3994,17 @@ BMS assumed `discovery reachable ⇒ resolve reachable` = เท็จ. WAF bloc
 - Success = worker survives **without re-entering block loop** (ไม่ใช่ worker start ได้)
 - Production Restored เมื่อ: new candidate → resolve → qualify → no WAF → worker healthy ≥1 cycle จริง
 
+### Phase A ✅ COMPLETE — Production Restored (2026-06-03 21:25)
+- deploy: push origin (fb98e04) → VPS pull (deploy-debt: backup data + discard CR-drift scripts; HEAD ค้าง f5311f7 เพราะ deploy/systemd root-owned + NO_SUDO bms — worker file อัปเดตบน disk ครบ)
+- **validated run (manual .env + systemd timer) — 2 clean cycles:**
+  - Province qual 5 pending (mode=live) → resolved 5/5 → expired=5 failed=0 retry=0
+  - **ไม่มี ⚡ circuit breaker, cooldown ไม่ trip, ไม่โดน WAF** (VPS resolve ทำงานเมื่อ throttle = Rev 3 ยืนยัน)
+  - batch=5 envelope ทำงาน · kw-first shadow + match enforce active
+- timer re-enabled (root@): active + enabled, รันทุก 2 นาที ระบาย backlog 5/run
+- **Production Restored = YES** (path viability validated ตาม objective lock — enqueued=0 ถูกต้องเพราะไม่มีงานเปิด, ไม่ใช่ notification count)
+- INC-001 status: Impact Low🟢 · RootCause Rev3 Confirmed🟢 · Containment🟢 · **Recovery Complete🟢 · Production Restored YES🟢**
+
 ### Followup
-- [ ] implement backoff/cooldown awareness ใน enrichment worker (ไม่ใช่แค่ batch/interval config)
-- [ ] watch 24h = production characterization → tune throughput envelope
+- [ ] **watch 24h** = production characterization → tune throughput envelope (cooldown trip count, resolve success rate)
+- [ ] deploy-debt: VPS git HEAD ค้าง f5311f7 (worker file ใหม่บน disk แต่ git ref ไม่ advance) — fix ตอน single-runtime-authority migration
+- [ ] P1 alerts: AES canary + resolve-success-rate + qualification-throughput (L-003/L-004)

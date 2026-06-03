@@ -3888,3 +3888,20 @@ portal ติดดาว (👍→saved) · auto-tune matching · budget filter 
 ### Followup
 - implement leading metrics ใน Sebastian_Shadow_Audit.py (ก่อน deploy)
 - P3 consolidate data dir หลัง shadow deploy (สัปดาห์นี้)
+
+## งานที่ N+64: RSS Shadow Mode — implement metrics + deploy gate ON (2026-06-03)
+
+### สถานะ: ✅ deployed (gate ON, ยังไม่ flip — 48h dry-run เริ่ม)
+
+### สิ่งที่ทำ
+- **implement leading metrics** (ADR-001) ใน Sebastian_Shadow_Audit.py (`9ffe913`): shadow backlog size + age distribution (0-6/6-12/12-24/>24ชม) + confirmed rate. test ครบ (backlog/buckets/rate ตรง)
+- **deploy Task 5 (gate ON):** scp 4 scripts → VPS + compile OK + migration discovery_confirmed (VPS DB /opt/bms/data) + audit timer (21:00 ไทย, LF sanitized)
+- **verify production:** full sweep บึงกาฬ manual → ประทับตรา 348 งาน → confirmed rate 0%→50% → งาน 69059075454 (กัญจน์ feedback) discovery_confirmed=1 ✅
+
+### Gate ปลอดภัย
+`BMS_RSS_NOTIFY` ไม่ set = default `on` → RSS ยังส่ง user ปกติ ไม่กระทบ. flag กำลังสะสม (48h dry-run)
+
+### Next
+- รอ full sweep auto (นครพนม 19:30 + บึงกาฬ 20:30) ประทับตราครบ → confirmed rate ควร ~100%
+- 48h dry-run → ดู confirmed rate → flip เมื่อ ≥99% (ADR-001)
+- P3 consolidate data dir (หลัง shadow stable)

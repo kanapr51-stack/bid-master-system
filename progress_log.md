@@ -4247,3 +4247,31 @@ CGD **column swap**: header string 'วิธีการจัดหา ปร�
 
 ### Followup
 - backlog 2: เทรน classifier จากชื่องาน 617K — field `ชื่อประเภทโครงการ` (จ้างก่อสร้าง/...) มีใน raw_json แล้ว = label พร้อม. เช็ค live API ก่อน
+
+---
+
+## งานที่ N+80: Work-Type Classifier Phase 0 — gate PASS (2026-06-04)
+
+### สถานะ: ✅ เสร็จ (Phase 0) → กำลังต่อ Phase 1
+
+### สิ่งที่ทำ
+Rule-based classifier จัดหมวดงานก่อสร้าง 7 core (สะพาน/แหล่งน้ำ/ราง/อาคาร/ถนน/ดิน/ไฟฟ้า) + OTHER/UNKNOWN จากชื่องาน. ไฟล์: `scripts/work_type_classifier.py` + `config/work_type_keywords.json` + test + `scripts/validate_work_type.py`.
+
+### Flow ทำงานวันนี้
+1. spec review (ChatGPT 9.3/10) → ปิด open questions: ไฟฟ้า=core ที่ 7, priority ถนน>ราง, acceptance 90/90, analytics นับ primary+secondary
+2. writing-plans → 6 tasks → subagent-driven (subagent ตาย rate-limit หลัง config → ทำ inline ต่อ)
+3. TDD: unit test 11 cases จับ bug nested-keyword inflate (ไฟฟ้าส่องสว่าง⊃ส่องสว่าง) → fix yุบ substring
+4. **calibration loop กับ 52,525 จ้างก่อสร้าง:**
+   - v1.0 coverage 87.7% FAIL → quantify UNKNOWN 5,918 งานจริง (ไม่เดา) → v1.1 เพิ่ม keyword → 94.8%
+   - audit precision: **สะพาน 76.7% FAIL** (landmark "จากสะพาน/บ้านสะพานสูง" ถูกดูด)
+   - **v1.2 แก้ tie-break: score→ตำแหน่ง(head-noun)→priority** → สะพาน 97%, ทุกหมวด ≥90%
+
+### ผล: GATE PASS ✅
+Coverage 94.8% + precision ทุกหมวด ≥90% (audit ~30/หมวด). บันทึก `data/work_type_validation_audit.md`. commits: 730a5be (build) + 77cc516 (calibrate v1.2).
+
+### ⚠️ Spec deviation (flag คุณกัญจน์)
+tie-break เปลี่ยนจาก spec §4 (priority ก่อน position) → position ก่อน priority. validation พิสูจน์ priority-first ผิดสำหรับ domain (landmark problem). reversible. priority ยังเป็น fallback.
+
+### Followup
+- Phase 1: migration work_type column (52.5K) + Sheet 3 มุม (primary+secondary)
+- ยืนยัน OUR_TINS (BSC ทรัพย์คอนกรีต + ยศประทาน) สำหรับมุมบริษัทเรา

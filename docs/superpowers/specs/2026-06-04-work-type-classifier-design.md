@@ -1,7 +1,7 @@
 # Work-Type Classifier — Design Spec
 
 **วันที่:** 2026-06-04
-**สถานะ:** design (รอ user review ก่อน writing-plans)
+**สถานะ:** ✅ ready-for-plans (กัญจน์ approve 2026-06-04 — open questions ปิดครบ)
 **Backlog ที่มา:** N+77 item 2 "เทรน classifier จากชื่องาน 617K"
 
 ---
@@ -40,7 +40,7 @@ artifact/deps. → **rule-based keyword + calibrate กับ 617K** (617K = val
 
 ## 3. Taxonomy (7 หมวด core + 2 ถังพิเศษ)
 
-หมวด core 6 + OTHER + UNKNOWN:
+หมวด core 7 + OTHER + UNKNOWN:
 
 | หมวด | keyword ตัวอย่าง |
 |---|---|
@@ -50,8 +50,14 @@ artifact/deps. → **rule-based keyword + calibrate กับ 617K** (617K = val
 | 🏢 อาคาร | อาคาร, รั้ว, กำแพง, ศาลา, ห้องน้ำ, โรงเรียน, หลังคา, ฝ้าเพดาน, ลานคอนกรีต |
 | 🛣 ถนน | ถนน, ลาดยาง, ผิวจราจร, แอสฟัลต์, ลูกรัง, ไหล่ทาง, เสริมผิว |
 | ⛰ ดิน/ปรับพื้นที่ | ถมดิน, ปรับพื้นที่, งานดิน, ปรับเกลี่ย |
-| ▫️ **OTHER** | match keyword นอก core: สนามกีฬา, ลานกีฬา, สวนสาธารณะ, ภูมิทัศน์, ไฟฟ้าส่องสว่าง, เสาไฟ, … (= รู้ว่าไม่ใช่ core) |
+| ⚡ ไฟฟ้า/ส่องสว่าง | ไฟฟ้าส่องสว่าง, ไฟฟ้าแสงสว่าง, เสาไฟ, โคมไฟ, ไฟกิ่ง, ส่องสว่าง |
+| ▫️ **OTHER** | match keyword นอก core: สนามกีฬา, ลานกีฬา, สวนสาธารณะ, ภูมิทัศน์, … (= รู้ว่าไม่ใช่ core) |
 | ⬛ **UNKNOWN** | ไม่ match keyword ใดเลย (= ถังขุด keyword ที่ขาด) |
+
+**ไฟฟ้า/ส่องสว่าง = core (กัญจน์ตัดสิน 2026-06-04):** data 617K — ไฟฟ้า 1,069 งาน/600 ลบ.
+**จำนวนงานมากกว่า สะพาน (873) และ ดิน (984)** ที่ยอมรับเป็น core อยู่แล้ว → ยกเป็น core
+ตั้งแต่รอบแรก (taxonomy ยังไม่ lock, เพิ่มตอนนี้ฟรี vs. เพิ่มหลัง Phase 1 = bump version +
+recompute 617K). [[project_classifier_research]]
 
 **OTHER vs UNKNOWN (จุดที่ 3):** ต่างกันชัด — OTHER = จัดได้ว่า "ไม่ใช่ 6 หมวดหลัก"
 (มี keyword), UNKNOWN = จัดไม่ได้จริง (ไม่มี keyword). Analytics ใช้ประโยชน์ต่างกัน:
@@ -74,10 +80,12 @@ keyword ทั้งหมดเก็บใน `config/work_type_keywords.json`
 
 **priority list (tie-break, default — แก้ได้ใน config):**
 ```
-สะพาน > แหล่งน้ำ/ชลประทาน > อาคาร > ถนน > รางระบายน้ำ/ท่อ > ดิน/ปรับพื้นที่ > OTHER
+สะพาน > แหล่งน้ำ/ชลประทาน > อาคาร > ถนน > รางระบายน้ำ/ท่อ > ไฟฟ้า/ส่องสว่าง > ดิน/ปรับพื้นที่ > OTHER
 ```
 เหตุผล: โครงสร้างเฉพาะ/เด่น (สะพาน) ไม่ถูกกลืนโดยคำ incidental. ถนน อยู่กลางเพราะ
-common; วาง **เหนือ ราง** → "ถนนพร้อมราง" tie จะได้ ถนน (งานหลัก=ถนน) ✓
+common; วาง **เหนือ ราง** → "ถนนพร้อมราง" tie จะได้ ถนน (งานหลัก=ถนน) ✓.
+**ไฟฟ้า/ส่องสว่าง** วาง **ใต้ ถนน** ด้วยเหตุผลเดียวกัน — "ถนนพร้อมไฟส่องสว่าง" tie → ถนน
+(ไฟเป็น incidental บนถนน), แต่ "ติดตั้งไฟฟ้าส่องสว่าง" เดี่ยวๆ ยัง classify เป็นไฟฟ้าถูก.
 
 **secondary** = หมวด core อื่นที่ score ≥ 1 (เรียงตาม score) → เก็บครบ ไม่เสียข้อมูล.
 
@@ -125,7 +133,7 @@ config/work_type_keywords.json       # taxonomy + priority + version
     "...": ["..."]
   },
   "other_keywords": ["สนามกีฬา", "ลานกีฬา", "สวนสาธารณะ", "ไฟฟ้าส่องสว่าง", "..."],
-  "priority": ["สะพาน", "แหล่งน้ำ/ชลประทาน", "อาคาร", "ถนน", "รางระบายน้ำ/ท่อ", "ดิน/ปรับพื้นที่", "OTHER"]
+  "priority": ["สะพาน", "แหล่งน้ำ/ชลประทาน", "อาคาร", "ถนน", "รางระบายน้ำ/ท่อ", "ไฟฟ้า/ส่องสว่าง", "ดิน/ปรับพื้นที่", "OTHER"]
 }
 ```
 
@@ -169,6 +177,21 @@ per-category precision จับเคสนี้ได้ (precision หมว
    - **ตำบล × หมวด** — พื้นที่ × ความต้องการงานแต่ละหมวด
 3. apply เฉพาะงานก่อสร้าง (typeId/ชื่อประเภท=จ้างก่อสร้าง) — งานซื้อ/เช่าข้าม.
 
+### ⚠️ Constraint บังคับ (กัญจน์ตัดสิน 2026-06-04): นับ Primary + Secondary
+Classifier ตอบ **"งานนี้หลักคืออะไร"** (primary เดี่ยว) — แต่ Analytics ตอบ
+**"ธุรกิจเราเกี่ยวข้องกับอะไร"** สองคำถามนี้ **ไม่เหมือนกัน**.
+
+- งาน "ถนน คสล. พร้อมรางระบายน้ำ" → primary=ถนน, secondary=[ราง].
+- ถ้ามุม **บริษัทเรา × หมวด** นับ **primary-only** → undercount demand หมวด **ราง**
+  ทันที (BSC = ทรัพย์คอนกรีต ผลิตราง/ท่อสำเร็จรูป → ราง คือสินค้าหลัก [[user_profile]]).
+
+**กฎ:**
+- **Classification** (จัดงานเข้าหมวด, validation §6) → ใช้ **primary**.
+- **Market / company-capability analytics** (Sheet 3 มุม) → นับงานเข้า **ทุกหมวดใน `all`
+  (primary + secondary)**. งานหนึ่งงานนับได้หลายหมวด (ไม่ dedup ข้ามหมวด).
+- เก็บ metric แยก 2 ชั้น: count ตาม primary (scope หลัก) **และ** count ตาม involvement
+  (primary+secondary) → กันการตีความเป็น primary-only โดยไม่ตั้งใจ.
+
 ---
 
 ## 8. Out of scope (YAGNI)
@@ -180,9 +203,14 @@ per-category precision จับเคสนี้ได้ (precision หมว
 
 ---
 
-## 9. Open questions (รอ user ยืนยันตอน review)
+## 9. Resolved questions (ปิดครบ — กัญจน์ + ChatGPT review 2026-06-04)
 
-1. **priority order** (§4) — default วาง ถนน เหนือ ราง. ถ้าอยากให้ ราง (สินค้าหลัก) สูงกว่า
-   → "ถนนพร้อมราง" จะกลายเป็น ราง. โอเคแบบ default ไหม?
-2. keyword core/OTHER แต่ละหมวด (§3) — ครบไหม อยากเพิ่มตัวไหน
-3. acceptance 90/90 — เข้มไป/หย่อนไปไหม
+1. **priority order** (§4) — ✅ **คง default `ถนน > ราง`**. data หนุน: ถนน 31.8K งาน/22,879 ลบ.
+   vs ราง 7.5K/1,656 ลบ. → ถนนเป็น scope หลักเชิงมูลค่าจริง. การกลืน ราง แก้ที่ชั้น analytics
+   (นับ secondary, §7 constraint) ไม่ใช่ที่ priority.
+2. **keyword core/OTHER** (§3) — ✅ **เพิ่ม ไฟฟ้า/ส่องสว่าง เป็น core ที่ 7** (data 1,069 งาน
+   > สะพาน/ดิน). หมวดอื่นคงเดิม.
+3. **acceptance 90/90** — ✅ **คง** Coverage ≥ 90% + Precision ต่อหมวด ≥ 90%. (95/95 ไล่ edge
+   case ไม่จบ, 80/80 ต่ำไปสำหรับ analytics ตัดสินใจธุรกิจ — ChatGPT + กัญจน์ เห็นตรงกัน.)
+4. **Analytics primary vs primary+secondary** — ✅ **primary+secondary** สำหรับมุมบริษัทเรา/ตลาด
+   (§7 constraint). classification ยังใช้ primary.

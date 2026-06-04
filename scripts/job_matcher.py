@@ -41,6 +41,33 @@ def _kw_hit(k: str, name: str) -> bool:
     return bool(g.search(name)) if g else (k in name)
 
 
+# 77 จังหวัด — ใช้ anti-province guard (soft-include only): กันงานจังหวัดอื่นที่ระบุชัดในชื่อ
+_THAI_PROVINCES = frozenset({
+    "กระบี่", "กรุงเทพมหานคร", "กาญจนบุรี", "กาฬสินธุ์", "กำแพงเพชร", "ขอนแก่น", "จันทบุรี",
+    "ฉะเชิงเทรา", "ชลบุรี", "ชัยนาท", "ชัยภูมิ", "ชุมพร", "ตรัง", "ตราด", "ตาก", "นครนายก",
+    "นครปฐม", "นครพนม", "นครราชสีมา", "นครศรีธรรมราช", "นครสวรรค์", "นนทบุรี", "นราธิวาส",
+    "น่าน", "บึงกาฬ", "บุรีรัมย์", "ปทุมธานี", "ประจวบคีรีขันธ์", "ปราจีนบุรี", "ปัตตานี",
+    "พระนครศรีอยุธยา", "พะเยา", "พังงา", "พัทลุง", "พิจิตร", "พิษณุโลก", "ภูเก็ต", "มหาสารคาม",
+    "มุกดาหาร", "ยะลา", "ยโสธร", "ระนอง", "ระยอง", "ราชบุรี", "ร้อยเอ็ด", "ลพบุรี", "ลำปาง",
+    "ลำพูน", "ศรีสะเกษ", "สกลนคร", "สงขลา", "สตูล", "สมุทรปราการ", "สมุทรสงคราม", "สมุทรสาคร",
+    "สระบุรี", "สระแก้ว", "สิงห์บุรี", "สุพรรณบุรี", "สุราษฎร์ธานี", "สุรินทร์", "สุโขทัย",
+    "หนองคาย", "หนองบัวลำภู", "อำนาจเจริญ", "อุดรธานี", "อุตรดิตถ์", "อุทัยธานี", "อุบลราชธานี",
+    "อ่างทอง", "เชียงราย", "เชียงใหม่", "เพชรบุรี", "เพชรบูรณ์", "เลย", "แพร่", "แม่ฮ่องสอน",
+})
+
+
+def foreign_province_in_title(name: str, own_provinces) -> str:
+    """คืนชื่อจังหวัดอื่น (≠ ที่ subscribe) ถ้าระบุชัดในชื่อ ('จังหวัด<X>' / 'จ.<X>'), ไม่งั้น ''.
+    ใช้ใน soft-include branch เท่านั้น — กันงานข้ามจังหวัดที่ไม่ใช่พื้นที่เรา (INC-002)."""
+    own = set(own_provinces)
+    for p in _THAI_PROVINCES:
+        if p in own:
+            continue
+        if ("จังหวัด" + p) in name or ("จ." + p) in name or ("จ. " + p) in name:
+            return p
+    return ""
+
+
 def load_config(path: str = CONFIG_PATH) -> dict:
     with open(path, encoding="utf-8") as f:
         return json.load(f)
@@ -157,6 +184,13 @@ def match_job(project_name: str, province: str, tambon_field: str = "",
     si = cfg.get("soft_include", {})
     if not si.get("enabled", False):
         return "cut", {"keyword": kw, "reason": "location_unknown_softinclude_off"}
+    # anti-province guard (INC-002): ถ้าชื่อระบุจังหวัดอื่นชัด + ไม่มีจังหวัดเราในชื่อ → cut
+    # (ไม่แตะงานที่รู้ตำบลแล้ว — ถึงตรงนี้ loc ว่างแน่. งาน "นครพนม-สกลนคร" รอด เพราะมีชื่อจังหวัดเรา)
+    if province not in name:
+        fp = foreign_province_in_title(name, cfg.get("target_tambons", {}).keys())
+        if fp:
+            return "cut", {"keyword": kw, "foreign_province": fp,
+                           "reason": "foreign_province_softinclude"}
     code = extract_road_code(name)
     label = (si.get("label_roadcode", "⚠️ พื้นที่ไม่ชัด · ถนนสาย {code}").format(code=code)
              if code else si.get("label_default", "⚠️ พื้นที่ไม่ชัด"))

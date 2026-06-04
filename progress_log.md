@@ -4160,3 +4160,11 @@ discovery "🎯 อำเภอเป้าหมาย: 0" แต่ enqueue 3 
 - **617,357 แถว** (เดิม 187,931) | winner 100.0% (reextract) | price_valid 92.1%
 - Sheet สรุปอัปเดต: ภาพรวม 23 rows (11ปี×2จว.) + คู่แข่ง 500 + ตามตำบล 1000
 - หมายเหตุ: 2559-2560 records น้อย (dataset source เบาบาง), quota วันนี้ไหวหมดไม่ต้อง resume
+
+## งานที่ N+75: anti-province guard (INC-002 part 2) (2026-06-04)
+
+### สถานะ: ✅ เสร็จ (live VPS, กัญจน์ confirm design)
+- guard: soft-include branch เท่านั้น → cut ถ้าชื่อมี "จังหวัด<อื่น>" + ไม่มีจังหวัดเรา + (ถึง soft = ไม่มีตำบลเป้าหมายแล้ว)
+- embed 77 จังหวัด (จาก thai_geo_raw.csv) เป็น frozenset + foreign_province_in_title()
+- verified 5 เคส: สกลนคร gate→cut, นครพนม-สกลนคร→soft_include(recall รอด), ตำบลเป้าหมาย+สกลนคร→send, ไม่มีจว.อื่น→soft_include, ท่องเที่ยว→cut
+- conservative ตามที่กัญจน์ห่วง: งานจังหวัดเราที่บังเอิญพาดพิงจว.อื่น ไม่พลาด (ต้องมีชื่อจังหวัดเรา/ตำบลเรา)

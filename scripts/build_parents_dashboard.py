@@ -1,7 +1,10 @@
 """build_parents_dashboard.py — สร้างหน้าเว็บ static สรุปวิเคราะห์ตลาดงานก่อสร้าง (พ่อแม่).
 อ่าน winner_history.db (column work_type, primary) → คำนวณ size/share/trend + รายละเอียด
-(คู่แข่ง/พื้นที่/ผลงานเรา/กราฟรายปี) → เขียน dashboard/parents/index.html (self-contained).
+(คู่แข่ง/พื้นที่/ผลงานเรา/กราฟรายปี interactive) → เขียน dashboard/parents/index.html (self-contained).
 ดู spec 2026-06-05-parents-dashboard-design.md. รัน: python scripts/build_parents_dashboard.py
+
+NOTE: render ใช้ template + .replace จุดเดียว (/*__DATA__*/) — ไม่ใช้ f-string ใน HTML/JS
+(กัน brace escaping พัง). ค่า dynamic ทั้งหมด render ฝั่ง JS จาก const D.
 """
 import json
 import re
@@ -100,6 +103,7 @@ def compute_data(db):
             "leader": "เรา" if leader[0] == "★เรา" else leader[0][:36],
             "leader_share": round(leader[1][1] / cat_total * 100, 1) if cat_total else 0,
         })
+
         def comp_entry(i, w, nv):
             return {
                 "rank": i, "name": "★ บริษัทเรา" if w == "★เรา" else (w or "")[:40],
@@ -108,8 +112,7 @@ def compute_data(db):
                 "ours": w == "★เรา",
             }
         clist = [comp_entry(i, w, nv) for i, (w, nv) in enumerate(ranked[:8], 1)]
-        # ใส่แถวเราต่อท้ายเสมอ ถ้าเราไม่ติด top 8 (ให้เห็นตำแหน่งเทียบเจ้าตลาด)
-        if rk and rk > 8:
+        if rk and rk > 8:  # ใส่แถวเราต่อท้ายเสมอ ถ้าไม่ติด top 8
             clist.append(comp_entry(rk, "★เรา", wins["★เรา"]))
         competitors[short(cat)] = clist
 
@@ -127,7 +130,6 @@ def compute_data(db):
     cands = [t for t in trend if t["cat"] in our_zero and t["pct_v"] is not None and t["pct_v"] > 0]
     opp = max(cands, key=lambda t: t["recent_m"]) if cands else max(trend, key=lambda t: t["recent_m"])
 
-    # area: province summary + top tambon
     area_prov = [{
         "prov": prov, "total_m": round(sum(prov_v[prov].values()) / 1e6, 0),
         "by_cat": {short(cat): round(prov_v[prov].get(cat, 0) / 1e6, 0) for cat in CORE},
@@ -138,7 +140,6 @@ def compute_data(db):
         area_tambon.append({"prov": p, "dist": d, "tambon": t,
                             "total": sum(cnt.values()), "top_cat": short(top_cat)})
 
-    # our jobs (sorted by value desc) + summary by year
     our_jobs.sort(key=lambda j: -j["value_m"])
     our_total_m = round(sum(j["value_m"] for j in our_jobs), 1)
     our_by_year = defaultdict(lambda: [0, 0.0])
@@ -148,7 +149,6 @@ def compute_data(db):
     our_year_rows = [{"year": y, "jobs": v[0], "value_m": round(v[1], 1)}
                      for y, v in sorted(our_by_year.items(), reverse=True) if y]
 
-    # year series (line chart) — core cats, มูลค่า ลบ. ต่อปี
     yrs = sorted(years)
     year_series = {"years": yrs,
                    "series": [{"label": short(cat),
@@ -167,59 +167,62 @@ def compute_data(db):
     }
 
 
-_TITLE = "สรุปผลการวิเคราะห์ตลาดงานก่อสร้าง นครพนม-บึงกาฬ"
-
-
-def render_html(d):
-    data_json = json.dumps(d, ensure_ascii=False)
-    title_full = f"{_TITLE} ตั้งแต่ปี พ.ศ. {d['year_min']}-{d['year_max']} จัดทำโดยน้องกัญจน์"
-    return f"""<!DOCTYPE html>
+# template = plain string (ไม่ใช่ f-string) → JS/CSS braces literal, emoji/arrow literal.
+# inject ข้อมูลจุดเดียวที่ /*__DATA__*/ ; ค่า dynamic อื่น render ฝั่ง JS จาก D.
+_TEMPLATE = """<!DOCTYPE html>
 <html lang="th">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>{_TITLE}</title>
+<title>สรุปผลการวิเคราะห์ตลาดงานก่อสร้าง นครพนม-บึงกาฬ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
-:root{{--red:#C62828;--red2:#E53935;--ink:#222;--bg:#fff;--muted:#777;--line:#eee;}}
-*{{box-sizing:border-box;}}
-body{{margin:0;font-family:'Sarabun',sans-serif;color:var(--ink);background:var(--bg);line-height:1.5;}}
-.wrap{{max-width:560px;margin:0 auto;padding:16px;}}
-header{{text-align:center;padding:20px 8px;border-bottom:3px solid var(--red);}}
-header h1{{font-size:19px;margin:0 0 12px;color:var(--red);font-weight:700;}}
-.big{{font-size:40px;font-weight:700;color:var(--red);line-height:1.1;}}
-.big small{{display:block;font-size:14px;color:var(--muted);font-weight:400;margin-top:4px;}}
-section{{padding:22px 4px;border-bottom:1px solid var(--line);}}
-h2{{font-size:17px;margin:0 0 14px;}}
-.card{{background:#fafafa;border-radius:12px;padding:14px;margin:8px 0;border-left:4px solid var(--red);}}
-.card .medal{{font-size:15px;font-weight:700;}}
-.rankrow{{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);}}
-.rankrow:last-child{{border:0;}}
-table{{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px;}}
-th,td{{text-align:right;padding:6px 5px;border-bottom:1px solid var(--line);}}
-th:first-child,td:first-child{{text-align:left;}}
-th{{background:var(--red);color:#fff;font-weight:600;}}
-tr.ours td{{background:#fff3e0;font-weight:700;}}
-details{{margin-top:10px;}}
-summary{{color:var(--red);font-weight:600;cursor:pointer;padding:8px 0;list-style:none;}}
-summary::after{{content:" \\25B8";}}
-details[open] summary::after{{content:" \\25BE";}}
-.opp{{background:linear-gradient(135deg,var(--red),var(--red2));color:#fff;border-radius:14px;padding:20px;text-align:center;}}
-.opp .n{{font-size:30px;font-weight:700;margin:6px 0;}}
-.up{{color:#2e7d32;font-weight:700;}}.down{{color:var(--red);font-weight:700;}}.flat{{color:var(--muted);}}
-.sub{{color:var(--muted);font-size:13px;}}
-footer{{text-align:center;color:var(--muted);font-size:12px;padding:20px;}}
-canvas{{max-width:100%;}}
+:root{--red:#C62828;--red2:#E53935;--ink:#222;--bg:#fff;--muted:#777;--line:#eee;}
+*{box-sizing:border-box;}
+body{margin:0;font-family:'Sarabun',sans-serif;color:var(--ink);background:var(--bg);line-height:1.5;}
+.wrap{max-width:560px;margin:0 auto;padding:16px;}
+header{text-align:center;padding:20px 8px;border-bottom:3px solid var(--red);}
+header h1{font-size:19px;margin:0 0 12px;color:var(--red);font-weight:700;}
+.big{font-size:40px;font-weight:700;color:var(--red);line-height:1.1;}
+.big small{display:block;font-size:14px;color:var(--muted);font-weight:400;margin-top:4px;}
+section{padding:22px 4px;border-bottom:1px solid var(--line);}
+h2{font-size:17px;margin:0 0 14px;}
+.card{background:#fafafa;border-radius:12px;padding:14px;margin:8px 0;border-left:4px solid var(--red);}
+.card .medal{font-size:15px;font-weight:700;}
+.rankrow{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);}
+.rankrow:last-child{border:0;}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px;}
+th,td{text-align:right;padding:6px 5px;border-bottom:1px solid var(--line);}
+th:first-child,td:first-child{text-align:left;}
+th{background:var(--red);color:#fff;font-weight:600;}
+tr.ours td{background:#fff3e0;font-weight:700;}
+details{margin-top:10px;}
+summary{color:var(--red);font-weight:600;cursor:pointer;padding:8px 0;list-style:none;}
+summary::after{content:" \\25B8";}
+details[open] summary::after{content:" \\25BE";}
+.opp{background:linear-gradient(135deg,var(--red),var(--red2));color:#fff;border-radius:14px;padding:20px;text-align:center;}
+.opp .n{font-size:30px;font-weight:700;margin:6px 0;}
+.up{color:#2e7d32;font-weight:700;}.down{color:var(--red);font-weight:700;}.flat{color:var(--muted);}
+.sub{color:var(--muted);font-size:13px;}
+.seg{padding:7px 14px;border:1px solid var(--red);background:#fff;color:var(--red);border-radius:20px;font-family:inherit;font-size:13px;cursor:pointer;margin:3px 3px 3px 0;}
+.seg.active{background:var(--red);color:#fff;}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;}
+.chip{padding:5px 10px;border-radius:16px;font-size:12px;cursor:pointer;border:1px solid #ccc;background:#fff;color:#444;user-select:none;display:flex;align-items:center;}
+.chip.off{opacity:.4;text-decoration:line-through;}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;}
+.hint{color:var(--muted);font-size:12px;margin:4px 0 10px;}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:20px;}
+canvas{max-width:100%;}
 </style>
 </head>
 <body>
 <div class="wrap">
 <header>
-<h1>{title_full}</h1>
-<div class="big">{d['total_value_m']:,.0f}<small>มูลค่าตลาดรวม (ล้านบาท) &middot; {d['total_jobs']:,} งาน</small></div>
+<h1 id="ttl"></h1>
+<div class="big"><span id="tot"></span><small>มูลค่าตลาดรวม (ล้านบาท) &middot; <span id="totn"></span> งาน</small></div>
 </header>
 
 <section>
@@ -239,6 +242,19 @@ canvas{{max-width:100%;}}
 </section>
 
 <section>
+<h2>&#128202; เทรนด์รายปี</h2>
+<div>
+<button class="seg active" data-mode="value">มูลค่า (ลบ.)</button>
+<button class="seg" data-mode="pct">สัดส่วน %</button>
+</div>
+<div class="hint">แตะชื่อหมวดเพื่อซ่อน/แสดงเส้น</div>
+<div class="chips" id="cat-chips"></div>
+<canvas id="yr" height="240"></canvas>
+<details><summary>เลือกปีที่จะเทียบ (แตะปีเพื่อเอาออก/ใส่กลับ)</summary>
+<div class="chips" id="yr-chips"></div></details>
+</section>
+
+<section>
 <h2>3&#65039;&#8419; หมวดไหนกำลังโต / หด</h2>
 <div id="trend-rows"></div>
 <details><summary>ดูตัวเลขเทรนด์ (มูลค่า/ปี)</summary>
@@ -249,13 +265,7 @@ canvas{{max-width:100%;}}
 <section>
 <h2>&#128161; โอกาส</h2>
 <div class="opp"><div>หมวดที่โตแรงสุด และเรายังไม่เล่น</div>
-<div class="n">{d['opportunity']['label']}</div>
-<div>โต +{d['opportunity']['pct_v']}% &middot; ตลาดปัจจุบัน ~{d['opportunity']['recent_m']:,.0f} ลบ./ปี</div></div>
-</section>
-
-<section>
-<h2>&#128202; เทรนด์รายปี (มูลค่า ลบ.)</h2>
-<canvas id="yr" height="240"></canvas>
+<div class="n" id="opp-cat"></div><div id="opp-detail"></div></div>
 </section>
 
 <section>
@@ -280,65 +290,120 @@ canvas{{max-width:100%;}}
 <table><thead><tr><th>ปี</th><th>หมวด</th><th>มูลค่า</th><th>พื้นที่</th><th>ชื่องาน</th></tr></thead><tbody id="oj-tb"></tbody></table></details>
 </section>
 
-<footer>ข้อมูล ณ {d['build_date']} &middot; ที่มา: ระบบจัดซื้อจัดจ้างภาครัฐ (CGD/eGP)</footer>
+<footer>ข้อมูล ณ <span id="bdate"></span> &middot; ที่มา: ระบบจัดซื้อจัดจ้างภาครัฐ (CGD/eGP)</footer>
 </div>
 
 <script>
-const D = {data_json};
+/*__DATA__*/
 const baht = n => n.toLocaleString('th-TH');
 const PALETTE = ['#C62828','#E53935','#EF5350','#F4511E','#FB8C00','#FFB300','#FDD835','#bdbdbd','#e0e0e0'];
+const $ = id => document.getElementById(id);
 
-new Chart(document.getElementById('mkt'), {{
-  type:'doughnut',
-  data:{{labels:D.market.map(m=>m.label+' '+m.pct+'%'),
-    datasets:[{{data:D.market.map(m=>m.value_m),backgroundColor:PALETTE}}]}},
-  options:{{plugins:{{legend:{{position:'bottom',labels:{{font:{{family:'Sarabun',size:12}}}}}}}}}}
-}});
-document.getElementById('mkt-tb').innerHTML = D.market.map(m=>
-  `<tr><td>${{m.label}}</td><td>${{baht(m.value_m)}}</td><td>${{m.pct}}%</td><td>${{m.avg_m}}</td></tr>`).join('');
+// header
+$('ttl').textContent = 'สรุปผลการวิเคราะห์ตลาดงานก่อสร้าง นครพนม-บึงกาฬ ตั้งแต่ปี พ.ศ. '+D.year_min+'-'+D.year_max+' จัดทำโดยน้องกัญจน์';
+$('tot').textContent = baht(D.total_value_m);
+$('totn').textContent = baht(D.total_jobs);
+$('bdate').textContent = D.build_date;
+$('opp-cat').textContent = D.opportunity.label;
+$('opp-detail').innerHTML = 'โต +'+D.opportunity.pct_v+'% &middot; ตลาดปัจจุบัน ~'+baht(D.opportunity.recent_m)+' ลบ./ปี';
 
-const played = D.our_rank.filter(r=>r.rank); played.sort((a,b)=>a.rank-b.rank);
-document.getElementById('rank-cards').innerHTML = played.map(r=>{{
-  const medal = r.rank<=15?'\\u{{1F947}}':(r.rank<=50?'\\u{{1F948}}':'\\u{{1F949}}');
-  return `<div class="card"><div class="medal">${{medal}} ${{r.label}} — อันดับ ${{r.rank}} <span class="sub">จาก ${{r.players}} ราย</span></div>
-    <div class="sub">เจ้าตลาด: ${{r.leader}} (${{r.leader_share}}%)</div></div>`;
-}}).join('');
-document.getElementById('rank-tb').innerHTML = D.our_rank.map(r=>
-  `<tr><td>${{r.label}}</td><td>${{r.rank||'ไม่เล่น'}}</td><td>${{r.players}}</td><td>${{r.leader}} ${{r.leader_share}}%</td></tr>`).join('');
+// 1) market donut
+new Chart($('mkt'), {type:'doughnut',
+  data:{labels:D.market.map(m=>m.label+' '+m.pct+'%'),
+    datasets:[{data:D.market.map(m=>m.value_m),backgroundColor:PALETTE}]},
+  options:{plugins:{legend:{position:'bottom',labels:{font:{family:'Sarabun',size:12}}}}}});
+$('mkt-tb').innerHTML = D.market.map(m=>
+  '<tr><td>'+m.label+'</td><td>'+baht(m.value_m)+'</td><td>'+m.pct+'%</td><td>'+m.avg_m+'</td></tr>').join('');
 
-const arrow = p => p>=15?'<span class="up">\\u{{1F4C8}} โต</span>':(p<=-15?'<span class="down">\\u{{1F4C9}} หด</span>':'<span class="flat">\\u27A1\\uFE0F ทรง</span>');
-document.getElementById('trend-rows').innerHTML = D.trend.map(t=>
-  `<div class="rankrow"><span>${{t.label}}</span><span>${{t.pct_v>0?'+':''}}${{t.pct_v}}% ${{arrow(t.pct_v)}}</span></div>`).join('');
-document.getElementById('trend-tb').innerHTML = D.trend.map(t=>
-  `<tr><td>${{t.label}}</td><td>${{baht(t.early_m)}}</td><td>${{baht(t.recent_m)}}</td><td>${{t.pct_v>0?'+':''}}${{t.pct_v}}%</td></tr>`).join('');
+// 2) our rank
+const played = D.our_rank.filter(r=>r.rank).sort((a,b)=>a.rank-b.rank);
+$('rank-cards').innerHTML = played.map(r=>{
+  const medal = r.rank<=15?'🥇':(r.rank<=50?'🥈':'🥉');
+  return '<div class="card"><div class="medal">'+medal+' '+r.label+' — อันดับ '+r.rank+' <span class="sub">จาก '+r.players+' ราย</span></div><div class="sub">เจ้าตลาด: '+r.leader+' ('+r.leader_share+'%)</div></div>';
+}).join('');
+$('rank-tb').innerHTML = D.our_rank.map(r=>
+  '<tr><td>'+r.label+'</td><td>'+(r.rank||'ไม่เล่น')+'</td><td>'+r.players+'</td><td>'+r.leader+' '+r.leader_share+'%</td></tr>').join('');
 
-new Chart(document.getElementById('yr'), {{
-  type:'line',
-  data:{{labels:D.year_series.years,
-    datasets:D.year_series.series.map((s,i)=>({{label:s.label,data:s.data,borderColor:PALETTE[i],backgroundColor:PALETTE[i],tension:.3,borderWidth:2,pointRadius:2}}))}},
-  options:{{plugins:{{legend:{{position:'bottom',labels:{{font:{{family:'Sarabun',size:11}},boxWidth:12}}}}}},scales:{{y:{{ticks:{{font:{{family:'Sarabun'}}}}}},x:{{ticks:{{font:{{family:'Sarabun'}}}}}}}}}}
-}});
+// 3) trend summary rows + table
+const arrow = p => p>=15?'<span class="up">📈 โต</span>':(p<=-15?'<span class="down">📉 หด</span>':'<span class="flat">➡️ ทรง</span>');
+$('trend-rows').innerHTML = D.trend.map(t=>
+  '<div class="rankrow"><span>'+t.label+'</span><span>'+(t.pct_v>0?'+':'')+t.pct_v+'% '+arrow(t.pct_v)+'</span></div>').join('');
+$('trend-tb').innerHTML = D.trend.map(t=>
+  '<tr><td>'+t.label+'</td><td>'+baht(t.early_m)+'</td><td>'+baht(t.recent_m)+'</td><td>'+(t.pct_v>0?'+':'')+t.pct_v+'%</td></tr>').join('');
 
-document.getElementById('comp').innerHTML = Object.entries(D.competitors).map(([cat,list])=>
-  `<details><summary>${{cat}}</summary><table><thead><tr><th>#</th><th>ผู้ชนะ</th><th>งาน</th><th>มูลค่า(ลบ.)</th><th>%</th></tr></thead><tbody>`+
-  list.map(w=>`<tr class="${{w.ours?'ours':''}}"><td>${{w.rank}}</td><td>${{w.name}}</td><td>${{w.jobs}}</td><td>${{baht(w.value_m)}}</td><td>${{w.share}}%</td></tr>`).join('')+
-  `</tbody></table></details>`).join('');
+// === interactive year chart: mode % / hide lines / pick years ===
+(function(){
+  const ys = D.year_series;
+  let mode = 'value';
+  const hidden = new Set();
+  const sel = new Set(ys.years);
 
-document.getElementById('prov').innerHTML = D.area_prov.map(p=>
-  `<div class="card"><div class="medal">${{p.prov}} — ${{baht(p.total_m)}} ลบ.</div>
-   <div class="sub">ถนน ${{baht(p.by_cat['ถนน']||0)}} &middot; อาคาร ${{baht(p.by_cat['อาคาร']||0)}} &middot; แหล่งน้ำ ${{baht(p.by_cat['แหล่งน้ำ']||0)}} &middot; ราง/ท่อ ${{baht(p.by_cat['ราง/ท่อ']||0)}} ลบ.</div></div>`).join('');
-document.getElementById('tam-tb').innerHTML = D.area_tambon.map(t=>
-  `<tr><td>${{t.tambon}}</td><td>${{t.dist}}</td><td>${{t.prov}}</td><td>${{t.top_cat}}</td><td>${{t.total}}</td></tr>`).join('');
+  $('cat-chips').innerHTML = ys.series.map((s,i)=>
+    '<span class="chip" data-cat="'+s.label+'"><span class="dot" style="background:'+PALETTE[i]+'"></span>'+s.label+'</span>').join('');
+  $('yr-chips').innerHTML = ys.years.map(y=>'<span class="chip" data-yr="'+y+'">'+y+'</span>').join('');
 
-document.getElementById('our-n').textContent = D.our_jobs.length;
-document.getElementById('our-v').textContent = baht(D.our_total_m);
-document.getElementById('oy-tb').innerHTML = D.our_year_rows.map(r=>
-  `<tr><td>${{r.year}}</td><td>${{r.jobs}}</td><td>${{baht(r.value_m)}}</td></tr>`).join('');
-document.getElementById('oj-tb').innerHTML = D.our_jobs.map(j=>
-  `<tr><td>${{j.year}}</td><td>${{j.cat}}</td><td>${{j.value_m}}</td><td>${{j.area}}</td><td style="font-size:11px">${{j.name}}</td></tr>`).join('');
+  function build(){
+    const years = ys.years.filter(y=>sel.has(y));
+    const idx = years.map(y=>ys.years.indexOf(y));
+    const totals = idx.map(i=>ys.series.reduce((s,se)=>s+se.data[i],0));
+    const ds = ys.series.map((se,si)=>{
+      const data = idx.map((i,k)=>mode==='pct'?(totals[k]?+(se.data[i]/totals[k]*100).toFixed(1):0):se.data[i]);
+      return {label:se.label,data:data,borderColor:PALETTE[si],backgroundColor:PALETTE[si],tension:.3,borderWidth:2,pointRadius:2,hidden:hidden.has(se.label)};
+    });
+    return {labels:years,datasets:ds};
+  }
+  const ch = new Chart($('yr'), {type:'line', data:build(),
+    options:{plugins:{legend:{display:false}},
+      scales:{y:{title:{display:true,text:'มูลค่า (ลบ.)'},ticks:{font:{family:'Sarabun'}}},x:{ticks:{font:{family:'Sarabun'}}}}}});
+  function refresh(){
+    const d = build();
+    ch.data.labels = d.labels; ch.data.datasets = d.datasets;
+    ch.options.scales.y.title.text = mode==='pct'?'สัดส่วน % (ในกลุ่มงานหลัก)':'มูลค่า (ลบ.)';
+    ch.update();
+  }
+  document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{
+    mode = b.dataset.mode;
+    document.querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('active',x===b));
+    refresh();
+  });
+  $('cat-chips').querySelectorAll('.chip').forEach(el=>el.onclick=()=>{
+    const c = el.dataset.cat;
+    if(hidden.has(c)){hidden.delete(c);el.classList.remove('off');}else{hidden.add(c);el.classList.add('off');}
+    refresh();
+  });
+  $('yr-chips').querySelectorAll('.chip').forEach(el=>el.onclick=()=>{
+    const y = el.dataset.yr;
+    if(sel.has(y)){ if(sel.size<=2) return; sel.delete(y); el.classList.add('off'); }
+    else { sel.add(y); el.classList.remove('off'); }
+    refresh();
+  });
+})();
+
+// competitors
+$('comp').innerHTML = Object.entries(D.competitors).map(([cat,list])=>
+  '<details><summary>'+cat+'</summary><table><thead><tr><th>#</th><th>ผู้ชนะ</th><th>งาน</th><th>มูลค่า(ลบ.)</th><th>%</th></tr></thead><tbody>'+
+  list.map(w=>'<tr class="'+(w.ours?'ours':'')+'"><td>'+w.rank+'</td><td>'+w.name+'</td><td>'+w.jobs+'</td><td>'+baht(w.value_m)+'</td><td>'+w.share+'%</td></tr>').join('')+
+  '</tbody></table></details>').join('');
+
+// area
+$('prov').innerHTML = D.area_prov.map(p=>
+  '<div class="card"><div class="medal">'+p.prov+' — '+baht(p.total_m)+' ลบ.</div><div class="sub">ถนน '+baht(p.by_cat['ถนน']||0)+' &middot; อาคาร '+baht(p.by_cat['อาคาร']||0)+' &middot; แหล่งน้ำ '+baht(p.by_cat['แหล่งน้ำ']||0)+' &middot; ราง/ท่อ '+baht(p.by_cat['ราง/ท่อ']||0)+' ลบ.</div></div>').join('');
+$('tam-tb').innerHTML = D.area_tambon.map(t=>
+  '<tr><td>'+t.tambon+'</td><td>'+t.dist+'</td><td>'+t.prov+'</td><td>'+t.top_cat+'</td><td>'+t.total+'</td></tr>').join('');
+
+// our jobs
+$('our-n').textContent = D.our_jobs.length;
+$('our-v').textContent = baht(D.our_total_m);
+$('oy-tb').innerHTML = D.our_year_rows.map(r=>'<tr><td>'+r.year+'</td><td>'+r.jobs+'</td><td>'+baht(r.value_m)+'</td></tr>').join('');
+$('oj-tb').innerHTML = D.our_jobs.map(j=>'<tr><td>'+j.year+'</td><td>'+j.cat+'</td><td>'+j.value_m+'</td><td>'+j.area+'</td><td style="font-size:11px">'+j.name+'</td></tr>').join('');
 </script>
 </body>
 </html>"""
+
+
+def render_html(d):
+    data_json = json.dumps(d, ensure_ascii=False)
+    return _TEMPLATE.replace("/*__DATA__*/", "const D = " + data_json + ";")
 
 
 def main():

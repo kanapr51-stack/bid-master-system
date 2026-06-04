@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>สรุปผลการวิเคราะห์ตลาดงานก่อสร้าง นครพนม-บึงกาฬ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{--red:#C62828;--red2:#E53935;--ink:#222;--bg:#fff;--muted:#777;--line:#eee;}
+*{box-sizing:border-box;}
+body{margin:0;font-family:'Sarabun',sans-serif;color:var(--ink);background:var(--bg);line-height:1.5;}
+.wrap{max-width:560px;margin:0 auto;padding:16px;}
+header{text-align:center;padding:20px 8px;border-bottom:3px solid var(--red);}
+header h1{font-size:19px;margin:0 0 12px;color:var(--red);font-weight:700;}
+.big{font-size:40px;font-weight:700;color:var(--red);line-height:1.1;}
+.big small{display:block;font-size:14px;color:var(--muted);font-weight:400;margin-top:4px;}
+section{padding:22px 4px;border-bottom:1px solid var(--line);}
+h2{font-size:17px;margin:0 0 14px;}
+.card{background:#fafafa;border-radius:12px;padding:14px;margin:8px 0;border-left:4px solid var(--red);}
+.card .medal{font-size:15px;font-weight:700;}
+.rankrow{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);}
+.rankrow:last-child{border:0;}
+table{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px;}
+th,td{text-align:right;padding:7px 6px;border-bottom:1px solid var(--line);}
+th:first-child,td:first-child{text-align:left;}
+th{background:var(--red);color:#fff;font-weight:600;}
+details{margin-top:10px;}
+summary{color:var(--red);font-weight:600;cursor:pointer;padding:8px 0;list-style:none;}
+summary::after{content:" \25B8";}
+details[open] summary::after{content:" \25BE";}
+.opp{background:linear-gradient(135deg,var(--red),var(--red2));color:#fff;border-radius:14px;padding:20px;text-align:center;}
+.opp .n{font-size:30px;font-weight:700;margin:6px 0;}
+.up{color:#2e7d32;font-weight:700;}.down{color:var(--red);font-weight:700;}.flat{color:var(--muted);}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:20px;}
+canvas{max-width:100%;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>สรุปผลการวิเคราะห์ตลาดงานก่อสร้าง นครพนม-บึงกาฬ ตั้งแต่ปี พ.ศ. 2558-2568 จัดทำโดยน้องกัญจน์</h1>
+<div class="big">46,063<small>มูลค่าตลาดรวม (ล้านบาท) &middot; 52,525 งาน</small></div>
+</header>
+
+<section>
+<h2>1&#65039;&#8419; ตลาดใหญ่แค่ไหน — แยกตามหมวดงาน</h2>
+<canvas id="mkt" height="220"></canvas>
+<details><summary>ดูตารางเต็ม</summary>
+<table><thead><tr><th>หมวด</th><th>มูลค่า (ลบ.)</th><th>%</th><th>เฉลี่ย/งาน</th></tr></thead>
+<tbody id="mkt-tb"></tbody></table></details>
+</section>
+
+<section>
+<h2>2&#65039;&#8419; เราอยู่ตรงไหนในตลาด</h2>
+<div id="rank-cards"></div>
+<details><summary>ดูทุกหมวด (อันดับ/ผู้เล่น/เจ้าตลาด)</summary>
+<table><thead><tr><th>หมวด</th><th>อันดับเรา</th><th>ผู้เล่น</th><th>เจ้าตลาด</th></tr></thead>
+<tbody id="rank-tb"></tbody></table></details>
+</section>
+
+<section>
+<h2>3&#65039;&#8419; หมวดไหนกำลังโต / หด</h2>
+<div id="trend-rows"></div>
+<details><summary>ดูตัวเลขเทรนด์ (มูลค่า/ปี)</summary>
+<table><thead><tr><th>หมวด</th><th>61-62</th><th>67-68</th><th>เปลี่ยน</th></tr></thead>
+<tbody id="trend-tb"></tbody></table></details>
+</section>
+
+<section>
+<h2>&#128161; โอกาส</h2>
+<div class="opp"><div>หมวดที่โตแรงสุด และเรายังไม่เล่น</div>
+<div class="n">ไฟฟ้า/ส่องสว่าง</div>
+<div>โต +211.1% &middot; ตลาดปัจจุบัน ~142 ลบ./ปี</div></div>
+</section>
+
+<footer>ข้อมูล ณ 5/6/2569 &middot; ที่มา: ระบบจัดซื้อจัดจ้างภาครัฐ (CGD/eGP)</footer>
+</div>
+
+<script>
+const D = {"total_value_m": 46063.0, "total_jobs": 52525, "year_min": "2558", "year_max": "2568", "market": [{"cat": "ถนน", "label": "ถนน", "jobs": 27334, "value_m": 25438.8, "pct": 55.2, "avg_m": 0.93}, {"cat": "รางระบายน้ำ/ท่อ", "label": "ราง/ท่อ", "jobs": 6084, "value_m": 1547.5, "pct": 3.4, "avg_m": 0.25}, {"cat": "แหล่งน้ำ/ชลประทาน", "label": "แหล่งน้ำ", "jobs": 6115, "value_m": 4207.3, "pct": 9.1, "avg_m": 0.69}, {"cat": "อาคาร", "label": "อาคาร", "jobs": 7954, "value_m": 9600.5, "pct": 20.8, "avg_m": 1.21}, {"cat": "สะพาน", "label": "สะพาน", "jobs": 312, "value_m": 604.5, "pct": 1.3, "avg_m": 1.94}, {"cat": "ไฟฟ้า/ส่องสว่าง", "label": "ไฟฟ้า/ส่องสว่าง", "jobs": 709, "value_m": 735.6, "pct": 1.6, "avg_m": 1.04}, {"cat": "ดิน/ปรับพื้นที่", "label": "ดิน", "jobs": 1260, "value_m": 491.2, "pct": 1.1, "avg_m": 0.39}, {"cat": "OTHER", "label": "OTHER", "jobs": 453, "value_m": 562.8, "pct": 1.2, "avg_m": 1.24}, {"cat": "UNKNOWN", "label": "UNKNOWN", "jobs": 2304, "value_m": 2875.0, "pct": 6.2, "avg_m": 1.25}], "our_rank": [{"cat": "ถนน", "label": "ถนน", "our_value_m": 102.1, "share": 0.4, "rank": 55, "players": 1840, "leader": "ห้างหุ้นส่วนจำกัด ศรีประโคนชัยก่อสร้", "leader_share": 4.0}, {"cat": "รางระบายน้ำ/ท่อ", "label": "ราง/ท่อ", "our_value_m": 16.2, "share": 1.05, "rank": 11, "players": 1002, "leader": "ห้างหุ้นส่วนจำกัด สิทธาจารย์", "leader_share": 3.6}, {"cat": "แหล่งน้ำ/ชลประทาน", "label": "แหล่งน้ำ", "our_value_m": 41.5, "share": 0.99, "rank": 18, "players": 1192, "leader": "ห้างหุ้นส่วนจำกัด เอส.ที.เค.เพาเวอร์", "leader_share": 3.1}, {"cat": "อาคาร", "label": "อาคาร", "our_value_m": 8.3, "share": 0.09, "rank": 180, "players": 2164, "leader": "ห้างหุ้นส่วนจำกัด สกลนครไทยอีสาน", "leader_share": 9.4}, {"cat": "สะพาน", "label": "สะพาน", "our_value_m": 0.0, "share": 0.0, "rank": null, "players": 182, "leader": "ห้างหุ้นส่วนสามัญนิติบุคคล ประยงค์นค", "leader_share": 10.1}, {"cat": "ไฟฟ้า/ส่องสว่าง", "label": "ไฟฟ้า/ส่องสว่าง", "our_value_m": 0.0, "share": 0.0, "rank": null, "players": 247, "leader": "บริษัท ศรีไทย คอร์ปอเรชัน จำกัด", "leader_share": 13.9}, {"cat": "ดิน/ปรับพื้นที่", "label": "ดิน", "our_value_m": 0.0, "share": 0.0, "rank": null, "players": 304, "leader": "ห้างหุ้นส่วนสามัญนิติบุคคล ประยงค์นค", "leader_share": 10.1}], "trend": [{"cat": "ถนน", "label": "ถนน", "early_m": 2226.6, "recent_m": 3755.2, "pct_v": 68.6}, {"cat": "รางระบายน้ำ/ท่อ", "label": "ราง/ท่อ", "early_m": 185.8, "recent_m": 211.9, "pct_v": 14.1}, {"cat": "แหล่งน้ำ/ชลประทาน", "label": "แหล่งน้ำ", "early_m": 453.3, "recent_m": 264.8, "pct_v": -41.6}, {"cat": "อาคาร", "label": "อาคาร", "early_m": 944.3, "recent_m": 1045.5, "pct_v": 10.7}, {"cat": "สะพาน", "label": "สะพาน", "early_m": 92.7, "recent_m": 42.7, "pct_v": -54.0}, {"cat": "ไฟฟ้า/ส่องสว่าง", "label": "ไฟฟ้า/ส่องสว่าง", "early_m": 45.7, "recent_m": 142.3, "pct_v": 211.1}, {"cat": "ดิน/ปรับพื้นที่", "label": "ดิน", "early_m": 14.1, "recent_m": 123.5, "pct_v": 778.8}], "opportunity": {"cat": "ไฟฟ้า/ส่องสว่าง", "label": "ไฟฟ้า/ส่องสว่าง", "early_m": 45.7, "recent_m": 142.3, "pct_v": 211.1}, "build_date": "5/6/2569"};
+const baht = n => n.toLocaleString('th-TH');
+new Chart(document.getElementById('mkt'), {
+  type:'doughnut',
+  data:{labels:D.market.map(m=>m.label+' '+m.pct+'%'),
+    datasets:[{data:D.market.map(m=>m.value_m),
+      backgroundColor:['#C62828','#E53935','#EF5350','#F4511E','#FB8C00','#FFB300','#FDD835','#bdbdbd','#e0e0e0']}]},
+  options:{plugins:{legend:{position:'bottom',labels:{font:{family:'Sarabun',size:12}}}}}
+});
+document.getElementById('mkt-tb').innerHTML = D.market.map(m=>
+  `<tr><td>${m.label}</td><td>${baht(m.value_m)}</td><td>${m.pct}%</td><td>${m.avg_m}</td></tr>`).join('');
+const played = D.our_rank.filter(r=>r.rank);
+played.sort((a,b)=>a.rank-b.rank);
+document.getElementById('rank-cards').innerHTML = played.map(r=>{
+  const medal = r.rank<=15?'\u{1F947}':(r.rank<=50?'\u{1F948}':'\u{1F949}');
+  return `<div class="card"><div class="medal">${medal} ${r.label} — อันดับ ${r.rank} <span style="color:#777;font-weight:400">จาก ${r.players} ราย</span></div>
+    <div style="color:#777;font-size:13px">เจ้าตลาด: ${r.leader} (${r.leader_share}%)</div></div>`;
+}).join('');
+document.getElementById('rank-tb').innerHTML = D.our_rank.map(r=>
+  `<tr><td>${r.label}</td><td>${r.rank||'ไม่เล่น'}</td><td>${r.players}</td><td>${r.leader} ${r.leader_share}%</td></tr>`).join('');
+const arrow = p => p>=15?'<span class="up">\u{1F4C8} โต</span>':(p<=-15?'<span class="down">\u{1F4C9} หด</span>':'<span class="flat">\u27A1\uFE0F ทรง</span>');
+document.getElementById('trend-rows').innerHTML = D.trend.map(t=>
+  `<div class="rankrow"><span>${t.label}</span><span>${t.pct_v>0?'+':''}${t.pct_v}% ${arrow(t.pct_v)}</span></div>`).join('');
+document.getElementById('trend-tb').innerHTML = D.trend.map(t=>
+  `<tr><td>${t.label}</td><td>${baht(t.early_m)}</td><td>${baht(t.recent_m)}</td><td>${t.pct_v>0?'+':''}${t.pct_v}%</td></tr>`).join('');
+</script>
+</body>
+</html>

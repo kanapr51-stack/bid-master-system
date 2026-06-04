@@ -15,7 +15,7 @@
     "ถมดิน", "ปรับพื้นที่", "Dowel", "Wire Mesh"
   ],
   "negative_keywords": [],
-  "_negative_note": "คำที่ถ้าเจอ = ตัดทิ้งแม้ match token (กัน false positive) — เติมเมื่อพบงานไม่เกี่ยวหลุดมา",
+  "_negative_note": "คำที่ถ้าเจอ = ตัดทิ้งแม้ match token (กัน false positive) — เติมเมื่อพบงานไม่เกี่ยวหลุดมา. หมายเหตุ: 'ท่อ'⊂'ท่อง[เที่ยว]' แก้ด้วย regex guard ใน job_matcher ไม่ใช่ negative (กัน recall loss งานถนน-แหล่งท่องเที่ยว)",
 
   "target_tambons": {
     "นครพนม": [

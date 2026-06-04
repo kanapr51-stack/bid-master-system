@@ -30,6 +30,16 @@ _ROAD_CODE_RE = re.compile(r"(?:บก|นพ)\.?\s?[๐-๙\d]{3,4}")
 # ตำบลที่ระบุชัดในชื่องาน เช่น "ตำบลนาแก", "ต.หนองซน" → จับชื่อตำบล (อักษรไทยต่อเนื่อง)
 _TAMBON_NAME_RE = re.compile(r"(?:ตำบล|ต\.)\s*([ก-๙]+)")
 
+# keyword สั้นที่ substring ชนคำอื่น → regex guard (ภาษาไทยไม่มีเว้นวรรค)
+# "ท่อ" (ท่อระบายน้ำ) ห้าม match "ท่อง" (ท่องเที่ยว) — INC 2026-06-04. งานถนนยังเข้าได้ (ถนน match เอง)
+_KEYWORD_GUARDS = {"ท่อ": re.compile(r"ท่อ(?!ง)")}
+
+
+def _kw_hit(k: str, name: str) -> bool:
+    """keyword match — ใช้ regex guard ถ้า keyword นั้นเสี่ยง substring ชนคำอื่น, ไม่งั้น substring ปกติ"""
+    g = _KEYWORD_GUARDS.get(k)
+    return bool(g.search(name)) if g else (k in name)
+
 
 def load_config(path: str = CONFIG_PATH) -> dict:
     with open(path, encoding="utf-8") as f:
@@ -96,7 +106,7 @@ def passes_keyword(project_name: str, cfg: dict = None) -> Tuple[bool, str]:
     logic ตรงกับ keyword/negative ใน match_job (consistency)."""
     cfg = cfg if cfg is not None else load_config()
     name = project_name or ""
-    kw = next((k for k in cfg.get("keywords", []) if k in name), None)
+    kw = next((k for k in cfg.get("keywords", []) if _kw_hit(k, name)), None)
     if not kw:
         return False, "no_keyword"
     neg = next((n for n in cfg.get("negative_keywords", []) if n in name), None)
@@ -115,7 +125,7 @@ def match_job(project_name: str, province: str, tambon_field: str = "",
     if not targets:
         return "cut", {"reason": "province_not_subscribed", "province": province}
 
-    kw = next((k for k in cfg.get("keywords", []) if k in name), None)
+    kw = next((k for k in cfg.get("keywords", []) if _kw_hit(k, name)), None)
     if not kw:
         return "cut", {"reason": "no_keyword"}
     neg = next((n for n in cfg.get("negative_keywords", []) if n in name), None)

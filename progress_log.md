@@ -4124,3 +4124,30 @@ BMS assumed `discovery reachable ⇒ resolve reachable` = เท็จ. WAF bloc
 ### Followup
 - ปีงบ format ต่างกัน (CGD พ.ศ. / eGP-track ค.ศ.) — เล็ก
 - ขยายปีก่อน 2566 ได้อีก (มี dataset ถึง 2558) ถ้าต้องการ
+
+## งานที่ N+73: INC-002 false-positive notification (substring keyword) (2026-06-04)
+
+### สถานะ: ✅ แก้แล้ว (live VPS) + 1 รายการรอ confirm design
+
+### Trigger
+คุณกัญจน์ได้ LINE แจ้งเตือนงาน "จังหวัดสกลนคร" ที่ไม่เกี่ยวพื้นที่ → ตรวจสอบ
+
+### พบ 2 สาเหตุคนละแบบ (จาก 7 งานใหม่ 13:00, 3 enqueued)
+1. **#3 ท่องเที่ยว (69059277975) = BUG** — keyword "ท่อ" substring-match "ท่อง" ใน "ท่องเที่ยว" (ภาษาไทยไม่มีเว้นวรรค)
+2. **#1 สกลนคร (69069008604) = precision cost** — keyword ระบายน้ำ จริง แต่เป็นชลประทานข้ามจังหวัด (ลำน้ำพุง-น้ำก่ำ) eGP คืนใต้ province=นครพนม + resolve ตำบลไม่ได้ → soft-include (controlled recall). ส่งไป 4 user แล้ว (กู้ไม่ได้)
+3. **#2 อาคารโพนทอง (69059132412) = ถูกต้อง** — โพนทอง ∈ target → ส่งจริง
+
+### Fix
+- **substring bug:** regex guard `ท่อ(?!ง)` ใน job_matcher (_kw_hit) — **ไม่ใช้ blanket negative** เพราะจะตัด "ถนนเข้าแหล่งท่องเที่ยว" (งานถนนจริง) = ขัด recall-bias. verified: ท่องเที่ยวล้วน→cut, ถนน-ท่องเที่ยว→send ✓
+- **queue:** หยุด sender → cancel #3 (5 rows) → ปล่อย #2 โพนทอง → เปิด sender กลับ
+- deploy: scp job_matcher.py + config → VPS (deploy-debt git stuck), verified live
+
+### shadow
+ไม่เกี่ยว — discovery_confirmed=0, shadow ยัง dry-run. notification มาจาก province_api live path
+
+### รอ confirm (design)
+- **anti-province guard** — กัญจน์อยากได้แต่ห่วงตัดงานจังหวัดเราที่บังเอิญมีชื่อจังหวัดอื่น → ออกแบบ conservative (apply เฉพาะ soft-include branch + ต้องไม่มีชื่อจังหวัด/ตำบลเราใน title) ก่อน confirm
+- ❌ ไม่ลด keyword (อนาคต user พิมพ์ keyword เอง)
+
+### telemetry note
+discovery "🎯 อำเภอเป้าหมาย: 0" แต่ enqueue 3 — เพราะ target-count นับตอน discovery (ก่อน resolve ตำบล), qualify เกิดที่ worker. ป้ายอาจทำให้เข้าใจผิด (minor)

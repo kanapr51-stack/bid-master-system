@@ -4196,7 +4196,7 @@ discovery "🎯 อำเภอเป้าหมาย: 0" แต่ enqueue 3 
 
 ## งานที่ N+78: audit substring false-match keyword ทั้งชุด (2026-06-04)
 
-### สถานะ: ✅ เสร็จ (local) — รอ confirm deploy VPS + push
+### สถานะ: ✅ เสร็จ + DEPLOYED live VPS (push 3ae37dd + scp, VPS live test PASS 5/5)
 
 ### สิ่งที่ทำ
 - audit keyword สั้นทุกตัวกับชื่องานจริง **617K** (winner_history.db) → `scripts/_audit_substring_kw.py` + `data/_audit_substring_kw.txt`
@@ -4220,4 +4220,30 @@ substring guard ภาษาไทยต้อง verify 2 ทิศ: ไม่�
 
 ### Followup เหลือ
 - recall note: ตารางเมตร เคยบังเอิญจับ โดม/ศาลา/ฝ้า (ไม่มี keyword หลัก) — ถ้าอยากได้งานพวกนี้ = เพิ่ม keyword (อาคาร?) ไม่ใช่พึ่ง ตารางเมตร
-- deploy VPS (scp job_matcher.py — deploy-debt git stuck) + push : รอ confirm
+- ~~deploy VPS + push~~ ✅ DEPLOYED (push 3ae37dd + scp, VPS live test PASS 5/5)
+
+## งานที่ N+79: กู้ proc_type shift 61.5K + method_group column (2026-06-04, backlog)
+
+### สถานะ: ✅ เสร็จ (DB local + Sheet)
+
+### Root cause (เจอตอน investigate)
+CGD **column swap**: header string 'วิธีการจัดหา ประกาศเชิญชวนทั่วไป คัดเลือก เฉพาะเจาะจง' โผล่สลับตำแหน่งระหว่าง field `วิธีจัดซื้อฯ` ↔ `กลุ่มวิธีจัดซื้อฯ`:
+- 555,752 แถว: วิธีจัดซื้อฯ=ค่าจริง, กลุ่มฯ=header
+- 61,510 แถว: สลับกัน → proc_type เก็บ header ขยะ
+→ กฎกู้: ค่าจริง = field ที่ **ไม่ใช่** header. raw_json = source of truth (ไม่แตะ) → idempotent+reversible
+
+### Fix (`_winner_history_proctype_fix.py`)
+- snapshot (rowid, proc_type) → backups/proctype_snapshot_*.json.gz (เบา, ไม่ copy DB 2.6GB)
+- recompute proc_type ทั้ง 617K จาก raw_json (clean rows ค่าไม่เปลี่ยน, 61,510 กู้)
+- ADD COLUMN method_group + map: แข่งขันราคา/คัดเลือก/เฉพาะเจาะจง/อื่นๆ (keyword-based, ครอบคลุม 19 ค่า)
+
+### ผล (sanity)
+- proc_type=header เหลือ **0** (กู้ครบ 61,510) · 22s
+- method_group: เฉพาะเจาะจง 604,152 (97.9%) / แข่งขันราคา 11,795 / คัดเลือก 1,403 / อื่นๆ 7
+- proc_type top: เฉพาะเจาะจง 563,460 · ตกลงราคา 40,246 · e-bidding 9,962
+
+### Bonus — เติม 2 column ลง Sheet "ผลงานบริษัทเรา" + insight
+บริษัทเรา: เฉพาะเจาะจง 85.8% (92.7M งานเล็ก) · **แข่งขันราคา 12.7% = 64.4M งานใหญ่** (เฉลี่ย 1.6M/งาน vs 0.34M) · คัดเลือก 5 งาน 16.6M (ใหญ่สุด 3.3M/งาน)
+
+### Followup
+- backlog 2: เทรน classifier จากชื่องาน 617K — field `ชื่อประเภทโครงการ` (จ้างก่อสร้าง/...) มีใน raw_json แล้ว = label พร้อม. เช็ค live API ก่อน

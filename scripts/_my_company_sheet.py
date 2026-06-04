@@ -31,19 +31,20 @@ def main():
     rows = []
     for r in c.execute(f"""
         SELECT fiscal_year, winner, district, subdistrict, project_name, dept,
-               mid_price, win_price, discount_pct, announce_date
+               mid_price, win_price, discount_pct, announce_date, proc_type, method_group
         FROM winner_history WHERE {WHERE}
         ORDER BY fiscal_year DESC, win_price DESC"""):
-        fy, winner, dist, sub, pn, dept, mid, win, disc, adate = r
+        fy, winner, dist, sub, pn, dept, mid, win, disc, adate, ptype, mgroup = r
         rows.append([
             fy, co_name(winner or ""), dist or "", clean_tambon(sub),
             (pn or "")[:120], (dept or "")[:60],
             int(mid or 0), int(win or 0),
             round(disc or 0, 1), (adate or "")[:10],
+            ptype or "", mgroup or "",
         ])
 
     header = ["ปีงบ", "บริษัท", "อำเภอ", "ตำบล", "ชื่องาน", "หน่วยงานที่จ้าง",
-              "ราคากลาง", "ราคาที่ชนะ", "ส่วนลด %", "วันประกาศ"]
+              "ราคากลาง", "ราคาที่ชนะ", "ส่วนลด %", "วันประกาศ", "วิธีจัดซื้อ", "กลุ่มวิธี"]
 
     gc = get_client()
     sh = gc.open_by_key(SHEET_ID)

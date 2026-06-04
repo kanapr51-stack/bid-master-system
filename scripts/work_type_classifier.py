@@ -53,9 +53,12 @@ def classify_work_type(title: str) -> dict:
             earliest[cat] = min(p for k in distinct if (p := _first_pos(k, title)) >= 0)
 
     if scores:
+        # tie-break: score สูงสุด → ตำแหน่ง keyword เร็วสุด (head-noun = งานหลัก) → priority (fallback)
+        # NOTE: position มาก่อน priority (แก้จาก spec §4 เดิม) — validation 617K พิสูจน์ว่า landmark
+        # เช่น "สะพาน/โรงเรียน/ประปา" มักโผล่ท้ายชื่อเป็นจุดอ้างอิง งานจริงอยู่ต้นชื่อ (calibrate 2026-06-04)
         def sort_key(cat):
             pri = _PRIORITY.index(cat) if cat in _PRIORITY else len(_PRIORITY)
-            return (-scores[cat], pri, earliest[cat])
+            return (-scores[cat], earliest[cat], pri)
 
         ordered = sorted(scores, key=sort_key)
         primary = ordered[0]

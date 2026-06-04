@@ -4168,3 +4168,12 @@ discovery "🎯 อำเภอเป้าหมาย: 0" แต่ enqueue 3 
 - embed 77 จังหวัด (จาก thai_geo_raw.csv) เป็น frozenset + foreign_province_in_title()
 - verified 5 เคส: สกลนคร gate→cut, นครพนม-สกลนคร→soft_include(recall รอด), ตำบลเป้าหมาย+สกลนคร→send, ไม่มีจว.อื่น→soft_include, ท่องเที่ยว→cut
 - conservative ตามที่กัญจน์ห่วง: งานจังหวัดเราที่บังเอิญพาดพิงจว.อื่น ไม่พลาด (ต้องมีชื่อจังหวัดเรา/ตำบลเรา)
+
+## งานที่ N+76: feedback authority = กัญจน์คนเดียว (2026-06-04)
+
+### สถานะ: ✅ เสร็จ (live VPS, กัญจน์สั่ง)
+- เหตุผล: กัญจน์รู้ธุรกิจ + กัน noise (พ่อแม่กดลองเล่น UI = INC-002 lesson)
+- design: ครอบครัวยังได้รับแจ้งงานปกติ แค่ไม่มีปุ่ม feedback (ปุ่มขึ้นเฉพาะ cust2)
+- impl: build_job_flex(with_feedback) + _feedback_authority_ids() อ่าน config/feedback_authority.json {"customer_ids":[2]} (customer_id ไม่ใช่ PII, committable). ว่าง=ทุกคน (backward-compat)
+- verified local+VPS: cust2 มีปุ่ม, cust4 ไม่มี
+- followup: feedback rows เก่าจากพ่อแม่ (exploratory) ยังอยู่ใน table — ถ้าจะวัด North Star ให้กรอง customer_id=2 หรือลบ noise ทีหลัง

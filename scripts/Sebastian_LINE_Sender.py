@@ -16,6 +16,7 @@ State transitions handled by SubscriptionStore.
 Logs: logs/line_sender/sender_YYYYMMDD.log
 """
 import argparse
+import json
 import os
 import sys
 from datetime import datetime, timezone, timedelta
@@ -70,8 +71,10 @@ def parse_postback_data(data: str):
     return action, project_id
 
 
-def build_job_flex(project_id: str, title: str, detail: str, doc_url: str = "") -> dict:
-    """สร้าง flex bubble: งาน (body) + 3 ปุ่ม feedback postback (footer).
+def build_job_flex(project_id: str, title: str, detail: str, doc_url: str = "",
+                   with_feedback: bool = True) -> dict:
+    """สร้าง flex bubble: งาน (body) + ปุ่ม feedback postback (footer — เฉพาะ feedback authority).
+    with_feedback=False → ไม่มีปุ่ม (ครอบครัวได้แจ้งงานแต่ไม่กด feedback — กัน noise/สับสน).
     คืน contents dict (ใส่ใน message type=flex)"""
     body_contents = [
         {"type": "text", "text": "🏗️ " + title[:300], "wrap": True, "weight": "bold", "size": "sm"},
@@ -82,19 +85,33 @@ def build_job_flex(project_id: str, title: str, detail: str, doc_url: str = "") 
             "type": "button", "style": "link", "height": "sm", "margin": "md",
             "action": {"type": "uri", "label": "📋 ดูรายละเอียดงาน", "uri": doc_url},
         })
-    footer_btns = []
-    for action, label in FB_ACTIONS.items():
-        footer_btns.append({
+    bubble = {
+        "type": "bubble",
+        "body": {"type": "box", "layout": "vertical", "contents": body_contents},
+    }
+    if with_feedback:
+        footer_btns = [{
             "type": "button", "style": "secondary", "height": "sm",
             "action": {"type": "postback", "label": label,
                        "data": build_postback_data(action, project_id),
                        "displayText": label},
-        })
-    return {
-        "type": "bubble",
-        "body": {"type": "box", "layout": "vertical", "contents": body_contents},
-        "footer": {"type": "box", "layout": "vertical", "spacing": "sm", "contents": footer_btns},
-    }
+        } for action, label in FB_ACTIONS.items()]
+        bubble["footer"] = {"type": "box", "layout": "vertical", "spacing": "sm", "contents": footer_btns}
+    return bubble
+
+
+def _feedback_authority_ids() -> set:
+    """customer_id ที่มีสิทธิ์ feedback (beta: เฉพาะกัญจน์ — กัน noise จาก user ที่กดลองเล่น).
+    config/feedback_authority.json → {"customer_ids":[..]}. ไม่มีไฟล์/ว่าง = ทุกคน (backward-compat)."""
+    try:
+        p = Path(__file__).parent.parent / "config" / "feedback_authority.json"
+        if p.exists():
+            ids = json.loads(p.read_text(encoding="utf-8")).get("customer_ids")
+            if ids:
+                return set(ids)
+    except Exception:
+        pass
+    return set()
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -472,13 +489,16 @@ def main():
         log("=== LINE Sender done (dry-run) ===")
         return
 
-    # Step 5: send live — flex message + ปุ่ม feedback (postback)
+    # Step 5: send live — flex message + ปุ่ม feedback (เฉพาะ feedback authority)
     full_name = _clean_project_name(item.get("project_name") or "") or item["project_id"]
+    _auth = _feedback_authority_ids()
+    _with_fb = (not _auth) or (item["customer_id"] in _auth)
     flex = build_job_flex(
         project_id=item["project_id"],
         title=full_name,
         detail=text,
         doc_url=pdf_url,
+        with_feedback=_with_fb,
     )
     alt_text = (full_name + " | " + text)[:400]
     success, error_type, error_msg = send_line_flex(token, item["line_user_id"], alt_text, flex)

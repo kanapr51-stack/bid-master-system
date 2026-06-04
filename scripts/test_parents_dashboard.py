@@ -34,10 +34,10 @@ def main():
     rank = {r["cat"]: r["rank"] for r in d["our_rank"] if r["rank"]}
     chk(rank.get("รางระบายน้ำ/ท่อ") == 11, f"ราง rank={rank.get('รางระบายน้ำ/ท่อ')} != 11")
 
-    # trend — ไฟฟ้า โต, แหล่งน้ำ หด
-    tr = {t["cat"]: t["pct_v"] for t in d["trend"]}
-    chk(tr.get("ไฟฟ้า/ส่องสว่าง", 0) > 100, f"ไฟฟ้า trend={tr.get('ไฟฟ้า/ส่องสว่าง')}")
-    chk(tr.get("แหล่งน้ำ/ชลประทาน", 0) < 0, f"แหล่งน้ำ trend={tr.get('แหล่งน้ำ/ชลประทาน')}")
+    # trend (CAGR) — ไฟฟ้า โตจริง (บวก, สมเหตุผล ไม่ใช่ 211%), แหล่งน้ำ หด (ลบ)
+    tr = {t["cat"]: t["cagr"] for t in d["trend"]}
+    chk(0 < tr.get("ไฟฟ้า/ส่องสว่าง", 0) < 60, f"ไฟฟ้า cagr={tr.get('ไฟฟ้า/ส่องสว่าง')}")
+    chk(tr.get("แหล่งน้ำ/ชลประทาน", 0) < 0, f"แหล่งน้ำ cagr={tr.get('แหล่งน้ำ/ชลประทาน')}")
 
     # opportunity = core เทรนด์สูงสุด ที่เราไม่เล่น → ไฟฟ้า
     chk(d["opportunity"]["cat"] == "ไฟฟ้า/ส่องสว่าง", f"opportunity={d['opportunity']['cat']}")

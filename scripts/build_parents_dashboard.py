@@ -7,6 +7,7 @@ NOTE: render ใช้ template + .replace จุดเดียว (/*__DATA__*
 (กัน brace escaping พัง). ค่า dynamic ทั้งหมด render ฝั่ง JS จาก const D.
 """
 import json
+import math
 import re
 import sqlite3
 import sys
@@ -119,15 +120,31 @@ def compute_data(db):
     def avg_v(cat, ys):
         return sum(yc_v[y].get(cat, 0) for y in ys) / len(ys)
 
+    def cagr_pct(cat):
+        # โตทบต้น %/ปี จาก log-linear regression ทุกปีที่ value>0 (ทนต่อ spike/ปีฐาน — ไม่ใช้ endpoint)
+        pts = [(int(y), yc_v[y].get(cat, 0)) for y in yc_v if yc_v[y].get(cat, 0) > 0]
+        if len(pts) < 3:
+            return None
+        xs = [p[0] for p in pts]
+        ln = [math.log(p[1]) for p in pts]
+        n = len(pts)
+        mx, ml = sum(xs) / n, sum(ln) / n
+        den = sum((x - mx) ** 2 for x in xs)
+        if den == 0:
+            return None
+        slope = sum((x - mx) * (l - ml) for x, l in zip(xs, ln)) / den
+        return round((math.exp(slope) - 1) * 100, 1)
+
     trend = []
     for cat in CORE:
         ev, rv = avg_v(cat, EARLY), avg_v(cat, RECENT)
-        pct = round((rv - ev) / ev * 100, 1) if ev > 0 else None
         trend.append({"cat": cat, "label": short(cat),
-                      "early_m": round(ev / 1e6, 1), "recent_m": round(rv / 1e6, 1), "pct_v": pct})
+                      "early_m": round(ev / 1e6, 1), "recent_m": round(rv / 1e6, 1),
+                      "cagr": cagr_pct(cat)})
 
+    # โอกาส = ไม่เล่น + โตจริง (CAGR>0) → ตลาดปัจจุบันใหญ่สุด
     our_zero = {r["cat"] for r in our_rank if r["our_value_m"] == 0}
-    cands = [t for t in trend if t["cat"] in our_zero and t["pct_v"] is not None and t["pct_v"] > 0]
+    cands = [t for t in trend if t["cat"] in our_zero and t["cagr"] is not None and t["cagr"] > 0]
     opp = max(cands, key=lambda t: t["recent_m"]) if cands else max(trend, key=lambda t: t["recent_m"])
 
     area_prov = [{
@@ -261,9 +278,10 @@ canvas{max-width:100%;}
 
 <section>
 <h2>3&#65039;&#8419; หมวดไหนกำลังโต / หด</h2>
+<div class="hint">โต/ปี = อัตราโตเฉลี่ยทบต้น (CAGR) คำนวณจากแนวโน้มทุกปี — ทนต่อปีที่พุ่ง/ตกผิดปกติ</div>
 <div id="trend-rows"></div>
-<details><summary>ดูตัวเลขเทรนด์ (มูลค่า/ปี)</summary>
-<table><thead><tr><th>หมวด</th><th>61-62</th><th>67-68</th><th>เปลี่ยน</th></tr></thead>
+<details><summary>ดูตัวเลข (ช่วงต้น/ปลาย เฉลี่ย ลบ./ปี)</summary>
+<table><thead><tr><th>หมวด</th><th>61-62</th><th>67-68</th><th>โต/ปี</th></tr></thead>
 <tbody id="trend-tb"></tbody></table></details>
 </section>
 
@@ -310,7 +328,7 @@ $('tot').textContent = baht(D.total_value_m);
 $('totn').textContent = baht(D.total_jobs);
 $('bdate').textContent = D.build_date;
 $('opp-cat').textContent = D.opportunity.label;
-$('opp-detail').innerHTML = 'โต +'+D.opportunity.pct_v+'% &middot; ตลาดปัจจุบัน ~'+baht(D.opportunity.recent_m)+' ลบ./ปี';
+$('opp-detail').innerHTML = 'ตลาด ~'+baht(D.opportunity.recent_m)+' ลบ./ปี &middot; โตเฉลี่ย ~'+D.opportunity.cagr+'%/ปี &middot; เรายังไม่เล่น';
 
 // 1) market donut
 new Chart($('mkt'), {type:'doughnut',
@@ -330,11 +348,12 @@ $('rank-tb').innerHTML = D.our_rank.map(r=>
   '<tr><td>'+r.label+'</td><td>'+(r.rank||'ไม่เล่น')+'</td><td>'+r.players+'</td><td>'+r.leader+' '+r.leader_share+'%</td></tr>').join('');
 
 // 3) trend summary rows + table
-const arrow = p => p>=15?'<span class="up">📈 โต</span>':(p<=-15?'<span class="down">📉 หด</span>':'<span class="flat">➡️ ทรง</span>');
+const arrow = p => p>=5?'<span class="up">📈 โต</span>':(p<=-5?'<span class="down">📉 หด</span>':'<span class="flat">➡️ ทรง</span>');
+const cagrTxt = p => p==null?'—':((p>0?'+':'')+p+'%/ปี');
 $('trend-rows').innerHTML = D.trend.map(t=>
-  '<div class="rankrow"><span>'+t.label+'</span><span>'+(t.pct_v>0?'+':'')+t.pct_v+'% '+arrow(t.pct_v)+'</span></div>').join('');
+  '<div class="rankrow"><span>'+t.label+'</span><span>'+cagrTxt(t.cagr)+(t.cagr==null?'':' '+arrow(t.cagr))+'</span></div>').join('');
 $('trend-tb').innerHTML = D.trend.map(t=>
-  '<tr><td>'+t.label+'</td><td>'+baht(t.early_m)+'</td><td>'+baht(t.recent_m)+'</td><td>'+(t.pct_v>0?'+':'')+t.pct_v+'%</td></tr>').join('');
+  '<tr><td>'+t.label+'</td><td>'+baht(t.early_m)+'</td><td>'+baht(t.recent_m)+'</td><td>'+cagrTxt(t.cagr)+'</td></tr>').join('');
 
 // === interactive year chart: mode % / hide lines / pick years ===
 (function(){

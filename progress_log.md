@@ -4087,3 +4087,40 @@ BMS assumed `discovery reachable ⇒ resolve reachable` = เท็จ. WAF bloc
 - drop column ที่ shift (อำเภอ/วันที่สัญญา) · prices/ชื่องาน/จังหวัด ใน field ชื่อตรง = เชื่อถือได้
 - **verify-before-claim รอบ 3 ของ session** (system-python pdfplumber → page-size → CGD shift) — sanity check ก่อนประกาศทุกครั้ง
 - minor: ปีงบ inconsistent (CGD=2568 พ.ศ. / eGP-track=2026 ค.ศ.) — followup เล็ก
+
+## งานที่ N+72: winner ย้อนหลัง 3 ปี (2566-2568) ทุกงาน → SQLite + Sheet สรุป (2026-06-04)
+
+### สถานะ: ✅ เสร็จ
+
+### สิ่งที่ทำ
+- คุณกัญจน์สั่งขยาย winner ย้อนหลัง → **2567+2566** เพิ่ม + **ไม่กรอง keyword** (ทุกงานในจังหวัด)
+- **ค้นพบ dataset รายโครงการครบปี 2558-2568** บน data.go.th (ชื่อ prefix ต่างกัน: 2564-67=`cdg-contract` พิมพ์ผิด, 2558-63=`cgd-contract`, 2568=`egp-contact`). summary_cgdcontract = สรุประดับหน่วยงาน (ใช้ไม่ได้)
+- **architecture decision (กัญจน์เลือก):** 160K+ แถวดิบ = anti-pattern ใน Google Sheet → **SQLite ดิบ + Sheet สรุป**
+
+### ผล
+- `data/winner_history.db` (table winner_history, +raw_json): **187,931 งาน** (3 ปี × นครพนม+บึงกาฬ) | 28.89B บาท
+  - 2568: นพ 37,576 + บก 23,941 | 2567: นพ 58,034 + บก 36,344 | 2566: นพ 20,209 + บก 11,827
+- price_valid 99.3% · winner name **99.9%** (หลัง re-extract)
+- Sheet 3 tab: **ภาพรวม** (ผลประมูลย้อนหลัง, ปี×จว.) · **คู่แข่งรายใหญ่** (top 500) · **ตามตำบล** (top 1000)
+- พื้นที่เป้าหมายครบ: อ.บ้านแพง 3,089 · อ.บึงโขงหลง 4,561
+- quota: 225 calls (fetch) — เหลือ buffer พอ
+
+### Bug + fix (L-006 refinement)
+- winner เริ่มต้นเจอแค่ 78.9% — marker-scan เปราะ (marker "นาย " เว้นวรรค พลาด "นายไพบูลย์", ชื่อร้านไม่มี prefix)
+- **fix: detect shift จาก invariant** (ชื่อผู้ชนะ=วันที่ → winner อยู่ ละติจูดโครงการ) → 99.9%. **re-extract จาก raw_json ไม่ต้อง fetch ใหม่**
+
+### Sanity check ✅
+- 187,931 rows, price_valid 99.3%, winner 99.9%, อำเภอ/ตำบล/ราคา ไม่ shift (อยู่ก่อน coordinate block), target areas present
+
+### Scripts
+- `_winner_history_build.py` (fetch→SQLite, checkpointable) · `_winner_history_reextract.py` (re-extract จาก raw) · `_winner_history_summary.py` (→Sheet)
+- ลบ keyword-era: `_fetch_cgd_winners.py`, `_merge_winner_sheet.py`
+
+### Bonus (ระหว่างรอ fetch)
+- เช็คระบบ: 14 timers OK, worker pending=0 ไม่ติด cooldown, deadman healthy, INC-001 ไม่กลับมา
+- discovery เช้านี้: 0 งานใหม่ในอำเภอเป้าหมาย (วันเงียบปกติ)
+- เคลียร์ stale failed unit `bms-province-discovery-full.service` (ค้างจาก 2 มิ.ย., timer disabled แล้ว) → `systemctl --failed`=0
+
+### Followup
+- ปีงบ format ต่างกัน (CGD พ.ศ. / eGP-track ค.ศ.) — เล็ก
+- ขยายปีก่อน 2566 ได้อีก (มี dataset ถึง 2558) ถ้าต้องการ

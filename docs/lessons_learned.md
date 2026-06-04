@@ -32,6 +32,8 @@
 
 **How to apply:** ก่อน map external dataset → print sample values ของทุก field เทียบ label. ถ้า shift → extract by content-pattern (adaptive) + validate. อย่า trust field name. (= ญาติของ "ห้าม assume API response format โดยไม่ probe จริง" ใน CLAUDE.md)
 
+**Refinement (2026-06-04, full-dataset 188K):** marker-scan (หา field ที่มีคำ "บริษัท/นาย ...") **เปราะ** — ตอนขยายเป็นทุกงาน (ไม่กรอง keyword) เจอ winner แค่ 78.9% เพราะ (1) marker `"นาย "` มีเว้นวรรค → พลาด "นายไพบูลย์" (ติดกัน) (2) ชื่อร้าน/บุคคลไม่มี prefix เลย (ครัวอิ่มสุข, ป.การค้า). **วิธี robust กว่า = detect การ shift จาก invariant:** ถ้า `ชื่อผู้ชนะ` เป็น**วันที่** = row shift → winner จริงอยู่ `ละติจูดโครงการ` (อ่าน field ตรงตำแหน่งที่ shift ไป ไม่ใช่เดาจาก marker). กู้ 78.9% → **99.9%** (187,752/187,931). บทเรียนซ้อน: เมื่อ shift เป็น **systematic** ให้ใช้ field-position-after-shift (deterministic) > content-marker (heuristic). **เก็บ raw_json ทุก row** → re-extract ได้โดยไม่ fetch ใหม่ (ประหยัด quota, แก้ logic ย้อนหลังได้)
+
 ---
 
 ## Architecture Decision Records (ADR)

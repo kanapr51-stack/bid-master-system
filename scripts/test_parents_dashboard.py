@@ -66,6 +66,8 @@ def main():
     chk("งานอยู่พื้นที่ไหน" in html, "ไม่มี section พื้นที่")
     chk("ผลงานบริษัทเรา" in html, "ไม่มี section ผลงานเรา")
     chk("เทรนด์รายปี" in html, "ไม่มี section กราฟรายปี")
+    chk('data-mode="growth"' in html, "ไม่มีโหมดเติบโต %")
+    chk('data-type="bar"' in html and 'data-type="line"' in html, "ไม่มี toggle เส้น/แท่ง")
     chk(len(html) > 20000, f"HTML สั้นผิดปกติ ({len(html)} ตัว)")
 
     if fails:

@@ -246,6 +246,11 @@ canvas{max-width:100%;}
 <div>
 <button class="seg active" data-mode="value">มูลค่า (ลบ.)</button>
 <button class="seg" data-mode="pct">สัดส่วน %</button>
+<button class="seg" data-mode="growth">เติบโต %</button>
+</div>
+<div>
+<button class="seg active" data-type="line">เส้น</button>
+<button class="seg" data-type="bar">แท่ง</button>
 </div>
 <div class="hint">แตะชื่อหมวดเพื่อซ่อน/แสดงเส้น</div>
 <div class="chips" id="cat-chips"></div>
@@ -334,7 +339,7 @@ $('trend-tb').innerHTML = D.trend.map(t=>
 // === interactive year chart: mode % / hide lines / pick years ===
 (function(){
   const ys = D.year_series;
-  let mode = 'value';
+  let mode = 'value', ctype = 'line';
   const hidden = new Set();
   const sel = new Set(ys.years);
 
@@ -342,40 +347,45 @@ $('trend-tb').innerHTML = D.trend.map(t=>
     '<span class="chip" data-cat="'+s.label+'"><span class="dot" style="background:'+PALETTE[i]+'"></span>'+s.label+'</span>').join('');
   $('yr-chips').innerHTML = ys.years.map(y=>'<span class="chip" data-yr="'+y+'">'+y+'</span>').join('');
 
-  function build(){
+  let chart = null;
+  function draw(){
     const years = ys.years.filter(y=>sel.has(y));
     const idx = years.map(y=>ys.years.indexOf(y));
     const totals = idx.map(i=>ys.series.reduce((s,se)=>s+se.data[i],0));
     const ds = ys.series.map((se,si)=>{
-      const data = idx.map((i,k)=>mode==='pct'?(totals[k]?+(se.data[i]/totals[k]*100).toFixed(1):0):se.data[i]);
-      return {label:se.label,data:data,borderColor:PALETTE[si],backgroundColor:PALETTE[si],tension:.3,borderWidth:2,pointRadius:2,hidden:hidden.has(se.label)};
+      let data;
+      if(mode==='pct') data = idx.map((i,k)=>totals[k]?+(se.data[i]/totals[k]*100).toFixed(1):0);
+      else if(mode==='growth') data = idx.map((i,k)=>{ if(k===0) return null; const prev=se.data[idx[k-1]]; return prev>0?+((se.data[i]-prev)/prev*100).toFixed(1):null; });
+      else data = idx.map(i=>se.data[i]);
+      return {label:se.label,data:data,borderColor:PALETTE[si],backgroundColor:PALETTE[si],tension:.3,borderWidth:2,pointRadius:2,hidden:hidden.has(se.label),spanGaps:true};
     });
-    return {labels:years,datasets:ds};
+    const ylab = mode==='pct'?'สัดส่วน % (ในกลุ่มงานหลัก)':(mode==='growth'?'การเติบโต % (เทียบปีก่อน)':'มูลค่า (ลบ.)');
+    if(chart) chart.destroy();
+    chart = new Chart($('yr'), {type:ctype, data:{labels:years,datasets:ds},
+      options:{plugins:{legend:{display:false}},
+        scales:{y:{title:{display:true,text:ylab},ticks:{font:{family:'Sarabun'}}},x:{ticks:{font:{family:'Sarabun'}}}}}});
   }
-  const ch = new Chart($('yr'), {type:'line', data:build(),
-    options:{plugins:{legend:{display:false}},
-      scales:{y:{title:{display:true,text:'มูลค่า (ลบ.)'},ticks:{font:{family:'Sarabun'}}},x:{ticks:{font:{family:'Sarabun'}}}}}});
-  function refresh(){
-    const d = build();
-    ch.data.labels = d.labels; ch.data.datasets = d.datasets;
-    ch.options.scales.y.title.text = mode==='pct'?'สัดส่วน % (ในกลุ่มงานหลัก)':'มูลค่า (ลบ.)';
-    ch.update();
-  }
+  draw();
   document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{
     mode = b.dataset.mode;
     document.querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('active',x===b));
-    refresh();
+    draw();
+  });
+  document.querySelectorAll('[data-type]').forEach(b=>b.onclick=()=>{
+    ctype = b.dataset.type;
+    document.querySelectorAll('[data-type]').forEach(x=>x.classList.toggle('active',x===b));
+    draw();
   });
   $('cat-chips').querySelectorAll('.chip').forEach(el=>el.onclick=()=>{
     const c = el.dataset.cat;
     if(hidden.has(c)){hidden.delete(c);el.classList.remove('off');}else{hidden.add(c);el.classList.add('off');}
-    refresh();
+    draw();
   });
   $('yr-chips').querySelectorAll('.chip').forEach(el=>el.onclick=()=>{
     const y = el.dataset.yr;
     if(sel.has(y)){ if(sel.size<=2) return; sel.delete(y); el.classList.add('off'); }
     else { sel.add(y); el.classList.remove('off'); }
-    refresh();
+    draw();
   });
 })();
 

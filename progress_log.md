@@ -4177,3 +4177,19 @@ discovery "🎯 อำเภอเป้าหมาย: 0" แต่ enqueue 3 
 - impl: build_job_flex(with_feedback) + _feedback_authority_ids() อ่าน config/feedback_authority.json {"customer_ids":[2]} (customer_id ไม่ใช่ PII, committable). ว่าง=ทุกคน (backward-compat)
 - verified local+VPS: cust2 มีปุ่ม, cust4 ไม่มี
 - followup: feedback rows เก่าจากพ่อแม่ (exploratory) ยังอยู่ใน table — ถ้าจะวัด North Star ให้กรอง customer_id=2 หรือลบ noise ทีหลัง
+
+## งานที่ N+77: วิเคราะห์ winner + จด backlog 2 งาน (2026-06-04)
+
+### สถานะ: ✅ วิเคราะห์เสร็จ + จด backlog (จะทำ session หน้า)
+- วิเคราะห์ผลงานบริษัทกัญจน์: 316 งาน 173.8M 11 ปี. เก่ง เมืองนครพนม+บ้านแพง. **88% เฉพาะเจาะจง / 10% e-bidding**
+- audit false-positive ทุกงานที่ส่ง: เจอ 3 (เลเซอร์+อีเวนต์ 29-30พค ก่อน enforce, สกลนคร 4มิย) — กฎปัจจุบัน cut หมดแล้ว
+- วิธีจัดซื้อในข้อมูล 20 ประเภท (เฉพาะเจาะจง 91.5% / e-bidding 1.5%), proc_type shift ~61.5K
+
+### Backlog จด (กัญจน์สั่ง — ideas/future_development.md):
+1. **method_group** column + กู้ 61.5K proc_type shift
+2. **เทรน BMS classifier จากชื่องาน 617K** (label=ชื่อประเภทโครงการ). เช็ค live API มี field นี้ก่อน
+
+### Followup (ค้างจาก session นี้):
+- ตัดสินใจ: ส่งข้อความ user เรื่อง false-pos เก่า (เลเซอร์/อีเวนต์) หรือไม่
+- Sheet tab "ผลงานบริษัทเรา" (316 งาน) — offered
+- 'ราง' substring risk เหมือน ท่อ

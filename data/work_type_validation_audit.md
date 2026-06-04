@@ -26,9 +26,10 @@ primary ∉ {OTHER, UNKNOWN} = 94.8%. UNKNOWN 4.4%, OTHER 0.9%.
 - **v1.1** → เพิ่ม keyword high-precision (quantified จาก 5,918 UNKNOWN จริง ไม่เดา) → coverage 94.8%. ตัด "สำนักงาน" (ชน "วัสดุสำนักงาน").
 - **v1.2** → **แก้ tie-break: score → ตำแหน่ง(head-noun) → priority** (เดิม spec §4 = priority ก่อน position).
 
-## ⚠️ Spec deviation ที่ต้อง flag — tie-break order
-**spec §4 เขียน:** score → priority → position.
-**v1.2 ใช้:** score → **position** → priority.
+## tie-break order — REVISED & APPROVED (กัญจน์ confirm 2026-06-04)
+**spec §4 เดิม:** score → priority → position.
+**v1.2 (ปัจจุบัน, spec §4 อัปเดตแล้ว):** score → **position** → priority.
+กัญจน์ confirm คง position-first หลังเห็นว่า priority-first ตก gate + พอง backlog analytics.
 
 **เหตุผล (validation พิสูจน์ hypothesis เดิมผิดสำหรับ domain นี้):**
 - "สะพาน" เป็น priority สูงสุด → งานถนน/ราง/ขุดลอกที่อ้างถึงสะพานเป็น landmark

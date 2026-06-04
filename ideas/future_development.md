@@ -250,3 +250,11 @@ winner_history มี field `proc_type` (วิธีจัดซื้อฯ) 2
   4. LLM/embedding classifier (future, เข้าใจคำพ้อง)
 - **อย่าทำ:** fine-tune (Claude fine-tune ไม่ได้ + YAGNI 5 users) / ML กล่องดำ (ขัด "user พิมพ์ keyword เองได้")
 - **ข้อจำกัด:** ชื่องาน train ได้แค่แกน "ใช่ก่อสร้างไหม" — **ไม่ช่วย location** (ตำบล API null = ปัญหาแยก)
+
+## Work-Type Analytics — Phase 2 backlog (กัญจน์สนใจ 2026-06-04)
+ต่อยอดจาก taxonomy work_type โดยตรง (มูลค่าธุรกิจสูง):
+1. **Market size by work type** — มูลค่า+จำนวนงานรวมต่อหมวด (ทั้งตลาด/ต่อจังหวัด/ต่อปี)
+2. **Competitor market share by work type** — ส่วนแบ่งตลาด % ของแต่ละเจ้าต่อหมวด (เราอยู่อันดับไหน)
+3. **Work-type trend over time** — เทรนด์งานแต่ละหมวดตามปีงบ (หมวดไหนโต/หด)
+
+หมายเหตุ: ทั้ง 3 ข้อ **พึ่ง classification ที่แม่น** — ดู open issue tie-break (precision สะพาน).

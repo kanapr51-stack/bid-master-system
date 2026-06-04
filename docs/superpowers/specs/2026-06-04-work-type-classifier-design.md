@@ -73,12 +73,18 @@ keyword ทั้งหมดเก็บใน `config/work_type_keywords.json`
 
 ```
 1. SCORE   = จำนวน keyword "ตัวที่ไม่ซ้ำ" ต่อหมวดที่เจอในชื่อ → หมวด score สูงสุด = primary
-             (นับ distinct keyword ไม่ใช่จำนวนครั้ง — กันคำซ้ำ inflate)
-2. TIE     → priority list (เขียนชัดใน config, แก้ได้)
-3. STILL   → ตำแหน่ง keyword เร็วสุดในชื่อ (head-noun)
+             (นับ distinct keyword ไม่ใช่จำนวนครั้ง + ยุบ keyword ซ้อน — กัน inflate)
+2. TIE     → ตำแหน่ง keyword เร็วสุดในชื่อ (head-noun = งานหลัก)
+3. STILL   → priority list (fallback ชั้นสุดท้าย, แก้ได้ใน config)
 ```
 
-**priority list (tie-break, default — แก้ได้ใน config):**
+> **⚠️ REVISED 2026-06-04 (กัญจน์ confirm หลังเห็น validation):** สลับชั้น 2↔3 จากเดิม
+> (priority ก่อน position). validation 52,525 งานพิสูจน์ว่า **priority-first ทำให้ landmark
+> ("จากสะพาน", "บ้านสะพานสูง", "ถนน...ทางเข้าประปา") ถูกดูดผิดหมวด → precision สะพาน 76.7% FAIL**.
+> **position-first** (งานที่พูดถึงก่อน = งานหลัก) → 96.7% + ทุกหมวด ≥90%. ทั้งคู่ deterministic
+> เท่ากัน, position-first แม่นกว่าเพราะชื่องานราชการขึ้นต้น "ก่อสร้าง[งานหลัก]..." landmark มาท้าย.
+
+**priority list (fallback ชั้น 3 เท่านั้น — แก้ได้ใน config):**
 ```
 สะพาน > แหล่งน้ำ/ชลประทาน > อาคาร > ถนน > รางระบายน้ำ/ท่อ > ไฟฟ้า/ส่องสว่าง > ดิน/ปรับพื้นที่ > OTHER
 ```

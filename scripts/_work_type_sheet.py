@@ -64,11 +64,11 @@ def main():
     our_disc = defaultdict(list)
     # มุม 2: คู่แข่ง × หมวด -> winner -> [count, value]
     rivals = defaultdict(lambda: defaultdict(lambda: [0, 0.0]))
-    # มุม 3: ตำบล × หมวด
+    # มุม 3: (จังหวัด, อำเภอ, ตำบล) × หมวด — group 3 ชั้น กัน collision ชื่อตำบลซ้ำทั้งประเทศ
     tambon = defaultdict(Counter)
 
-    for name, winner, wp, disc, sub in c.execute(
-        "SELECT project_name, winner, win_price, discount_pct, subdistrict "
+    for name, winner, wp, disc, prov, dist, sub in c.execute(
+        "SELECT project_name, winner, win_price, discount_pct, province, district, subdistrict "
         "FROM winner_history WHERE work_type IS NOT NULL"
     ):
         cats = involvement(name)
@@ -87,10 +87,10 @@ def main():
             for ci in cats:
                 rivals[ci][winner or "(ไม่ระบุ)"][0] += 1
                 rivals[ci][winner or "(ไม่ระบุ)"][1] += wp
-        t = clean_tambon(sub)
-        if t:
+        p, d, t = clean_tambon(prov), clean_tambon(dist), clean_tambon(sub)
+        if p and d and t:  # ต้องครบ 3 ชั้น (geometry/ว่าง → ข้าม)
             for ci in cats:
-                tambon[t][ci] += 1
+                tambon[(p, d, t)][ci] += 1
     c.close()
 
     # --- Tab 1: บริษัทเรา × หมวด ---
@@ -110,12 +110,12 @@ def main():
         for i, (w, (n, val)) in enumerate(top, 1):
             r2.append([cat if i == 1 else "", i, (w or "")[:50], n, round(val / 1e6, 2)])
 
-    # --- Tab 3: ตำบล × หมวด (top 40 ตำบลตามจำนวนงานรวม) ---
-    h3 = ["ตำบล"] + CORE + ["รวม"]
+    # --- Tab 3: (จังหวัด/อำเภอ/ตำบล) × หมวด (top 40 ตามจำนวนงานรวม) ---
+    h3 = ["จังหวัด", "อำเภอ", "ตำบล"] + CORE + ["รวม"]
     top_t = sorted(tambon.items(), key=lambda x: -sum(x[1].values()))[:40]
     r3 = []
-    for t, cnt in top_t:
-        row = [t] + [cnt.get(cat, 0) for cat in CORE] + [sum(cnt.values())]
+    for (p, d, t), cnt in top_t:
+        row = [p, d, t] + [cnt.get(cat, 0) for cat in CORE] + [sum(cnt.values())]
         r3.append(row)
 
     gc = get_client()

@@ -4192,4 +4192,32 @@ discovery "🎯 อำเภอเป้าหมาย: 0" แต่ enqueue 3 
 ### Followup (ค้างจาก session นี้):
 - ตัดสินใจ: ส่งข้อความ user เรื่อง false-pos เก่า (เลเซอร์/อีเวนต์) หรือไม่
 - Sheet tab "ผลงานบริษัทเรา" (316 งาน) — offered
-- 'ราง' substring risk เหมือน ท่อ
+- ~~'ราง' substring risk เหมือน ท่อ~~ → ทำใน N+78
+
+## งานที่ N+78: audit substring false-match keyword ทั้งชุด (2026-06-04)
+
+### สถานะ: ✅ เสร็จ (local) — รอ confirm deploy VPS + push
+
+### สิ่งที่ทำ
+- audit keyword สั้นทุกตัวกับชื่องานจริง **617K** (winner_history.db) → `scripts/_audit_substring_kw.py` + `data/_audit_substring_kw.txt`
+- เจอ false-match จริง 2 ตัว:
+  - **'ราง'**: ตารางเมตร (2,428), ถ้วย/ของรางวัล (349), วรางกูร พระนาม (41)
+  - **'ท่อ'**: ท่อน = ท่อนพันธุ์/ซุง (เกษตร)
+- ตัวอื่น (ฝาย/รั้ว/โยธา/สะพาน/กำแพง) ชนชื่อสถานที่ — โดน tambon-AND กรองอยู่แล้ว ไม่เร่งด่วน
+
+### Fix (job_matcher.py `_KEYWORD_GUARDS`)
+- `ราง`: `(?<!ตา)ราง(?!วัล|กูร)`
+- `ท่อ`: `ท่อ(?!ง)(?!น(?!้))` — refined จาก verify ชั้น 2
+
+### 🐛 จับได้ตอน verify (สำคัญ): guard รอบแรก `ท่อ(?![งน])` บล็อก **"ท่อน้ำ" (ท่อน้ำประปา=ท่อจริง 164 งาน)** = false-negative บน keyword หลัก → refined ให้ allow เฉพาะ ท่อน้ำ (น ตามด้วย ้)
+
+### ผล (verify กับ 617K)
+- match 77,170 → 73,974 · ตัด noise **3,196 (4.1%)** ทั้งหมดเป็น ถ้วยรางวัล/ท่องเที่ยว/ตารางสอน/ท่อนพันธุ์
+- **ท่อน้ำ pipe 164/164 เก็บครบ** · unit 11 เคส + module test PASS
+
+### Lesson (L-007)
+substring guard ภาษาไทยต้อง verify 2 ทิศ: ไม่ใช่แค่ "ตัด noise ถูกไหม" แต่ "ตัดของจริงไปด้วยรึเปล่า" — "ท่อน้ำ" เกือบหายเพราะ guard เหวี่ยง
+
+### Followup เหลือ
+- recall note: ตารางเมตร เคยบังเอิญจับ โดม/ศาลา/ฝ้า (ไม่มี keyword หลัก) — ถ้าอยากได้งานพวกนี้ = เพิ่ม keyword (อาคาร?) ไม่ใช่พึ่ง ตารางเมตร
+- deploy VPS (scp job_matcher.py — deploy-debt git stuck) + push : รอ confirm

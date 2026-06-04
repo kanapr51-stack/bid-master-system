@@ -4151,3 +4151,12 @@ BMS assumed `discovery reachable ⇒ resolve reachable` = เท็จ. WAF bloc
 
 ### telemetry note
 discovery "🎯 อำเภอเป้าหมาย: 0" แต่ enqueue 3 — เพราะ target-count นับตอน discovery (ก่อน resolve ตำบล), qualify เกิดที่ worker. ป้ายอาจทำให้เข้าใจผิด (minor)
+
+## งานที่ N+74: ขยาย winner ย้อนหลังครบ 11 ปี (2558-2568) (2026-06-04)
+
+### สถานะ: ✅ เสร็จ
+- ค้นพบ CGD มี dataset รายโครงการครบ 2558-2568 (RID เก็บ data/_cgd_rids_58_65.json + _67_66)
+- build script ทำ quota-safe (None=abort ไม่ mark done) + รวมทุกปี + resume ได้
+- **617,357 แถว** (เดิม 187,931) | winner 100.0% (reextract) | price_valid 92.1%
+- Sheet สรุปอัปเดต: ภาพรวม 23 rows (11ปี×2จว.) + คู่แข่ง 500 + ตามตำบล 1000
+- หมายเหตุ: 2559-2560 records น้อย (dataset source เบาบาง), quota วันนี้ไหวหมดไม่ต้อง resume

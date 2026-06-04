@@ -104,3 +104,5 @@ data/_cgd_winners_raw.json
 data/_cgd_winners_67_66_raw.json
 data/winner_history.db
 data/_wh_fetch_ckpt.json
+.vercel
+dashboard/parents/.vercel

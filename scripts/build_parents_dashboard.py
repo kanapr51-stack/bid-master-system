@@ -10,6 +10,7 @@ import json
 import math
 import re
 import sqlite3
+import statistics
 import sys
 from collections import defaultdict
 from datetime import datetime
@@ -135,17 +136,54 @@ def compute_data(db):
         slope = sum((x - mx) * (l - ml) for x, l in zip(xs, ln)) / den
         return round((math.exp(slope) - 1) * 100, 1)
 
+    def cv_pct(cat):
+        # ผันผวน % = ส่วนเบี่ยงเบนมาตรฐาน ÷ ค่าเฉลี่ย (CV) ของมูลค่ารายปี — สูง=เหวี่ยงแรง/เสี่ยง
+        vals = [yc_v[y].get(cat, 0) for y in yc_v if yc_v[y].get(cat, 0) > 0]
+        if len(vals) < 3:
+            return None
+        m = sum(vals) / len(vals)
+        return round(statistics.pstdev(vals) / m * 100) if m else None
+
     trend = []
     for cat in CORE:
         ev, rv = avg_v(cat, EARLY), avg_v(cat, RECENT)
         trend.append({"cat": cat, "label": short(cat),
                       "early_m": round(ev / 1e6, 1), "recent_m": round(rv / 1e6, 1),
-                      "cagr": cagr_pct(cat)})
+                      "cagr": cagr_pct(cat), "vol": cv_pct(cat)})
 
-    # โอกาส = ไม่เล่น + โตจริง (CAGR>0) → ตลาดปัจจุบันใหญ่สุด
+    # โอกาส = เทียบ 3 ทาง (เจาะลึกของเรา + 2 ตลาดใหม่ที่โต) พร้อม จุดเด่น/จุดระวัง — ไม่ fix คำตอบเดียว
     our_zero = {r["cat"] for r in our_rank if r["our_value_m"] == 0}
-    cands = [t for t in trend if t["cat"] in our_zero and t["cagr"] is not None and t["cagr"] > 0]
-    opp = max(cands, key=lambda t: t["recent_m"]) if cands else max(trend, key=lambda t: t["recent_m"])
+    avg_by_cat = {m["cat"]: m["avg_m"] for m in market}
+    rank_by_cat = {r["cat"]: r["rank"] for r in our_rank}
+    PRODUCT = {"รางระบายน้ำ/ท่อ"}  # สินค้าหลัก BSC = คอนกรีตสำเร็จรูป (ราง/ท่อ)
+
+    def opp_entry(cat):
+        t = next(x for x in trend if x["cat"] == cat)
+        ours, rk = cat in PRODUCT, rank_by_cat.get(cat)
+        cg, vol, rm = t["cagr"], t["vol"], t["recent_m"]
+        pros, cons = [], []
+        if ours:
+            pros.append("เป็นสินค้าเรา (คอนกรีตสำเร็จรูป) — ทำได้เลย")
+        if cg is not None and cg >= 15:
+            pros.append(f"โตเร็ว {cg}%/ปี")
+        if rm >= 140:
+            pros.append(f"ตลาดใหญ่ ~{rm:.0f} ลบ./ปี")
+        if rk:
+            pros.append(f"เรามีฐานแล้ว (อันดับ {rk})")
+        if vol is not None and vol >= 80:
+            cons.append(f"ผันผวนสูง {vol}% (เสี่ยง/อาจเป็นงานนโยบาย)")
+        if avg_by_cat.get(cat, 0) < 0.4:
+            cons.append("งานเล็ก margin บาง")
+        if not ours:
+            cons.append("นอกสายคอนกรีตสำเร็จรูป")
+        return {"label": t["label"], "recent_m": rm, "cagr": cg, "vol": vol, "rank": rk,
+                "tag": "เจาะลึก (สินค้าเรา)" if ours else "ตลาดใหม่", "pros": pros, "cons": cons}
+
+    played = [r["cat"] for r in our_rank if r["rank"]]
+    deepen = max(played, key=lambda c: next((x["cagr"] or -99) for x in trend if x["cat"] == c))
+    newcats = [t["cat"] for t in sorted(trend, key=lambda x: -x["recent_m"])
+               if t["cat"] in our_zero and (t["cagr"] or 0) > 0][:2]
+    opportunities = [opp_entry(deepen)] + [opp_entry(c) for c in newcats]
 
     area_prov = [{
         "prov": prov, "total_m": round(sum(prov_v[prov].values()) / 1e6, 0),
@@ -176,7 +214,7 @@ def compute_data(db):
     return {
         "total_value_m": round(total_v / 1e6, 0), "total_jobs": total_n,
         "year_min": min(years), "year_max": max(years),
-        "market": market, "our_rank": our_rank, "trend": trend, "opportunity": opp,
+        "market": market, "our_rank": our_rank, "trend": trend, "opportunities": opportunities,
         "competitors": competitors, "area_prov": area_prov, "area_tambon": area_tambon,
         "our_jobs": our_jobs, "our_total_m": our_total_m, "our_year_rows": our_year_rows,
         "year_series": year_series,
@@ -278,17 +316,17 @@ canvas{max-width:100%;}
 
 <section>
 <h2>3&#65039;&#8419; หมวดไหนกำลังโต / หด</h2>
-<div class="hint">โต/ปี = อัตราโตเฉลี่ยทบต้น (CAGR) คำนวณจากแนวโน้มทุกปี — ทนต่อปีที่พุ่ง/ตกผิดปกติ</div>
+<div class="hint">โต/ปี = อัตราโตเฉลี่ยทบต้น (CAGR) ทุกปี · ผันผวน = ตลาดเหวี่ยงแรงแค่ไหน (สูง=เสี่ยง)</div>
 <div id="trend-rows"></div>
 <details><summary>ดูตัวเลข (ช่วงต้น/ปลาย เฉลี่ย ลบ./ปี)</summary>
-<table><thead><tr><th>หมวด</th><th>61-62</th><th>67-68</th><th>โต/ปี</th></tr></thead>
+<table><thead><tr><th>หมวด</th><th>61-62</th><th>67-68</th><th>โต/ปี</th><th>ผันผวน</th></tr></thead>
 <tbody id="trend-tb"></tbody></table></details>
 </section>
 
 <section>
-<h2>&#128161; โอกาส</h2>
-<div class="opp"><div>หมวดที่โตแรงสุด และเรายังไม่เล่น</div>
-<div class="n" id="opp-cat"></div><div id="opp-detail"></div></div>
+<h2>&#128161; โอกาสที่น่าพิจารณา — 3 ทาง</h2>
+<div class="hint">แต่ละทางมีจุดเด่น/จุดระวัง ไม่มีคำตอบเดียว — ดูแล้วตัดสินใจเอง</div>
+<div id="opps"></div>
 </section>
 
 <section>
@@ -327,8 +365,13 @@ $('ttl').textContent = 'สรุปผลการวิเคราะห์�
 $('tot').textContent = baht(D.total_value_m);
 $('totn').textContent = baht(D.total_jobs);
 $('bdate').textContent = D.build_date;
-$('opp-cat').textContent = D.opportunity.label;
-$('opp-detail').innerHTML = 'ตลาด ~'+baht(D.opportunity.recent_m)+' ลบ./ปี &middot; โตเฉลี่ย ~'+D.opportunity.cagr+'%/ปี &middot; เรายังไม่เล่น';
+$('opps').innerHTML = D.opportunities.map(o=>{
+  const head = '<div class="medal">'+o.label+' <span class="sub">· '+o.tag+'</span></div>';
+  const stat = '<div class="sub">ตลาด ~'+baht(o.recent_m)+' ลบ./ปี &middot; โต '+(o.cagr==null?'—':o.cagr+'%/ปี')+' &middot; ผันผวน '+(o.vol==null?'—':o.vol+'%')+(o.rank?' &middot; เราอันดับ '+o.rank:' &middot; ยังไม่เล่น')+'</div>';
+  const pros = o.pros.map(p=>'<div style="color:#2e7d32;font-size:13px">✓ '+p+'</div>').join('');
+  const cons = o.cons.map(c=>'<div style="color:#C62828;font-size:13px">▲ '+c+'</div>').join('');
+  return '<div class="card">'+head+stat+'<div style="margin-top:6px">'+pros+cons+'</div></div>';
+}).join('');
 
 // 1) market donut
 new Chart($('mkt'), {type:'doughnut',
@@ -353,7 +396,7 @@ const cagrTxt = p => p==null?'—':((p>0?'+':'')+p+'%/ปี');
 $('trend-rows').innerHTML = D.trend.map(t=>
   '<div class="rankrow"><span>'+t.label+'</span><span>'+cagrTxt(t.cagr)+(t.cagr==null?'':' '+arrow(t.cagr))+'</span></div>').join('');
 $('trend-tb').innerHTML = D.trend.map(t=>
-  '<tr><td>'+t.label+'</td><td>'+baht(t.early_m)+'</td><td>'+baht(t.recent_m)+'</td><td>'+cagrTxt(t.cagr)+'</td></tr>').join('');
+  '<tr><td>'+t.label+'</td><td>'+baht(t.early_m)+'</td><td>'+baht(t.recent_m)+'</td><td>'+cagrTxt(t.cagr)+'</td><td>'+(t.vol==null?'—':t.vol+'%')+'</td></tr>').join('');
 
 // === interactive year chart: mode % / hide lines / pick years ===
 (function(){
@@ -446,7 +489,7 @@ def main():
         json.dumps({"cleanUrls": True, "trailingSlash": False}, indent=2), encoding="utf-8")
     size = (out_dir / "index.html").stat().st_size
     print(f"✅ เขียน {out_dir / 'index.html'}  ({size:,} bytes)")
-    print(f"ตลาด {data['total_value_m']:,.0f} ลบ. · ผลงานเรา {len(data['our_jobs'])} งาน · โอกาส: {data['opportunity']['label']}")
+    print(f"ตลาด {data['total_value_m']:,.0f} ลบ. · ผลงานเรา {len(data['our_jobs'])} งาน · โอกาส: {', '.join(o['label'] for o in data['opportunities'])}")
 
 
 if __name__ == "__main__":

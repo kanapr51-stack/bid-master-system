@@ -39,8 +39,15 @@ def main():
     chk(0 < tr.get("ไฟฟ้า/ส่องสว่าง", 0) < 60, f"ไฟฟ้า cagr={tr.get('ไฟฟ้า/ส่องสว่าง')}")
     chk(tr.get("แหล่งน้ำ/ชลประทาน", 0) < 0, f"แหล่งน้ำ cagr={tr.get('แหล่งน้ำ/ชลประทาน')}")
 
-    # opportunity = core เทรนด์สูงสุด ที่เราไม่เล่น → ไฟฟ้า
-    chk(d["opportunity"]["cat"] == "ไฟฟ้า/ส่องสว่าง", f"opportunity={d['opportunity']['cat']}")
+    # opportunities = 3 ทาง: เจาะลึก(ราง/ท่อ สินค้าเรา) + 2 ตลาดใหม่ (ไฟฟ้า/ดิน)
+    opp_labels = [o["label"] for o in d["opportunities"]]
+    chk(len(d["opportunities"]) == 3, f"opportunities count={len(d['opportunities'])}")
+    chk(d["opportunities"][0]["label"] == "ราง/ท่อ", f"deepen={opp_labels[0]}")
+    chk("ไฟฟ้า/ส่องสว่าง" in opp_labels, f"opps={opp_labels}")
+    chk(d["opportunities"][0]["pros"], "ราง ควรมีจุดเด่น")
+    # volatility (CV): ดิน ผันผวนสูงกว่า ถนน (ถนนนิ่ง)
+    vol = {t["cat"]: t["vol"] for t in d["trend"]}
+    chk(vol.get("ดิน/ปรับพื้นที่", 0) > vol.get("ถนน", 999), f"ดิน vol {vol.get('ดิน/ปรับพื้นที่')} ควร > ถนน {vol.get('ถนน')}")
 
     # รายละเอียดเพิ่ม: competitors / area / our_jobs / year_series
     chk(len(d["competitors"]) == 7, f"competitors cats={len(d['competitors'])}")
@@ -73,7 +80,7 @@ def main():
     if fails:
         print("❌ FAIL:\n" + "\n".join("  " + f for f in fails))
         sys.exit(1)
-    print(f"✅ PASS — total {d['total_value_m']:,.0f} ลบ., opportunity={d['opportunity']['label']}, html={len(html):,} ตัว")
+    print(f"✅ PASS — total {d['total_value_m']:,.0f} ลบ., opportunities={opp_labels}, html={len(html):,} ตัว")
 
 
 if __name__ == "__main__":

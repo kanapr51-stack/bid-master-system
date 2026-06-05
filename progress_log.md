@@ -4354,3 +4354,27 @@ tie-break เปลี่ยนจาก spec §4 (priority ก่อน positio
 ### Followup
 - DB migration work_type ยังไม่ re-run หลัง normalize+vocab (analytics tab ยังเป็นค่าเก่า) — รัน `migrate_work_type_column.py` เมื่อ vocab นิ่ง
 - validation txt artifacts ใน data/ ยังไม่ commit (เยอะ) — ตัดสินใจ gitignore
+
+---
+
+## งานที่ N+84: Construction Vocab batch 3 — UNKNOWN 2.6%→2.1% (2026-06-05)
+
+### สถานะ: ✅ เสร็จ
+
+### วิธี: data-driven จาก UNKNOWN sample จริง (ไม่ใช่ gap list)
+อ่าน `data/work_type_unknown_sample.txt` (200 งานที่ classifier แพ้) → เห็น pattern ซ้ำ → เลือก 23 คำชัวร์ที่ map หมวดได้ + เลี่ยงคำโลภ. `scripts/_vocab_approve_batch3.py` ต่าง batch ก่อน: **เติม term ใหม่เข้าคลังถ้ายังไม่มี** (คลัง=source of truth) แล้ว sync.
+
+### คำที่เพิ่ม (23 → classifier kw 127→150, matcher 66→89)
+- อาคาร: เสาธง, ที่จอดรถ, ตลาดสด, โดม, ลานเอนกประสงค์, ผนังกันดิน, ทางลาดสำหรับ/ผู้พิการ/คนพิการ
+- แหล่งน้ำ: ทางน้ำล้น, คันพนัง, หอถัง, ถังเก็บน้ำ
+- รางระบายน้ำ/ท่อ: ทางระบายน้ำ · สะพาน: บล็อกคอนเวิร์ส · ถนน: ทางจักรยาน
+- ไฟฟ้า: ระบบจำหน่าย, ฟีดเดอร์, โซล่าเซลล์ · OTHER: สนามเด็กเล่น/ฟุตบอล/วอลเลย์บอล/บาสเกตบอล
+
+### Sanity (ทำครบก่อน commit)
+1. **unit test จับ regression:** `อเนกประสงค์`→อาคาร ไปทับ `สนามกีฬาอเนกประสงค์` (ควร OTHER) → ทิ้งคำเปล่า ใช้ `โดม` แทน
+2. **precision audit (targeted, สุ่มงานจริงต่อคำ):** `จักรยาน` เปล่าไปจับ `จักรยานยนต์` (มอ'ไซค์) → เปลี่ยนเป็น `ทางจักรยาน` (ครอบ "เส้นทางจักรยาน" ในตัว). คำอื่น mismatch ส่วนใหญ่ = ถูกหมวดอื่นจริง (เช่น "ถนนข้างตลาดสด"→ถนน ✓)
+3. **validate 52,525 งาน:** coverage 97.0% · UNKNOWN 2.6%→**2.1%** · OTHER 0.9%
+
+### Followup
+- DB migration work_type ยังไม่ re-run (analytics tab ยังเป็นค่าเก่า) — รันเมื่อ vocab นิ่ง
+- validation txt artifacts ใน data/ ยังไม่ commit (เยอะ) — ตัดสินใจ gitignore

@@ -757,8 +757,8 @@
         "โครงการปรับปรุงซ่อมแซมตลาดสดเทศบาลตำบลธาตุพนม"
       ],
       "gap": "classifier",
-      "category": "",
-      "status": "candidate",
+      "category": "อาคาร",
+      "status": "approved",
       "guard": null
     },
     {
@@ -955,8 +955,8 @@
         "จ้างทำที่จอดรถยนต์และรถจักรยานยนต์ คณะวิทยาการจัดการและเทคโนโลยีสารสนเ"
       ],
       "gap": "classifier",
-      "category": "",
-      "status": "candidate",
+      "category": "อาคาร",
+      "status": "approved",
       "guard": null
     },
     {
@@ -1153,8 +1153,8 @@
         "จ้างโครงการก่อสร้างเสาธงสำนักงานเทศบาลตำบลเรณูนคร โดยวิธีเฉพาะเจาะจง"
       ],
       "gap": "classifier",
-      "category": "",
-      "status": "candidate",
+      "category": "อาคาร",
+      "status": "approved",
       "guard": null
     },
     {
@@ -1868,8 +1868,8 @@
         "จ้างก่อสร้างทางน้ำล้นคอนกรีตเสริมเหล็ก บ้านดอนม่วง หมู่ที่ ๙ โดยวิธีเฉ"
       ],
       "gap": "classifier",
-      "category": "",
-      "status": "candidate",
+      "category": "แหล่งน้ำ/ชลประทาน",
+      "status": "approved",
       "guard": null
     },
     {
@@ -2451,8 +2451,8 @@
         "ประกวดราคาจ้างก่อสร้างโครงการก่อสร้างสนามฟุตบอลหญ้าเทียม ดงบาก หมู่ที่"
       ],
       "gap": "classifier",
-      "category": "",
-      "status": "candidate",
+      "category": "OTHER",
+      "status": "approved",
       "guard": null
     },
     {
@@ -2738,7 +2738,7 @@
       ],
       "gap": "classifier",
       "category": "อาคาร",
-      "status": "candidate",
+      "status": "approved",
       "guard": null
     },
     {
@@ -2990,8 +2990,8 @@
         "จ้างโครงการก่อสร้างบล็อกคอนเวิร์ส ขนาด 2 ช่อง x 1.80 ม. X 1.80 ม .ยาว "
       ],
       "gap": "classifier",
-      "category": "",
-      "status": "candidate",
+      "category": "สะพาน",
+      "status": "approved",
       "guard": null
     },
     {
@@ -3452,8 +3452,8 @@
         "จ้างก่อสร้างหอถังสูง ขนาด 10 ลูกบาศก์เมตร(ถังไฟเบอร์กลาส 4 ถัง) หมู่ที"
       ],
       "gap": "classifier",
-      "category": "อาคาร",
-      "status": "candidate",
+      "category": "แหล่งน้ำ/ชลประทาน",
+      "status": "approved",
       "guard": null
     },
     {
@@ -5083,6 +5083,111 @@
       "category": "",
       "status": "candidate",
       "guard": null
+    },
+    {
+      "term": "ลานเอนกประสงค์",
+      "category": "อาคาร",
+      "status": "approved",
+      "freq": null,
+      "source": "unknown_sample_n84"
+    },
+    {
+      "term": "ผนังกันดิน",
+      "category": "อาคาร",
+      "status": "approved",
+      "freq": null,
+      "source": "unknown_sample_n84"
+    },
+    {
+      "term": "ทางลาดสำหรับ",
+      "category": "อาคาร",
+      "status": "approved",
+      "freq": null,
+      "source": "unknown_sample_n84"
+    },
+    {
+      "term": "ทางลาดผู้พิการ",
+      "category": "อาคาร",
+      "status": "approved",
+      "freq": null,
+      "source": "unknown_sample_n84"
+    },
+    {
+      "term": "ทางลาดคนพิการ",
+      "category": "อาคาร",
+      "status": "approved",
+      "freq": null,
+      "source": "unknown_sample_n84"
+    },
+    {
+      "term": "คันพนัง",
+      "category": "แหล่งน้ำ/ชลประทาน",
+      "status": "approved",
+      "freq": null,
+      "source": "unknown_sample_n84"
+    },
+    {
+      "term": "ถังเก็บน้ำ",
+      "category": "แหล่งน้ำ/ชลประทาน",
+      "status": "approved",
+      "freq": null,
+      "source": "unknown_sample_n84"
+    },
+    {
+      "term": "ทางระบายน้ำ",
+      "category": "รางระบายน้ำ/ท่อ",
+      "status": "approved",
+      "freq": null,
+      "source": "unknown_sample_n84"
+    },
+    {
+      "term": "ทางจักรยาน",
+      "category": "ถนน",
+      "status": "approved",
+      "freq": null,
+      "source": "unknown_sample_n84"
+    },
+    {
+      "term": "ระบบจำหน่าย",
+      "category": "ไฟฟ้า/ส่องสว่าง",
+      "status": "approved",
+      "freq": null,
+      "source": "unknown_sample_n84"
+    },
+    {
+      "term": "ฟีดเดอร์",
+      "category": "ไฟฟ้า/ส่องสว่าง",
+      "status": "approved",
+      "freq": null,
+      "source": "unknown_sample_n84"
+    },
+    {
+      "term": "โซล่าเซลล์",
+      "category": "ไฟฟ้า/ส่องสว่าง",
+      "status": "approved",
+      "freq": null,
+      "source": "unknown_sample_n84"
+    },
+    {
+      "term": "สนามเด็กเล่น",
+      "category": "OTHER",
+      "status": "approved",
+      "freq": null,
+      "source": "unknown_sample_n84"
+    },
+    {
+      "term": "สนามวอลเลย์บอล",
+      "category": "OTHER",
+      "status": "approved",
+      "freq": null,
+      "source": "unknown_sample_n84"
+    },
+    {
+      "term": "สนามบาสเกตบอล",
+      "category": "OTHER",
+      "status": "approved",
+      "freq": null,
+      "source": "unknown_sample_n84"
     }
   ]
 }

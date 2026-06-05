@@ -16,6 +16,7 @@ interim fix (Windows หยุด push data) แก้ deploy conflict แล้
 (tested + fail-loud + no caller = near-zero risk; "สะพานที่สร้างไว้แต่ยังไม่เปิดจราจร").
 """
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -53,6 +54,23 @@ def runtime_path(name: str) -> Path:
 def asset_path(name: str) -> Path:
     """path ของ read-only asset (config / seed / lookup) ใน repo — ห้ามเขียน runtime ที่นี่."""
     return (_REPO_ROOT / "data" / name).resolve()
+
+
+def heal_legacy_state(*names: str) -> list:
+    """dual-read transition (time-boxed, ถอด Phase 4): ถ้า runtime file หายแต่ legacy app/data มี
+    → copy + LOG ดังๆ (= copy migration พลาด, ต้องสืบ). คืน list ที่ heal. ไม่ทับ runtime ที่มีอยู่."""
+    healed = []
+    for name in names:
+        new = runtime_path(name)
+        if new.exists():
+            continue
+        old = (_REPO_ROOT / "data" / name)
+        if old.exists():
+            shutil.copy2(old, new)
+            print(f"[bms_paths] ⚠️ DUAL-READ HEAL: {name} หายใน {RUNTIME_DIR} → copy จาก {old} "
+                  f"(migration copy พลาด? ต้องสืบ)", file=sys.stderr)
+            healed.append(name)
+    return healed
 
 
 def log_paths(*names: str) -> None:

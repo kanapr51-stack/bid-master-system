@@ -4376,5 +4376,26 @@ tie-break เปลี่ยนจาก spec §4 (priority ก่อน positio
 3. **validate 52,525 งาน:** coverage 97.0% · UNKNOWN 2.6%→**2.1%** · OTHER 0.9%
 
 ### Followup
-- DB migration work_type ยังไม่ re-run (analytics tab ยังเป็นค่าเก่า) — รันเมื่อ vocab นิ่ง
-- validation txt artifacts ใน data/ ยังไม่ commit (เยอะ) — ตัดสินใจ gitignore
+- ~~DB migration work_type re-run~~ ✅ N+85
+- ~~validation txt artifacts gitignore~~ ✅ N+84 (commit 2e5108f)
+
+---
+
+## งานที่ N+85: DB migration work_type re-run + analytics refresh (2026-06-05)
+
+### สถานะ: ✅ เสร็จ (Sheet) · ⏸ Parents Dashboard รอ confirm redeploy
+
+### สิ่งที่ทำ
+หลัง vocab batch 1-3 (classifier v1.2 + 23 คำใหม่) → recompute work_type column ทั้ง DB แล้ว refresh analytics tabs ให้ตรงค่าใหม่.
+1. `migrate_work_type_column.py` — snapshot 617,357 rows → recompute 52,525 งานก่อสร้าง (8s, idempotent). distribution ตรง validate เป๊ะ (ถนน 27,280 / อาคาร 8,690 / UNKNOWN 1,077=2.1%)
+2. re-run 4 analytics scripts → Sheet:
+   - `_work_type_sheet` (3 tab: บริษัทเรา/คู่แข่ง/ตำบล) — ใช้ column เป็น filter + recompute runtime
+   - `_market_size_sheet` (3 tab) — ตลาดรวม 46,063 ลบ.
+   - `_competitor_share_sheet` (2 tab) · `_trend_sheet` (2 tab)
+
+### Sanity
+- DB: total 617,357 ✓ · tagged 52,525 ✓ · UNKNOWN 1,077 (ตรง validate)
+- ทุก tab เขียนสำเร็จ (exit 0)
+
+### Followup
+- **Parents Dashboard** (`build_parents_dashboard.py` → parents-sigma.vercel.app) อ่าน work_type column ตรงๆ → live ยังเป็นค่าก่อน batch3. rebuild+redeploy ได้ทันที (impact เล็ก: UNKNOWN ลด ~260 งานจาก 46K) — รอ confirm เพราะ outward-facing

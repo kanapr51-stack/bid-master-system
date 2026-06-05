@@ -20,13 +20,13 @@ BACKUP = ROOT / "backups"
 SHEET_ID = "1gz7qLDIWphDhqxLf8Pxm08_cPmNb_IXTDvyxm6uThps"
 
 
-def sync_into_configs(approved, wt, mp):
-    """เติม term approved เข้า config (additive, idempotent). แก้ wt, mp in-place.
+def sync_into_configs(approved, rejected, wt, mp):
+    """sync คลัง → config (idempotent, in-place). approved เติม, rejected ลบ.
     classifier: ตามหมวด (สากล). matcher: ทุกคำงานก่อสร้าง (company-agnostic, recall กว้าง —
-    per-company category selection = อนาคต multi-tenant, ไม่ผูกบริษัทเดียว)."""
+    per-company category selection = อนาคต multi-tenant). rejected term มาจากคลัง (mining กรอง
+    คำที่มีใน config แล้วออก) → ลบได้ปลอดภัย ไม่โดน keyword ดั้งเดิม."""
     for e in approved:
         term, cat = e["term"], e.get("category") or ""
-        # classifier (ต้องมีหมวด)
         if cat and cat != "OTHER" and cat in wt["categories"]:
             if term not in wt["categories"][cat]:
                 wt["categories"][cat].append(term)
@@ -35,9 +35,20 @@ def sync_into_configs(approved, wt, mp):
                 wt["other_keywords"].append(term)
         if e.get("guard"):
             wt.setdefault("guards", {})[term] = e["guard"]
-        # matcher: ทุก term approved (คำงานก่อสร้างจริง) → recall กว้าง
         if term not in mp["keywords"]:
             mp["keywords"].append(term)
+
+    # rejected → ลบออกจากทุกที่ (กรณีเคย approve แล้วเปลี่ยนใจ)
+    for e in rejected:
+        term = e["term"]
+        for kws in wt["categories"].values():
+            if term in kws:
+                kws.remove(term)
+        if term in wt["other_keywords"]:
+            wt["other_keywords"].remove(term)
+        wt.get("guards", {}).pop(term, None)
+        if term in mp["keywords"]:
+            mp["keywords"].remove(term)
 
 
 def main():
@@ -58,7 +69,7 @@ def main():
         }
 
     vocab = json.loads(VOCAB.read_text(encoding="utf-8"))
-    approved = []
+    approved, rejected = [], []
     for e in vocab["terms"]:
         rv = review.get(e["term"])
         if rv:
@@ -70,6 +81,8 @@ def main():
                 e["status"] = "rejected"
         if e["status"] == "approved":
             approved.append(e)
+        elif e["status"] == "rejected":
+            rejected.append(e)
     VOCAB.write_text(json.dumps(vocab, ensure_ascii=False, indent=2), encoding="utf-8")
 
     BACKUP.mkdir(exist_ok=True)
@@ -79,11 +92,12 @@ def main():
     wt = json.loads(WT.read_text(encoding="utf-8"))
     mp = json.loads(MP.read_text(encoding="utf-8"))
     before = (sum(len(v) for v in wt["categories"].values()) + len(wt["other_keywords"]), len(mp["keywords"]))
-    sync_into_configs(approved, wt, mp)
+    sync_into_configs(approved, rejected, wt, mp)
     after = (sum(len(v) for v in wt["categories"].values()) + len(wt["other_keywords"]), len(mp["keywords"]))
     WT.write_text(json.dumps(wt, ensure_ascii=False, indent=2), encoding="utf-8")
     MP.write_text(json.dumps(mp, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"✅ approved {len(approved)} | classifier kw {before[0]}→{after[0]} | matcher kw {before[1]}→{after[1]}")
+    print(f"✅ approved {len(approved)} | rejected {len(rejected)} | "
+          f"classifier kw {before[0]}→{after[0]} | matcher kw {before[1]}→{after[1]}")
 
 
 if __name__ == "__main__":

@@ -498,9 +498,37 @@ Expected: จด inventory ใน runbook ว่าทุกไฟล์ = A ห
 
 ---
 
-## PHASE 2 — Migrate live state + Git sync VPS (in maintenance window, timers ยัง stop)
+## PHASE 2 — Migrate live state + Git sync VPS (maintenance window)
 
-> ✅ ก่อนเริ่ม: ยืนยัน Phase 0 backup ครบ + timers stopped + Phase 1 อยู่บน origin/main แล้ว
+> ✅ ก่อนเริ่ม: Phase 0-1 COMPLETE (backup ครบ, dry-run ZERO Group B, origin มี Phase 1). window timing: เลือกช่วง user ไม่ใช้ LINE (แนะ 21:00-23:00 ไทย)
+
+### Task 2.0: PRE-WINDOW GATE (v2.2 — ChatGPT final-Go conditions) — กดทีละข้อก่อน stop
+
+**🚦 6-item checklist (ก่อนกด stop services):**
+- [ ] 1. Backup ครบ (app.tgz, data.tgz, env, systemd, forensic) — VPS + local ✓ (Phase 0)
+- [ ] 2. `vps_vs_origin.patch` สร้าง + copy ออกนอก VPS แล้ว (ทำใน Task 2.3 Step ก่อน reset — เตรียมคำสั่งไว้)
+- [ ] 3. **รัน audit ซ้ำ (stop-list อาจเปลี่ยน!)** — `systemctl list-timers 'bms-*'` + `lsof +D app/data` ใหม่ ณ ตอนนั้น (ChatGPT: audit เจอ rss-scraper ที่ runbook เดิมไม่รู้ → อย่า trust stop-list เก่า)
+- [ ] 4. Rollback command พิมพ์เตรียมไว้แล้ว (ไม่ใช่คิดตอนพัง) — ดู Rollback Phase 2 ด้านล่าง
+- [ ] 5. Abort triggers เขียนชัด (ด้านล่าง) — เจอข้อใดข้อหนึ่ง = abort ทันที
+- [ ] 6. Operator คนเดียวกดทุก command, คนอื่น review (Rule #3)
+
+**🛑 ABORT TRIGGERS (เจอ = abort + restore ทันที ไม่ improvise):**
+- checksum mismatch (Task 2.1) · validate_state_files fail (torn file) · **Group B โผล่ใหม่** (Task 2.2) · service start fail (Phase 3) · เกิน hard-stop 30 นาที
+
+**Step: รัน audit ซ้ำ + stop services (expanded list จาก Phase 0 audit)**
+```bash
+ssh -i ~/.ssh/bms_vps bms@45.76.156.166 \
+  "echo '--- audit ซ้ำ ---'; systemctl list-timers 'bms-*' --no-legend | awk '{print \$NF}' | sort -u; sudo lsof +D /opt/bms/app/data 2>/dev/null || echo lsof-clean"
+# ตรวจ output ว่า stop-list ครอบทุก timer ที่เห็น แล้วจึง:
+ssh -i ~/.ssh/bms_vps bms@45.76.156.166 \
+  "sudo systemctl stop bms-enrichment-worker.timer bms-rss-notifier.timer bms-rss-scraper.timer \
+   bms-line-sender.timer bms-province-discovery.timer bms-province-discovery-full-bkg.timer \
+   bms-province-discovery-full-nkp.timer bms-province-discovery-full.timer bms-crossprobe.timer \
+   bms-canary.timer bms-deadman.timer bms-shadow-audit.timer bms-daily-digest.timer \
+   bms-daily-user-summary.timer bms-api.service bms-tunnel.service && echo STOPPED"
+ssh -i ~/.ssh/bms_vps bms@45.76.156.166 "systemctl list-units --state=running 'bms-*' --no-legend | grep -v 'backup' || echo NONE_RUNNING"
+```
+Expected: `STOPPED` + `NONE_RUNNING`. **stop-list = ผล audit ซ้ำ ไม่ใช่ลิสต์นี้ถ้า audit เจอเพิ่ม**
 
 ### Task 2.1: Copy live runtime-state จาก app/data → /opt/bms/data (writer-wins)
 

@@ -74,4 +74,10 @@ bms-backup.timer
 ---
 
 ## Rollback log
-(ว่าง — ยังไม่มี rollback)
+
+### 2026-06-05 22:34 — Phase 2 ABORT #1 (sudo blocker, clean)
+- window เปิด 22:23 → Task 2.0 gate ผ่าน (backup OK, audit ยืนยัน timer list) → **stop services ล้มเหลว: `sudo systemctl stop` ต้อง password (ssh non-interactive)**
+- `sudo -n -l` = password required → **bms user ไม่มี NOPASSWD sudo เลย** → Operator (Claude ผ่าน ssh key) หยุด/สตาร์ท service เองไม่ได้
+- **ABORT (Rule #2: ไม่หา/เดา sudo password)**. ยืนยันระบบ untouched: timers+api+tunnel active, HEAD=f5311f7, state ยังอยู่ app/data → **ไม่ต้อง rollback**
+- ⚠️ side-finding: Phase 0 `sudo lsof +D app/data` น่าจะ no-op (sudo เงียบ) → "lsof clean" **ยังไม่ verify จริง** (crontab non-sudo valid; cron-grep sudo unverified). ต้องทำ lsof ใหม่ตอนมี sudo
+- BLOCKER: ต้องแก้ sudo access ก่อนรัน Phase 2 ใหม่ (option A: NOPASSWD scoped / option B: กัญจน์รัน sudo เอง / option C: sudo script)

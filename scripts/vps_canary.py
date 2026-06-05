@@ -7,8 +7,8 @@ interim fix ตัด git push → Windows canary ไม่ sync VPS แล้�
 HEALTHY / BLOCKED (rate-limited) / UNKNOWN (token reject) → เขียน api_ingestion_state
 ที่ app/data (= path ที่ Enrichment_Worker._api_state() อ่าน. gate line 303 skip ถ้า !HEALTHY).
 
-note: เขียน app/data (current canonical ที่ worker อ่าน) ไม่ใช่ BMS_DATA_DIR —
-ตรงกับ worker. full migration (defer) ค่อยย้ายทั้งคู่พร้อมกัน. ดู memory/project_deploy_debt.
+note: เขียน api_ingestion_state ผ่าน bms_paths.runtime_path → /opt/bms/data (เดียวกับ worker
+หลัง migration 2026-06-05). เดิมเขียน app/data — migration N+8x ย้ายทั้ง worker+canary พร้อมกัน.
 """
 import os
 import sys
@@ -18,9 +18,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 import Sebastian_Province_Discovery as disc
+import bms_paths  # single runtime-state authority (BMS_DATA_DIR) — post-migration 2026-06-05
 
 TZ_TH = timezone(timedelta(hours=7))
-STATE_FILE = Path(__file__).parent.parent / "data" / "api_ingestion_state.json"   # ที่ worker อ่าน
+STATE_FILE = bms_paths.runtime_path("api_ingestion_state.json")   # worker อ่านที่เดียวกัน (/opt/bms/data)
 TOKEN_FILE = Path(os.environ.get("BMS_DATA_DIR") or str(Path(__file__).parent.parent / "data")) / "token_state.json"
 CANARY_MOI = "480000"   # นครพนม
 BUDGET_YEAR = "2569"

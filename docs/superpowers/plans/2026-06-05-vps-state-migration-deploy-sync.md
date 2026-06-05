@@ -37,6 +37,8 @@
 - **Rule #2 — Abort > Improvise:** เจออะไรที่ runbook ไม่ได้เขียนไว้ → abort ไม่ใช่ improvise (incident ส่วนใหญ่มาจาก "ขอแก้นิดเดียว")
 - **Rule #3 — Single Operator:** Operator = 1 คน (Claude + กัญจน์อยู่ด้วย), Reviewer = 1 (ChatGPT async). ห้ามแก้พร้อมกันหลายฝั่งกลาง window
 - **Rule #4 — Timestamp ทุก milestone** ลง runbook (เช่น `20:01 stop · 20:05 backup · 20:07 checksum OK · 20:11 restart`) — มีค่าตอน rollback/forensic
+- **Rule #5 — Git ops = bms user เท่านั้น. ห้าม `sudo git pull/reset/fetch` เด็ดขาด** (ทำให้ .git refs/objects root-owned → pull/reset ค้างครึ่งทาง = blocker คืน 2026-06-05). pre-deploy check: `find /opt/bms/app/.git ! -user bms` ต้องว่าง. monthly audit: `find /opt/bms/app ! -user bms`
+- **Rule #6 — NOPASSWD scope = systemctl + lsof เท่านั้น** (ไม่ขยายไป chown/chmod — งานนั้นต้อง password/root โดยตั้งใจ)
 
 ### ⏱️ Time-box / Abort Triggers (window Phase 2)
 - **Window target = 15 นาที · Hard-stop = 30 นาที** → เกิน 30 นาทียังไม่ผ่าน Exit Criteria = **rollback ทันที**
@@ -180,6 +182,20 @@ Expected: เซ็ต writers จาก audit ⊆ เซ็ตที่จะ w
 - [ ] backup ครบ (app.tgz + data.tgz + env + systemd) ทั้งบน VPS **และ** local
 - [ ] `lsof +D app/data` = NONE (ไม่มี writer เปิดค้าง)
 - [ ] รายชื่อ hidden writers จดใน runbook ครบ
+
+---
+
+## PHASE 0.5 — Operational Readiness Check (v2.3, ChatGPT post-mortem) — บังคับก่อนเปิด window ทุกครั้ง
+
+> บทเรียน 2026-06-05: blocker 2 ตัว (sudo, .git root-owned) = **operational precondition** ที่แผน technical จับไม่ได้. "Technical Readiness ≠ Operational Readiness" — ต้องตรวจว่า **operator มีสิทธิ์ execute** ก่อน
+
+- [ ] **Privilege check:** `ssh bms@vps "sudo -n systemctl is-active bms-api.service && sudo -n systemctl stop bms-canary.timer && sudo -n systemctl start bms-canary.timer"` → ต้องสำเร็จ **ไม่ถาม password** (ถ้าถาม = ตั้ง /etc/sudoers.d/bms-operator ก่อน)
+- [ ] **Git ownership check:** `ssh bms@vps "find /opt/bms/app/.git ! -user bms | head"` → ต้อง**ว่าง** (ถ้ามี root-owned → `sudo chown -R bms:bms /opt/bms/app` ก่อน ไม่งั้น reset/pull ค้างครึ่งทาง)
+- [ ] **Writeability check:** `ssh bms@vps "touch /opt/bms/data/.permtest && rm /opt/bms/data/.permtest && echo WRITABLE"` → `WRITABLE`
+- [ ] **Service-control dry-run:** ยืนยัน stop/start คุม timer ได้จริง (จาก privilege check)
+- [ ] **lsof ทำงานจริง** (ไม่ใช่ no-op เงียบ): `ssh bms@vps "sudo -n lsof -v >/dev/null && echo LSOF_OK"`
+
+**ถ้าข้อใดข้อหนึ่งไม่ผ่าน = ไม่เปิด window** (แก้ operational precondition ก่อน)
 
 ---
 

@@ -15,6 +15,7 @@ MIGRATED = [
     "scripts/Sebastian_Enrichment_Worker.py", "scripts/health_deadman.py",
     "scripts/queue_health.py", "scripts/pipeline_funnel.py",
     "scripts/dashboard_extractor.py", "scripts/refresh_active_jobs.py",
+    "scripts/vps_canary.py", "scripts/Sebastian_LINE_Sender.py", "scripts/seed_self_notify.py",
 ]
 BAD = re.compile(r'parent\.parent\s*/\s*["\']data["\']\s*/\s*["\']([^"\']+)["\']')
 ROOT = Path(__file__).parent.parent

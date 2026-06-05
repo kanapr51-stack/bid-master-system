@@ -154,7 +154,8 @@ def inject_project(project_id: str, province: str, budget: int,
 
 def auto_seed_from_queue(provinces: list[str], limit: int = 3) -> int:
     """Find matching items from rss_queue and inject. Returns count seeded."""
-    queue_path = Path(__file__).parent.parent / "data" / "rss_queue.json"
+    import bms_paths  # single runtime-state authority (BMS_DATA_DIR)
+    queue_path = bms_paths.runtime_path("rss_queue.json")
     if not queue_path.exists():
         return 0
     try:

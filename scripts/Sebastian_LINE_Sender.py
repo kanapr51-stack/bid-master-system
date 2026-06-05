@@ -25,6 +25,7 @@ from pathlib import Path
 import requests as req_lib
 
 sys.path.insert(0, str(Path(__file__).parent))
+import bms_paths  # noqa: E402  — single runtime-state authority (BMS_DATA_DIR)
 from Sebastian_Customer_DB import (
     SubscriptionStore, init_schema, worker_id, _now,
 )
@@ -132,8 +133,7 @@ def _lookup_pdf_url_from_rss(project_id: str) -> str:
     """Find PDF link from rss_queue.json by project_id (best-effort, non-fatal)."""
     try:
         import json as _json
-        from pathlib import Path as _Path
-        rss_path = _Path(__file__).parent.parent / "data" / "rss_queue.json"
+        rss_path = bms_paths.runtime_path("rss_queue.json")
         if not rss_path.exists():
             return ""
         items = _json.loads(rss_path.read_text(encoding="utf-8-sig"))
@@ -380,7 +380,7 @@ def main():
         """Read api_ingestion_state.json → api_state value, 'UNKNOWN' if unreadable."""
         try:
             import json as _json
-            state_path = Path(__file__).parent.parent / "data" / "api_ingestion_state.json"
+            state_path = bms_paths.runtime_path("api_ingestion_state.json")
             if state_path.exists():
                 return _json.loads(state_path.read_text(encoding="utf-8-sig")).get("api_state", "UNKNOWN")
         except Exception:

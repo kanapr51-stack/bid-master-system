@@ -98,6 +98,10 @@ data/_test_invitation*.pdf
 data/session_flow_capture.ndjson
 data/deadline_presence_sample.json
 
+# work-type validation artifacts (regen ทุกครั้งที่รัน validate; เก็บ audit.md ที่ curate ไว้)
+data/work_type_validation_2*.txt
+data/work_type_unknown_sample.txt
+
 data/_winner_history_156.json
 data/_target_pids.json
 data/_cgd_winners_raw.json

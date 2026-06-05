@@ -1,0 +1,5550 @@
+{
+  "version": "v1",
+  "updated": "2026-06-05",
+  "terms": [
+    {
+      "term": "ห้อง",
+      "freq": 179,
+      "examples": [
+        "จ้างตกแต่งชั้นวางบริเวณโถงต้อนรับหน้าห้องอธิการบดี ตำบลขามเฒ่า อำเภอเม"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ลาน",
+      "freq": 125,
+      "examples": [
+        "จ้างโครงการก่อสร้างลานตากผลผลิตทางการเกษตร บ้านท่าคำไฮ หมู่ที่ 10 โดยว"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สำนักงาน",
+      "freq": 115,
+      "examples": [
+        "จ้างโครงการก่อสร้างเสาธงสำนักงานเทศบาลตำบลเรณูนคร โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ก่อสร้างลาน",
+      "freq": 89,
+      "examples": [
+        "จ้างโครงการก่อสร้างลานตากผลผลิตทางการเกษตร บ้านท่าคำไฮ หมู่ที่ 10 โดยว"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ห้วย",
+      "freq": 89,
+      "examples": [
+        "จ้างก่อสร้างผนังกันดิน บ้านหนองฮี หมู่ที่ ๑๑ บ้านนางโอกาศ ถึง ห้วยแคน "
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "คอนกรีตเสริมเหล็ก",
+      "freq": 84,
+      "examples": [
+        "จ้างโครงการก่อสร้างถนคอนกรีตเสริมเหล็ก บ้านโพธิ์ศรี หมู่ ๑๒ สายข้าง อบ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ป้องกัน",
+      "freq": 81,
+      "examples": [
+        "จ้างงานบำรุงรักษาและปรับปรุงซ่อมแซมเขื่อนป้องกันตลิ่งริมแม่น้ำโขง บ้าน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ขยะ",
+      "freq": 80,
+      "examples": [
+        "จ้างโครงการปรับปรุงบ่อทิ้งขยะองค์การบริหารส่วนตำบลนาขมิ้น อำเภอโพนสวรร"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "แปลง",
+      "freq": 67,
+      "examples": [
+        "จ้างก่อสร้างลานอเนกประสงค์คอนกรีตเสริมเหล็ก ที่ดินแปลง ที่ นพ.18 หมู่ท"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เมรุ",
+      "freq": 63,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างฌาปนสถาน (เมรุเผาศพ) บ้านส้มป่อย หมู่ที่ ๖ ด้วยว"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ตลิ่ง",
+      "freq": 63,
+      "examples": [
+        "จ้างเหมาก่อสร้างตลิ่งกันพัง สายหลังวัดมาลัย - บ้านร่มโพธิ์ทอง หมู่ที่ "
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "กิจกรรม",
+      "freq": 62,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างงานจ้างจัดหาและก่อสร้างระบบอบแห้งพลังงานแสงอาทิต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เขื่อน",
+      "freq": 62,
+      "examples": [
+        "จ้างงานบำรุงรักษาและปรับปรุงซ่อมแซมเขื่อนป้องกันตลิ่งริมแม่น้ำโขง บ้าน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ที่ดิน",
+      "freq": 62,
+      "examples": [
+        "จ้างปรับปรุงบันไดทางขึ้นและทางลาดสำหรับผู้พิการ สำนักงานที่ดินจังหวัดน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "รูปแบบ",
+      "freq": 62,
+      "examples": [
+        "จ้างโครงการส่งเสริมการรู้ในรูปแบบทุกที่ทุกเวลา โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เขื่อนป้องกัน",
+      "freq": 56,
+      "examples": [
+        "จ้างงานบำรุงรักษาและปรับปรุงซ่อมแซมเขื่อนป้องกันตลิ่งริมแม่น้ำโขง บ้าน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ไร่",
+      "freq": 56,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการปรับระดับพื้นที่เกษตรกรและฟื้นฟูพื้นที่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ซ่อมแซมห้อง",
+      "freq": 54,
+      "examples": [
+        "จ้างปรับปรุงซ่อมแซมห้องเรียนพิเศษ โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ชุมชน",
+      "freq": 53,
+      "examples": [
+        "จ้างโครงการปรับปรุงซ่อมแซมตลาดชุมชน หมู่ที่ ๓ บ้านนาเชือกน้อย (ตามแบบแ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ขุด",
+      "freq": 53,
+      "examples": [
+        "จ้างขุดบ่อขยะพร้อมฝังกลบ บ้านอ้วน หมู่ที่ 4 และเกลี่ยขยะลงบ่อพร้อมตกแต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "หมู่บ้าน",
+      "freq": 52,
+      "examples": [
+        "จ้างโครงการปรับปรุงแอสฟีลท์ติกภายในหมู่บ้าน หมู่ที่ 1 หมู่ที่ 10 สายหล"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ป้องกันตลิ่ง",
+      "freq": 52,
+      "examples": [
+        "จ้างงานบำรุงรักษาและปรับปรุงซ่อมแซมเขื่อนป้องกันตลิ่งริมแม่น้ำโขง บ้าน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ที่ว่าการอำเภอ",
+      "freq": 52,
+      "examples": [
+        "จ้างปรับปรุงซ่อมแซมหอประชุมยงใจยุทธที่ว่าการอำเภอท่าอุเทน โดยวิธีเฉพาะ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ปรับปรุงห้อง",
+      "freq": 49,
+      "examples": [
+        "จ้างปรับปรุงห้องกู้ชีพและห้องป้องกันฯสำนักงาน องค์การบริหารส่วนตำบลถ้ำ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "อเนกประสงค์",
+      "freq": 48,
+      "examples": [
+        "จ้างก่อสร้างโดมอเนกประสงค์ (ศพด.ตำบลกุตาไก้ (กองการศึกษาฯ) โดมอเนกประส"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ริมแม่น้ำ",
+      "freq": 48,
+      "examples": [
+        "จ้างงานบำรุงรักษาและปรับปรุงซ่อมแซมเขื่อนป้องกันตลิ่งริมแม่น้ำโขง บ้าน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สำหรับแปลง",
+      "freq": 48,
+      "examples": [
+        "จ้างปรับรูปแบบแปลง ที่ดินตามรายละเอียดงานปรับรูปแบบแปลง ตามโครงการงานป"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เรียนรู้",
+      "freq": 47,
+      "examples": [
+        "จ้างโครงการพัฒนาหมู่บ้านเศรษฐกิจพอเพียง กิจกรรมสนับสนุนการพัฒนาศูนย์เร"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "หอประชุม",
+      "freq": 46,
+      "examples": [
+        "จ้างปรับปรุงซ่อมแซมหอประชุมยงใจยุทธที่ว่าการอำเภอท่าอุเทน โดยวิธีเฉพาะ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ประชาชน",
+      "freq": 46,
+      "examples": [
+        "จ้างก่อสร้างที่จอดรถประชาชนและคนพิการ สำนักงานที่ดินจังหวัดนครพนม สาขา"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "บ่อขยะ",
+      "freq": 45,
+      "examples": [
+        "จ้างเหมาปรับดันบ่อขยะ ตามโครงการปรับปรุงสถานที่กำจัดขยะมูลฝอย เทศบาลตำ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ศูนย์เรียนรู้",
+      "freq": 43,
+      "examples": [
+        "จ้างโครงการพัฒนาหมู่บ้านเศรษฐกิจพอเพียง กิจกรรมสนับสนุนการพัฒนาศูนย์เร"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "จ้างงาน",
+      "freq": 42,
+      "examples": [
+        "จ้างงานบำรุงรักษาและปรับปรุงซ่อมแซมเขื่อนป้องกันตลิ่งริมแม่น้ำโขง บ้าน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ระดับ",
+      "freq": 42,
+      "examples": [
+        "จ้างเหมาก่อสร้างโครงการการพัฒนาที่ดินเค็มแบบบูรณาการในพื้นที่ลุ่มน้ำย่"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "บริการ",
+      "freq": 41,
+      "examples": [
+        "จ้างโครงการยกระดับศูนย์บูรณาการคัดแยก ตามแผนปฏิบัติการว่าด้วยกลไกการส่"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สูบน้ำ",
+      "freq": 41,
+      "examples": [
+        "จ้างติดตั้งระบบสูบน้ำพลังงานแสงอาทิตย์ เพื่อสู้ภัยแล้ง ขนาดไม่น้อยกว่า"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "โรงพยาบาล",
+      "freq": 41,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างระบบบำบัดน้ำเสียสำหรับโรงพยาบาลชุมชน ขนาด 30 เตี"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "มาตรฐาน",
+      "freq": 40,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการก่อสร้างสนามฟุตบอลหญ้าเทียม มาตรฐาน ๕ คน "
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ตลิ่งริมแม่น้ำ",
+      "freq": 40,
+      "examples": [
+        "จ้างงานบำรุงรักษาและปรับปรุงซ่อมแซมเขื่อนป้องกันตลิ่งริมแม่น้ำโขง บ้าน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "หน้า",
+      "freq": 40,
+      "examples": [
+        "จ้างก่อสร้างโดมหน้าที่ทำการองค์การบริหารส่วนตำบลวังตามัว โดยวิธีเฉพาะเ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ทฤษฎีใหม่",
+      "freq": 40,
+      "examples": [
+        "จ้างก่อสร้างระบบชลประทานโครงการพัฒนาพื้นที่ต้นแบบการพัฒนาคุณภาพชีวิต ต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เผาศพ",
+      "freq": 39,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างฌาปนสถาน (เมรุเผาศพ) บ้านส้มป่อย หมู่ที่ ๖ ด้วยว"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "พลังงานแสงอาทิตย์",
+      "freq": 39,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างงานจ้างจัดหาและก่อสร้างระบบอบแห้งพลังงานแสงอาทิต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ที่ทำการ",
+      "freq": 39,
+      "examples": [
+        "จ้างก่อสร้างโดมหน้าที่ทำการองค์การบริหารส่วนตำบลวังตามัว โดยวิธีเฉพาะเ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สิ่งก่อสร้าง",
+      "freq": 38,
+      "examples": [
+        "จ้างค่าที่ดินและสิ่งก่อสร้าง โครงการก่อสร้างเมรุวัดป่าห้วยหินลาด บ้านห"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "โมเดล",
+      "freq": 38,
+      "examples": [
+        "จ้างก่อสร้างระบบชลประทานโครงการพัฒนาพื้นที่ต้นแบบการพัฒนาคุณภาพชีวิต ต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "นาโมเดล",
+      "freq": 38,
+      "examples": [
+        "จ้างก่อสร้างระบบชลประทานโครงการพัฒนาพื้นที่ต้นแบบการพัฒนาคุณภาพชีวิต ต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "คฟ",
+      "freq": 38,
+      "examples": [
+        "จ้างเหมาก่อสร้างขยายเขตระบบจำหน่ายไฟฟ้า กฟส.บึงกาฬ-คฟม.(2566-3) บ.ดอนอ"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ทฤษฎีใหม่รูปแบบ",
+      "freq": 38,
+      "examples": [
+        "จ้างกิจกรรมการพัฒนาศูนย์เรียนรู้ทฤษฎีใหม่ รูปแบบ โคกหนองนา ประจำปี 256"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ริมแม่น้ำโขง",
+      "freq": 37,
+      "examples": [
+        "จ้างงานบำรุงรักษาและปรับปรุงซ่อมแซมเขื่อนป้องกันตลิ่งริมแม่น้ำโขง บ้าน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ครัวเรือน",
+      "freq": 37,
+      "examples": [
+        "จ้างโครงการพัฒนาหมู่บ้านเศรษฐกิจพอเพียง กิจกรรมสนับสนุนการพัฒนาศูนย์เร"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "รูปแบบโคก",
+      "freq": 37,
+      "examples": [
+        "จ้างกิจกรรมการพัฒนาศูนย์เรียนรู้ทฤษฎีใหม่ รูปแบบ โคกหนองนา ประจำปี 256"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ด้วยวิธีการ",
+      "freq": 37,
+      "examples": [
+        "ประกวดราคาจ้างปรับปรุงสัญญาณไฟจราจรภายในเขตเทศบาลเมืองนครพนม จำนวน ๖ จ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "วิธีการทางอิเล็กทรอนิกส์",
+      "freq": 37,
+      "examples": [
+        "ประกวดราคาจ้างปรับปรุงสัญญาณไฟจราจรภายในเขตเทศบาลเมืองนครพนม จำนวน ๖ จ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ทางอิเล็กทรอนิกส์",
+      "freq": 37,
+      "examples": [
+        "ประกวดราคาจ้างปรับปรุงสัญญาณไฟจราจรภายในเขตเทศบาลเมืองนครพนม จำนวน ๖ จ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "วิธีการ",
+      "freq": 37,
+      "examples": [
+        "ประกวดราคาจ้างปรับปรุงสัญญาณไฟจราจรภายในเขตเทศบาลเมืองนครพนม จำนวน ๖ จ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "การเกษตร",
+      "freq": 36,
+      "examples": [
+        "จ้างโครงการก่อสร้างลานตากผลผลิตทางการเกษตร บ้านท่าคำไฮ หมู่ที่ 10 โดยว"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เรียนรู้ทฤษฎีใหม่",
+      "freq": 35,
+      "examples": [
+        "จ้างกิจกรรมการพัฒนาศูนย์เรียนรู้ทฤษฎีใหม่ รูปแบบ โคกหนองนา ประจำปี 256"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เมรุเผาศพ",
+      "freq": 34,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างฌาปนสถาน (เมรุเผาศพ) บ้านส้มป่อย หมู่ที่ ๖ ด้วยว"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "คนพิการ",
+      "freq": 34,
+      "examples": [
+        "จ้างก่อสร้างที่จอดรถประชาชนและคนพิการ สำนักงานที่ดินจังหวัดนครพนม สาขา"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ก่อสร้างเมรุ",
+      "freq": 33,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการก่อสร้างเมรุเผาศพ บ้านโนนจันทร์ หมู่ที่ ๘"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เฉลิมพระเกียรติ",
+      "freq": 33,
+      "examples": [
+        "จ้างก่อสร้างโครงการบ้านกาชาดเฉลิมพระเกียรติ ฯ เพื่อชาวนครพนม ประจำปี 2"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สร้าง",
+      "freq": 33,
+      "examples": [
+        "จ้างโครงการปรับปรุงสนามเด็กเล่นสร้างปัญญา โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "รายละเอียด",
+      "freq": 32,
+      "examples": [
+        "จ้างก่อสร้างเมรุเผาศพประจำฌาปนสถาน บ้านหนองบัวคำ หมู่ที่ 11 (เฉพาะส่วน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เลขที่",
+      "freq": 32,
+      "examples": [
+        "จ้างก่อสร้างโครงการบ้านกาชาดเฉลิมพระเกียรติฯ เพื่อชาวนครพนม ประจำปี 25"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "จุด",
+      "freq": 32,
+      "examples": [
+        "จ้างโครงการปรับปรุงจุดพักบริการประชาชนบริเวณหน้าที่ว่าการอำเภอท่าอุเทน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เสริม",
+      "freq": 32,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างจ้างเหมาก่อสร้างลานคอนกรัีตเสริมเหล็ก องค์การบริ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "พื้น",
+      "freq": 31,
+      "examples": [
+        "จ้างปรับปรุงพื้นทางเข้าด้านหน้าที่ว่าการอำเภอท่าอุเทน โดยวิธีเฉพาะเจาะ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ตลาดสด",
+      "freq": 30,
+      "examples": [
+        "โครงการปรับปรุงซ่อมแซมตลาดสดเทศบาลตำบลธาตุพนม"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ลานอเนกประสงค์",
+      "freq": 30,
+      "examples": [
+        "จ้างโครงการก่อสร้างลานอเนกประสงค์คอนกรีตเสริมเหล็กป่าช้าบ้านโนนจันทร์ "
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ลานคสล",
+      "freq": 30,
+      "examples": [
+        "จ้างโครงการก่อสร้างลาน คสลรอบเมรุเผาศพวัดทองประเสริฐ หมู่ที่ ๗ บ้านดงต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สนาม",
+      "freq": 30,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการเพิ่มประสิทธิภาพการขอรับใบอนุญาตขับรถ ของ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "โรงเรือน",
+      "freq": 30,
+      "examples": [
+        "จ้างโรงเรือนอเนกประสงค์ โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ดิน",
+      "freq": 29,
+      "examples": [
+        "จ้างก่อสร้างผนังกันดิน บ้านหนองฮี หมู่ที่ ๑๑ บ้านนางโอกาศ ถึง ห้วยแคน "
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ห้องเรียน",
+      "freq": 29,
+      "examples": [
+        "จ้างปรับปรุงซ่อมแซมห้องเรียน จำนวน 1 งาน กลุ่มบริหารงานวิชาการ โดยวิธี"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "การซ่อมแซม",
+      "freq": 29,
+      "examples": [
+        "จ้างโครงการซ่อมแซมคสล ม6 โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "โครงการซ่อมแซม",
+      "freq": 29,
+      "examples": [
+        "จ้างโครงการซ่อมแซมคสล ม6 โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ติดเชื้อ",
+      "freq": 29,
+      "examples": [
+        "จ้างเหมาปรับปรุงห้องพักขยะติดเชื้อ โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เกษตร",
+      "freq": 28,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างงานจ้างจัดหาและก่อสร้างระบบอบแห้งพลังงานแสงอาทิต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ศพ",
+      "freq": 28,
+      "examples": [
+        "จ้างก่อสร้างโดมอเนกประสงค์ (ศพด.ตำบลกุตาไก้ (กองการศึกษาฯ) โดมอเนกประส"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "แบบมาตรฐาน",
+      "freq": 28,
+      "examples": [
+        "จ้างก่อสร้างโดมอเนกประสงค์ (ศพด.ตำบลกุตาไก้ (กองการศึกษาฯ) โดมอเนกประส"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ซ่อมแซมเขื่อน",
+      "freq": 28,
+      "examples": [
+        "จ้างงานบำรุงรักษาและปรับปรุงซ่อมแซมเขื่อนป้องกันตลิ่งริมแม่น้ำโขง บ้าน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ระบบสูบน้ำ",
+      "freq": 28,
+      "examples": [
+        "จ้างติดตั้งระบบสูบน้ำพลังงานแสงอาทิตย์ เพื่อสู้ภัยแล้ง ขนาดไม่น้อยกว่า"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ค่าแรง",
+      "freq": 28,
+      "examples": [
+        "จ้าง จ้างเหมาค่าแรง คขก. บ.ศิริมงคล ต.บ้านต้อง อ.เซกา จ.บึงกาฬ โดยวิธี"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "แปลงนาย",
+      "freq": 28,
+      "examples": [
+        "จ้างก่อสร้างระบบชลประทานโครงการพัฒนาพื้นที่ต้นแบบการพัฒนาคุณภาพชีวิต ต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สนับสนุน",
+      "freq": 27,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างงานจ้างจัดหาและก่อสร้างระบบอบแห้งพลังงานแสงอาทิต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ที่จอดรถ",
+      "freq": 27,
+      "examples": [
+        "จ้างทำที่จอดรถยนต์และรถจักรยานยนต์ คณะวิทยาการจัดการและเทคโนโลยีสารสนเ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "บัว",
+      "freq": 27,
+      "examples": [
+        "จ้างก่อสร้างเมรุเผาศพประจำฌาปนสถาน บ้านหนองบัวคำ หมู่ที่ 11 (เฉพาะส่วน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ผู้สูงอายุ",
+      "freq": 27,
+      "examples": [
+        "จ้างปรับปรุงศูนย์ผู้สูงอายุตำบลโคกหินแฮ่ (ศูนย์ที่ 2) หมู่ที่ 1 โดยวิธ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "แปลงนาง",
+      "freq": 27,
+      "examples": [
+        "จ้างปรับรูปแบบแปลง ที่ดินตามรายละเอียดงานปรับรูปแบบแปลง ตามโครงการงานป"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ก่อสร้างคอนกรีตเสริมเหล็ก",
+      "freq": 26,
+      "examples": [
+        "จ้างโครงการก่อสร้างคอนกรีตเสริมเหล็กทุ่งมนต์ หมู่ที่ 6 (สายบ้านนายสายั"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ล้น",
+      "freq": 26,
+      "examples": [
+        "จ้างก่อสร้างทางน้ำล้นคอนกรีตเสริมเหล็ก บ้านดอนม่วง หมู่ที่ ๙ โดยวิธีเฉ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ประจำปี",
+      "freq": 26,
+      "examples": [
+        "จ้างก่อสร้างโครงการบ้านกาชาดเฉลิมพระเกียรติฯ เพื่อชาวนครพนม ประจำปี 25"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ประตู",
+      "freq": 26,
+      "examples": [
+        "จ้างก่อสร้างฐานพระพุทธรูปและเปลี่ยนประตูเหล็กม้วน โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "รอบ",
+      "freq": 26,
+      "examples": [
+        "จ้างโครงการก่อสร้างลาน คสลรอบเมรุเผาศพวัดทองประเสริฐ หมู่ที่ ๗ บ้านดงต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "หอ",
+      "freq": 26,
+      "examples": [
+        "จ้างก่อสร้างหอถังสูง ขนาด 10 ลูกบาศก์เมตร(ถังไฟเบอร์กลาส 4 ถัง) หมู่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เหมาค่าแรง",
+      "freq": 26,
+      "examples": [
+        "จ้าง จ้างเหมาค่าแรง คขก. บ.ศิริมงคล ต.บ้านต้อง อ.เซกา จ.บึงกาฬ โดยวิธี"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เค",
+      "freq": 26,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างงาน ปรับปรุง.22 เควี ช่วงสี่แยกที่ 2 บ้านขว้างคล"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "พัสดุ",
+      "freq": 26,
+      "examples": [
+        "จ้างปรับปรุงโรงเก็บพัสดุสำนักงานเกษตรอำเภอโพนสวรรค์ โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "จ่าย",
+      "freq": 26,
+      "examples": [
+        "จ้างโครงการปรับปรุงห้องเก็บฎีกาและเอกสารการเบิกจ่ายเงิน โครงการขับเคลื"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "กิจกรรมการพัฒนา",
+      "freq": 26,
+      "examples": [
+        "จ้างกิจกรรมการพัฒนาศูนย์เรียนรู้ทฤษฎีใหม่ รูปแบบ โคกหนองนา ประจำปี 256"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "แพ",
+      "freq": 26,
+      "examples": [
+        "จ้างโครงการก่อสร้างแพสูบน้ำ หมู่่ที่ 5 บ้านหัวภูธร ตำบลวังยาง อำเภอวัง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ตอน",
+      "freq": 25,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างงานจ้างเหมาทำการติดตั้งราวกันอันตราย ทล.22 ตอน ก"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สาขา",
+      "freq": 25,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างปรับปรุงห้องปฏิบัติการสาขาวิชาการโรงแรม ตำบลหนอง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เสาธง",
+      "freq": 25,
+      "examples": [
+        "จ้างโครงการก่อสร้างเสาธงสำนักงานเทศบาลตำบลเรณูนคร โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ลำห้วย",
+      "freq": 25,
+      "examples": [
+        "จ้างโครงการก่อสร้างท่าน้ำ ลำห้วยศรีคุณ ประจำปีงบประมาณ ๒๕๖๘ โดยวิธีเฉพ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ขุดบ่อ",
+      "freq": 25,
+      "examples": [
+        "จ้างขุดบ่อขยะพร้อมฝังกลบ บ้านอ้วน หมู่ที่ 4 และเกลี่ยขยะลงบ่อพร้อมตกแต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "จ้างขุด",
+      "freq": 25,
+      "examples": [
+        "จ้างขุดบ่อขยะพร้อมฝังกลบ บ้านอ้วน หมู่ที่ 4 และเกลี่ยขยะลงบ่อพร้อมตกแต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เควี",
+      "freq": 25,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างงาน ปรับปรุง.22 เควี ช่วงสี่แยกที่ 2 บ้านขว้างคล"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "วี",
+      "freq": 25,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างงาน ปรับปรุง.22 เควี ช่วงสี่แยกที่ 2 บ้านขว้างคล"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "พื้นที่เรียนรู้",
+      "freq": 25,
+      "examples": [
+        "จ้างเหมาปรับปรุงพื้นที่เรียนรู้ชุมชน ตามโครงการพัฒนาศูนย์เรียนรู้ทฤษฎี"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เรียนรู้ชุมชน",
+      "freq": 25,
+      "examples": [
+        "จ้างเหมาปรับปรุงพื้นที่เรียนรู้ชุมชน ตามโครงการพัฒนาศูนย์เรียนรู้ทฤษฎี"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "กอง",
+      "freq": 24,
+      "examples": [
+        "จ้างก่อสร้างโดมอเนกประสงค์ (ศพด.ตำบลกุตาไก้ (กองการศึกษาฯ) โดมอเนกประส"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ถัง",
+      "freq": 24,
+      "examples": [
+        "จ้างโครงการย้ายถังสูงเหล็กรูปทรงถ้วยแชมเปญ พร้อมเทฐานและติดตั้งระบบใช้"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ปี",
+      "freq": 24,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการปรับระดับพื้นที่เกษตรกรและฟื้นฟูพื้นที่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ซุ้ม",
+      "freq": 24,
+      "examples": [
+        "จ้างเหมาก่อสร้างซุ้มทางเดินเท้าสำหรับนักเรียน โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "คุณภาพชีวิต",
+      "freq": 24,
+      "examples": [
+        "จ้างก่อสร้างระบบชลประทานโครงการพัฒนาพื้นที่ต้นแบบการพัฒนาคุณภาพชีวิต ต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ผู้ป่วย",
+      "freq": 24,
+      "examples": [
+        "จ้างเหมาปรับปรุงซ่อมแซมหอผู้ป่วยจิตเวช จำนวน ๑ งาน โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "มาตรฐานโคก",
+      "freq": 24,
+      "examples": [
+        "จ้างปรับรูปแบบแปลง ที่ดินตามรายละเอียดงานปรับรูปแบบแปลง ตามโครงการงานป"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "งบ",
+      "freq": 24,
+      "examples": [
+        "จ้างก่อสร้างจ้างปรับปรุงสิ่งก่อสร้าง จำนวน 1 รายการ ด้วยงบเรี่ยไรโครงก"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "โครงการกิจกรรม",
+      "freq": 24,
+      "examples": [
+        "จ้างเหมาปรับปรุงพื้นที่เรียนรู้ชุมชนและจัดหาพันธุ์พืช พันธุ์สัตว์ ตามภ"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สูบน้ำพลังงานแสงอาทิตย์",
+      "freq": 23,
+      "examples": [
+        "จ้างติดตั้งระบบสูบน้ำพลังงานแสงอาทิตย์ เพื่อสู้ภัยแล้ง ขนาดไม่น้อยกว่า"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ริม",
+      "freq": 23,
+      "examples": [
+        "จ้างเหมาก่อสร้างตลิ่งกันพังริมห้วยขาม สายหมู่ที่ 1 บ้านนางัวเหนือ - หม"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "แยก",
+      "freq": 23,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างปรับปรุงระบบสัญญาณไฟจราจร บริเวณแยกต่างๆ จำนวน ๖"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ที่พัก",
+      "freq": 23,
+      "examples": [
+        "จ้างเหมาสร้างและปรับปรุงที่พักสำหรับนักศึกษา จำนวน 1งาน โดยวิธีเฉพาะเจ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ก่อสร้างที่จอดรถ",
+      "freq": 22,
+      "examples": [
+        "จ้างก่อสร้างที่จอดรถสำนักงานเทศบาลตำบลท่าเรือ ขนาดความกว้าง 6.00 เมตร "
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เท",
+      "freq": 22,
+      "examples": [
+        "จ้างโครงการย้ายถังสูงเหล็กรูปทรงถ้วยแชมเปญ พร้อมเทฐานและติดตั้งระบบใช้"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "แปลงที่ดิน",
+      "freq": 22,
+      "examples": [
+        "จ้างปรับรูปแบบแปลง ที่ดินตามรายละเอียดงานปรับรูปแบบแปลง ตามโครงการงานป"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ที่ดินตาม",
+      "freq": 22,
+      "examples": [
+        "จ้างปรับรูปแบบแปลง ที่ดินตามรายละเอียดงานปรับรูปแบบแปลง ตามโครงการงานป"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ปรับรูปแบบ",
+      "freq": 22,
+      "examples": [
+        "จ้างปรับรูปแบบแปลง ที่ดินตามรายละเอียดงานปรับรูปแบบแปลง ตามโครงการงานป"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "รูปแบบแปลง",
+      "freq": 22,
+      "examples": [
+        "จ้างปรับรูปแบบแปลง ที่ดินตามรายละเอียดงานปรับรูปแบบแปลง ตามโครงการงานป"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ท่ี",
+      "freq": 22,
+      "examples": [
+        "จ้างโครงการซ่อมแซมเขื่อนป้องกันตล่ิงริมแม่น้ำโขง บ้านท่าไคร้ หมู่ท่ี ๕"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สังคม",
+      "freq": 22,
+      "examples": [
+        "จ้างโครงการงานปรับปรุงพื้นที่ตามแบบมาตรฐานโคก หนอง นา ขนาด 3 ไร่ สำหรั"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "บูรณาการ",
+      "freq": 21,
+      "examples": [
+        "จ้างโครงการยกระดับศูนย์บูรณาการคัดแยก ตามแผนปฏิบัติการว่าด้วยกลไกการส่"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ตารางเมตร",
+      "freq": 21,
+      "examples": [
+        "จ้างก่อสร้างโดมอเนกประสงค์ (ศพด.ตำบลกุตาไก้ (กองการศึกษาฯ) โดมอเนกประส"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ภายในหมู่บ้าน",
+      "freq": 21,
+      "examples": [
+        "จ้างโครงการปรับปรุงแอสฟีลท์ติกภายในหมู่บ้าน หมู่ที่ 1 หมู่ที่ 10 สายหล"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "รายละเอียดตาม",
+      "freq": 21,
+      "examples": [
+        "จ้างก่อสร้างเมรุเผาศพประจำฌาปนสถาน บ้านหนองบัวคำ หมู่ที่ 11 (เฉพาะส่วน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ทางน้ำ",
+      "freq": 21,
+      "examples": [
+        "จ้างก่อสร้างทางน้ำล้นคอนกรีตเสริมเหล็ก บ้านดอนม่วง หมู่ที่ ๙ โดยวิธีเฉ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เหล็ก",
+      "freq": 21,
+      "examples": [
+        "จ้างโครงการย้ายถังสูงเหล็กรูปทรงถ้วยแชมเปญ พร้อมเทฐานและติดตั้งระบบใช้"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สถานที่",
+      "freq": 21,
+      "examples": [
+        "จ้างเหมาปรับดันบ่อขยะ ตามโครงการปรับปรุงสถานที่กำจัดขยะมูลฝอย เทศบาลตำ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "กั้น",
+      "freq": 21,
+      "examples": [
+        "จ้างกั้นห้องทำงานฝ่ายรังวัด สำนักงานที่ดินจังหวัดนครพนม สาขานาหว้า โดย"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "พระราชพิธี",
+      "freq": 21,
+      "examples": [
+        "จ้างก่อสร้างซุ้มประตูเฉลิมพระเกียรติ เนื่องในโอกาสพระราชพิธีมหามงคลเฉล"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ลานจอดรถ",
+      "freq": 21,
+      "examples": [
+        "จ้างก่อสร้างลานจอดรถประชาชนผู้มาติดต่อราชการ ที่ว่าการอำเภอศรีวิไล ตำบ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ริ",
+      "freq": 21,
+      "examples": [
+        "จ้างก่อสร้างห้องเก็บขององค์การบริหาารส่วนตำบลเหล่าทอง อำเภอโซ่พิสัย จั"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เก็บพัสดุ",
+      "freq": 21,
+      "examples": [
+        "จ้างปรับปรุงโรงเก็บพัสดุสำนักงานเกษตรอำเภอโพนสวรรค์ โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สนับสนุนการ",
+      "freq": 21,
+      "examples": [
+        "จ้างเหมาโครงการแก้ไขปัญหาความเดือดร้อนของประชาชน โดยการปรับปรุงลานวัฒน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ก่อสร้างเขื่อน",
+      "freq": 21,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการก่อสร้างเขื่อนป้องกันตลิ่งริมแม่น้ำโขง บ้"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "โครงการขุด",
+      "freq": 21,
+      "examples": [
+        "จ้างโครงการขุดหลุมขยะเทศบาลตำบลศรีสงคราม โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เส้นทาง",
+      "freq": 21,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างกิจกรรมก่อสร้างเส้นทางจักรยานริมฝั่งแม่น้ำโขงจาก"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เซิ้งหมู่",
+      "freq": 21,
+      "examples": [
+        "จ้างก่อสร้างทุ่นแพเซิ้ง หมู่ที่ ๑๐ และ หมู่ที่ ๑๓ โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ทุ่นแพ",
+      "freq": 21,
+      "examples": [
+        "จ้างก่อสร้างทุ่นแพเซิ้ง หมู่ที่ ๑๐ และ หมู่ที่ ๑๓ โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "แพเซิ้ง",
+      "freq": 21,
+      "examples": [
+        "จ้างก่อสร้างทุ่นแพเซิ้ง หมู่ที่ ๑๐ และ หมู่ที่ ๑๓ โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เซิ้ง",
+      "freq": 21,
+      "examples": [
+        "จ้างก่อสร้างทุ่นแพเซิ้ง หมู่ที่ ๑๐ และ หมู่ที่ ๑๓ โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ทุ่น",
+      "freq": 21,
+      "examples": [
+        "จ้างก่อสร้างทุ่นแพเซิ้ง หมู่ที่ ๑๐ และ หมู่ที่ ๑๓ โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ก่อสร้างทุ่น",
+      "freq": 21,
+      "examples": [
+        "จ้างก่อสร้างทุ่นแพเซิ้ง หมู่ที่ ๑๐ และ หมู่ที่ ๑๓ โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เอนกประสงค์",
+      "freq": 20,
+      "examples": [
+        "จ้างก่อสร้างลานเอนกประสงค์คอนกรีตเสริมเหล็ก บ้านเอื้อง หมู่ที่ 1 โดยวิ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "รักษา",
+      "freq": 20,
+      "examples": [
+        "จ้างก่อสร้าง ตามโครงการก่อสร้างลานอเนกประสงค์คอนกรีตเสริมเหล็กบริเวณกอ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "คบ",
+      "freq": 20,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างปรับปรุงเพิ่มประสิทธิภาพการเก็บกักและระบายน้ำหนอ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "พิเศษ",
+      "freq": 20,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างปรับปรุงพัฒนาศูนย์การศึกษาพิเศษ ประจำจังหวัดนครพ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "หมู่ท่ี",
+      "freq": 20,
+      "examples": [
+        "จ้างโครงการซ่อมแซมเขื่อนป้องกันตล่ิงริมแม่น้ำโขง บ้านท่าไคร้ หมู่ท่ี ๕"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ภูมิ",
+      "freq": 20,
+      "examples": [
+        "จ้างปูพื้นกระเบื้องยางพาราภายในโดม ศพด.วัดสว่างภูมิกาวาส บ้านกุงโกน หม"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "แหล่งท่องเที่ยว",
+      "freq": 19,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการพัฒนาแหล่งท่องเที่ยวจังหวัดนครพนม (Mekong"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ห้องปฏิบัติการ",
+      "freq": 19,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างปรับปรุงห้องปฏิบัติการสาขาวิชาการโรงแรม ตำบลหนอง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "หมู่บ้านหมู่",
+      "freq": 19,
+      "examples": [
+        "จ้างโครงการปรับปรุงแอสฟีลท์ติกภายในหมู่บ้าน หมู่ที่ 1 หมู่ที่ 10 สายหล"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ตามแบบแปลน",
+      "freq": 19,
+      "examples": [
+        "จ้างก่อสร้างซุ้มประตูเทศบาลตำบลท่าเรือ ขนาดความกว้างไม่น้อยกว่า 11.00 "
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "แบบแปลน",
+      "freq": 19,
+      "examples": [
+        "จ้างก่อสร้างซุ้มประตูเทศบาลตำบลท่าเรือ ขนาดความกว้างไม่น้อยกว่า 11.00 "
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ชั้น",
+      "freq": 19,
+      "examples": [
+        "จ้างซ่อมแซมแฟลต 5 ชั้น 30 ครอบครัว ตำรวจภูธรจังหวัดนครนม จำนวน 1 หลัง "
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ก่อสร้างเสาธง",
+      "freq": 19,
+      "examples": [
+        "จ้างโครงการก่อสร้างเสาธงสำนักงานเทศบาลตำบลเรณูนคร โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "งานก่อสร้าง",
+      "freq": 19,
+      "examples": [
+        "จ้างก่อสร้างที่จอดรถสำนักงานเทศบาลตำบลท่าเรือ ขนาดความกว้าง 6.00 เมตร "
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ทางน้ำล้น",
+      "freq": 19,
+      "examples": [
+        "จ้างก่อสร้างทางน้ำล้นคอนกรีตเสริมเหล็ก บ้านดอนม่วง หมู่ที่ ๙ โดยวิธีเฉ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ก่อสร้างทางน้ำ",
+      "freq": 19,
+      "examples": [
+        "จ้างก่อสร้างทางน้ำล้นคอนกรีตเสริมเหล็ก บ้านดอนม่วง หมู่ที่ ๙ โดยวิธีเฉ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "กำจัด",
+      "freq": 19,
+      "examples": [
+        "จ้างเหมาปรับดันบ่อขยะ ตามโครงการปรับปรุงสถานที่กำจัดขยะมูลฝอย เทศบาลตำ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "กลบ",
+      "freq": 19,
+      "examples": [
+        "จ้างขุดบ่อขยะพร้อมฝังกลบ บ้านอ้วน หมู่ที่ 4 และเกลี่ยขยะลงบ่อพร้อมตกแต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "รองรับ",
+      "freq": 19,
+      "examples": [
+        "จ้างโครงการพัฒนาและปรับปรุงสถานที่ปฏิบัติงานเพื่อรองรับบริการประชาชน ป"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เด็ก",
+      "freq": 19,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการก่อสร้างศูนย์พัฒนาเล็กเด็กบ้านหนองฮู-ฝอยล"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "มงคล",
+      "freq": 19,
+      "examples": [
+        "จ้างก่อสร้างซุ้มประตูเฉลิมพระเกียรติ เนื่องในโอกาสพระราชพิธีมหามงคลเฉล"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ก่อสร้างสนาม",
+      "freq": 19,
+      "examples": [
+        "จ้างก่อสร้างสนามบาสเกตบอลแบบมาตรฐาน FIBA โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ขยะติดเชื้อ",
+      "freq": 19,
+      "examples": [
+        "จ้างเหมาปรับปรุงห้องพักขยะติดเชื้อ โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "คันดิน",
+      "freq": 19,
+      "examples": [
+        "จ้างซ่อมแซมคันดินหนองแวง หมู่ 11 บ้านหนองแวง โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "พันธุ์",
+      "freq": 19,
+      "examples": [
+        "จ้างเหมาปรับปรุงพื้นที่เรียนรู้ชุมชนและจัดหาพันธุ์พืช พันธุ์สัตว์ ตามภ"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สัตว์",
+      "freq": 19,
+      "examples": [
+        "จ้างเหมาปรับปรุงพื้นที่เรียนรู้ชุมชนและจัดหาพันธุ์พืช พันธุ์สัตว์ ตามภ"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ที่พักขยะ",
+      "freq": 19,
+      "examples": [
+        "จ้างปรับปรุงที่พักขยะติดเชื้อรพ.สต.บ้านโนนสวาง โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "วิทยาศาสตร์",
+      "freq": 18,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างงานจ้างจัดหาและก่อสร้างระบบอบแห้งพลังงานแสงอาทิต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "บำรุงรักษา",
+      "freq": 18,
+      "examples": [
+        "จ้างงานบำรุงรักษาและปรับปรุงซ่อมแซมเขื่อนป้องกันตลิ่งริมแม่น้ำโขง บ้าน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ทางลาด",
+      "freq": 18,
+      "examples": [
+        "จ้างปรับปรุงบันไดทางขึ้นและทางลาดสำหรับผู้พิการ สำนักงานที่ดินจังหวัดน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "คอนเวิร์ส",
+      "freq": 18,
+      "examples": [
+        "จ้างโครงการก่อสร้างบล็อกคอนเวิร์ส ขนาด 2 ช่อง x 1.80 ม. X 1.80 ม .ยาว "
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "อาสา",
+      "freq": 18,
+      "examples": [
+        "จ้างก่อสร้าง ตามโครงการก่อสร้างลานอเนกประสงค์คอนกรีตเสริมเหล็กบริเวณกอ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "อาสารักษา",
+      "freq": 18,
+      "examples": [
+        "จ้างก่อสร้าง ตามโครงการก่อสร้างลานอเนกประสงค์คอนกรีตเสริมเหล็กบริเวณกอ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "กองร้อย",
+      "freq": 18,
+      "examples": [
+        "จ้างก่อสร้าง ตามโครงการก่อสร้างลานอเนกประสงค์คอนกรีตเสริมเหล็กบริเวณกอ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "รักษาดินแดน",
+      "freq": 18,
+      "examples": [
+        "จ้างก่อสร้าง ตามโครงการก่อสร้างลานอเนกประสงค์คอนกรีตเสริมเหล็กบริเวณกอ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ดินแดน",
+      "freq": 18,
+      "examples": [
+        "จ้างก่อสร้าง ตามโครงการก่อสร้างลานอเนกประสงค์คอนกรีตเสริมเหล็กบริเวณกอ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ต้นแบบ",
+      "freq": 18,
+      "examples": [
+        "จ้างก่อสร้างระบบชลประทานโครงการพัฒนาพื้นที่ต้นแบบการพัฒนาคุณภาพชีวิต ต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "แก้ไขปัญหา",
+      "freq": 18,
+      "examples": [
+        "จ้างเหมาโครงการแก้ไขปัญหาความเดือดร้อนของประชาชน โดยการปรับปรุงลานวัฒน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "โมเดลสำหรับ",
+      "freq": 18,
+      "examples": [
+        "จ้างเหมาปรับปรุงพื้นที่เรียนรู้ชุมชนและจัดหาพันธุ์พืช พันธุ์สัตว์ ตามภ"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ก่อสร้างที่พัก",
+      "freq": 18,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างก่อสร้างที่พักประชาชนพร้อมส่วนประกอบ สำนักงานที่"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "การผลิต",
+      "freq": 17,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างงานจ้างจัดหาและก่อสร้างระบบอบแห้งพลังงานแสงอาทิต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ทำ",
+      "freq": 17,
+      "examples": [
+        "จ้างทำที่จอดรถยนต์และรถจักรยานยนต์ คณะวิทยาการจัดการและเทคโนโลยีสารสนเ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "หนองบัว",
+      "freq": 17,
+      "examples": [
+        "จ้างก่อสร้างเมรุเผาศพประจำฌาปนสถาน บ้านหนองบัวคำ หมู่ที่ 11 (เฉพาะส่วน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "พิการ",
+      "freq": 17,
+      "examples": [
+        "จ้างปรับปรุงบันไดทางขึ้นและทางลาดสำหรับผู้พิการ สำนักงานที่ดินจังหวัดน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เพื่อการเกษตร",
+      "freq": 17,
+      "examples": [
+        "จ้างก่อสร้างลานอเนกประสงค์เพื่อการเกษตร หมู่ที่ ๑๑ บ้านน้อยทวย ขนาดกว้"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "โรงฆ่าสัตว์",
+      "freq": 17,
+      "examples": [
+        "จ้างโครงการปรับปรุงโรงฆ่าสัตว์เทศบาลตำบลเรณูนคร โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ช่าง",
+      "freq": 17,
+      "examples": [
+        "จ้างค่าที่ดินและสิ่งก่อสร้าง โครงการก่อสร้างเมรุวัดป่าห้วยหินลาด บ้านห"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ปู",
+      "freq": 17,
+      "examples": [
+        "จ้างโครงการปูพื้นกระเบื้องหอประชุมปัญญาภิมุของค์การบริหารส่วนตำบลท่าดอ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "การพัฒนาคุณภาพชีวิต",
+      "freq": 17,
+      "examples": [
+        "จ้างก่อสร้างระบบชลประทานโครงการพัฒนาพื้นที่ต้นแบบการพัฒนาคุณภาพชีวิต ต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ต้นแบบการพัฒนา",
+      "freq": 17,
+      "examples": [
+        "จ้างก่อสร้างระบบชลประทานโครงการพัฒนาพื้นที่ต้นแบบการพัฒนาคุณภาพชีวิต ต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "คัน",
+      "freq": 17,
+      "examples": [
+        "จ้างซ่อมแซมคันพนังฝั่งซ้าย กม.๑+๕๐๐ ปตร.บ้านนาคู่ ตำบลนาคู่ อำเภอนาแก "
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ขยะบ้าน",
+      "freq": 17,
+      "examples": [
+        "จ้างปรับปรุงบ่อขยะบ้านอีอูด หมู่ที่ 3 ตำบลนาเดื่อ อำเภอศรีสงคราม จังหว"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ของประชาชน",
+      "freq": 17,
+      "examples": [
+        "จ้างเหมาโครงการแก้ไขปัญหาความเดือดร้อนของประชาชน โดยการปรับปรุงลานวัฒน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สุขภาพ",
+      "freq": 17,
+      "examples": [
+        "จ้างเหมาซ่อมแซมลานคอนกรีดเสริมเหล็กภายในโรงพยาบาลส่งเสริมสุขภาพตำบลท่า"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ก่อสร้างโรงเรือน",
+      "freq": 17,
+      "examples": [
+        "จ้างจ้างก่อสร้างโรงเรือนเพาะเห็ดและเรือนเพาะชำ โครงการ อิ่มนี้เพื่อน้อ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "จัดหาพันธุ์พืช",
+      "freq": 17,
+      "examples": [
+        "จ้างเหมาปรับปรุงพื้นที่เรียนรู้ชุมชนและจัดหาพันธุ์พืช พันธุ์สัตว์ ตามภ"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ครัวเรือนตาม",
+      "freq": 17,
+      "examples": [
+        "จ้างเหมาปรับปรุงพื้นที่เรียนรู้ชุมชนและจัดหาพันธุ์พืช พันธุ์สัตว์ ตามภ"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ภูมิสังคม",
+      "freq": 17,
+      "examples": [
+        "จ้างเหมาปรับปรุงพื้นที่เรียนรู้ชุมชนและจัดหาพันธุ์พืช พันธุ์สัตว์ ตามภ"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ของครัวเรือน",
+      "freq": 17,
+      "examples": [
+        "จ้างเหมาปรับปรุงพื้นที่เรียนรู้ชุมชนและจัดหาพันธุ์พืช พันธุ์สัตว์ ตามภ"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "พันธุ์สัตว์",
+      "freq": 17,
+      "examples": [
+        "จ้างเหมาปรับปรุงพื้นที่เรียนรู้ชุมชนและจัดหาพันธุ์พืช พันธุ์สัตว์ ตามภ"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "พันธุ์พืชพันธุ์",
+      "freq": 17,
+      "examples": [
+        "จ้างเหมาปรับปรุงพื้นที่เรียนรู้ชุมชนและจัดหาพันธุ์พืช พันธุ์สัตว์ ตามภ"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ความเหมาะสม",
+      "freq": 17,
+      "examples": [
+        "จ้างเหมาปรับปรุงพื้นที่เรียนรู้ชุมชนและจัดหาพันธุ์พืช พันธุ์สัตว์ ตามภ"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "พันธุ์พืช",
+      "freq": 17,
+      "examples": [
+        "จ้างเหมาปรับปรุงพื้นที่เรียนรู้ชุมชนและจัดหาพันธุ์พืช พันธุ์สัตว์ ตามภ"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ตามภูมิ",
+      "freq": 17,
+      "examples": [
+        "จ้างเหมาปรับปรุงพื้นที่เรียนรู้ชุมชนและจัดหาพันธุ์พืช พันธุ์สัตว์ ตามภ"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ชุมชนและ",
+      "freq": 17,
+      "examples": [
+        "จ้างเหมาปรับปรุงพื้นที่เรียนรู้ชุมชนและจัดหาพันธุ์พืช พันธุ์สัตว์ ตามภ"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สัตว์ตาม",
+      "freq": 17,
+      "examples": [
+        "จ้างเหมาปรับปรุงพื้นที่เรียนรู้ชุมชนและจัดหาพันธุ์พืช พันธุ์สัตว์ ตามภ"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สังคมหรือ",
+      "freq": 17,
+      "examples": [
+        "จ้างเหมาปรับปรุงพื้นที่เรียนรู้ชุมชนและจัดหาพันธุ์พืช พันธุ์สัตว์ ตามภ"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สนามฟุตบอล",
+      "freq": 16,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการก่อสร้างสนามฟุตบอลหญ้าเทียม ดงบาก หมู่ที่"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ลานตาก",
+      "freq": 16,
+      "examples": [
+        "จ้างโครงการก่อสร้างลานตากผลผลิตทางการเกษตร บ้านท่าคำไฮ หมู่ที่ 10 โดยว"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "มหา",
+      "freq": 16,
+      "examples": [
+        "จ้างก่อสร้างมณฑลปลูก พระศรีมหาโพธิทศมราชบพิตร โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สำนักงานเทศบาลตำบล",
+      "freq": 16,
+      "examples": [
+        "จ้างโครงการก่อสร้างเสาธงสำนักงานเทศบาลตำบลเรณูนคร โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ผู้พิการ",
+      "freq": 16,
+      "examples": [
+        "จ้างปรับปรุงบันไดทางขึ้นและทางลาดสำหรับผู้พิการ สำนักงานที่ดินจังหวัดน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ที่ดินจังหวัด",
+      "freq": 16,
+      "examples": [
+        "จ้างปรับปรุงบันไดทางขึ้นและทางลาดสำหรับผู้พิการ สำนักงานที่ดินจังหวัดน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ขยะมูลฝอย",
+      "freq": 16,
+      "examples": [
+        "จ้างเหมาปรับดันบ่อขยะ ตามโครงการปรับปรุงสถานที่กำจัดขยะมูลฝอย เทศบาลตำ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เกษตรกร",
+      "freq": 16,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการปรับระดับพื้นที่เกษตรกรและฟื้นฟูพื้นที่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เสา",
+      "freq": 16,
+      "examples": [
+        "จ้างเหมาปักเสาพร้อมอุปกรณ์ประกอบ คขก.2 บ.โนนงาม-โนนศิลา ม.15 ต.ศรีชมภู"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "กองร้อยอาสา",
+      "freq": 16,
+      "examples": [
+        "จ้างก่อสร้าง ตามโครงการก่อสร้างลานอเนกประสงค์คอนกรีตเสริมเหล็กบริเวณกอ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ขับเคลื่อน",
+      "freq": 16,
+      "examples": [
+        "จ้างโครงการปรับปรุงห้องเก็บข้อมูลแผนงาน โครงการขับเคลื่อนการพัฒนาจังหว"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ห้องเก็บ",
+      "freq": 16,
+      "examples": [
+        "จ้างโครงการปรับปรุงห้องเก็บข้อมูลแผนงาน โครงการขับเคลื่อนการพัฒนาจังหว"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ให้บริการ",
+      "freq": 16,
+      "examples": [
+        "จ้างพัฒนาสถานที่เพื่อการให้บริการประชาชน อำเภอวังยาง จังหวัดนครพนม โดย"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "จักรยาน",
+      "freq": 16,
+      "examples": [
+        "จ้างปรับปรุงซ่อมแซมลานจอดรถจักรยานนักเรียน โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สุขภาพตำบล",
+      "freq": 16,
+      "examples": [
+        "จ้างเหมาซ่อมแซมลานคอนกรีดเสริมเหล็กภายในโรงพยาบาลส่งเสริมสุขภาพตำบลท่า"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "โรงพยาบาลส่งเสริม",
+      "freq": 16,
+      "examples": [
+        "จ้างเหมาซ่อมแซมลานคอนกรีดเสริมเหล็กภายในโรงพยาบาลส่งเสริมสุขภาพตำบลท่า"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เผา",
+      "freq": 16,
+      "examples": [
+        "จ้างเหมาปรับปรุงเดาเผาขยะ รพ.สต.หนองบ่อ โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ตามความเหมาะสม",
+      "freq": 16,
+      "examples": [
+        "จ้างเหมาปรับปรุงพื้นที่เรียนรู้ชุมชนและจัดหาพันธุ์พืช พันธุ์สัตว์ ตามภ"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ความเหมาะสมของ",
+      "freq": 16,
+      "examples": [
+        "จ้างเหมาปรับปรุงพื้นที่เรียนรู้ชุมชนและจัดหาพันธุ์พืช พันธุ์สัตว์ ตามภ"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ครัวเรือนสำหรับ",
+      "freq": 16,
+      "examples": [
+        "จ้างจ้างเหมาปรับรูปแบบแปลงที่ดินตามแบบมาตรฐาน โคก หนอง นา โมเดล ตามโคร"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ระดับครัวเรือน",
+      "freq": 16,
+      "examples": [
+        "จ้างจ้างเหมาปรับรูปแบบแปลงที่ดินตามแบบมาตรฐาน โคก หนอง นา โมเดล ตามโคร"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "พื้นที่ครัวเรือน",
+      "freq": 16,
+      "examples": [
+        "จ้างจ้างเหมาปรับรูปแบบแปลงที่ดินตามแบบมาตรฐาน โคก หนอง นา โมเดล ตามโคร"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ครัวเรือนต้นแบบ",
+      "freq": 16,
+      "examples": [
+        "จ้างจ้างเหมาปรับรูปแบบแปลงที่ดินตามแบบมาตรฐาน โคก หนอง นา โมเดล ตามโคร"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ดอกไม้จันทน์",
+      "freq": 16,
+      "examples": [
+        "จ้างก่อสร้างที่เผาดอกไม้จันทน์ งานพระราชพิธีถวายพระเพลิงพระบรมศพ พระบา"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "จันทร์",
+      "freq": 15,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการก่อสร้างเมรุเผาศพ บ้านโนนจันทร์ หมู่ที่ ๘"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ป่าช้า",
+      "freq": 15,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการก่อสร้างเมรุเผาศพป่าช้าบ้านท่าจำปา หมู่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "โดม",
+      "freq": 15,
+      "examples": [
+        "จ้างก่อสร้างโดมอเนกประสงค์ (ศพด.ตำบลกุตาไก้ (กองการศึกษาฯ) โดมอเนกประส"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ผนัง",
+      "freq": 15,
+      "examples": [
+        "จ้างก่อสร้างผนังกันดิน บ้านหนองฮี หมู่ที่ ๑๑ บ้านนางโอกาศ ถึง ห้วยแคน "
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "คอนกรีตเสริมเหล็กบ้าน",
+      "freq": 15,
+      "examples": [
+        "จ้างก่อสร้างลานเอนกประสงค์คอนกรีตเสริมเหล็ก บ้านเอื้อง หมู่ที่ 1 โดยวิ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สำนักงานที่ดิน",
+      "freq": 15,
+      "examples": [
+        "จ้างปรับปรุงบันไดทางขึ้นและทางลาดสำหรับผู้พิการ สำนักงานที่ดินจังหวัดน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ทางเข้า",
+      "freq": 15,
+      "examples": [
+        "จ้างปรับปรุงพื้นทางเข้าด้านหน้าที่ว่าการอำเภอท่าอุเทน โดยวิธีเฉพาะเจาะ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "บล็อก",
+      "freq": 15,
+      "examples": [
+        "จ้างโครงการก่อสร้างบล็อกคอนเวิร์ส ขนาด 2 ช่อง x 1.80 ม. X 1.80 ม .ยาว "
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ฐาน",
+      "freq": 15,
+      "examples": [
+        "จ้างโครงการย้ายถังสูงเหล็กรูปทรงถ้วยแชมเปญ พร้อมเทฐานและติดตั้งระบบใช้"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ที่ทำการองค์การบริหารส่วนตำบล",
+      "freq": 15,
+      "examples": [
+        "จ้างก่อสร้างโดมหน้าที่ทำการองค์การบริหารส่วนตำบลวังตามัว โดยวิธีเฉพาะเ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "น้ำหนอง",
+      "freq": 15,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างปรับปรุงเพิ่มประสิทธิภาพการเก็บกักและระบายน้ำหนอ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "แหล่ง",
+      "freq": 15,
+      "examples": [
+        "จ้างก่อสร้าง โครงการพัฒนาแหล่งน้ำหนองคำอ้อตอนบน บ้านเซียงเซา หมู่ที่ ๗"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "รูป",
+      "freq": 15,
+      "examples": [
+        "จ้างตามโครงการก่อสร้างรงระบายน้ำรูปตัวยู บ้านดอนสวัสดิ์ หมู่ที่ ๑๐ โดย"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "กรอง",
+      "freq": 15,
+      "examples": [
+        "จ้างก่อสร้างโรงกรองน้ำพร้อมติดตั้งเครื่องกรองน้ำ อบต.หนองบ่อ โดยวิธีเฉ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ฉุกเฉิน",
+      "freq": 15,
+      "examples": [
+        "จ้างจ้างเหมาซ่อมแซมห้องอุบัติเหตุและฉุกเฉิน(32 ตร.ม.) รพ.สต.บ้านโนนสวา"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ส่งเสริมสุขภาพ",
+      "freq": 15,
+      "examples": [
+        "จ้างเหมาซ่อมแซมลานคอนกรีดเสริมเหล็กภายในโรงพยาบาลส่งเสริมสุขภาพตำบลท่า"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "โมเดลตาม",
+      "freq": 15,
+      "examples": [
+        "จ้างจ้างเหมาปรับรูปแบบแปลงที่ดินตามแบบมาตรฐาน โคก หนอง นา โมเดล ตามโคร"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ที่เผา",
+      "freq": 15,
+      "examples": [
+        "จ้างปรับปรุงที่เผาขยะสำนักงาน องค์การบริหารส่นตำบลเหล่าทอง โดยวิธีเฉพา"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ผ่านห้วย",
+      "freq": 15,
+      "examples": [
+        "จ้างโครงการก่อสร้างทางน้ำล้นผ่านห้วยอีเก้ง จุดที่ 2 หมู่ที่ 14 บ้านธาต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ล้นผ่าน",
+      "freq": 15,
+      "examples": [
+        "จ้างโครงการก่อสร้างทางน้ำล้นผ่านห้วยอีเก้ง จุดที่ 2 หมู่ที่ 14 บ้านธาต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เผาศพบ้าน",
+      "freq": 14,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการก่อสร้างเมรุเผาศพ บ้านโนนจันทร์ หมู่ที่ ๘"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "การศึกษา",
+      "freq": 14,
+      "examples": [
+        "จ้างก่อสร้างโดมอเนกประสงค์ (ศพด.ตำบลกุตาไก้ (กองการศึกษาฯ) โดมอเนกประส"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ทางการเกษตร",
+      "freq": 14,
+      "examples": [
+        "จ้างโครงการก่อสร้างลานตากผลผลิตทางการเกษตร บ้านท่าคำไฮ หมู่ที่ 10 โดยว"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "พัง",
+      "freq": 14,
+      "examples": [
+        "จ้างเหมาก่อสร้างตลิ่งกันพัง สายหลังวัดมาลัย - บ้านร่มโพธิ์ทอง หมู่ที่ "
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "นครพนมสาขา",
+      "freq": 14,
+      "examples": [
+        "จ้างปรับปรุงบันไดทางขึ้นและทางลาดสำหรับผู้พิการ สำนักงานที่ดินจังหวัดน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "บล็อกคอนเวิร์ส",
+      "freq": 14,
+      "examples": [
+        "จ้างโครงการก่อสร้างบล็อกคอนเวิร์ส ขนาด 2 ช่อง x 1.80 ม. X 1.80 ม .ยาว "
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "บาน",
+      "freq": 14,
+      "examples": [
+        "จ้างโครงการปรับปรุงห้องหัวหน้าสำนักปลัด โดย การติดตั้งหน้าต่าง ขนาดกว้"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "กองช่าง",
+      "freq": 14,
+      "examples": [
+        "จ้างค่าที่ดินและสิ่งก่อสร้าง โครงการก่อสร้างเมรุวัดป่าห้วยหินลาด บ้านห"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "บ้านห้วย",
+      "freq": 14,
+      "examples": [
+        "จ้างค่าที่ดินและสิ่งก่อสร้าง โครงการก่อสร้างเมรุวัดป่าห้วยหินลาด บ้านห"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ราชการ",
+      "freq": 14,
+      "examples": [
+        "จ้างก่อสร้างลานจอดรถประชาชนผู้มาติดต่อราชการ ที่ว่าการอำเภอศรีวิไล ตำบ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ป้องกันและ",
+      "freq": 14,
+      "examples": [
+        "จ้างโครงการปรับปรุงห้องดนตรี(เพื่อใช้เป็นสำนักงานป้องกันและบรรเทาสาธาร"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ชนิด",
+      "freq": 14,
+      "examples": [
+        "จ้างโครงการก่อสร้างฌาปนสถานชนิดเตาเดี่ยว (เมรุเผาศพ) บ้านใหม่จำปา หมู่"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เอกชน",
+      "freq": 14,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างงานจ้างเหมาเอกชนเฉพาะค่าแรงเพื่อดำเนินการย้ายแนว"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "อารย",
+      "freq": 14,
+      "examples": [
+        "จ้างก่อสร้างป้ายโครงการโคก หนองนา อารยเกษตร เฉลิมพระเกียรติพระบาทสมเด็"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ค่าแรงก่อสร้าง",
+      "freq": 14,
+      "examples": [
+        "จ้างจ้างเหมาค่าแรงก่อสร้างระบบจำหน่าย บ้านป่าก่อ-หัวแฮด ต.ท่าสะอาด อ.เ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ปรับปรุงสำนักงาน",
+      "freq": 14,
+      "examples": [
+        "จ้างปรับปรุงสำนักงานพาณิชย์จังหวัดนครพนม โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ก่อสร้างทางลาด",
+      "freq": 14,
+      "examples": [
+        "จ้างก่อสร้างทางลาดผู้พิการ อบต.นาดง (ทางลาดคอนกรีตเสริมเหล็ก กว้าง 1.5"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สุข",
+      "freq": 14,
+      "examples": [
+        "จ้างก่อสร้างเมรุเผาศพ ขนาด ๓.๐ x ๖.๐ เมตร หมู่ที่ ๗ บ้านสุขประเสริฐ โด"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ปริมาณ",
+      "freq": 13,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างงานจ้างเหมาทำการติดตั้งราวกันอันตราย ทล.22 ตอน ก"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ตลาด",
+      "freq": 13,
+      "examples": [
+        "จ้างโครงการปรับปรุงซ่อมแซมตลาดชุมชน หมู่ที่ ๓ บ้านนาเชือกน้อย (ตามแบบแ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ก่อสร้างบล็อก",
+      "freq": 13,
+      "examples": [
+        "จ้างโครงการก่อสร้างบล็อกคอนเวิร์ส ขนาด 2 ช่อง x 1.80 ม. X 1.80 ม .ยาว "
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ม่วง",
+      "freq": 13,
+      "examples": [
+        "จ้างก่อสร้างทางน้ำล้นคอนกรีตเสริมเหล็ก บ้านดอนม่วง หมู่ที่ ๙ โดยวิธีเฉ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ก่อ",
+      "freq": 13,
+      "examples": [
+        "จ้างก่อสร้างบ้าน ตามโครงการบ้านกาชาดเฉลิมพระเกียรติฯ เพื่อชาวนครพนม ปร"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ฝังกลบ",
+      "freq": 13,
+      "examples": [
+        "จ้างขุดบ่อขยะพร้อมฝังกลบ บ้านอ้วน หมู่ที่ 4 และเกลี่ยขยะลงบ่อพร้อมตกแต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ฝัง",
+      "freq": 13,
+      "examples": [
+        "จ้างขุดบ่อขยะพร้อมฝังกลบ บ้านอ้วน หมู่ที่ 4 และเกลี่ยขยะลงบ่อพร้อมตกแต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ปฏิบัติงาน",
+      "freq": 13,
+      "examples": [
+        "จ้างโครงการพัฒนาและปรับปรุงสถานที่ปฏิบัติงานเพื่อรองรับบริการประชาชน ป"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "หน้าต่าง",
+      "freq": 13,
+      "examples": [
+        "จ้างโครงการปรับปรุงห้องหัวหน้าสำนักปลัด โดย การติดตั้งหน้าต่าง ขนาดกว้"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "มหามงคล",
+      "freq": 13,
+      "examples": [
+        "จ้างก่อสร้างซุ้มประตูเฉลิมพระเกียรติ เนื่องในโอกาสพระราชพิธีมหามงคลเฉล"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เศรษฐกิจ",
+      "freq": 13,
+      "examples": [
+        "จ้างเหมาก่อสร้างงานจัดทำระบบอนุรักษ์ดินและน้ำ โครงการการพัฒนาที่ดินเค็"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สนามฟุตซอล",
+      "freq": 13,
+      "examples": [
+        "จ้างก่อสร้าง (สนามฟุตซอล) บ้านตาลกุด หมู่ที่ 3 ตำบลโพนแพง องค์การบริหา"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ฟุตซอล",
+      "freq": 13,
+      "examples": [
+        "จ้างก่อสร้าง (สนามฟุตซอล) บ้านตาลกุด หมู่ที่ 3 ตำบลโพนแพง องค์การบริหา"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สิ่งปฏิกูล",
+      "freq": 13,
+      "examples": [
+        "จ้างปรับปรุงซ่อมแซมโรงบำบัดสิ่งปฏิกูล โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ลำ",
+      "freq": 13,
+      "examples": [
+        "จ้างโครงการก่อสร้าง คสลสายบ้านนายลำไพร โพธิ์สาวัง ถึงสี่แยกทางไปบะเม็ก"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ไร่โดย",
+      "freq": 13,
+      "examples": [
+        "จ้างปรับรูปแบบแปลง ที่ดินตามรายละเอียดงานปรับรูปแบบแปลง ตามโครงการงานป"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ซ่อมแซมคันดิน",
+      "freq": 13,
+      "examples": [
+        "จ้างซ่อมแซมคันดินหนองแวง หมู่ 11 บ้านหนองแวง โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "โกดัง",
+      "freq": 13,
+      "examples": [
+        "จ้างโครงการก่อสร้างห้องเก็บของ (โกดัง) องค์การบริหารส่วนตำบลโพธิ์ตาก อ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เพื่อคนพิการ",
+      "freq": 13,
+      "examples": [
+        "จ้างเหมาก่อสร้างและปรับปรุง ตามโครงการเมืองน่าอยู่ทุกกลุ่มคน อารยสถาปั"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เพิ่มประสิทธิภาพ",
+      "freq": 12,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างงานจ้างจัดหาและก่อสร้างระบบอบแห้งพลังงานแสงอาทิต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ก่อสร้างโดม",
+      "freq": 12,
+      "examples": [
+        "จ้างก่อสร้างโดมอเนกประสงค์ (ศพด.ตำบลกุตาไก้ (กองการศึกษาฯ) โดมอเนกประส"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "แอ",
+      "freq": 12,
+      "examples": [
+        "จ้างโครงการปรับปรุงแอสฟีลท์ติกภายในหมู่บ้าน หมู่ที่ 1 หมู่ที่ 10 สายหล"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ซอย",
+      "freq": 12,
+      "examples": [
+        "จ้างจ้างโครงการก่อสร้างผวิจราจรแอสฟัลท์ติกคอนกรีต ซอยสวนแก้ว หมู่ที่ ๑"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "องค์การบริหารส่วนจังหวัด",
+      "freq": 12,
+      "examples": [
+        "จ้างโครงการก่อสร้างลานอเนกประสงค์คอนกรีตเสริมเหล็ก ภายในสำนักงานองค์กา"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ห้องทำงาน",
+      "freq": 12,
+      "examples": [
+        "จ้างกั้นห้องทำงานฝ่ายรังวัด สำนักงานที่ดินจังหวัดนครพนม สาขานาหว้า โดย"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ลบ",
+      "freq": 12,
+      "examples": [
+        "จ้างก่อสร้างถังพักน้ำพร้อมระบบสูบน้ำ หมู่ 14 บ้านนาพระชัย (หนองเสือแมว"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เพื่อรองรับ",
+      "freq": 12,
+      "examples": [
+        "จ้างโครงการพัฒนาและปรับปรุงสถานที่ปฏิบัติงานเพื่อรองรับบริการประชาชน ป"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ไร่ปีงบประมาณ",
+      "freq": 12,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการปรับระดับพื้นที่เกษตรกรและฟื้นฟูพื้นที่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เนื่องใน",
+      "freq": 12,
+      "examples": [
+        "จ้างก่อสร้างซุ้มประตูเฉลิมพระเกียรติ เนื่องในโอกาสพระราชพิธีมหามงคลเฉล"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "หอถัง",
+      "freq": 12,
+      "examples": [
+        "จ้างก่อสร้างหอถังสูง ขนาด 10 ลูกบาศก์เมตร(ถังไฟเบอร์กลาส 4 ถัง) หมู่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "อุปกรณ์",
+      "freq": 12,
+      "examples": [
+        "จ้างเหมาปักเสาพร้อมอุปกรณ์ประกอบ คขก.2 บ.โนนงาม-โนนศิลา ม.15 ต.ศรีชมภู"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เป้าหมาย",
+      "freq": 12,
+      "examples": [
+        "จ้างเหมาก่อสร้างโครงการการพัฒนาที่ดินเค็มแบบบูรณาการในพื้นที่ลุ่มน้ำย่"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สาธารณภัย",
+      "freq": 12,
+      "examples": [
+        "จ้างโครงการปรับปรุงห้องดนตรี(เพื่อใช้เป็นสำนักงานป้องกันและบรรเทาสาธาร"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "แผนงาน",
+      "freq": 12,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างงาน ปรับปรุง.22 เควี ช่วงสี่แยกที่ 2 บ้านขว้างคล"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สำนักงานเกษตร",
+      "freq": 12,
+      "examples": [
+        "จ้างปรับปรุงโรงเก็บพัสดุสำนักงานเกษตรอำเภอโพนสวรรค์ โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "กักเก็บ",
+      "freq": 12,
+      "examples": [
+        "จ้างก่อสร้างหอถังกักเก็บน้ำเพื่อบรรเทาสาธารณภัย หอถังโครงเหล็ก ขนาดกว้"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "หมู",
+      "freq": 12,
+      "examples": [
+        "จ้างก่อสร้างบล็อกคอนเวิร์ส หนองบ่อโศก-หนองบ่อแก้ว หมูที่ 15 กว้าง 2.10"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ระดับอำเภอ",
+      "freq": 12,
+      "examples": [
+        "จ้างเหมาโครงการแก้ไขปัญหาความเดือดร้อนของประชาชน โดยการปรับปรุงลานวัฒน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ประชาชนใน",
+      "freq": 12,
+      "examples": [
+        "จ้างส่งเสริมระบบสูบน้ำ พลังงานแสงอาทิตย์ ชุมชนโนนสาวแอ้ บ้านหนองผือ หม"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ลึก",
+      "freq": 12,
+      "examples": [
+        "จ้างขุดร่องกันแนวเขตที่สาธารณะประโยชน์ บ้านหนองแสง หมู่ที่ 5 ขนาดกว้าง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ไทย",
+      "freq": 12,
+      "examples": [
+        "จ้างปรับปรุงซ่อมแซมฝาตะแกรงเหล็ก หมู่ที่ 7 บ้านชาติพัฒนาชาติไทย โดยวิธ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "คอนกรีตเสริมเหล็กหมู่",
+      "freq": 12,
+      "examples": [
+        "จ้างก่อสร้างทางระบายน้ำคอนกรีตเสริมเหล็ก หมู่ที่ ๒ โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ก่อสร้างห้อง",
+      "freq": 12,
+      "examples": [
+        "จ้างก่อสร้างห้องเก็บเอกสาร สำนักงานการท่องเที่ยวและกีฬาจังหวัดบึงกาฬ ต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "กฟส",
+      "freq": 12,
+      "examples": [
+        "จ้างงานจ้างเหมาก่อสร้างสนามฝึกติดตั้งระบบ Solar Rooftop ที่ กฟส.บึงกาฬ"
+      ],
+      "gap": "both",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ที่ทำการปกครอง",
+      "freq": 12,
+      "examples": [
+        "จ้างจ้างเหมาปรับปรุงระบบสาธารณูปโภค ของที่ทำการปกครองอำเภอบ้านแพง จังห"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ปกครอง",
+      "freq": 12,
+      "examples": [
+        "จ้างจ้างเหมาปรับปรุงระบบสาธารณูปโภค ของที่ทำการปกครองอำเภอบ้านแพง จังห"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "น่าอยู่",
+      "freq": 12,
+      "examples": [
+        "จ้างเหมาก่อสร้างและปรับปรุง ตามโครงการเมืองน่าอยู่ทุกกลุ่มคน อารยสถาปั"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ทุกกลุ่มคน",
+      "freq": 12,
+      "examples": [
+        "จ้างเหมาก่อสร้างและปรับปรุง ตามโครงการเมืองน่าอยู่ทุกกลุ่มคน อารยสถาปั"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สถาปัตย์",
+      "freq": 12,
+      "examples": [
+        "จ้างเหมาก่อสร้างและปรับปรุง ตามโครงการเมืองน่าอยู่ทุกกลุ่มคน อารยสถาปั"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "น่าอยู่ทุก",
+      "freq": 12,
+      "examples": [
+        "จ้างเหมาก่อสร้างและปรับปรุง ตามโครงการเมืองน่าอยู่ทุกกลุ่มคน อารยสถาปั"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "อารยสถาปัตย์",
+      "freq": 12,
+      "examples": [
+        "จ้างเหมาก่อสร้างและปรับปรุง ตามโครงการเมืองน่าอยู่ทุกกลุ่มคน อารยสถาปั"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "กลุ่มคน",
+      "freq": 12,
+      "examples": [
+        "จ้างเหมาก่อสร้างและปรับปรุง ตามโครงการเมืองน่าอยู่ทุกกลุ่มคน อารยสถาปั"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เผาดอกไม้จันทน์",
+      "freq": 12,
+      "examples": [
+        "จ้างก่อสร้างที่เผาดอกไม้จันทน์ งานพระราชพิธีถวายพระเพลิงพระบรมศพ พระบา"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "จ้างโกดัง",
+      "freq": 12,
+      "examples": [
+        "จ้างโกดังเสบียงอาหารสัตว์โคเนื้อประจำกลุ่มตำบลนางาม อ.เรณูนคร โดยวิธีต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สวน",
+      "freq": 11,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการพัฒนาแหล่งท่องเที่ยวจังหวัดนครพนม (Mekong"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "คลัง",
+      "freq": 11,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างจ้างซ่อมปรับปรุงคลังกระสุน จำนวน ๒ หลัง ของ มณฑล"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สถาน",
+      "freq": 11,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างฌาปณสถาน (เมรุเผาศพ บ้านหนองกุง หมู่ที่ ๕) ด้วยว"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ยกระดับ",
+      "freq": 11,
+      "examples": [
+        "จ้างโครงการยกระดับศูนย์บูรณาการคัดแยก ตามแผนปฏิบัติการว่าด้วยกลไกการส่"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สินค้า",
+      "freq": 11,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างงานจ้างจัดหาและก่อสร้างระบบอบแห้งพลังงานแสงอาทิต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ติก",
+      "freq": 11,
+      "examples": [
+        "จ้างโครงการปรับปรุงแอสฟีลท์ติกภายในหมู่บ้าน หมู่ที่ 1 หมู่ที่ 10 สายหล"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ไก่",
+      "freq": 11,
+      "examples": [
+        "จ้างงานบำรุงรักษาและปรับปรุงซ่อมแซมเขื่อน ป้องกันตลิ่งริมแม่น้ำโขง บ้า"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ยนต์",
+      "freq": 11,
+      "examples": [
+        "จ้างทำที่จอดรถยนต์และรถจักรยานยนต์ คณะวิทยาการจัดการและเทคโนโลยีสารสนเ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "แคน",
+      "freq": 11,
+      "examples": [
+        "จ้างก่อสร้างผนังกันดิน บ้านหนองฮี หมู่ที่ ๑๑ บ้านนางโอกาศ ถึง ห้วยแคน "
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "รา",
+      "freq": 11,
+      "examples": [
+        "จ้างก่อสร้างเมรุเผาศพประจำฌาปนสถาน บ้านหนองบัวคำ หมู่ที่ 11 (เฉพาะส่วน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เฉลิมพระเกียรติฯ",
+      "freq": 11,
+      "examples": [
+        "จ้างก่อสร้างโครงการบ้านกาชาดเฉลิมพระเกียรติฯ เพื่อชาวนครพนม ประจำปี 25"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "โรงฆ่าสัตว์เทศบาลตำบล",
+      "freq": 11,
+      "examples": [
+        "จ้างโครงการปรับปรุงโรงฆ่าสัตว์เทศบาลตำบลเรณูนคร โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "รอบเมรุ",
+      "freq": 11,
+      "examples": [
+        "จ้างโครงการก่อสร้างลาน คสลรอบเมรุเผาศพวัดทองประเสริฐ หมู่ที่ ๗ บ้านดงต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ที่สาธารณะ",
+      "freq": 11,
+      "examples": [
+        "จ้างถมปรับที่สาธารณะป่าช้าบ้านดงขวาง ขนาดกว้าง ๒๓ เมตร ยาว ๓๔ เมตร สูง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เกษตรกรและ",
+      "freq": 11,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการปรับระดับพื้นที่เกษตรกรและฟื้นฟูพื้นที่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ดินและ",
+      "freq": 11,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างมาตรการบริหารจัดการน้ำใต้ดิน โครงการบริหารจัดการ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "น้ำใต้ดิน",
+      "freq": 11,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างมาตรการบริหารจัดการน้ำใต้ดิน โครงการบริหารจัดการ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ศักยภาพ",
+      "freq": 11,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างมาตรการบริหารจัดการน้ำใต้ดิน โครงการบริหารจัดการ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ค่า",
+      "freq": 11,
+      "examples": [
+        "จ้างค่าที่ดินและสิ่งก่อสร้าง โครงการก่อสร้างเมรุวัดป่าห้วยหินลาด บ้านห"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "โอกาส",
+      "freq": 11,
+      "examples": [
+        "จ้างก่อสร้างซุ้มประตูเฉลิมพระเกียรติ เนื่องในโอกาสพระราชพิธีมหามงคลเฉล"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เนื่องในโอกาส",
+      "freq": 11,
+      "examples": [
+        "จ้างก่อสร้างซุ้มประตูเฉลิมพระเกียรติ เนื่องในโอกาสพระราชพิธีมหามงคลเฉล"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ผิว",
+      "freq": 11,
+      "examples": [
+        "จ้างเหมาก่อสร้างโครงการการพัฒนาที่ดินเค็มแบบบูรณาการในพื้นที่ลุ่มน้ำย่"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ปรับปรุงหอประชุม",
+      "freq": 11,
+      "examples": [
+        "จ้างปรับปรุงหอประชุมสภาองค์การบริหารส่วนตำบลหนองพันทา โดยวิธีเฉพาะเจาะ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "และห้อง",
+      "freq": 11,
+      "examples": [
+        "จ้างปรับปรุงห้องกู้ชีพและห้องป้องกันฯสำนักงาน องค์การบริหารส่วนตำบลถ้ำ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "คพ",
+      "freq": 11,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างงาน ปรับปรุง.22 เควี ช่วงสี่แยกที่ 2 บ้านขว้างคล"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เทศบาลเมือง",
+      "freq": 11,
+      "examples": [
+        "จ้างปรับปรุงซ่อมแซมและบำรุงรักษาสถานีขนส่งผู้โดยสารเทศบาลเมืองนครพนม โ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เกษตรอำเภอ",
+      "freq": 11,
+      "examples": [
+        "จ้างปรับปรุงโรงเก็บพัสดุสำนักงานเกษตรอำเภอโพนสวรรค์ โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ความเดือดร้อน",
+      "freq": 11,
+      "examples": [
+        "จ้างเหมาโครงการแก้ไขปัญหาความเดือดร้อนของประชาชน โดยการปรับปรุงลานวัฒน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "แก้ไขปัญหาความเดือดร้อน",
+      "freq": 11,
+      "examples": [
+        "จ้างเหมาโครงการแก้ไขปัญหาความเดือดร้อนของประชาชน โดยการปรับปรุงลานวัฒน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "การสนับสนุน",
+      "freq": 11,
+      "examples": [
+        "จ้างส่งเสริมระบบสูบน้ำ พลังงานแสงอาทิตย์ ชุมชนโนนสาวแอ้ บ้านหนองผือ หม"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เมตรลึก",
+      "freq": 11,
+      "examples": [
+        "จ้างขุดร่องกันแนวเขตที่สาธารณะประโยชน์ บ้านหนองแสง หมู่ที่ 5 ขนาดกว้าง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ข้าราชการ",
+      "freq": 11,
+      "examples": [
+        "จ้างปรับปรุงบ้านพักข้าราชการ สำนักงานเกษตรอำเภอเมืองบึงกาฬ ตำบลบึงกาฬ "
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "การท่องเที่ยว",
+      "freq": 11,
+      "examples": [
+        "จ้างก่อสร้างห้องเก็บเอกสาร สำนักงานการท่องเที่ยวและกีฬาจังหวัดบึงกาฬ ต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สุ",
+      "freq": 11,
+      "examples": [
+        "จ้างปรับรูปแบบแปลง ที่ดินตามรายละเอียดงานปรับรูปแบบแปลง ตามโครงการงานป"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สาธารณูปโภค",
+      "freq": 11,
+      "examples": [
+        "จ้างโครงการซ่อมแซมสาธารณูปโภคและโครงสร้างพื้นฐาน บ้านโนนทรายทอง หมู่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สระ",
+      "freq": 11,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างระบบบำบัดน้ำเสียสำหรับโรงพยาบาลชุมชน ขนาด 30 เตี"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "จ้างงานก่อสร้าง",
+      "freq": 11,
+      "examples": [
+        "จ้างงานก่อสร้างลาน คสลตามแบบมาตรฐานของ กฟภ.บริเวณโดยข้างสำนักงาน พื้นท"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เส้นทางจักรยาน",
+      "freq": 11,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างกิจกรรมก่อสร้างเส้นทางจักรยานริมฝั่งแม่น้ำโขงจาก"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ปรับปรุงห้องเรียน",
+      "freq": 11,
+      "examples": [
+        "จ้างปรับปรุงห้องเรียนวิทยาศาสตร์ โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "จุดที่",
+      "freq": 11,
+      "examples": [
+        "จ้างเหมาก่อสร้างขยายเขตระบบจำหน่ายไฟฟ้า กฟจ.บึงกาฬ-อบต.โซ่ บ.ห้วยทราย-"
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ขนาดเล็ก",
+      "freq": 11,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างก่อสร้างกองร้อยอาสารักษาดินแดนตามแบบมาตรฐานขนาดเ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ไร่นาง",
+      "freq": 11,
+      "examples": [
+        "จ้างพัฒนาพื้นที่ ขนาด 1 ไร่ นางสุกี การกล้า โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "วัย",
+      "freq": 11,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างก่อสร้างสิ่งอำนวยความสะดวกสำหรับคนพิการ ผู้สูงอา"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ผู้สูงอายุและ",
+      "freq": 11,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างก่อสร้างสิ่งอำนวยความสะดวกสำหรับคนพิการ ผู้สูงอา"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "โคเนื้อ",
+      "freq": 11,
+      "examples": [
+        "จ้างปรับปรุงโรงเรือนเลี้ยงโคเนื้อ โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "พระราชพิธีถวายพระเพลิง",
+      "freq": 11,
+      "examples": [
+        "จ้างก่อสร้างที่เผาดอกไม้จันทน์ งานพระราชพิธีถวายพระเพลิงพระบรมศพ พระบา"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ถวายพระเพลิง",
+      "freq": 11,
+      "examples": [
+        "จ้างก่อสร้างที่เผาดอกไม้จันทน์ งานพระราชพิธีถวายพระเพลิงพระบรมศพ พระบา"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ถวายพระเพลิงพระบรมศพ",
+      "freq": 11,
+      "examples": [
+        "จ้างก่อสร้างที่เผาดอกไม้จันทน์ งานพระราชพิธีถวายพระเพลิงพระบรมศพ พระบา"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "พระบรมศพ",
+      "freq": 11,
+      "examples": [
+        "จ้างก่อสร้างที่เผาดอกไม้จันทน์ งานพระราชพิธีถวายพระเพลิงพระบรมศพ พระบา"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เสบียงอาหาร",
+      "freq": 11,
+      "examples": [
+        "จ้างโกดังเสบียงอาหารหยาบโคเนื้อ บ.โพนสว่าง ต.โพนสว่าง อ.ศรีสงคราม โดยว"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "หยาบ",
+      "freq": 11,
+      "examples": [
+        "จ้างโกดังเสบียงอาหารหยาบโคเนื้อ บ.โพนสว่าง ต.โพนสว่าง อ.ศรีสงคราม โดยว"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "โกดังเสบียงอาหาร",
+      "freq": 11,
+      "examples": [
+        "จ้างโกดังเสบียงอาหารหยาบโคเนื้อ บ.โพนสว่าง ต.โพนสว่าง อ.ศรีสงคราม โดยว"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เสบียงอาหารหยาบ",
+      "freq": 11,
+      "examples": [
+        "จ้างโกดังเสบียงอาหารหยาบโคเนื้อ บ.โพนสว่าง ต.โพนสว่าง อ.ศรีสงคราม โดยว"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ตลาดสดเทศบาลตำบล",
+      "freq": 10,
+      "examples": [
+        "โครงการปรับปรุงซ่อมแซมตลาดสดเทศบาลตำบลธาตุพนม"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ผลผลิต",
+      "freq": 10,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างงานจ้างเหมาทำการติดตั้งราวกันอันตราย ทล.22 ตอน ก"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "การบริหาร",
+      "freq": 10,
+      "examples": [
+        "จ้างโครงการยกระดับศูนย์บูรณาการคัดแยก ตามแผนปฏิบัติการว่าด้วยกลไกการส่"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "คุณภาพ",
+      "freq": 10,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างงานจ้างจัดหาและก่อสร้างระบบอบแห้งพลังงานแสงอาทิต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "แปรรูป",
+      "freq": 10,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างงานจ้างจัดหาและก่อสร้างระบบอบแห้งพลังงานแสงอาทิต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ข้าว",
+      "freq": 10,
+      "examples": [
+        "จ้างก่อสร้างลานตากข้าวเกษตร หมู่ที่ 7 บ้านโพนบกน้อย โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "การเกษตรหมู่",
+      "freq": 10,
+      "examples": [
+        "จ้างก่อสร้างลานตากพืชผลทางการเกษตร หมู่ที่ 6 บ้านนาคอย ตำบลนาเดื่อ อำเ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "บันได",
+      "freq": 10,
+      "examples": [
+        "จ้างปรับปรุงบันไดทางขึ้นและทางลาดสำหรับผู้พิการ สำนักงานที่ดินจังหวัดน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "องค์การบริหารส่วนจังหวัดนครพนม",
+      "freq": 10,
+      "examples": [
+        "จ้างโครงการก่อสร้างลานอเนกประสงค์คอนกรีตเสริมเหล็ก ภายในสำนักงานองค์กา"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "บุญ",
+      "freq": 10,
+      "examples": [
+        "จ้างก่อสร้างโครงการบ้านกาชาดเฉลิมพระเกียรติฯ เพื่อชาวนครพนม ประจำปี 25"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "นครพนมประจำปี",
+      "freq": 10,
+      "examples": [
+        "จ้างก่อสร้างโครงการบ้านกาชาดเฉลิมพระเกียรติฯ เพื่อชาวนครพนม ประจำปี 25"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "บุ่ง",
+      "freq": 10,
+      "examples": [
+        "จ้างโครงการส่งเสริมแหล่งท่องเที่ยวบุ่งยอดชาติ หมู่ที่ ๑ บ้านเหิบ โดยก่"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "คสลรอบ",
+      "freq": 10,
+      "examples": [
+        "จ้างโครงการก่อสร้างลาน คสลรอบเมรุเผาศพวัดทองประเสริฐ หมู่ที่ ๗ บ้านดงต"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เตา",
+      "freq": 10,
+      "examples": [
+        "จ้างก่อสร้างเตาเผาศพป่าช้า บ้านหนองบัวคำ หมู่ที่ 11 (บ้านน้อยหนองพอก) "
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "การปรับปรุงห้อง",
+      "freq": 10,
+      "examples": [
+        "จ้างโครงการปรับปรุงห้องปฏิบัติงานกองยุทธศาสตร์และงบประมาณ โดยวิธีเฉพาะ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ห้องปฏิบัติงาน",
+      "freq": 10,
+      "examples": [
+        "จ้างโครงการปรับปรุงห้องปฏิบัติงานกองยุทธศาสตร์และงบประมาณ โดยวิธีเฉพาะ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "น้ำลดปี",
+      "freq": 10,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการปรับระดับพื้นที่เกษตรกรและฟื้นฟูพื้นที่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ได้รับผลกระทบ",
+      "freq": 10,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการปรับระดับพื้นที่เกษตรกรและฟื้นฟูพื้นที่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ปรับระดับพื้นที่",
+      "freq": 10,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการปรับระดับพื้นที่เกษตรกรและฟื้นฟูพื้นที่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ระยะหลัง",
+      "freq": 10,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการปรับระดับพื้นที่เกษตรกรและฟื้นฟูพื้นที่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "น้ำลด",
+      "freq": 10,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการปรับระดับพื้นที่เกษตรกรและฟื้นฟูพื้นที่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ปรับระดับ",
+      "freq": 10,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการปรับระดับพื้นที่เกษตรกรและฟื้นฟูพื้นที่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ระยะหลังน้ำลด",
+      "freq": 10,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการปรับระดับพื้นที่เกษตรกรและฟื้นฟูพื้นที่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "จากอุทกภัย",
+      "freq": 10,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการปรับระดับพื้นที่เกษตรกรและฟื้นฟูพื้นที่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "อุทกภัยระยะหลัง",
+      "freq": 10,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการปรับระดับพื้นที่เกษตรกรและฟื้นฟูพื้นที่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "โครงการปรับระดับ",
+      "freq": 10,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการปรับระดับพื้นที่เกษตรกรและฟื้นฟูพื้นที่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ฟื้นฟู",
+      "freq": 10,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการปรับระดับพื้นที่เกษตรกรและฟื้นฟูพื้นที่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ผลกระทบจาก",
+      "freq": 10,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการปรับระดับพื้นที่เกษตรกรและฟื้นฟูพื้นที่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "พื้นที่เกษตรกร",
+      "freq": 10,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการปรับระดับพื้นที่เกษตรกรและฟื้นฟูพื้นที่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ฟื้นฟูพื้นที่",
+      "freq": 10,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการปรับระดับพื้นที่เกษตรกรและฟื้นฟูพื้นที่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ผลกระทบ",
+      "freq": 10,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการปรับระดับพื้นที่เกษตรกรและฟื้นฟูพื้นที่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "และฟื้นฟู",
+      "freq": 10,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการปรับระดับพื้นที่เกษตรกรและฟื้นฟูพื้นที่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "อุทกภัย",
+      "freq": 10,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการปรับระดับพื้นที่เกษตรกรและฟื้นฟูพื้นที่ที"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "รัชกาลที่",
+      "freq": 10,
+      "examples": [
+        "จ้างก่อสร้าง ตามโครงการก่อสร้างลานอเนกประสงค์รอบพระราชานุสาวรีย์พระบาท"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "รัชกาล",
+      "freq": 10,
+      "examples": [
+        "จ้างก่อสร้าง ตามโครงการก่อสร้างลานอเนกประสงค์รอบพระราชานุสาวรีย์พระบาท"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "และสิ่งก่อสร้าง",
+      "freq": 10,
+      "examples": [
+        "จ้างค่าที่ดินและสิ่งก่อสร้าง โครงการก่อสร้างเมรุวัดป่าห้วยหินลาด บ้านห"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "นก",
+      "freq": 10,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างจ้างเหมาก่อสร้างลานคอนกรัีตเสริมเหล็ก องค์การบริ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "คข",
+      "freq": 10,
+      "examples": [
+        "จ้าง จ้างเหมาค่าแรง คขก. บ.ศิริมงคล ต.บ้านต้อง อ.เซกา จ.บึงกาฬ โดยวิธี"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ก่อสร้างซุ้ม",
+      "freq": 10,
+      "examples": [
+        "จ้างเหมาก่อสร้างซุ้มทางเดินเท้าสำหรับนักเรียน โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "บรรเทา",
+      "freq": 10,
+      "examples": [
+        "จ้างโครงการปรับปรุงห้องดนตรี(เพื่อใช้เป็นสำนักงานป้องกันและบรรเทาสาธาร"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "โครงการคพ",
+      "freq": 10,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างงาน ปรับปรุง.22 เควี ช่วงสี่แยกที่ 2 บ้านขว้างคล"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ตอนบน",
+      "freq": 10,
+      "examples": [
+        "จ้างก่อสร้าง โครงการพัฒนาแหล่งน้ำหนองคำอ้อตอนบน บ้านเซียงเซา หมู่ที่ ๗"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "หอประชุมอำเภอ",
+      "freq": 10,
+      "examples": [
+        "จ้างโครงการปรับปรุงซ่อมแซมหอประชุมอำเภอนาหว้า ที่ว่าการอำเภอนาหว้า อำเ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เลขที่ฉ",
+      "freq": 10,
+      "examples": [
+        "จ้างซ่อมแซมคันพนังฝั่งซ้าย กม.๑+๕๐๐ ปตร.บ้านนาคู่ ตำบลนาคู่ อำเภอนาแก "
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "หมูที่",
+      "freq": 10,
+      "examples": [
+        "จ้างก่อสร้างบล็อกคอนเวิร์ส หนองบ่อโศก-หนองบ่อแก้ว หมูที่ 15 กว้าง 2.10"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "หน่วย",
+      "freq": 10,
+      "examples": [
+        "จ้างปรับปรุงห้องล้างไตทางช่องท้อง (CAPD) งานหน่วยไตเทียม จำนวน ๘ งาน โ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ปรับปรุงสิ่งก่อสร้าง",
+      "freq": 10,
+      "examples": [
+        "จ้างปรับปรุง สิ่งก่อสร้าง จำนวน 2 รายการ โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "การบูรณาการ",
+      "freq": 10,
+      "examples": [
+        "จ้างเหมาโครงการแก้ไขปัญหาความเดือดร้อนของประชาชน โดยการปรับปรุงลานวัฒน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "การขับเคลื่อน",
+      "freq": 10,
+      "examples": [
+        "จ้างเหมาโครงการแก้ไขปัญหาความเดือดร้อนของประชาชน โดยการปรับปรุงลานวัฒน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ขับเคลื่อนนโยบาย",
+      "freq": 10,
+      "examples": [
+        "จ้างเหมาโครงการแก้ไขปัญหาความเดือดร้อนของประชาชน โดยการปรับปรุงลานวัฒน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "บูรณาการและ",
+      "freq": 10,
+      "examples": [
+        "จ้างเหมาโครงการแก้ไขปัญหาความเดือดร้อนของประชาชน โดยการปรับปรุงลานวัฒน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "นโยบาย",
+      "freq": 10,
+      "examples": [
+        "จ้างเหมาโครงการแก้ไขปัญหาความเดือดร้อนของประชาชน โดยการปรับปรุงลานวัฒน"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "บำบัด",
+      "freq": 10,
+      "examples": [
+        "จ้างปรับปรุงซ่อมแซมโรงบำบัดสิ่งปฏิกูล โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "แท่น",
+      "freq": 10,
+      "examples": [
+        "จ้างก่อสร้างลานแท่นพระ โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "โครงสร้างพื้นฐาน",
+      "freq": 10,
+      "examples": [
+        "จ้างก่อสร้างโดมอเนกประสงค์ (ส่วนที่1โครงสร้างพื้นฐาน) โดยวิธีคัดเลือก"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "บ้านพักข้าราชการ",
+      "freq": 10,
+      "examples": [
+        "จ้างปรับปรุงบ้านพักข้าราชการ สำนักงานเกษตรอำเภอเมืองบึงกาฬ ตำบลบึงกาฬ "
+      ],
+      "gap": "matcher",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เสียด",
+      "freq": 10,
+      "examples": [
+        "ประกวดราคาจ้างก่อสร้างโครงการก่อสร้างถังน้ำใส ขนาด 100 ลบ.ม. หมู่ที่ 3"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ติด",
+      "freq": 10,
+      "examples": [
+        "จ้างโครงการติดตั้งไฟแบบโซล่าเซลล์ในพื้นที่ตำบลโนนสมบูรณ์ 13 หมู่บ้าน ห"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "บรม",
+      "freq": 10,
+      "examples": [
+        "จ้างปรับปรุงซ่อมแซมลานและฐานรอบพระบรมราชานุสรณ์ รัชกาลที่ 5 หน้าที่ว่า"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "กระเบื้อง",
+      "freq": 10,
+      "examples": [
+        "จ้างปูกระเบื้องเซรามิก ชนิดกันลื่น ขนาด 12 นิ้ว X 12 นิ้ว ศูนย์พัฒนาเด"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เหมาะสม",
+      "freq": 10,
+      "examples": [
+        "จ้างเหมาก่อสร้างโครงการพัฒนาที่ดินเพื่อการสนับสนุนการปรับเปลี่ยนการผลิ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ปรับเปลี่ยน",
+      "freq": 10,
+      "examples": [
+        "จ้างเหมาก่อสร้างโครงการพัฒนาที่ดินเพื่อการสนับสนุนการปรับเปลี่ยนการผลิ"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "สามัคคี",
+      "freq": 10,
+      "examples": [
+        "จ้างก่อสร้างจ้างปรับปรุงสิ่งก่อสร้าง จำนวน 1 รายการ ด้วยงบเรี่ยไรโครงก"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "กรณี",
+      "freq": 10,
+      "examples": [
+        "จ้างเหมาโครงการสูบน้ำพลังงานแสงอาทิตย์โซล่าเซลล์ เพื่อการเกษตรและแก้ไข"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ล่าง",
+      "freq": 10,
+      "examples": [
+        "จ้างโครงการซ่อมแซมตลิ่งห้วยเอือดตอนล่าง โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ตอนล่าง",
+      "freq": 10,
+      "examples": [
+        "จ้างโครงการซ่อมแซมตลิ่งห้วยเอือดตอนล่าง โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "ซุ้มเฉลิมพระเกียรติ",
+      "freq": 10,
+      "examples": [
+        "จ้างโครงการปรับปรุงซ่อมแซมฐานรองซุ้มเฉลิมพระเกียรติและซุ้มเฉลิมพระเกีย"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "เลี้ยง",
+      "freq": 10,
+      "examples": [
+        "จ้างปรับปรุงโรงเรือนเลี้ยงไก่ไข่ โดยวิธีเฉพาะเจาะจง"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "พระบาทสมเด็จพระปรมินทรมหาภูมิพลอดุลยเดช",
+      "freq": 10,
+      "examples": [
+        "จ้างก่อสร้างที่เผาดอกไม้จันทน์ งานพระราชพิธีถวายพระเพลิงพระบรมศพ พระบา"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "งานพระราชพิธี",
+      "freq": 10,
+      "examples": [
+        "จ้างก่อสร้างที่เผาดอกไม้จันทน์ งานพระราชพิธีถวายพระเพลิงพระบรมศพ พระบา"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    },
+    {
+      "term": "พระบรมศพพระบาทสมเด็จพระปรมินทรมหาภูมิพลอดุลยเดช",
+      "freq": 10,
+      "examples": [
+        "จ้างก่อสร้างที่เผาดอกไม้จันทน์ งานพระราชพิธีถวายพระเพลิงพระบรมศพ พระบา"
+      ],
+      "gap": "classifier",
+      "category": "",
+      "bsc_relevant": false,
+      "status": "candidate",
+      "guard": null
+    }
+  ]
+}

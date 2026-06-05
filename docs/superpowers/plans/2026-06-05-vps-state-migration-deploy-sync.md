@@ -29,6 +29,25 @@
 
 ---
 
+## 🚦 Execution Discipline (v2.1 — ChatGPT final review) — บังคับวันรันจริง
+> "ความเสี่ยงหลักเหลือที่ execution discipline ไม่ใช่ตัวแผน" — กฎหน้างาน:
+
+- **Rule #0 (สำคัญสุด):** ถ้ามีข้อมูลใหม่ที่ทำให้ **assumption หลักของแผนผิด → ABORT + restore + วิเคราะห์ใหม่. ห้ามแก้สด/คิดสด/ตัดสินใจสด กลาง migration**
+- **Rule #1 — ห้ามข้าม Exit Criteria:** ต้องผ่าน **100%** (checksum 95% = ไม่ผ่าน). ไม่ครบ = ไม่ขึ้น phase ถัดไป
+- **Rule #2 — Abort > Improvise:** เจออะไรที่ runbook ไม่ได้เขียนไว้ → abort ไม่ใช่ improvise (incident ส่วนใหญ่มาจาก "ขอแก้นิดเดียว")
+- **Rule #3 — Single Operator:** Operator = 1 คน (Claude + กัญจน์อยู่ด้วย), Reviewer = 1 (ChatGPT async). ห้ามแก้พร้อมกันหลายฝั่งกลาง window
+- **Rule #4 — Timestamp ทุก milestone** ลง runbook (เช่น `20:01 stop · 20:05 backup · 20:07 checksum OK · 20:11 restart`) — มีค่าตอน rollback/forensic
+
+### ⏱️ Time-box / Abort Triggers (window Phase 2)
+- **Window target = 15 นาที · Hard-stop = 30 นาที** → เกิน 30 นาทียังไม่ผ่าน Exit Criteria = **rollback ทันที**
+- **🛑 Group B (hotfix เฉพาะ VPS ที่ไม่อยู่ origin) โผล่กลาง window = ABORT TRIGGER** — แปลว่า assumption "VPS==origin (scp มา)" ผิด. ไม่ cherry-pick สด. abort → restore → ตรวจ Group B ใน local → push → เริ่ม window ใหม่. (Group B ควรถูกจับใน **dry-run Task 1.7 ก่อน window** อยู่แล้ว)
+
+### Go / No-Go gate
+- **Phase 0-1 = GO** (ไม่แตะ production state)
+- **Phase 2+ = CONDITIONAL GO** — เปิด window ได้ต่อเมื่อ review ผลจริงจาก Phase 0 audit + Phase 1 tests + hidden-writer scan + **reconcile dry-run inventory (ต้องเป็น Group A/C ล้วน, ไม่มี B)**
+
+---
+
 ## File Structure
 
 **สร้างใหม่:**
@@ -57,16 +76,24 @@
 
 - [ ] **Step 1: ประกาศ freeze** — ห้าม deploy feature/scp ใหม่จนจบ Phase 4. จดใน progress_log + Discord.
 
-- [ ] **Step 2: Snapshot สถานะ git ปัจจุบันของ VPS (เป็นหลักฐาน rollback)**
+- [ ] **Step 2: Forensic snapshot (v2.1) — text เดียวตอบ "cutover ระบบอยู่สถานะไหน"**
+
+> ไม่ใช่ backup (กู้คืน) แต่เป็นหลักฐาน state ณ จุดเริ่ม. เก็บใน backup folder + local
 
 Run:
 ```bash
+TS=$(date +%Y%m%d_%H%M%S)
 ssh -i ~/.ssh/bms_vps bms@45.76.156.166 \
-  "cd /opt/bms/app && git rev-parse HEAD > /tmp/vps_head_before.txt && \
-   git status --short > /tmp/vps_status_before.txt && \
-   git stash list > /tmp/vps_stash_before.txt; cat /tmp/vps_head_before.txt"
+  "cd /opt/bms/app && { echo '=== TS ==='; date -Is; \
+   echo '=== git HEAD ==='; git rev-parse HEAD; \
+   echo '=== git status ==='; git status --short; \
+   echo '=== git stash ==='; git stash list; \
+   echo '=== timers ==='; systemctl list-timers 'bms-*' --no-legend; \
+   echo '=== services ==='; systemctl list-units --type=service 'bms-*' --no-legend; \
+   echo '=== sha256 state ==='; sha256sum /opt/bms/data/*.json /opt/bms/app/data/*.json 2>/dev/null; \
+   } > /opt/bms/backups/forensic_\$(date +%Y%m%d_%H%M%S).txt; ls -t /opt/bms/backups/forensic_*.txt | head -1"
 ```
-Expected: พิมพ์ `f5311f7...`
+Expected: path ของ forensic_*.txt — ดึงลง local ด้วย (`scp ... forensic_*.txt backups/`). บันทึก HEAD ที่เห็น (คาด `f5311f7`)
 
 ### Task 0.2: Full backup (code + data + db + env + systemd)
 
@@ -434,7 +461,32 @@ git commit -m "feat(transition): service entry heal_legacy_state + log_paths (v2
 git push origin main
 ```
 
-**🔙 ROLLBACK (Phase 1):** เป็น commit ใน repo local/GitHub ล้วน — `git revert` ได้. **VPS ยังไม่ถูกแตะ** จึงไม่มีผลกับ production.
+### Task 1.7: Reconcile dry-run ก่อน window (v2.1, read-only) — จับ Group B ก่อนเปิด window
+
+> diff VPS-worktree vs origin/main เป็น **read-only** (git fetch+diff ไม่ mutate) → ทำได้โดยไม่ต้องหยุด service. เป้าหมาย: รู้ Group A/B/C **ก่อน** เปิด maintenance window. ถ้ามี Group B = แก้ใน local ก่อน, **ห้ามเปิด window จนกว่าเหลือ A/C ล้วน**
+
+- [ ] **Step 1: fetch + diff ทุก script ที่ต่าง (read-only บน VPS)**
+```bash
+ssh -i ~/.ssh/bms_vps bms@45.76.156.166 \
+  "cd /opt/bms/app && git fetch origin 2>&1 | tail -1 && \
+   for f in \$(git diff --name-only origin/main -- 'scripts/*.py' 'config/*'); do \
+     echo \"\$f : \$(git diff origin/main -- \$f | wc -l) บรรทัด\"; done"
+```
+Expected: list ไฟล์ + ขนาด diff. ตัวที่ 0 บรรทัด = Group A (==origin)
+
+- [ ] **Step 2: ดู diff จริงของแต่ละไฟล์ที่ > 0 → จัด A/B/C ใน runbook**
+```bash
+ssh ... "cd /opt/bms/app && git diff origin/main -- scripts/<file>.py"
+```
+- A = ต่างเพราะ scp version ใหม่ที่ == origin (จริงๆ คือ git ยังไม่ commit) → take origin
+- **B = มี logic ไม่อยู่ origin** → cherry-pick กลับ local repo, commit, push, fetch ใหม่, **ทำซ้ำจนเหลือ A/C**
+- C = hotfix ชั่วคราว/debug → ทิ้ง
+
+- [ ] **Step 3: ยืนยัน "เหลือ A/C ล้วน, ไม่มี B" → gate เปิด window**
+
+Expected: จด inventory ใน runbook ว่าทุกไฟล์ = A หรือ C. **นี่คือเงื่อนไข Conditional-Go ของ Phase 2** (Group B = ห้ามเปิด window จน resolve ใน local)
+
+**🔙 ROLLBACK (Phase 1):** เป็น commit ใน repo local/GitHub ล้วน — `git revert` ได้. **VPS ยังไม่ถูกแตะ** (dry-run = read-only) จึงไม่มีผลกับ production.
 
 **✅ EXIT CRITERIA (Phase 1):**
 - [ ] `test_runtime_paths.py` PASS (ทุก runtime-state script ใช้ bms_paths)
@@ -442,6 +494,7 @@ git push origin main
 - [ ] inventory table ใน runbook ครบ + cross-check กับ hidden-writer audit (Task 0.3) แล้ว
 - [ ] service หลักทุกตัว import ได้ (smoke) + เรียก heal+log_paths ที่ entry
 - [ ] origin/main มี Phase 1 ครบ (push แล้ว) · **VPS ยังไม่ถูกแตะ**
+- [ ] **reconcile dry-run (Task 1.7) = Group A/C ล้วน, ไม่มี B** (ถ้ามี B = resolve ก่อน, ยังไม่เปิด window)
 
 ---
 
@@ -535,30 +588,23 @@ ssh -i ~/.ssh/bms_vps bms@45.76.156.166 \
 ```
 Expected: `✅ state files valid` (ถ้า ❌ = torn file → ใช้ backup ตัวนั้นแทน, อย่า proceed)
 
-### Task 2.2: Reconcile code — diff VPS worktree vs origin/c077938 (หา hotfix เฉพาะ VPS)
+### Task 2.2: Reconcile confirm (in-window) — ยืนยันตรงกับ dry-run Task 1.7
 
-- [ ] **Step 1: fetch origin บน VPS แล้ว diff worktree ปัจจุบัน vs origin/main ทีละไฟล์**
+> reconcile หลักทำเป็น dry-run ใน Task 1.7 ก่อน window แล้ว (เหลือ A/C ล้วน). Task นี้ = **confirm สั้นๆ** ว่าสถานะไม่เปลี่ยน
 
-Run:
+- [ ] **Step 1: re-fetch + diff ซ้ำ ยืนยันยังเป็น A/C ล้วน (เหมือน Task 1.7)**
 ```bash
 ssh -i ~/.ssh/bms_vps bms@45.76.156.166 \
   "cd /opt/bms/app && git fetch origin 2>&1 | tail -1 && \
-   for f in \$(git diff --name-only HEAD -- 'scripts/*.py'); do \
-     n=\$(git diff --no-index --stat /dev/null /dev/null 2>/dev/null; git diff origin/main -- \$f | wc -l); \
-     echo \"\$f : diff-vs-origin \$n บรรทัด\"; \
-   done"
+   for f in \$(git diff --name-only origin/main -- 'scripts/*.py' 'config/*'); do \
+     echo \"\$f : \$(git diff origin/main -- \$f | wc -l) บรรทัด\"; done"
 ```
-Expected: ตาราง diff. **diff-vs-origin = 0 → VPS worktree == origin (scp มาตรงแล้ว, take origin ปลอดภัย). > 0 → มี logic ต่าง ต้องดูก่อน**
+Expected: ตรงกับ inventory dry-run (Task 1.7)
 
-- [ ] **Step 2: ไฟล์ที่ diff > 0 — ดู diff จริง ตัดสิน A/B/C**
+- [ ] **Step 2: 🛑 ถ้าเจอ Group B ที่ dry-run ไม่เคยเห็น = ABORT TRIGGER**
 
-Run (ต่อไฟล์ที่ diff>0): `ssh ... "cd /opt/bms/app && git diff origin/main -- scripts/<file>.py"`
-จดใน runbook: **กลุ่ม A** (==origin, take origin) / **กลุ่ม B** (มี logic จริงไม่อยู่ origin → cherry-pick กลับ local, commit, push, fetch ใหม่) / **กลุ่ม C** (hotfix ชั่วคราว/ขยะ → ทิ้ง)
-**⚠️ ถ้าเจอกลุ่ม B → หยุด, กลับไปทำใน local repo, push, แล้วเริ่ม Task 2.2 ใหม่** (กัน commit ขยะบน VPS)
-
-- [ ] **Step 3: ยืนยันไม่มีกลุ่ม B ค้าง (ทุก diff = A หรือ C)**
-
-Expected: confirm ใน runbook ว่าจัดการ B ครบ — เหลือแต่ A/C ก่อนไป Task 2.3
+**ไม่ cherry-pick สด. ไม่แก้สด.** → abort window: restore backup, start services, ปิด window. แล้วไปตรวจ Group B ใน local (นอก window) → push → นัด window ใหม่. (Rule #0 + Rule #2: Group B กลาง window = assumption ผิด ไม่ใช่งานย่อย)
+Expected: ปกติควรไม่มี B (dry-run จับไปแล้ว) → ผ่านไป Task 2.3
 
 ### Task 2.3: Git sync VPS → origin/main (atomic, ตอนนี้ปลอดภัยเพราะ state ออกนอก app/data แล้ว)
 

@@ -4422,3 +4422,26 @@ Discovery (24h): PASS
 
 ### Deploy
 scp ไฟล์เดียว → `/opt/bms/app/scripts/` (VPS app repo อยู่หลัง+dirty = deploy debt; VPS local diff = feedback_section ซึ่งมีใน local commit แล้ว → superset ปลอดภัย ไม่ทับของหาย). **ไม่ push GitHub** (deploy debt แยกเรื่อง)
+
+---
+
+## งานที่ N+87: Matching health audit → proc-type gate (ตัดงานซื้อ) (2026-06-05)
+
+### สถานะ: ✅ เสร็จ + deploy VPS
+
+### Audit (ตรวจสุขภาพ matching #1)
+- ✅ RSS leak = 0 (ไม่มีงานเป้าหมายหลุดทาง RSS)
+- ✅ recall งานก่อสร้างในตำบลเป้าหมาย = แข็งแรง (28kw หลักครอบครบ)
+- ⚠️ **precision พังในมือ user จริง:** 21 enqueue/sent → มีงาน "ซื้อ" หลุด เช่น `ซื้อเครื่องรักษาโรคตาด้วยแสงเลเซอร์` (ส่งให้ user แล้ว!), `ซื้อคอนกรีตผสมเสร็จ`
+- 💡 จุดพลิก: live matcher = 28kw, repo = 89kw (vocab วันนี้). จำลอง 89kw บนงานเป้าหมายจับเพิ่ม 5 = **ทั้งหมดงานซื้อ** → deploy 89kw ดิบๆ แย่ลง (ดีที่ deploy-debt-B defer ไว้)
+
+### Root cause
+`job_matcher.match_job()` gate = keyword AND tambon เท่านั้น **ไม่มี filter ซื้อ vs จ้างก่อสร้าง** → งานซื้อที่ชื่อมีคำก่อสร้าง+ตำบลตรง หลุด
+
+### Fix (กัญจน์เลือก: ตัดซื้อทั้งหมด เฉพาะจ้างก่อสร้าง)
+`is_procurement(name)` — leading-token (ตัดคำวิธี ประกวดราคา/สอบราคา แล้วดู ซื้อ/จัดซื้อ, กันคำ 'ซื้อ' กลางชื่องานจ้าง) → match_job ตัดเป็น `procurement_not_construction`. TDD: `test_job_matcher.py` 17 เคส PASS.
+
+### Validate (ข้อมูลจริง)
+- 21 enqueue/sent: ตัดถูก 2 งานซื้อ (เครื่องรักษาตา + คอนกรีตผสมเสร็จ) เก็บงานก่อสร้างครบ
+- **ผลรวม: 346/1093 (31%) ของ province_api เป็นงานซื้อ → กรองออกจาก matching** = precision ขึ้นมาก
+- deploy: scp job_matcher.py → VPS (text_normalize มีอยู่แล้ว). config คง 28kw (ไม่ deploy 89kw)

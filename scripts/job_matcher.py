@@ -50,6 +50,22 @@ def _kw_hit(k: str, name: str) -> bool:
     return bool(g.search(name)) if g else (k in name)
 
 
+# eGP ตั้งชื่องานมาตรฐาน: [วิธีจัดหา]+[ประเภท] เช่น "ประกวดราคาซื้อ...", "สอบราคาจ้างก่อสร้าง..."
+# ดูที่ leading-token หลังตัดคำวิธี → ซื้อ = จัดหาสินค้า (ไม่ใช่งานก่อสร้าง) → ตัด
+_PROC_METHOD_PREFIXES = ("ประกวดราคาอิเล็กทรอนิกส์", "ประกวดราคา", "สอบราคา")
+
+
+def is_procurement(name: str) -> bool:
+    """True ถ้าเป็นงาน 'ซื้อ' (จัดหาสินค้า) ไม่ใช่ 'จ้าง' (ก่อสร้าง/บริการ).
+    ใช้ leading-token (ตัดคำวิธีนำหน้าแล้วดู ซื้อ/จัดซื้อ) → กันงานจ้างที่มีคำ 'ซื้อ' กลางชื่อ."""
+    n = (name or "").lstrip()
+    for p in _PROC_METHOD_PREFIXES:
+        if n.startswith(p):
+            n = n[len(p):].lstrip()
+            break
+    return n.startswith("ซื้อ") or n.startswith("จัดซื้อ")
+
+
 # 77 จังหวัด — ใช้ anti-province guard (soft-include only): กันงานจังหวัดอื่นที่ระบุชัดในชื่อ
 _THAI_PROVINCES = frozenset({
     "กระบี่", "กรุงเทพมหานคร", "กาญจนบุรี", "กาฬสินธุ์", "กำแพงเพชร", "ขอนแก่น", "จันทบุรี",
@@ -160,6 +176,11 @@ def match_job(project_name: str, province: str, tambon_field: str = "",
 
     if not targets:
         return "cut", {"reason": "province_not_subscribed", "province": province}
+
+    # proc-type gate: ตัดงาน 'ซื้อ' (จัดหาสินค้า) — matcher จับเฉพาะงานก่อสร้าง/จ้าง
+    # (กัน false-positive เช่น "ซื้อเครื่องรักษาโรคตา" ที่ชื่อมีคำก่อสร้าง+ตำบลตรง)
+    if is_procurement(name):
+        return "cut", {"reason": "procurement_not_construction"}
 
     kw = next((k for k in cfg.get("keywords", []) if _kw_hit(k, name)), None)
     if not kw:

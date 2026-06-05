@@ -177,14 +177,18 @@ def match_job(project_name: str, province: str, tambon_field: str = "",
     if not targets:
         return "cut", {"reason": "province_not_subscribed", "province": province}
 
-    # proc-type gate: ตัดงาน 'ซื้อ' (จัดหาสินค้า) — matcher จับเฉพาะงานก่อสร้าง/จ้าง
-    # (กัน false-positive เช่น "ซื้อเครื่องรักษาโรคตา" ที่ชื่อมีคำก่อสร้าง+ตำบลตรง)
+    # proc-aware keyword pool (1 feed เสิร์ฟ 2 ธุรกิจของเจ้าของเดียวกัน):
+    #   ซื้อ  → ตรงกับ material_keywords (วัสดุที่ BSC ขาย) = lead ขายของ; ไม่ตรง → ตัด
+    #          (กัน false-positive เช่น "ซื้อเครื่องรักษาโรคตา" ที่ชื่อมีคำก่อสร้าง)
+    #   จ้าง → ตรงกับ keywords (งานก่อสร้างของยศประทาน) เหมือนเดิม
     if is_procurement(name):
-        return "cut", {"reason": "procurement_not_construction"}
-
-    kw = next((k for k in cfg.get("keywords", []) if _kw_hit(k, name)), None)
-    if not kw:
-        return "cut", {"reason": "no_keyword"}
+        kw = next((k for k in cfg.get("material_keywords", []) if _kw_hit(k, name)), None)
+        if not kw:
+            return "cut", {"reason": "no_material_keyword"}
+    else:
+        kw = next((k for k in cfg.get("keywords", []) if _kw_hit(k, name)), None)
+        if not kw:
+            return "cut", {"reason": "no_keyword"}
     neg = next((n for n in cfg.get("negative_keywords", []) if n in name), None)
     if neg:
         return "cut", {"keyword": kw, "negative": neg, "reason": "negative_keyword"}

@@ -1,4 +1,4 @@
-"""test_job_matcher.py — proc-type gate (ตัดงาน 'ซื้อ', เก็บ 'จ้างก่อสร้าง') + regression.
+"""test_job_matcher.py — proc-aware gate (ซื้อ+วัสดุ=lead BSC, ซื้อ+ไม่ใช่วัสดุ=cut, จ้าง=ก่อสร้าง) + regression.
 รัน: python scripts/test_job_matcher.py
 """
 import sys
@@ -11,6 +11,7 @@ from job_matcher import match_job, is_procurement  # noqa: E402
 CFG = {
     "target_tambons": {"นครพนม": ["บ้านแพง"], "บึงกาฬ": ["บึงโขงหลง"]},
     "keywords": ["ถนน", "คอนกรีต", "ห้อง", "อาคาร"],
+    "material_keywords": ["วัสดุก่อสร้าง", "คอนกรีตผสมเสร็จ", "คอนกรีต", "ท่อคอนกรีต", "ลูกรัง"],
     "negative_keywords": [],
     "soft_include": {"enabled": True, "label_default": "⚠️ พื้นที่ไม่ชัด"},
 }
@@ -36,14 +37,23 @@ chk(not is_procurement("สอบราคาจ้างก่อสร้า�
 chk(not is_procurement("ประกวดราคาจ้างก่อสร้างถนนพร้อมจัดซื้อวัสดุ"),
     "จ้างก่อสร้าง+จัดซื้อกลางชื่อ ควร=False")
 
-# ── match_job: proc gate ตัดงานซื้อ แม้ keyword+tambon ครบ ──
+# ── proc-aware gate: ซื้อ+วัสดุ = lead BSC (send), ซื้อ+ไม่ใช่วัสดุ = cut ──
 d, info = match_job("ประกวดราคาซื้อคอนกรีตผสมเสร็จ ตำบลบ้านแพง", "นครพนม", cfg=CFG)
-chk(d == "cut" and info.get("reason") == "procurement_not_construction",
-    f"ซื้อคอนกรีต+บ้านแพง ควร cut/procurement, ได้ {d}/{info.get('reason')}")
+chk(d == "send" and info.get("reason") == "tambon_match",
+    f"ซื้อคอนกรีตผสมเสร็จ+บ้านแพง = lead BSC ควร send, ได้ {d}/{info.get('reason')}")
 
+d, info = match_job("จัดซื้อวัสดุก่อสร้าง ตำบลบ้านแพง โดยวิธีเฉพาะเจาะจง", "นครพนม", cfg=CFG)
+chk(d == "send", f"ซื้อวัสดุก่อสร้าง+บ้านแพง = lead BSC ควร send, ได้ {d}/{info.get('reason')}")
+
+# ซื้อ ที่ match คำก่อสร้าง (ห้อง) แต่ไม่ใช่ "วัสดุ" → ตัด (กันเครื่องแพทย์/รถ/คอม)
 d, info = match_job("ประกวดราคาซื้อเครื่องรักษาโรคตา ห้องผ่าตัด ตำบลบ้านแพง", "นครพนม", cfg=CFG)
-chk(d == "cut" and info.get("reason") == "procurement_not_construction",
-    f"ซื้อเครื่องแพทย์(false-pos เดิม) ควร cut, ได้ {d}/{info.get('reason')}")
+chk(d == "cut" and info.get("reason") == "no_material_keyword",
+    f"ซื้อเครื่องแพทย์(match ห้อง ไม่ใช่วัสดุ) ควร cut/no_material, ได้ {d}/{info.get('reason')}")
+
+# ซื้อวัสดุ จังหวัด target แต่ตำบลไม่ target → cut
+d, info = match_job("ประกวดราคาซื้อคอนกรีตผสมเสร็จ ตำบลเรณู", "นครพนม", cfg=CFG)
+chk(d == "cut" and info.get("reason") == "tambon_not_target",
+    f"ซื้อวัสดุ ตำบลไม่ target ควร cut, ได้ {d}/{info.get('reason')}")
 
 # ── match_job: งานจ้างก่อสร้าง ยังผ่านปกติ (regression) ──
 d, info = match_job("ประกวดราคาจ้างก่อสร้างถนนคอนกรีต ตำบลบ้านแพง", "นครพนม", cfg=CFG)

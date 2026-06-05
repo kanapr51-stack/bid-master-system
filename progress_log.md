@@ -4398,4 +4398,4 @@ tie-break เปลี่ยนจาก spec §4 (priority ก่อน positio
 - ทุก tab เขียนสำเร็จ (exit 0)
 
 ### Followup
-- **Parents Dashboard** (`build_parents_dashboard.py` → parents-sigma.vercel.app) อ่าน work_type column ตรงๆ → live ยังเป็นค่าก่อน batch3. rebuild+redeploy ได้ทันที (impact เล็ก: UNKNOWN ลด ~260 งานจาก 46K) — รอ confirm เพราะ outward-facing
+- ~~Parents Dashboard redeploy~~ ✅ rebuild + `vercel deploy --prod` (dpl_28sQ5r3...) → parents-sigma.vercel.app สด (HTTP 200, 128,384 bytes ตรง local). ระบบสดทั้ง DB+Sheet+Dashboard

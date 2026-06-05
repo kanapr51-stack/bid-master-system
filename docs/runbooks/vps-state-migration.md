@@ -81,3 +81,21 @@ bms-backup.timer
 - **ABORT (Rule #2: ไม่หา/เดา sudo password)**. ยืนยันระบบ untouched: timers+api+tunnel active, HEAD=f5311f7, state ยังอยู่ app/data → **ไม่ต้อง rollback**
 - ⚠️ side-finding: Phase 0 `sudo lsof +D app/data` น่าจะ no-op (sudo เงียบ) → "lsof clean" **ยังไม่ verify จริง** (crontab non-sudo valid; cron-grep sudo unverified). ต้องทำ lsof ใหม่ตอนมี sudo
 - BLOCKER: ต้องแก้ sudo access ก่อนรัน Phase 2 ใหม่ (option A: NOPASSWD scoped / option B: กัญจน์รัน sudo เอง / option C: sudo script)
+
+### 2026-06-05 23:21-23:36 — Phase 2 SUCCESS ✅ (window 15 นาที, ตรง target)
+แก้ sudo: กัญจน์ตั้ง `passwd bms` + `/etc/sudoers.d/bms-operator` (`bms NOPASSWD: /usr/bin/systemctl, /usr/bin/lsof`) → verified `sudo -n` ทำงาน
+
+**ลำดับจริง (มี deviation ที่จัดการตาม discipline):**
+1. 23:21 redo lsof audit (sudo จริง) = ว่าง ✓ · stop 14 timers+api+tunnel (23:22, NONE_RUNNING)
+2. fresh backup (migration_window_20260605_162250) + copy 8 state files app/data→/opt/bms/data · **checksum 8/8 OK**
+3. validate: ⚠️ `ingestion_run_history.json` BOM → **false-positive** (validator ใช้ utf-8 แทน utf-8-sig; ไฟล์เดิมมี BOM, parse utf-8-sig ได้, checksum ตรง = ไม่ torn) → ไม่ abort
+4. **DEVIATION 1:** `git fetch`/`reset` ล้มเหลว = `.git/objects` + `refs/heads/main` + `deploy/*` **root-owned** (git ops เก่ารันด้วย root) → reset ค้างครึ่งทาง. **ไม่ improvise** → escalate กัญจน์รัน `sudo chown -R bms:bms /opt/bms/app`
+5. หลัง chown: root-owned=0 → fetch ทำงาน (236dcc7→64794f6) → `git reset --hard origin/main` → **HEAD=64794f6=GitHub เป๊ะ (full sync, ไม่ใช่แค่ 236dcc7)**
+6. vps_vs_origin.patch (75224 บรรทัด) เก็บก่อน reset · Group B re-confirm = 0
+7. imports 9/9 OK (transitive deps) · start services 23:33 · **log_paths = RUNTIME_DIR=/opt/bms/data** · ไม่มี DUAL-READ HEAL (copy ครบ)
+8. verify: app/data ไม่ถูกแตะหลัง cutover ✓ · write ไป /opt/bms/data ✓ · **ส่งซ้ำ=0** (4 sends = งานเดียว 21:00 ก่อน window, first-time) · 0 errors
+9. **`git pull` = "Already up to date"** → deploy-debt end-goal พิสูจน์แล้ว
+
+**Lessons:** (L) validator ต้อง utf-8-sig · (L) `.git` root-owned จาก sudo-git เก่า = blocker ซ่อน → chown เป็นส่วนของ migration · (L) Phase 0 lsof no-op เพราะ sudo เงียบ → ต้อง verify sudo ก่อน trust audit
+
+**RESULT: #1 Deploy-Debt + #2 Data Split-Brain = RESOLVED.** เหลือ Phase 3 (48h watch, cutoff set) + Phase 4 (gitignore app/data state + ถอด heal) = non-disruptive follow-up

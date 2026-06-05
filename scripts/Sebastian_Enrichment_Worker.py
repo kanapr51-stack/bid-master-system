@@ -406,6 +406,9 @@ def qualify_province_api(store, log) -> int:
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
+    # migration transition: heal state ที่ copy พลาด + log resolved dir (ถอด heal Phase 4)
+    bms_paths.heal_legacy_state("api_ingestion_state.json", "resolve_plane_state.json", "resolve_heartbeat.json")
+    bms_paths.log_paths("api_ingestion_state.json", "resolve_plane_state.json", "resolve_heartbeat.json")
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     log_path = LOG_DIR / f"enrichment_{datetime.now().strftime('%Y%m%d')}.log"
 

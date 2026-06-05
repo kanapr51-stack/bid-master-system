@@ -52,6 +52,8 @@ def is_backfill_item(queued_at: str, epoch: str) -> bool:
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
+    bms_paths.heal_legacy_state("rss_queue.json", "rss_notifier_epoch.txt")
+    bms_paths.log_paths("rss_queue.json", "rss_notifier_epoch.txt")
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     log_path = LOG_DIR / f"notifier_{datetime.now().strftime('%Y%m%d')}.log"
 

@@ -160,6 +160,7 @@ def _alertable(issues, state):
 
 
 def main() -> int:
+    bms_paths.log_paths("resolve_heartbeat.json")  # verify reader ชี้ dir เดียวกับ writer
     issues = check()
     if not issues:
         print("✅ dead-man: healthy (token + discovery OK)")

@@ -653,6 +653,8 @@ def run(queue_new: bool = False, skip_probe: bool = False,
     full_poll: poll ALL depts (default False = active-only, 50x faster).
     Multi-stage support discovered 2026-05-18.
     """
+    bms_paths.heal_legacy_state("rss_queue.json", "rss_seen_ids.json", "seen_ids.json", "dept_failure_state.json")
+    bms_paths.log_paths("rss_queue.json", "rss_seen_ids.json")
     catalog = load_catalog()
     targets = load_target_depts(catalog, active_only=not full_poll,
                                 use_negative_cache=full_poll)

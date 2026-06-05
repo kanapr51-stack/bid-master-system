@@ -120,25 +120,24 @@ def main():
             by_term[t]["freq"] = n
             continue
         by_term[t] = {"term": t, "freq": n, "examples": [ex_of[t]], "gap": src_of[t],
-                      "category": "", "bsc_relevant": False, "status": "candidate", "guard": None}
+                      "category": "", "status": "candidate", "guard": None}
         added += 1
     vocab["terms"] = sorted(by_term.values(), key=lambda e: -e["freq"])
     vocab["updated"] = datetime.now().strftime("%Y-%m-%d")
     VOCAB.write_text(json.dumps(vocab, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"คลัง: +{added} candidate ใหม่ (รวม {len(vocab['terms'])})")
 
-    rows = [["term", "freq", "gap", "ตัวอย่าง", "approve(✓/✗)", "หมวด", "bsc(y/n)", "guard"]]
+    rows = [["term", "freq", "gap", "ตัวอย่าง", "approve(✓/✗)", "หมวด", "guard"]]
     for e in vocab["terms"]:
         if e["status"] == "candidate":
-            rows.append([e["term"], e["freq"], e["gap"], e["examples"][0], "", e["category"],
-                         "y" if e["bsc_relevant"] else "", e["guard"] or ""])
+            rows.append([e["term"], e["freq"], e["gap"], e["examples"][0], "", e["category"], e["guard"] or ""])
     gc = get_client()
     sh = gc.open_by_key(SHEET_ID)
     try:
         ws = sh.worksheet("vocab_review"); ws.clear()
     except Exception:
-        ws = sh.add_worksheet(title="vocab_review", rows=len(rows) + 10, cols=8)
-    ws.resize(rows=len(rows) + 2, cols=8)
+        ws = sh.add_worksheet(title="vocab_review", rows=len(rows) + 10, cols=7)
+    ws.resize(rows=len(rows) + 2, cols=7)
     ws.update(values=rows, range_name="A1")
     ws.freeze(rows=1)
     print(f"📊 Sheet 'vocab_review': {len(rows)-1} candidate รอรีวิว")

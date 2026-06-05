@@ -21,10 +21,12 @@ SHEET_ID = "1gz7qLDIWphDhqxLf8Pxm08_cPmNb_IXTDvyxm6uThps"
 
 
 def sync_into_configs(approved, wt, mp):
-    """เติม term approved เข้า config (additive, idempotent). แก้ wt, mp in-place."""
+    """เติม term approved เข้า config (additive, idempotent). แก้ wt, mp in-place.
+    classifier: ตามหมวด (สากล). matcher: ทุกคำงานก่อสร้าง (company-agnostic, recall กว้าง —
+    per-company category selection = อนาคต multi-tenant, ไม่ผูกบริษัทเดียว)."""
     for e in approved:
         term, cat = e["term"], e.get("category") or ""
-        # classifier
+        # classifier (ต้องมีหมวด)
         if cat and cat != "OTHER" and cat in wt["categories"]:
             if term not in wt["categories"][cat]:
                 wt["categories"][cat].append(term)
@@ -33,8 +35,8 @@ def sync_into_configs(approved, wt, mp):
                 wt["other_keywords"].append(term)
         if e.get("guard"):
             wt.setdefault("guards", {})[term] = e["guard"]
-        # matcher
-        if e.get("bsc_relevant") and term not in mp["keywords"]:
+        # matcher: ทุก term approved (คำงานก่อสร้างจริง) → recall กว้าง
+        if term not in mp["keywords"]:
             mp["keywords"].append(term)
 
 
@@ -42,7 +44,7 @@ def main():
     gc = get_client()
     sh = gc.open_by_key(SHEET_ID)
     rows = sh.worksheet("vocab_review").get_all_values()[1:]  # ข้าม header
-    # cols: term, freq, gap, ตัวอย่าง, approve, หมวด, bsc, guard
+    # cols: term, freq, gap, ตัวอย่าง, approve, หมวด, guard
     review = {}
     for r in rows:
         if not r or not r[0].strip():
@@ -52,8 +54,7 @@ def main():
             "approve": approve in ("✓", "y", "yes", "Y", "ใช่", "1"),
             "reject": approve in ("✗", "x", "n", "no", "ไม่"),
             "category": (r[5].strip() if len(r) > 5 else ""),
-            "bsc_relevant": ((r[6].strip().lower() if len(r) > 6 else "") in ("y", "yes", "1", "ใช่")),
-            "guard": ((r[7].strip() if len(r) > 7 else "") or None),
+            "guard": ((r[6].strip() if len(r) > 6 else "") or None),
         }
 
     vocab = json.loads(VOCAB.read_text(encoding="utf-8"))
@@ -64,7 +65,6 @@ def main():
             if rv["approve"]:
                 e["status"] = "approved"
                 e["category"] = rv["category"] or e["category"]
-                e["bsc_relevant"] = rv["bsc_relevant"]
                 e["guard"] = rv["guard"]
             elif rv["reject"]:
                 e["status"] = "rejected"

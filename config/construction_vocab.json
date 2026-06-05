@@ -9,8 +9,7 @@
         "จ้างตกแต่งชั้นวางบริเวณโถงต้อนรับหน้าห้องอธิการบดี ตำบลขามเฒ่า อำเภอเม"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -21,8 +20,7 @@
         "จ้างโครงการก่อสร้างลานตากผลผลิตทางการเกษตร บ้านท่าคำไฮ หมู่ที่ 10 โดยว"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -33,8 +31,7 @@
         "จ้างโครงการก่อสร้างเสาธงสำนักงานเทศบาลตำบลเรณูนคร โดยวิธีเฉพาะเจาะจง"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -45,8 +42,7 @@
         "จ้างโครงการก่อสร้างลานตากผลผลิตทางการเกษตร บ้านท่าคำไฮ หมู่ที่ 10 โดยว"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -58,7 +54,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -70,7 +65,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -82,7 +76,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -93,8 +86,7 @@
         "จ้างโครงการปรับปรุงบ่อทิ้งขยะองค์การบริหารส่วนตำบลนาขมิ้น อำเภอโพนสวรร"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "OTHER",
       "status": "candidate",
       "guard": null
     },
@@ -105,8 +97,7 @@
         "จ้างก่อสร้างลานอเนกประสงค์คอนกรีตเสริมเหล็ก ที่ดินแปลง ที่ นพ.18 หมู่ท"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "ดิน/ปรับพื้นที่",
       "status": "candidate",
       "guard": null
     },
@@ -117,8 +108,7 @@
         "ประกวดราคาจ้างก่อสร้างฌาปนสถาน (เมรุเผาศพ) บ้านส้มป่อย หมู่ที่ ๖ ด้วยว"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -129,8 +119,7 @@
         "จ้างเหมาก่อสร้างตลิ่งกันพัง สายหลังวัดมาลัย - บ้านร่มโพธิ์ทอง หมู่ที่ "
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "แหล่งน้ำ/ชลประทาน",
       "status": "candidate",
       "guard": null
     },
@@ -142,7 +131,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -153,8 +141,7 @@
         "จ้างงานบำรุงรักษาและปรับปรุงซ่อมแซมเขื่อนป้องกันตลิ่งริมแม่น้ำโขง บ้าน"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "แหล่งน้ำ/ชลประทาน",
       "status": "candidate",
       "guard": null
     },
@@ -165,8 +152,7 @@
         "จ้างปรับปรุงบันไดทางขึ้นและทางลาดสำหรับผู้พิการ สำนักงานที่ดินจังหวัดน"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "ดิน/ปรับพื้นที่",
       "status": "candidate",
       "guard": null
     },
@@ -177,8 +163,7 @@
         "จ้างโครงการส่งเสริมการรู้ในรูปแบบทุกที่ทุกเวลา โดยวิธีเฉพาะเจาะจง"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "ดิน/ปรับพื้นที่",
       "status": "candidate",
       "guard": null
     },
@@ -189,8 +174,7 @@
         "จ้างงานบำรุงรักษาและปรับปรุงซ่อมแซมเขื่อนป้องกันตลิ่งริมแม่น้ำโขง บ้าน"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "แหล่งน้ำ/ชลประทาน",
       "status": "candidate",
       "guard": null
     },
@@ -202,7 +186,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -213,8 +196,7 @@
         "จ้างปรับปรุงซ่อมแซมห้องเรียนพิเศษ โดยวิธีเฉพาะเจาะจง"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -226,7 +208,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -238,7 +219,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -250,7 +230,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -261,8 +240,7 @@
         "จ้างงานบำรุงรักษาและปรับปรุงซ่อมแซมเขื่อนป้องกันตลิ่งริมแม่น้ำโขง บ้าน"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "แหล่งน้ำ/ชลประทาน",
       "status": "candidate",
       "guard": null
     },
@@ -273,8 +251,7 @@
         "จ้างปรับปรุงซ่อมแซมหอประชุมยงใจยุทธที่ว่าการอำเภอท่าอุเทน โดยวิธีเฉพาะ"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -285,8 +262,7 @@
         "จ้างปรับปรุงห้องกู้ชีพและห้องป้องกันฯสำนักงาน องค์การบริหารส่วนตำบลถ้ำ"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -297,8 +273,7 @@
         "จ้างก่อสร้างโดมอเนกประสงค์ (ศพด.ตำบลกุตาไก้ (กองการศึกษาฯ) โดมอเนกประส"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -309,8 +284,7 @@
         "จ้างงานบำรุงรักษาและปรับปรุงซ่อมแซมเขื่อนป้องกันตลิ่งริมแม่น้ำโขง บ้าน"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "แหล่งน้ำ/ชลประทาน",
       "status": "candidate",
       "guard": null
     },
@@ -321,8 +295,7 @@
         "จ้างปรับรูปแบบแปลง ที่ดินตามรายละเอียดงานปรับรูปแบบแปลง ตามโครงการงานป"
       ],
       "gap": "matcher",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "ดิน/ปรับพื้นที่",
       "status": "candidate",
       "guard": null
     },
@@ -334,7 +307,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -345,8 +317,7 @@
         "จ้างปรับปรุงซ่อมแซมหอประชุมยงใจยุทธที่ว่าการอำเภอท่าอุเทน โดยวิธีเฉพาะ"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -358,7 +329,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -369,8 +339,7 @@
         "จ้างเหมาปรับดันบ่อขยะ ตามโครงการปรับปรุงสถานที่กำจัดขยะมูลฝอย เทศบาลตำ"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "OTHER",
       "status": "candidate",
       "guard": null
     },
@@ -382,7 +351,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -394,7 +362,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -406,7 +373,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -418,7 +384,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -429,8 +394,7 @@
         "จ้างติดตั้งระบบสูบน้ำพลังงานแสงอาทิตย์ เพื่อสู้ภัยแล้ง ขนาดไม่น้อยกว่า"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "แหล่งน้ำ/ชลประทาน",
       "status": "candidate",
       "guard": null
     },
@@ -441,8 +405,7 @@
         "ประกวดราคาจ้างก่อสร้างระบบบำบัดน้ำเสียสำหรับโรงพยาบาลชุมชน ขนาด 30 เตี"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -454,7 +417,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -465,8 +427,7 @@
         "จ้างงานบำรุงรักษาและปรับปรุงซ่อมแซมเขื่อนป้องกันตลิ่งริมแม่น้ำโขง บ้าน"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "แหล่งน้ำ/ชลประทาน",
       "status": "candidate",
       "guard": null
     },
@@ -478,7 +439,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -489,8 +449,7 @@
         "จ้างก่อสร้างระบบชลประทานโครงการพัฒนาพื้นที่ต้นแบบการพัฒนาคุณภาพชีวิต ต"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "ดิน/ปรับพื้นที่",
       "status": "candidate",
       "guard": null
     },
@@ -501,8 +460,7 @@
         "ประกวดราคาจ้างก่อสร้างฌาปนสถาน (เมรุเผาศพ) บ้านส้มป่อย หมู่ที่ ๖ ด้วยว"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -513,8 +471,7 @@
         "ประกวดราคาจ้างก่อสร้างงานจ้างจัดหาและก่อสร้างระบบอบแห้งพลังงานแสงอาทิต"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "ไฟฟ้า/ส่องสว่าง",
       "status": "candidate",
       "guard": null
     },
@@ -525,8 +482,7 @@
         "จ้างก่อสร้างโดมหน้าที่ทำการองค์การบริหารส่วนตำบลวังตามัว โดยวิธีเฉพาะเ"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -538,7 +494,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -550,7 +505,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -562,7 +516,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -574,7 +527,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -585,8 +537,7 @@
         "จ้างกิจกรรมการพัฒนาศูนย์เรียนรู้ทฤษฎีใหม่ รูปแบบ โคกหนองนา ประจำปี 256"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "ดิน/ปรับพื้นที่",
       "status": "candidate",
       "guard": null
     },
@@ -597,8 +548,7 @@
         "จ้างงานบำรุงรักษาและปรับปรุงซ่อมแซมเขื่อนป้องกันตลิ่งริมแม่น้ำโขง บ้าน"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "แหล่งน้ำ/ชลประทาน",
       "status": "candidate",
       "guard": null
     },
@@ -610,7 +560,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -621,8 +570,7 @@
         "จ้างกิจกรรมการพัฒนาศูนย์เรียนรู้ทฤษฎีใหม่ รูปแบบ โคกหนองนา ประจำปี 256"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "ดิน/ปรับพื้นที่",
       "status": "candidate",
       "guard": null
     },
@@ -634,7 +582,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -646,7 +593,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -658,7 +604,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -670,7 +615,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -682,7 +626,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -693,8 +636,7 @@
         "จ้างกิจกรรมการพัฒนาศูนย์เรียนรู้ทฤษฎีใหม่ รูปแบบ โคกหนองนา ประจำปี 256"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "ดิน/ปรับพื้นที่",
       "status": "candidate",
       "guard": null
     },
@@ -705,8 +647,7 @@
         "ประกวดราคาจ้างก่อสร้างฌาปนสถาน (เมรุเผาศพ) บ้านส้มป่อย หมู่ที่ ๖ ด้วยว"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -718,7 +659,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -729,8 +669,7 @@
         "ประกวดราคาจ้างก่อสร้างโครงการก่อสร้างเมรุเผาศพ บ้านโนนจันทร์ หมู่ที่ ๘"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -742,7 +681,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -754,7 +692,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -766,7 +703,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -778,7 +714,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -790,7 +725,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -802,7 +736,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -814,7 +747,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -826,7 +758,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -837,8 +768,7 @@
         "จ้างโครงการก่อสร้างลานอเนกประสงค์คอนกรีตเสริมเหล็กป่าช้าบ้านโนนจันทร์ "
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -849,8 +779,7 @@
         "จ้างโครงการก่อสร้างลาน คสลรอบเมรุเผาศพวัดทองประเสริฐ หมู่ที่ ๗ บ้านดงต"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -862,7 +791,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -873,8 +801,7 @@
         "จ้างโรงเรือนอเนกประสงค์ โดยวิธีเฉพาะเจาะจง"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -886,7 +813,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -897,8 +823,7 @@
         "จ้างปรับปรุงซ่อมแซมห้องเรียน จำนวน 1 งาน กลุ่มบริหารงานวิชาการ โดยวิธี"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -910,7 +835,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -922,7 +846,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -934,7 +857,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -946,7 +868,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -958,7 +879,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -970,7 +890,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -981,8 +900,7 @@
         "จ้างงานบำรุงรักษาและปรับปรุงซ่อมแซมเขื่อนป้องกันตลิ่งริมแม่น้ำโขง บ้าน"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "แหล่งน้ำ/ชลประทาน",
       "status": "candidate",
       "guard": null
     },
@@ -993,8 +911,7 @@
         "จ้างติดตั้งระบบสูบน้ำพลังงานแสงอาทิตย์ เพื่อสู้ภัยแล้ง ขนาดไม่น้อยกว่า"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "แหล่งน้ำ/ชลประทาน",
       "status": "candidate",
       "guard": null
     },
@@ -1006,7 +923,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1017,8 +933,7 @@
         "จ้างก่อสร้างระบบชลประทานโครงการพัฒนาพื้นที่ต้นแบบการพัฒนาคุณภาพชีวิต ต"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "ดิน/ปรับพื้นที่",
       "status": "candidate",
       "guard": null
     },
@@ -1030,7 +945,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1042,7 +956,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1054,7 +967,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1066,7 +978,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1077,8 +988,7 @@
         "จ้างปรับรูปแบบแปลง ที่ดินตามรายละเอียดงานปรับรูปแบบแปลง ตามโครงการงานป"
       ],
       "gap": "matcher",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "ดิน/ปรับพื้นที่",
       "status": "candidate",
       "guard": null
     },
@@ -1090,7 +1000,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1102,7 +1011,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1114,7 +1022,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1126,7 +1033,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1138,7 +1044,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1149,8 +1054,7 @@
         "จ้างก่อสร้างหอถังสูง ขนาด 10 ลูกบาศก์เมตร(ถังไฟเบอร์กลาส 4 ถัง) หมู่ที"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -1162,7 +1066,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1174,7 +1077,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1186,7 +1088,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1198,7 +1099,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1210,7 +1110,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1222,7 +1121,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1234,7 +1132,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1246,7 +1143,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1258,7 +1154,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1269,8 +1164,7 @@
         "จ้างโครงการก่อสร้างท่าน้ำ ลำห้วยศรีคุณ ประจำปีงบประมาณ ๒๕๖๘ โดยวิธีเฉพ"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "แหล่งน้ำ/ชลประทาน",
       "status": "candidate",
       "guard": null
     },
@@ -1282,7 +1176,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1294,7 +1187,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1306,7 +1198,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1318,7 +1209,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1330,7 +1220,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1342,7 +1231,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1354,7 +1242,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1366,7 +1253,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1378,7 +1264,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1390,7 +1275,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1402,7 +1286,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1414,7 +1297,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1425,8 +1307,7 @@
         "จ้างปรับรูปแบบแปลง ที่ดินตามรายละเอียดงานปรับรูปแบบแปลง ตามโครงการงานป"
       ],
       "gap": "matcher",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "ดิน/ปรับพื้นที่",
       "status": "candidate",
       "guard": null
     },
@@ -1438,7 +1319,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1450,7 +1330,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1461,8 +1340,7 @@
         "จ้างติดตั้งระบบสูบน้ำพลังงานแสงอาทิตย์ เพื่อสู้ภัยแล้ง ขนาดไม่น้อยกว่า"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "ไฟฟ้า/ส่องสว่าง",
       "status": "candidate",
       "guard": null
     },
@@ -1474,7 +1352,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1486,7 +1363,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1498,7 +1374,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1510,7 +1385,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1522,7 +1396,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1533,8 +1406,7 @@
         "จ้างปรับรูปแบบแปลง ที่ดินตามรายละเอียดงานปรับรูปแบบแปลง ตามโครงการงานป"
       ],
       "gap": "matcher",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "ดิน/ปรับพื้นที่",
       "status": "candidate",
       "guard": null
     },
@@ -1545,8 +1417,7 @@
         "จ้างปรับรูปแบบแปลง ที่ดินตามรายละเอียดงานปรับรูปแบบแปลง ตามโครงการงานป"
       ],
       "gap": "matcher",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "ดิน/ปรับพื้นที่",
       "status": "candidate",
       "guard": null
     },
@@ -1557,8 +1428,7 @@
         "จ้างปรับรูปแบบแปลง ที่ดินตามรายละเอียดงานปรับรูปแบบแปลง ตามโครงการงานป"
       ],
       "gap": "matcher",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "ดิน/ปรับพื้นที่",
       "status": "candidate",
       "guard": null
     },
@@ -1569,8 +1439,7 @@
         "จ้างปรับรูปแบบแปลง ที่ดินตามรายละเอียดงานปรับรูปแบบแปลง ตามโครงการงานป"
       ],
       "gap": "matcher",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "ดิน/ปรับพื้นที่",
       "status": "candidate",
       "guard": null
     },
@@ -1582,7 +1451,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1594,7 +1462,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1606,7 +1473,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1618,7 +1484,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1630,7 +1495,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1642,7 +1506,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1654,7 +1517,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1666,7 +1528,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1678,7 +1539,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1690,7 +1550,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1702,7 +1561,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1713,8 +1571,7 @@
         "จ้างก่อสร้างลานจอดรถประชาชนผู้มาติดต่อราชการ ที่ว่าการอำเภอศรีวิไล ตำบ"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -1726,7 +1583,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1738,7 +1594,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1750,7 +1605,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1761,8 +1615,7 @@
         "ประกวดราคาจ้างก่อสร้างโครงการก่อสร้างเขื่อนป้องกันตลิ่งริมแม่น้ำโขง บ้"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "แหล่งน้ำ/ชลประทาน",
       "status": "candidate",
       "guard": null
     },
@@ -1774,7 +1627,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1786,7 +1638,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1798,7 +1649,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1810,7 +1660,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1822,7 +1671,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1834,7 +1682,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1846,7 +1693,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1858,7 +1704,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1870,7 +1715,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1882,7 +1726,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1894,7 +1737,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1906,7 +1748,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1918,7 +1759,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1930,7 +1770,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1942,7 +1781,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1953,8 +1791,7 @@
         "ประกวดราคาจ้างก่อสร้างปรับปรุงห้องปฏิบัติการสาขาวิชาการโรงแรม ตำบลหนอง"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -1966,7 +1803,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1978,7 +1814,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -1990,7 +1825,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2002,7 +1836,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2014,7 +1847,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2026,7 +1858,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2038,7 +1869,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2050,7 +1880,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2062,7 +1891,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2074,7 +1902,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2086,7 +1913,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2098,7 +1924,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2110,7 +1935,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2122,7 +1946,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2133,8 +1956,7 @@
         "จ้างเหมาปรับปรุงห้องพักขยะติดเชื้อ โดยวิธีเฉพาะเจาะจง"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "OTHER",
       "status": "candidate",
       "guard": null
     },
@@ -2146,7 +1968,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2158,7 +1979,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2170,7 +1990,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2181,8 +2000,7 @@
         "จ้างปรับปรุงที่พักขยะติดเชื้อรพ.สต.บ้านโนนสวาง โดยวิธีเฉพาะเจาะจง"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "OTHER",
       "status": "candidate",
       "guard": null
     },
@@ -2194,7 +2012,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2206,7 +2023,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2217,8 +2033,7 @@
         "จ้างปรับปรุงบันไดทางขึ้นและทางลาดสำหรับผู้พิการ สำนักงานที่ดินจังหวัดน"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -2230,7 +2045,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2242,7 +2056,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2254,7 +2067,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2266,7 +2078,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2278,7 +2089,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2290,7 +2100,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2302,7 +2111,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2314,7 +2122,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2326,7 +2133,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2338,7 +2144,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2350,7 +2155,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2362,7 +2166,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2374,7 +2177,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2386,7 +2188,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2398,7 +2199,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2409,8 +2209,7 @@
         "จ้างโครงการปรับปรุงโรงฆ่าสัตว์เทศบาลตำบลเรณูนคร โดยวิธีเฉพาะเจาะจง"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -2422,7 +2221,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2434,7 +2232,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2446,7 +2243,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2458,7 +2254,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2470,7 +2265,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2481,8 +2275,7 @@
         "จ้างปรับปรุงบ่อขยะบ้านอีอูด หมู่ที่ 3 ตำบลนาเดื่อ อำเภอศรีสงคราม จังหว"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "OTHER",
       "status": "candidate",
       "guard": null
     },
@@ -2494,7 +2287,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2506,7 +2298,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2517,8 +2308,7 @@
         "จ้างจ้างก่อสร้างโรงเรือนเพาะเห็ดและเรือนเพาะชำ โครงการ อิ่มนี้เพื่อน้อ"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -2530,7 +2320,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2542,7 +2331,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2554,7 +2342,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2566,7 +2353,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2578,7 +2364,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2590,7 +2375,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2602,7 +2386,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2614,7 +2397,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2626,7 +2408,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2638,7 +2419,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2650,7 +2430,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2662,7 +2441,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2674,7 +2452,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2685,8 +2462,7 @@
         "จ้างโครงการก่อสร้างลานตากผลผลิตทางการเกษตร บ้านท่าคำไฮ หมู่ที่ 10 โดยว"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -2698,7 +2474,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2709,8 +2484,7 @@
         "จ้างโครงการก่อสร้างเสาธงสำนักงานเทศบาลตำบลเรณูนคร โดยวิธีเฉพาะเจาะจง"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -2722,7 +2496,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2733,8 +2506,7 @@
         "จ้างปรับปรุงบันไดทางขึ้นและทางลาดสำหรับผู้พิการ สำนักงานที่ดินจังหวัดน"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "ดิน/ปรับพื้นที่",
       "status": "candidate",
       "guard": null
     },
@@ -2745,8 +2517,7 @@
         "จ้างเหมาปรับดันบ่อขยะ ตามโครงการปรับปรุงสถานที่กำจัดขยะมูลฝอย เทศบาลตำ"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "OTHER",
       "status": "candidate",
       "guard": null
     },
@@ -2758,7 +2529,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2770,7 +2540,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2782,7 +2551,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2794,7 +2562,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2805,8 +2572,7 @@
         "จ้างโครงการปรับปรุงห้องเก็บข้อมูลแผนงาน โครงการขับเคลื่อนการพัฒนาจังหว"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -2818,7 +2584,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2830,7 +2595,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2842,7 +2606,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2853,8 +2616,7 @@
         "จ้างเหมาซ่อมแซมลานคอนกรีดเสริมเหล็กภายในโรงพยาบาลส่งเสริมสุขภาพตำบลท่า"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -2866,7 +2628,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2878,7 +2639,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2890,7 +2650,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2902,7 +2661,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2914,7 +2672,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2926,7 +2683,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2938,7 +2694,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2950,7 +2705,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2962,7 +2716,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2974,7 +2727,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -2985,8 +2737,7 @@
         "จ้างก่อสร้างโดมอเนกประสงค์ (ศพด.ตำบลกุตาไก้ (กองการศึกษาฯ) โดมอเนกประส"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -2997,8 +2748,7 @@
         "จ้างก่อสร้างผนังกันดิน บ้านหนองฮี หมู่ที่ ๑๑ บ้านนางโอกาศ ถึง ห้วยแคน "
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -3010,7 +2760,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3021,8 +2770,7 @@
         "จ้างปรับปรุงบันไดทางขึ้นและทางลาดสำหรับผู้พิการ สำนักงานที่ดินจังหวัดน"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "ดิน/ปรับพื้นที่",
       "status": "candidate",
       "guard": null
     },
@@ -3034,7 +2782,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3046,7 +2793,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3058,7 +2804,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3069,8 +2814,7 @@
         "จ้างก่อสร้างโดมหน้าที่ทำการองค์การบริหารส่วนตำบลวังตามัว โดยวิธีเฉพาะเ"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -3082,7 +2826,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3094,7 +2837,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3106,7 +2848,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3118,7 +2859,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3130,7 +2870,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3142,7 +2881,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3154,7 +2892,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3166,7 +2903,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3178,7 +2914,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3190,7 +2925,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3201,8 +2935,7 @@
         "ประกวดราคาจ้างก่อสร้างโครงการก่อสร้างเมรุเผาศพ บ้านโนนจันทร์ หมู่ที่ ๘"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -3214,7 +2947,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3226,7 +2958,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3238,7 +2969,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3250,7 +2980,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3262,7 +2991,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3274,7 +3002,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3286,7 +3013,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3298,7 +3024,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3310,7 +3035,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3322,7 +3046,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3334,7 +3057,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3346,7 +3068,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3358,7 +3079,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3370,7 +3090,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3381,8 +3100,7 @@
         "จ้างปรับปรุงสำนักงานพาณิชย์จังหวัดนครพนม โดยวิธีเฉพาะเจาะจง"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -3393,8 +3111,7 @@
         "จ้างก่อสร้างทางลาดผู้พิการ อบต.นาดง (ทางลาดคอนกรีตเสริมเหล็ก กว้าง 1.5"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -3406,7 +3123,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3418,7 +3134,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3430,7 +3145,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3442,7 +3156,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3454,7 +3167,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3466,7 +3178,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3478,7 +3189,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3490,7 +3200,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3502,7 +3211,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3514,7 +3222,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3526,7 +3233,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3538,7 +3244,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3550,7 +3255,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3562,7 +3266,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3574,7 +3277,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3586,7 +3288,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3598,7 +3299,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3610,7 +3310,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3622,7 +3321,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3634,7 +3332,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3646,7 +3343,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3657,8 +3353,7 @@
         "จ้างก่อสร้างโดมอเนกประสงค์ (ศพด.ตำบลกุตาไก้ (กองการศึกษาฯ) โดมอเนกประส"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -3670,7 +3365,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3682,7 +3376,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3694,7 +3387,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3705,8 +3397,7 @@
         "จ้างกั้นห้องทำงานฝ่ายรังวัด สำนักงานที่ดินจังหวัดนครพนม สาขานาหว้า โดย"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -3718,7 +3409,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3730,7 +3420,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3742,7 +3431,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3754,7 +3442,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3765,8 +3452,7 @@
         "จ้างก่อสร้างหอถังสูง ขนาด 10 ลูกบาศก์เมตร(ถังไฟเบอร์กลาส 4 ถัง) หมู่ที"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -3778,7 +3464,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3790,7 +3475,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3802,7 +3486,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3814,7 +3497,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3825,8 +3507,7 @@
         "จ้างปรับปรุงโรงเก็บพัสดุสำนักงานเกษตรอำเภอโพนสวรรค์ โดยวิธีเฉพาะเจาะจง"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -3837,8 +3518,7 @@
         "จ้างก่อสร้างหอถังกักเก็บน้ำเพื่อบรรเทาสาธารณภัย หอถังโครงเหล็ก ขนาดกว้"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "แหล่งน้ำ/ชลประทาน",
       "status": "candidate",
       "guard": null
     },
@@ -3850,7 +3530,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3862,7 +3541,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3874,7 +3552,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3886,7 +3563,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3898,7 +3574,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3910,7 +3585,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3921,8 +3595,7 @@
         "จ้างก่อสร้างห้องเก็บเอกสาร สำนักงานการท่องเที่ยวและกีฬาจังหวัดบึงกาฬ ต"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -3934,7 +3607,6 @@
       ],
       "gap": "both",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3945,8 +3617,7 @@
         "จ้างจ้างเหมาปรับปรุงระบบสาธารณูปโภค ของที่ทำการปกครองอำเภอบ้านแพง จังห"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -3958,7 +3629,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3970,7 +3640,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3982,7 +3651,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -3994,7 +3662,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4006,7 +3673,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4018,7 +3684,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4030,7 +3695,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4042,7 +3706,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4054,7 +3717,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4066,7 +3728,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4078,7 +3739,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4090,7 +3750,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4102,7 +3761,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4114,7 +3772,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4126,7 +3783,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4138,7 +3794,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4150,7 +3805,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4162,7 +3816,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4174,7 +3827,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4186,7 +3838,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4197,8 +3848,7 @@
         "จ้างโครงการปรับปรุงโรงฆ่าสัตว์เทศบาลตำบลเรณูนคร โดยวิธีเฉพาะเจาะจง"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -4209,8 +3859,7 @@
         "จ้างโครงการก่อสร้างลาน คสลรอบเมรุเผาศพวัดทองประเสริฐ หมู่ที่ ๗ บ้านดงต"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -4222,7 +3871,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4234,7 +3882,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4246,7 +3893,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4258,7 +3904,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4270,7 +3915,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4282,7 +3926,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4294,7 +3937,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4306,7 +3948,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4318,7 +3959,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4329,8 +3969,7 @@
         "จ้างปรับปรุงหอประชุมสภาองค์การบริหารส่วนตำบลหนองพันทา โดยวิธีเฉพาะเจาะ"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -4341,8 +3980,7 @@
         "จ้างปรับปรุงห้องกู้ชีพและห้องป้องกันฯสำนักงาน องค์การบริหารส่วนตำบลถ้ำ"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -4354,7 +3992,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4366,7 +4003,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4378,7 +4014,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4390,7 +4025,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4402,7 +4036,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4414,7 +4047,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4426,7 +4058,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4438,7 +4069,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4450,7 +4080,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4462,7 +4091,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4474,7 +4102,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4485,8 +4112,7 @@
         "ประกวดราคาจ้างก่อสร้างระบบบำบัดน้ำเสียสำหรับโรงพยาบาลชุมชน ขนาด 30 เตี"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "แหล่งน้ำ/ชลประทาน",
       "status": "candidate",
       "guard": null
     },
@@ -4498,7 +4124,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4510,7 +4135,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4521,8 +4145,7 @@
         "จ้างปรับปรุงห้องเรียนวิทยาศาสตร์ โดยวิธีเฉพาะเจาะจง"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -4534,7 +4157,6 @@
       ],
       "gap": "matcher",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4546,7 +4168,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4558,7 +4179,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4570,7 +4190,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4582,7 +4201,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4594,7 +4212,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4606,7 +4223,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4618,7 +4234,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4630,7 +4245,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4642,7 +4256,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4654,7 +4267,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4666,7 +4278,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4678,7 +4289,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4690,7 +4300,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4702,7 +4311,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4714,7 +4322,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4726,7 +4333,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4738,7 +4344,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4750,7 +4355,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4762,7 +4366,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4774,7 +4377,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4785,8 +4387,7 @@
         "จ้างปรับปรุงบันไดทางขึ้นและทางลาดสำหรับผู้พิการ สำนักงานที่ดินจังหวัดน"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -4798,7 +4399,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4810,7 +4410,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4822,7 +4421,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4834,7 +4432,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4846,7 +4443,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4858,7 +4454,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4869,8 +4464,7 @@
         "จ้างโครงการปรับปรุงห้องปฏิบัติงานกองยุทธศาสตร์และงบประมาณ โดยวิธีเฉพาะ"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -4881,8 +4475,7 @@
         "จ้างโครงการปรับปรุงห้องปฏิบัติงานกองยุทธศาสตร์และงบประมาณ โดยวิธีเฉพาะ"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -4894,7 +4487,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4906,7 +4498,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4918,7 +4509,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4930,7 +4520,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4942,7 +4531,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4954,7 +4542,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4966,7 +4553,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4978,7 +4564,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -4990,7 +4575,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5002,7 +4586,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5014,7 +4597,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5026,7 +4608,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5038,7 +4619,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5050,7 +4630,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5062,7 +4641,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5074,7 +4652,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5086,7 +4663,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5098,7 +4674,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5110,7 +4685,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5122,7 +4696,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5134,7 +4707,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5146,7 +4718,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5158,7 +4729,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5170,7 +4740,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5182,7 +4751,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5194,7 +4762,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5205,8 +4772,7 @@
         "จ้างโครงการปรับปรุงซ่อมแซมหอประชุมอำเภอนาหว้า ที่ว่าการอำเภอนาหว้า อำเ"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -5218,7 +4784,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5230,7 +4795,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5242,7 +4806,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5254,7 +4817,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5266,7 +4828,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5278,7 +4839,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5290,7 +4850,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5302,7 +4861,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5314,7 +4872,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5326,7 +4883,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5338,7 +4894,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5350,7 +4905,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5361,8 +4915,7 @@
         "จ้างปรับปรุงบ้านพักข้าราชการ สำนักงานเกษตรอำเภอเมืองบึงกาฬ ตำบลบึงกาฬ "
       ],
       "gap": "matcher",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -5374,7 +4927,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5386,7 +4938,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5398,7 +4949,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5409,8 +4959,7 @@
         "จ้างปูกระเบื้องเซรามิก ชนิดกันลื่น ขนาด 12 นิ้ว X 12 นิ้ว ศูนย์พัฒนาเด"
       ],
       "gap": "classifier",
-      "category": "",
-      "bsc_relevant": false,
+      "category": "อาคาร",
       "status": "candidate",
       "guard": null
     },
@@ -5422,7 +4971,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5434,7 +4982,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5446,7 +4993,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5458,7 +5004,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5470,7 +5015,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5482,7 +5026,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5494,7 +5037,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5506,7 +5048,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5518,7 +5059,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5530,7 +5070,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     },
@@ -5542,7 +5081,6 @@
       ],
       "gap": "classifier",
       "category": "",
-      "bsc_relevant": false,
       "status": "candidate",
       "guard": null
     }

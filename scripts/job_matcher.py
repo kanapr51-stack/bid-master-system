@@ -17,8 +17,12 @@ location_source เก็บไว้ audit (field/name/unknown) — กัน s
 """
 import os
 import re
+import sys
 import json
 from typing import Tuple
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from text_normalize import normalize_thai  # noqa: E402
 
 CONFIG_PATH = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -137,7 +141,7 @@ def passes_keyword(project_name: str, cfg: dict = None) -> Tuple[bool, str]:
     คืน (True, kw) ถ้าผ่าน · (False, reason) ถ้าไม่ผ่าน → skip resolve ได้เลย.
     logic ตรงกับ keyword/negative ใน match_job (consistency)."""
     cfg = cfg if cfg is not None else load_config()
-    name = project_name or ""
+    name = normalize_thai(project_name)
     kw = next((k for k in cfg.get("keywords", []) if _kw_hit(k, name)), None)
     if not kw:
         return False, "no_keyword"
@@ -151,7 +155,7 @@ def match_job(project_name: str, province: str, tambon_field: str = "",
               dept_name: str = "", cfg: dict = None) -> Tuple[str, dict]:
     """คืน (decision, detail). decision ∈ {'send','cut','soft_include'}"""
     cfg = cfg if cfg is not None else load_config()
-    name = project_name or ""
+    name = normalize_thai(project_name)
     targets = cfg.get("target_tambons", {}).get(province, [])
 
     if not targets:

@@ -12,7 +12,11 @@ guard ภาษาไทย: keyword เสี่ยง substring (ราง/ท
 """
 import json
 import re
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent))
+from text_normalize import normalize_thai  # noqa: E402
 
 _ROOT = Path(__file__).parent.parent
 _CFG = json.loads((_ROOT / "config" / "work_type_keywords.json").read_text(encoding="utf-8"))
@@ -39,7 +43,7 @@ def _hit(k: str, title: str) -> bool:
 
 
 def classify_work_type(title: str) -> dict:
-    title = title or ""
+    title = normalize_thai(title)
 
     # 1) score ต่อหมวด = จำนวน keyword distinct ที่ hit
     scores = {}      # cat -> distinct keyword count

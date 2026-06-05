@@ -272,7 +272,8 @@ def main():
 
     # ── โหลด queue ──
     queue_items: list[dict] = []
-    queue_file = Path(__file__).parent.parent / "data" / "rss_queue.json"
+    import bms_paths  # runtime-state single authority (BMS_DATA_DIR)
+    queue_file = bms_paths.runtime_path("rss_queue.json")
     if args.from_queue:
         if queue_file.exists():
             try:

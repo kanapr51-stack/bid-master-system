@@ -26,6 +26,7 @@ from datetime import datetime, timezone, timedelta, date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
+import bms_paths  # noqa: E402  — runtime-state single authority (BMS_DATA_DIR)
 from Sebastian_Customer_DB import SubscriptionStore, init_schema, get_connection, _now, _now_plus
 
 if sys.stdout and hasattr(sys.stdout, "reconfigure"):
@@ -47,8 +48,8 @@ CIRCUIT_BREAK       = 5    # provider errors ติดกัน → หยุด
 # INC-001 Rev 3: cross-run cooldown — เมื่อตรวจพบ WAF/circuit-break → หยุดทั้ง plane
 # กัน positive feedback loop (worker timer 2นาที << WAF cooldown 30-40นาที → ต่ออายุ block เอง 1.5 วัน)
 RESOLVE_COOLDOWN_MIN = int(os.environ.get("BMS_RESOLVE_COOLDOWN_MIN", "45"))  # > observed WAF cooldown
-RESOLVE_STATE_PATH   = Path(__file__).parent.parent / "data" / "resolve_plane_state.json"
-API_STATE_PATH    = Path(__file__).parent.parent / "data" / "api_ingestion_state.json"
+RESOLVE_STATE_PATH = bms_paths.runtime_path("resolve_plane_state.json")
+API_STATE_PATH     = bms_paths.runtime_path("api_ingestion_state.json")
 LOG_DIR           = Path(__file__).parent.parent / "logs" / "enrichment_worker"
 TZ_TH             = timezone(timedelta(hours=7))
 
@@ -120,7 +121,7 @@ def _set_resolve_cooldown(reason: str) -> str:
 # ── INC-001 P1: Resolve heartbeat (กันพังเงียบ — dead-man switch ตรวจ) ───────────
 # L-004: วัด business-critical path (resolve สำเร็จจริง) ไม่ใช่ synthetic probe (L-002).
 # ไม่ยิง API เพิ่ม → ไม่เสี่ยง burst. last_resolve_success_at = สัญญาณ resolve plane alive.
-RESOLVE_HEARTBEAT_PATH = Path(__file__).parent.parent / "data" / "resolve_heartbeat.json"
+RESOLVE_HEARTBEAT_PATH = bms_paths.runtime_path("resolve_heartbeat.json")
 
 
 def _write_resolve_heartbeat(status: str, resolved_ok: int = 0,

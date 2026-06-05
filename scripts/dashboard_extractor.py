@@ -263,7 +263,8 @@ def rss_catalog_stats() -> dict:
     scraper_seen = last_run.get('scraper_seen_size', 0)
 
     # Queue size
-    queue_file = DATA_DIR / "rss_queue.json"
+    import bms_paths  # runtime-state single authority (BMS_DATA_DIR)
+    queue_file = bms_paths.runtime_path("rss_queue.json")
     queue_count = 0
     if queue_file.exists():
         try:

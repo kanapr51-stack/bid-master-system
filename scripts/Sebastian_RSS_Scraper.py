@@ -38,17 +38,20 @@ from Sebastian_Telemetry import check_breaker, record_poll
 
 sys.stdout.reconfigure(encoding="utf-8")
 sys.path.insert(0, str(Path(__file__).parent))
+import bms_paths  # noqa: E402  — runtime-state single authority (BMS_DATA_DIR)
 
 RSS_URL = "https://process.gprocurement.go.th/EPROCRssFeedWeb/egpannouncerss.xml"
 DATA_DIR = Path(__file__).parent.parent / "data"
 DATA_DIR.mkdir(exist_ok=True)
 
+# ASSET (lookup/seed ที่ commit ใน repo — scraper อ่าน startup, auto-rediscover ได้) → คง DATA_DIR
 CATALOG_FILE = DATA_DIR / "egp_deptid_catalog.json"
 TARGET_FILE = DATA_DIR / "target_deptids.json"
-RSS_SEEN_FILE = DATA_DIR / "rss_seen_ids.json"
-RSS_QUEUE_FILE = DATA_DIR / "rss_queue.json"
-SCRAPER_SEEN_FILE = DATA_DIR / "seen_ids.json"
-DEPT_FAIL_STATE_FILE = DATA_DIR / "dept_failure_state.json"
+# RUNTIME (mutate ทุกรอบ) → BMS_DATA_DIR
+RSS_SEEN_FILE = bms_paths.runtime_path("rss_seen_ids.json")
+RSS_QUEUE_FILE = bms_paths.runtime_path("rss_queue.json")
+SCRAPER_SEEN_FILE = bms_paths.runtime_path("seen_ids.json")
+DEPT_FAIL_STATE_FILE = bms_paths.runtime_path("dept_failure_state.json")
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "

@@ -20,6 +20,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
+import bms_paths  # noqa: E402  — runtime-state single authority (BMS_DATA_DIR)
 from Sebastian_Customer_DB import SubscriptionStore, init_schema, get_connection, _now
 
 if sys.stdout and hasattr(sys.stdout, "reconfigure"):
@@ -28,8 +29,8 @@ if sys.stdout and hasattr(sys.stdout, "reconfigure"):
 # ── Config ────────────────────────────────────────────────────────────────────
 
 NOTIFY_TYPES   = {"D0"}
-RSS_QUEUE_PATH = Path(__file__).parent.parent / "data" / "rss_queue.json"
-EPOCH_PATH     = Path(__file__).parent.parent / "data" / "rss_notifier_epoch.txt"
+RSS_QUEUE_PATH = bms_paths.runtime_path("rss_queue.json")
+EPOCH_PATH     = bms_paths.runtime_path("rss_notifier_epoch.txt")
 LOG_DIR        = Path(__file__).parent.parent / "logs" / "rss_notifier"
 TZ_TH          = timezone(timedelta(hours=7))
 

@@ -36,7 +36,8 @@ def main():
     print(f"    (Operational funnel tracking since: {FUNNEL_TRACKING_STARTED_AT})\n")
 
     # Stage 1: RSS discovered (rss_seen_ids.json)
-    seen_file = DATA_DIR / "rss_seen_ids.json"
+    import bms_paths  # runtime-state single authority (BMS_DATA_DIR)
+    seen_file = bms_paths.runtime_path("rss_seen_ids.json")
     rss_discovered = 0
     if seen_file.exists():
         try:

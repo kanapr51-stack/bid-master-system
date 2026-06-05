@@ -8,9 +8,11 @@ from pathlib import Path
 from collections import Counter
 
 ROOT        = Path(__file__).parent.parent
-QUEUE_FILE  = ROOT / "data" / "rss_queue.json"
-STATE_FILE  = ROOT / "data" / "api_ingestion_state.json"
-HISTORY_FILE = ROOT / "data" / "ingestion_run_history.json"
+sys.path.insert(0, str(Path(__file__).parent))
+import bms_paths  # noqa: E402  — runtime-state single authority (BMS_DATA_DIR)
+QUEUE_FILE  = bms_paths.runtime_path("rss_queue.json")
+STATE_FILE  = bms_paths.runtime_path("api_ingestion_state.json")
+HISTORY_FILE = bms_paths.runtime_path("ingestion_run_history.json")
 OUTPUT_FILE = ROOT / "data" / "queue_health_snapshot.json"
 
 def age_minutes(ts_str: str) -> float:

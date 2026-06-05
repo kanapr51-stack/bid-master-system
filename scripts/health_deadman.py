@@ -24,6 +24,7 @@ import json
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import bms_paths  # noqa: E402  — resolve_heartbeat ต้องชี้ dir เดียวกับ Enrichment_Worker
 sys.stdout.reconfigure(encoding="utf-8")
 
 DATA_DIR = os.environ.get("BMS_DATA_DIR", "/opt/bms/data")
@@ -37,8 +38,7 @@ COOLDOWN_SEC = 60 * 60             # alert ซ้ำ issue เดิมไม่
 
 # INC-001 P1: resolve-plane health — ปิด gap ที่ทำให้ production ตายเงียบ 1.5 วัน (L-004)
 # heartbeat เขียนโดย Enrichment_Worker ที่ app/data (ไม่ใช่ BMS_DATA_DIR — deploy-debt 2 dir)
-APP_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
-RESOLVE_HB_FILE = os.path.join(APP_DATA_DIR, "resolve_heartbeat.json")
+RESOLVE_HB_FILE = str(bms_paths.runtime_path("resolve_heartbeat.json"))
 WORKER_STALE_SEC  = 12 * 60      # worker รันทุก 2 นาที → >12 นาที = timer/worker ตาย
 RESOLVE_DEAD_SEC  = 75 * 60      # resolve ไม่สำเร็จ >75 นาที + มี pending + ไม่ cooldown = ตายเงียบ
 RESOLVE_STUCK_SEC = 120 * 60     # cooldown ค้าง + ไม่สำเร็จ >2 ชม = resolve plane ลงจริง

@@ -4275,3 +4275,82 @@ tie-break เปลี่ยนจาก spec §4 (priority ก่อน positio
 ### Followup
 - Phase 1: migration work_type column (52.5K) + Sheet 3 มุม (primary+secondary)
 - ยืนยัน OUR_TINS (BSC ทรัพย์คอนกรีต + ยศประทาน) สำหรับมุมบริษัทเรา
+
+---
+
+## งานที่ N+81: Work-Type Analytics Phase 2 — ครบ 3 backlog (2026-06-05)
+
+### สถานะ: ✅ เสร็จ
+
+### สิ่งที่ทำ — ต่อยอด taxonomy work_type เป็น market intelligence (7 tab ใหม่)
+1. **Market size** (`_market_size_sheet.py`): ตลาด 46,063 ลบ. (นครพนม+บึงกาฬ 11 ปี). ถนน 55%, อาคาร 21%, ราง 3.4%. primary-based (total ไม่ double-count) + win_price.
+2. **Competitor share** (`_competitor_share_sheet.py`): top10/หมวด + อันดับเรา. ราง=อันดับ 11/1002 (จุดแข็ง), ถนน 55/1840. ตลาดกระจาย (เจ้าตลาดครอง 3-14%).
+3. **Trend** (`_trend_sheet.py`): early 2561-62 vs recent 2567-68. ถนน +69%, ไฟฟ้า +211%, ดิน +779% (โต) · แหล่งน้ำ -42%, สะพาน -54% (หด) · ราง +14% (ทรง).
+
+### Insight เชิงกลยุทธ์
+- ถนน = สนามใหญ่สุด (55%) + ยังโต → ต้องอยู่
+- **ไฟฟ้า/ส่องสว่าง โตแรง +211%** (solar boom) = โอกาสขยาย (เรายังไม่เล่น)
+- ราง (สินค้าหลัก) ตลาดเล็ก+ทรง แต่อันดับเราดีสุด → ป้องตำแหน่ง + ขายของให้เจ้าถนน
+- UNKNOWN หด -49% = ปีหลัง classifier ครอบคลุมดีขึ้น
+
+### commits: 4e92f50 (market size) + competitor share + trend (3 commits)
+
+### Followup
+- ถ้าจะ refine classifier: UNKNOWN ยัง 6.2% มูลค่า (งานใหญ่ avg 1.25 ลบ)
+- wire 10 tab analytics เข้า web portal (ภายหลัง)
+
+---
+
+## งานที่ N+82: เว็บแดชบอร์ดพ่อแม่ (Parents Dashboard) (2026-06-05)
+
+### สถานะ: ✅ เสร็จ + deploy live
+
+### สิ่งที่ทำ
+หน้าเว็บ static มือถือ สรุปวิเคราะห์ตลาดงานก่อสร้าง (size/share/trend) ส่งให้พ่อแม่ เปิดไม่ต้อง login.
+- `scripts/build_parents_dashboard.py` — compute_data (primary, อ่าน work_type column) + render_html (self-contained, Chart.js donut, details expand, ธีมขาว-แดง) + test
+- `dashboard/parents/index.html` (generated) → deploy Vercel
+- หัวเว็บ: "สรุปผลการวิเคราะห์ตลาดงานก่อสร้าง นครพนม-บึงกาฬ ตั้งแต่ปี พ.ศ. 2558-2568 จัดทำโดยน้องกัญจน์"
+
+### 🔗 URL (public, มือถือเปิดได้): https://parents-sigma.vercel.app
+- ปิด Vercel Deployment Protection ผ่าน API (ssoProtection=null) — เดิม 401, ตอนนี้ 200
+- noindex (ไม่ขึ้น Google)
+
+### Insight ในหน้า
+ตลาด 46,063 ลบ. · ถนน 55% · อันดับเรา ราง #11 (จุดแข็ง) · เทรนด์ ไฟฟ้า +211% · โอกาส=ไฟฟ้า/ส่องสว่าง (ไม่เล่น+โต+ตลาดใหญ่สุด)
+
+### Rebuild เมื่อ data อัปเดต
+`python scripts/build_parents_dashboard.py` แล้ว `vercel deploy dashboard/parents --prod --yes`
+
+### commits: 6 (spec→plan→compute→render→gitignore) + 1 deploy
+
+---
+
+## งานที่ N+83: Parents Dashboard (interactive) + Construction Vocab (2026-06-05)
+
+### สถานะ: ✅ Dashboard เสร็จ · 🚧 Vocab รอบ batch (resume ได้)
+
+### A. Parents Dashboard — https://parents-sigma.vercel.app (public, มือถือ)
+`scripts/build_parents_dashboard.py` → static HTML ขาว-แดง "จัดทำโดยน้องกัญจน์" deploy Vercel (ปิด deployment protection).
+- 6 section: ตลาด 46B / อันดับเรา / เทรนด์ / โอกาส / คู่แข่ง / พื้นที่ / ผลงานเรา 282 งาน
+- กราฟเทรนด์ interactive: โหมด มูลค่า/สัดส่วน%/เติบโต%(YoY) × เส้น/แท่ง + ตัดเส้น + เลือกปี
+- **แก้ honesty:** window% หลอกตา (กัญจน์จับ +211% ไฟฟ้า) → เปลี่ยนเป็น **CAGR** (log-linear) + คอลัมน์ผันผวน CV%
+- โอกาส = 3 ทาง (ราง=สินค้าเรา / ไฟฟ้า / ดิน) พร้อม pros-cons (ไม่ fix คำตอบเดียว)
+- rebuild: `python scripts/build_parents_dashboard.py` แล้ว `vercel deploy dashboard/parents --prod --yes`
+
+### B. Construction Vocab (คลังคำกลาง) — spec/plan ใน docs/superpowers/
+**Pipeline:** normalize → mine(gap) → review(Sheet vocab_review) → apply(approve/reject sync) → validate
+- `text_normalize.py`: นํ้า→น้ำ, คสล → wire เข้า classifier+matcher → **UNKNOWN 4.4%→4.1% ฟรี**
+- `mine_vocab_gaps.py`: ขุด gap (pythainlp offline) → 462 candidate
+- `construction_vocab.json`: คลังกลาง **company-agnostic** (term→category, ไม่มี bsc_relevant; relevance per-company = อนาคต multi-tenant)
+- `apply_vocab_review.py`: `sync_into_configs(approved, rejected, wt, mp)` — approve เติม, reject ลบ (idempotent+test)
+- **approve 2 batch (38 คำ) → UNKNOWN 2.6%** (classifier 89→127, matcher 28→66)
+- validate จับคำโลภ reject: ลาน/ก่อสร้างลาน/สำนักงาน/ที่ดิน (ชนคำตึก/วัสดุ)
+- pythainlp = dev tool offline (ไม่แตะ pipeline VPS)
+
+### Resume point (session ใหม่)
+- Sheet `vocab_review` มี ~440 candidate เหลือ (เดาหมวดให้บางส่วน) — approve batch ต่อ ด้วย `_vocab_approve_batch.py` (แก้ BATCH dict) หรือกัญจน์รีวิวเองใน Sheet → `apply_vocab_review.py`
+- ทุก batch: ต้อง validate (unit test + UNKNOWN + เช็คคำโลภ substring) ก่อน commit
+
+### Followup
+- DB migration work_type ยังไม่ re-run หลัง normalize+vocab (analytics tab ยังเป็นค่าเก่า) — รัน `migrate_work_type_column.py` เมื่อ vocab นิ่ง
+- validation txt artifacts ใน data/ ยังไม่ commit (เยอะ) — ตัดสินใจ gitignore

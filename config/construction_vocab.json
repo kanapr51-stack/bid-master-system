@@ -21,7 +21,7 @@
       ],
       "gap": "classifier",
       "category": "อาคาร",
-      "status": "candidate",
+      "status": "rejected",
       "guard": null
     },
     {
@@ -43,7 +43,7 @@
       ],
       "gap": "classifier",
       "category": "อาคาร",
-      "status": "candidate",
+      "status": "rejected",
       "guard": null
     },
     {
@@ -109,7 +109,7 @@
       ],
       "gap": "classifier",
       "category": "อาคาร",
-      "status": "candidate",
+      "status": "approved",
       "guard": null
     },
     {
@@ -120,7 +120,7 @@
       ],
       "gap": "classifier",
       "category": "แหล่งน้ำ/ชลประทาน",
-      "status": "candidate",
+      "status": "approved",
       "guard": null
     },
     {
@@ -142,7 +142,7 @@
       ],
       "gap": "classifier",
       "category": "แหล่งน้ำ/ชลประทาน",
-      "status": "candidate",
+      "status": "approved",
       "guard": null
     },
     {
@@ -175,7 +175,7 @@
       ],
       "gap": "classifier",
       "category": "แหล่งน้ำ/ชลประทาน",
-      "status": "candidate",
+      "status": "approved",
       "guard": null
     },
     {
@@ -241,7 +241,7 @@
       ],
       "gap": "classifier",
       "category": "แหล่งน้ำ/ชลประทาน",
-      "status": "candidate",
+      "status": "approved",
       "guard": null
     },
     {
@@ -252,7 +252,7 @@
       ],
       "gap": "classifier",
       "category": "อาคาร",
-      "status": "candidate",
+      "status": "approved",
       "guard": null
     },
     {
@@ -318,7 +318,7 @@
       ],
       "gap": "classifier",
       "category": "อาคาร",
-      "status": "candidate",
+      "status": "approved",
       "guard": null
     },
     {
@@ -340,7 +340,7 @@
       ],
       "gap": "classifier",
       "category": "OTHER",
-      "status": "candidate",
+      "status": "approved",
       "guard": null
     },
     {
@@ -395,7 +395,7 @@
       ],
       "gap": "classifier",
       "category": "แหล่งน้ำ/ชลประทาน",
-      "status": "candidate",
+      "status": "approved",
       "guard": null
     },
     {
@@ -406,7 +406,7 @@
       ],
       "gap": "classifier",
       "category": "อาคาร",
-      "status": "candidate",
+      "status": "approved",
       "guard": null
     },
     {
@@ -428,7 +428,7 @@
       ],
       "gap": "classifier",
       "category": "แหล่งน้ำ/ชลประทาน",
-      "status": "candidate",
+      "status": "approved",
       "guard": null
     },
     {
@@ -450,7 +450,7 @@
       ],
       "gap": "classifier",
       "category": "ดิน/ปรับพื้นที่",
-      "status": "candidate",
+      "status": "approved",
       "guard": null
     },
     {
@@ -461,7 +461,7 @@
       ],
       "gap": "classifier",
       "category": "อาคาร",
-      "status": "candidate",
+      "status": "approved",
       "guard": null
     },
     {
@@ -472,7 +472,7 @@
       ],
       "gap": "classifier",
       "category": "ไฟฟ้า/ส่องสว่าง",
-      "status": "candidate",
+      "status": "approved",
       "guard": null
     },
     {
@@ -483,7 +483,7 @@
       ],
       "gap": "classifier",
       "category": "อาคาร",
-      "status": "candidate",
+      "status": "approved",
       "guard": null
     },
     {
@@ -2518,7 +2518,7 @@
       ],
       "gap": "classifier",
       "category": "OTHER",
-      "status": "candidate",
+      "status": "approved",
       "guard": null
     },
     {

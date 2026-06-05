@@ -4445,3 +4445,22 @@ scp ไฟล์เดียว → `/opt/bms/app/scripts/` (VPS app repo อย
 - 21 enqueue/sent: ตัดถูก 2 งานซื้อ (เครื่องรักษาตา + คอนกรีตผสมเสร็จ) เก็บงานก่อสร้างครบ
 - **ผลรวม: 346/1093 (31%) ของ province_api เป็นงานซื้อ → กรองออกจาก matching** = precision ขึ้นมาก
 - deploy: scp job_matcher.py → VPS (text_normalize มีอยู่แล้ว). config คง 28kw (ไม่ deploy 89kw)
+
+---
+
+## งานที่ N+88: VPS state-migration (Phase 0-4) + proc-aware matcher (2026-06-05→06)
+
+### สถานะ: ✅ migration + matcher เสร็จ deploy
+
+### A. VPS State Migration — deploy-debt + split-brain RESOLVED
+ดูละเอียด `docs/runbooks/vps-state-migration.md`. สรุป: runtime state → /opt/bms/data (bms_paths), VPS HEAD=GitHub, **git pull deploy ทำงาน** (เลิก scp). window 15 นาที. เจอ+แก้ blocker: sudo (ตั้ง sudoers NOPASSWD systemctl+lsof), .git root-owned (chown), Phase 3 leak-watch จับ canary/LINE_Sender missed writers → wire เพิ่ม. Phase 0.5 Operational Readiness Check + Rule #5/#6 เข้า playbook. L: Technical≠Operational Readiness
+
+### B. Proc-aware matcher — 1 feed 2 ธุรกิจ (commit 7e1433e)
+จากประวัติชนะจริง: **ยศประทาน=รับเหมา (จ้าง 99%)** vs **BSC=ขายวัสดุ (ซื้อ 88%)** = 2 ธุรกิจตรงข้าม เจ้าของคนเดียว → กัญจน์เลือกส่ง feed เดียว
+- proc-gate v1 "ตัดซื้อทั้งหมด" ฆ่างาน BSC → เปลี่ยนเป็น **proc-aware**: ซื้อ→ต้องตรง material_keywords (16 คำ) / จ้าง→keywords เดิม
+- validate: BSC recall 30/30=100%, เครื่องแพทย์/รถ/คอม ยังตัด. TDD PASS. deploy+verify VPS
+- L: เช็ค revealed-preference (ประวัติชนะจริง) ก่อนตั้ง filter rule (v1 ผิดเพราะไม่เช็คก่อน)
+
+### Followup
+- Phase 3 leak-watch cron รัน 48h → Phase 4 (gitignore app/data state + ถอด heal) หลัง clean
+- material_keywords อาจ refine เพิ่มถ้า BSC ขายของอื่น (ดู feedback)

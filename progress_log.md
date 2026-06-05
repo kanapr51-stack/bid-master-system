@@ -4399,3 +4399,26 @@ tie-break เปลี่ยนจาก spec §4 (priority ก่อน positio
 
 ### Followup
 - ~~Parents Dashboard redeploy~~ ✅ rebuild + `vercel deploy --prod` (dpl_28sQ5r3...) → parents-sigma.vercel.app สด (HTTP 200, 128,384 bytes ตรง local). ระบบสดทั้ง DB+Sheet+Dashboard
+
+---
+
+## งานที่ N+86: Digest แยก RSS ทั้งประเทศ ออกจาก discovery เป้าหมาย (2026-06-05)
+
+### สถานะ: ✅ เสร็จ (deploy VPS via scp)
+
+### ปัญหา
+`discovery_section()` เดิมอ่าน `rss_queue.json` แล้วนับ RSS (global feed ทั้งประเทศ) เป็น "new items/D0" + "target hits" (substring) → ปนกัน ทำให้ดูเหมือน discovery เยอะกว่าจริง (66 = 4 จริง + 62 noise ทั้งประเทศ)
+
+### Fix (Sebastian_Daily_Digest.py)
+เขียน `discovery_section()` ใหม่ → อ่าน DB (projects_seen + project_locations) แยก 2 บรรทัดชัด:
+```
+Discovery (24h): PASS
+  🎯 เป้าหมาย (province_api): 4 งาน  [นครพนม=1 บึงกาฬ=3]
+  🌐 RSS ทั้งประเทศ (shadow): 81  ปั๊มตรา=0  (ที่เหลือ noise กักไว้ ไม่ match)
+```
+- 🎯 = discovery จริง (province_api, กรอง moiId แล้ว) — PASS/ZERO key จากตัวนี้
+- 🌐 = RSS global (shadow) + นับ discovery_confirmed (ปั๊มตรา) → เห็นชัดว่า noise ถูกกัก
+- preview กับ VPS DB จริงก่อน deploy
+
+### Deploy
+scp ไฟล์เดียว → `/opt/bms/app/scripts/` (VPS app repo อยู่หลัง+dirty = deploy debt; VPS local diff = feedback_section ซึ่งมีใน local commit แล้ว → superset ปลอดภัย ไม่ทับของหาย). **ไม่ push GitHub** (deploy debt แยกเรื่อง)

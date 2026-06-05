@@ -85,25 +85,41 @@ def rss_section() -> str:
 # ── Discovery ─────────────────────────────────────────────────────────────────
 
 def discovery_section() -> str:
-    queue_path = BASE / "data" / "rss_queue.json"
-    if not queue_path.exists():
-        return "Discovery: FAIL  rss_queue.json missing"
+    """งานใหม่ 24h — แยก 'พื้นที่เป้าหมาย' (province_api) ออกจาก 'RSS ทั้งประเทศ' (shadow)
+    กัน volume illusion. province_api = discovery จริงที่กรองจังหวัด (moiId นครพนม/บึงกาฬ) แล้ว.
+    RSS = global feed ทั้งประเทศ, shadow — ไม่เข้า matching จนกว่าจะปั๊มตรา discovery_confirmed."""
+    db_path = Path(os.environ.get("BMS_DATA_DIR") or str(BASE / "data")) / "bms_customers.db"
+    if not db_path.exists():
+        return "Discovery: FAIL  bms_customers.db missing"
+    conn = sqlite3.connect(db_path); conn.row_factory = sqlite3.Row
+    win = WINDOW.isoformat()
 
-    items = json.loads(queue_path.read_text(encoding="utf-8"))
-    new_24h = [i for i in items if _ts(i.get("queued_at", "")) and _ts(i["queued_at"]) >= WINDOW]
-    d0_new  = [i for i in new_24h if i.get("anounce_type") == "D0"]
+    # 🎯 พื้นที่เป้าหมาย — province_api (ค้นตาม moiId, จังหวัดรู้แน่นอน)
+    pa_rows = conn.execute(
+        "SELECT province, COUNT(*) n FROM projects_seen "
+        "WHERE source='province_api' AND first_seen_at >= ? GROUP BY province", (win,)
+    ).fetchall()
+    pa_total = sum(r["n"] for r in pa_rows)
+    pa_brk = " ".join(f"{r['province'] or '?'}={r['n']}" for r in pa_rows) or "-"
 
-    target = {"นครพนม", "บึงกาฬ"}
-    hits   = [i for i in d0_new if any(p in i.get("title", "") for p in target)]
+    # 🌐 RSS ทั้งประเทศ — global feed (shadow, ไม่กรองจังหวัด → ส่วนใหญ่เป็น noise)
+    rss_total = conn.execute(
+        "SELECT COUNT(*) n FROM projects_seen WHERE source='rss' AND first_seen_at >= ?", (win,)
+    ).fetchone()["n"]
+    rss_confirmed = conn.execute(
+        "SELECT COUNT(*) n FROM project_locations "
+        "WHERE source='rss' AND created_at >= ? AND discovery_confirmed=1", (win,)
+    ).fetchone()["n"]
+    conn.close()
 
-    sym = "PASS " if new_24h else "ZERO "
+    sym = "PASS " if pa_total else "ZERO "
     lines = [
-        f"Discovery: {sym}",
-        f"  new items 24h={len(new_24h)}  D0={len(d0_new)}",
-        f"  target province hits={len(hits)}",
+        f"Discovery (24h): {sym}",
+        f"  \U0001f3af เป้าหมาย (province_api): {pa_total} งาน  [{pa_brk}]",
+        f"  \U0001f310 RSS ทั้งประเทศ (shadow): {rss_total}  ปั๊มตรา={rss_confirmed}  (ที่เหลือ noise กักไว้ ไม่ match)",
     ]
-    if not new_24h:
-        lines.append("  (RSS may have been down or no new announcements)")
+    if pa_total == 0:
+        lines.append("  (พื้นที่เป้าหมายไม่มีงานใหม่ — low-volume ปกติ; เช็ค RSS section ว่า feed ล่มไหม)")
     return "\n".join(lines)
 
 

@@ -1,6 +1,8 @@
-# VPS Runtime-State Migration + Git Deploy-Sync — Implementation Plan
+# VPS Runtime-State Migration + Git Deploy-Sync — Implementation Plan (v2)
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+> **v2 changelog (หลัง ChatGPT review รอบ 2 — fold 8 จุด):** (1) dual-read transition + loud log, (2) `vps_vs_origin.patch` ก่อน reset --hard, (3) stop bms-api **บังคับ**, (4) checksum verify หลัง copy, (5) hidden-writer audit (Phase 0), (6) lightweight startup validation (parse+type+not-empty, ไม่ทำ field schema), (7) note: write-time guard มีใน `runtime_path` แล้ว, (8) **Exit Criteria ต่อ phase**.
 
 **Goal:** ทำให้ production VPS มี "source of truth ชัด" — แยก runtime state ออกจาก code dir แล้ว sync VPS code ให้ตรง GitHub (origin/main) อย่างปลอดภัย โดยไม่ทำให้ RSS dedup/state หาย (กันส่งงานซ้ำให้ลูกค้า)
 
@@ -21,16 +23,21 @@
 1. **repo `data/` = read-only assets เท่านั้น** (config/seed/lookup) · **BMS_DATA_DIR = runtime writes ทั้งหมด**
 2. **"writer wins ไม่ใช่ newest-file wins"** — ตอน migrate state ห้าม overwrite ไฟล์ที่ใหม่กว่าด้วยไฟล์เก่า
 3. timers ต้องหยุดก่อนแตะ state/git (กัน write ระหว่าง migrate → torn state)
-4. ทุก phase มี rollback ที่กลับได้ใน < 5 นาที
+4. ทุก phase มี rollback ที่กลับได้ใน < 5 นาที **และ Exit Criteria ชัด** (ห้ามขึ้น phase ถัดไปจนกว่า criteria ครบ)
 5. **Definition of Done ของ migration ไม่ใช่ "ทำเสร็จ" แต่คือ "verify 48h ว่าไม่มี writer หลุดไป app/data"** (failure ประเภทนี้ surface ทีหลัง)
+6. **fail-loud เสมอ**: `runtime_path()` มี guard อยู่แล้ว (raise ถ้า path escape ออกนอก RUNTIME_DIR) → เขียนเข้า app/data ผ่าน helper ไม่ได้. dual-read fallback (transition) ต้อง **log ดังๆ** ทุกครั้งที่ตกไป old (silent corruption > hard crash = ห้าม)
 
 ---
 
 ## File Structure
 
 **สร้างใหม่:**
-- `docs/runbooks/vps-state-migration.md` — runbook + rollback log (เก็บ output แต่ละ phase)
-- `scripts/verify_runtime_paths.py` — verify ไม่มี runtime-state file ตกค้างใน app/data (ใช้ Phase 3 + cron heartbeat)
+- `docs/runbooks/vps-state-migration.md` — runbook + rollback log (เก็บ output แต่ละ phase + `vps_vs_origin.patch`)
+- `scripts/verify_runtime_paths.py` — leak detector: ไม่มี runtime-state file ถูกแตะใน app/data หลัง cutoff (Phase 3, 48h watch)
+- `scripts/validate_state_files.py` — lightweight startup validation (parse + top-level type + not-empty) เรียกก่อน start services (Phase 2)
+
+**แก้ helper:**
+- `scripts/bms_paths.py` — เพิ่ม `heal_legacy_state(*names)` (dual-read transition: ถ้า RUNTIME_DIR/name หาย แต่ app/data/name มี → copy + log ดังๆ) เรียกที่ entry ของแต่ละ service ช่วง transition, ถอดออก Phase 4. (`runtime_path` guard เขียน app/data ไม่ได้ — มีแล้ว ไม่แตะ)
 
 **แก้ (Phase 1 — wire bms_paths):** runtime-state writers/readers (รายการเต็มสร้างใน Task 1.1). ตัวที่ confirm แล้ว:
 - `scripts/Sebastian_RSS_Scraper.py:43` (DATA_DIR → runtime สำหรับ rss_queue/rss_seen_ids/dept_failure_state/rss_run; egp_deptid_catalog/target_deptids = ก้ำกึ่ง ดู Task 1.1)
@@ -63,7 +70,7 @@ Expected: พิมพ์ `f5311f7...`
 
 ### Task 0.2: Full backup (code + data + db + env + systemd)
 
-- [ ] **Step 1: หยุด timers (freeze runtime writes)**
+- [ ] **Step 1: หยุด timers + bms-api + tunnel (freeze ทั้งหมด — consistency > availability สำหรับ 5 users)**
 
 Run:
 ```bash
@@ -71,9 +78,9 @@ ssh -i ~/.ssh/bms_vps bms@45.76.156.166 \
   "sudo systemctl stop bms-enrichment-worker.timer bms-rss-notifier.timer \
    bms-line-sender.timer bms-province-discovery.timer bms-province-discovery-full-bkg.timer \
    bms-canary.timer bms-deadman.timer bms-shadow-audit.timer bms-daily-digest.timer \
-   bms-daily-user-summary.timer && echo STOPPED"
+   bms-daily-user-summary.timer bms-api.service bms-tunnel.service && echo STOPPED"
 ```
-Expected: `STOPPED`. (bms-api.service / bms-tunnel.service ปล่อยรันได้ — read-mostly; ถ้าต้องการเข้มสุดให้ stop ด้วย)
+Expected: `STOPPED`. **stop bms-api ด้วย (บังคับ, v2)** — กัน read-old/write-new ระหว่าง copy. LINE retry webhook ได้บ้าง + นัด off-hours window 10-15 นาที. (ChatGPT review รอบ 2: production เล็ก consistency สำคัญกว่า availability)
 
 - [ ] **Step 2: ยืนยันไม่มี process เขียน state ค้าง**
 
@@ -109,13 +116,107 @@ ls -la "backups/vps_migration_$TS/"
 ```
 Expected: ไฟล์ครบบน local
 
-**🔙 ROLLBACK (Phase 0):** ถ้าอะไรพลาด → `systemctl start` timers กลับ. ยังไม่แตะ state/git เลย ปลอดภัย 100%.
+### Task 0.3: Audit hidden writers (v2 — ChatGPT blind spot #7)
+
+> หา writer ที่ไม่ใช่ service หลัก: ad-hoc script, cron เก่า, manual command, process ที่เปิด app/data ค้าง
+
+- [ ] **Step 1: ใครเปิดไฟล์ใน app/data อยู่ (หลัง stop services ควรว่าง)**
+
+Run:
+```bash
+ssh -i ~/.ssh/bms_vps bms@45.76.156.166 \
+  "sudo lsof +D /opt/bms/app/data 2>/dev/null || echo 'NONE (ไม่มี process เปิดค้าง — ดี)'"
+```
+Expected: `NONE` (ถ้ามี = ยังมี writer ค้าง ต้องหา/หยุดก่อน)
+
+- [ ] **Step 2: cron / systemd writers อื่นที่อาจแตะ app/data**
+
+Run:
+```bash
+ssh -i ~/.ssh/bms_vps bms@45.76.156.166 \
+  "echo '--- crontab ---'; crontab -l 2>/dev/null | grep -v '^#' || echo none; \
+   echo '--- /etc/cron* ---'; sudo grep -rl 'opt/bms' /etc/cron* 2>/dev/null || echo none; \
+   echo '--- all bms timers/services ---'; systemctl list-unit-files 'bms-*' --no-legend; \
+   echo '--- scripts เขียน app/data ไม่ผ่าน bms_paths ---'; cd /opt/bms/app && \
+   grep -rln \"parent.parent.*data\\|/ .data.\" scripts/*.py | head"
+```
+Expected: list ครบ — จดใน runbook ว่ามีตัวไหน "หลุดสายตา". ตรวจ Windows-side ด้วย (memory: ps1 tasks เขียน repo ฝั่ง Windows ไม่ใช่ VPS — confirm ว่าไม่ได้ rsync/scp data ขึ้น VPS)
+
+- [ ] **Step 3: จดทุก writer ที่เจอใน runbook → ใช้ cross-check กับ inventory Task 1.1**
+
+Expected: เซ็ต writers จาก audit ⊆ เซ็ตที่จะ wire ใน Phase 1 (ถ้ามีตัวนอกเหนือ = ต้องเพิ่มใน Phase 1)
+
+**🔙 ROLLBACK (Phase 0):** ถ้าอะไรพลาด → `systemctl start` timers + bms-api + tunnel กลับ. ยังไม่แตะ state/git เลย ปลอดภัย 100%.
+
+**✅ EXIT CRITERIA (Phase 0):**
+- [ ] timers + bms-api + tunnel = stopped (`NONE_RUNNING`)
+- [ ] backup ครบ (app.tgz + data.tgz + env + systemd) ทั้งบน VPS **และ** local
+- [ ] `lsof +D app/data` = NONE (ไม่มี writer เปิดค้าง)
+- [ ] รายชื่อ hidden writers จดใน runbook ครบ
 
 ---
 
 ## PHASE 1 — Wire runtime-state ผ่าน bms_paths (code-only, ใน repo local)
 
 > ทำบน local repo → commit → push GitHub. **ยังไม่แตะ VPS.** โค้ดนี้จะขึ้น VPS พร้อม git sync ใน Phase 2 (แก้ chicken-and-egg: ไม่ต้อง scp routing code แยก).
+
+### Task 1.0: เพิ่ม `heal_legacy_state()` ใน bms_paths (dual-read transition, v2)
+
+**Files:** Modify `scripts/bms_paths.py`, Create `scripts/test_bms_paths_heal.py`
+
+- [ ] **Step 1: Write failing test**
+```python
+"""test_bms_paths_heal.py — heal_legacy_state copy old→new + log, ไม่ทับ new ที่มีอยู่."""
+import os, sys, tempfile, json
+from pathlib import Path
+d = tempfile.mkdtemp(); os.environ["BMS_DATA_DIR"] = d
+sys.path.insert(0, str(Path(__file__).parent)); sys.stdout.reconfigure(encoding="utf-8")
+import bms_paths
+legacy = bms_paths._REPO_ROOT / "data" / "_heal_test.json"
+legacy.write_text('{"x":1}', encoding="utf-8")
+try:
+    healed = bms_paths.heal_legacy_state("_heal_test.json")   # new หาย → copy จาก old
+    assert healed == ["_heal_test.json"], healed
+    assert json.loads(bms_paths.runtime_path("_heal_test.json").read_text())["x"] == 1
+    bms_paths.runtime_path("_heal_test.json").write_text('{"x":2}', encoding="utf-8")
+    healed2 = bms_paths.heal_legacy_state("_heal_test.json")  # new มีแล้ว → ไม่ทับ
+    assert healed2 == [], healed2
+    assert json.loads(bms_paths.runtime_path("_heal_test.json").read_text())["x"] == 2
+    print("✅ PASS heal_legacy_state")
+finally:
+    legacy.unlink(missing_ok=True)
+```
+
+- [ ] **Step 2: Run → FAIL** — `BMS_ENV=dev python scripts/test_bms_paths_heal.py` → AttributeError (ยังไม่มี heal)
+
+- [ ] **Step 3: เพิ่มฟังก์ชันใน bms_paths.py (ก่อน log_paths)**
+```python
+import shutil  # เพิ่มบน import
+
+def heal_legacy_state(*names: str) -> list:
+    """dual-read transition (time-boxed, ถอด Phase 4): ถ้า runtime file หายแต่ legacy app/data มี
+    → copy + LOG ดังๆ (= copy migration พลาด, ต้องสืบ). คืน list ที่ heal. ไม่ทับ runtime ที่มีอยู่."""
+    healed = []
+    for name in names:
+        new = runtime_path(name)
+        if new.exists():
+            continue
+        old = (_REPO_ROOT / "data" / name)
+        if old.exists():
+            shutil.copy2(old, new)
+            print(f"[bms_paths] ⚠️ DUAL-READ HEAL: {name} หายใน {RUNTIME_DIR} → copy จาก {old} "
+                  f"(migration copy พลาด? ต้องสืบ)", file=sys.stderr)
+            healed.append(name)
+    return healed
+```
+
+- [ ] **Step 4: Run → PASS** — `BMS_ENV=dev python scripts/test_bms_paths_heal.py` → `✅ PASS`
+
+- [ ] **Step 5: Commit**
+```bash
+git add scripts/bms_paths.py scripts/test_bms_paths_heal.py
+git commit -m "feat(bms_paths): heal_legacy_state — dual-read transition + loud log (v2 ChatGPT #1)"
+```
 
 ### Task 1.1: สร้าง inventory เต็มของ runtime-state references
 
@@ -310,7 +411,37 @@ git push origin main
 ```
 Expected: push สำเร็จ → origin/main มี state-routing ครบ
 
+### Task 1.6: เรียก heal_legacy_state + log_paths ที่ entry ของ service หลัก (v2)
+
+**Files:** Modify `scripts/Sebastian_Enrichment_Worker.py`, `scripts/Sebastian_RSS_Notifier.py`, `scripts/Sebastian_RSS_Scraper.py`, `scripts/health_deadman.py` (ต้น main/entry)
+
+- [ ] **Step 1: เพิ่ม 2 บรรทัดที่ต้น main แต่ละ service** (ก่อนอ่าน state ครั้งแรก)
+```python
+_STATE_FILES = ["rss_queue.json", "rss_seen_ids.json", "api_ingestion_state.json",
+                "resolve_heartbeat.json", "resolve_plane_state.json", "rss_notifier_epoch.txt"]
+bms_paths.heal_legacy_state(*_STATE_FILES)   # dual-read transition (ถอด Phase 4)
+bms_paths.log_paths(*_STATE_FILES)           # instrumentation: ยืนยัน RUNTIME_DIR เดียวกัน
+```
+(แต่ละ service ใส่เฉพาะ state ที่ตัวเองใช้ก็ได้ — แต่ใส่ครบ idempotent ไม่เสียหาย)
+
+- [ ] **Step 2: smoke test** — `BMS_ENV=dev python -c "import sys;sys.path.insert(0,'scripts');import Sebastian_Enrichment_Worker, health_deadman;print('OK')"`
+Expected: `OK` (ไม่ crash ตอน import)
+
+- [ ] **Step 3: Commit + push**
+```bash
+git add scripts/Sebastian_Enrichment_Worker.py scripts/Sebastian_RSS_Notifier.py scripts/Sebastian_RSS_Scraper.py scripts/health_deadman.py
+git commit -m "feat(transition): service entry heal_legacy_state + log_paths (v2 dual-read + observability)"
+git push origin main
+```
+
 **🔙 ROLLBACK (Phase 1):** เป็น commit ใน repo local/GitHub ล้วน — `git revert` ได้. **VPS ยังไม่ถูกแตะ** จึงไม่มีผลกับ production.
+
+**✅ EXIT CRITERIA (Phase 1):**
+- [ ] `test_runtime_paths.py` PASS (ทุก runtime-state script ใช้ bms_paths)
+- [ ] `test_bms_paths_heal.py` PASS
+- [ ] inventory table ใน runbook ครบ + cross-check กับ hidden-writer audit (Task 0.3) แล้ว
+- [ ] service หลักทุกตัว import ได้ (smoke) + เรียก heal+log_paths ที่ entry
+- [ ] origin/main มี Phase 1 ครบ (push แล้ว) · **VPS ยังไม่ถูกแตะ**
 
 ---
 
@@ -348,14 +479,61 @@ ssh -i ~/.ssh/bms_vps bms@45.76.156.166 \
 ```
 Expected: copy สำเร็จ (`-n` สำหรับ epoch = ไม่ทับถ้ามีแล้ว, กัน Tier3 พัง)
 
-- [ ] **Step 3: verify counts (rss_queue/seen ไม่ลดลง)**
+- [ ] **Step 3: verify checksum (v2 — แข็งกว่า count, ยืนยัน copy byte-identical)**
+
+Run (ต่อไฟล์ที่ copy):
+```bash
+ssh -i ~/.ssh/bms_vps bms@45.76.156.166 \
+  "for f in rss_queue.json rss_seen_ids.json api_ingestion_state.json resolve_heartbeat.json resolve_plane_state.json; do \
+     a=\$(sha256sum /opt/bms/app/data/\$f 2>/dev/null | cut -d' ' -f1); \
+     b=\$(sha256sum /opt/bms/data/\$f 2>/dev/null | cut -d' ' -f1); \
+     [ \"\$a\" = \"\$b\" ] && echo \"OK  \$f\" || echo \"MISMATCH \$f (a=\$a b=\$b)\"; \
+   done"
+```
+Expected: `OK` ทุกไฟล์ที่ copy (MISMATCH = copy ไม่ครบ/ผิด → หยุด)
+
+- [ ] **Step 4: lightweight startup validation (v2 — กัน torn file จาก hard-kill) — สร้าง validator**
+
+**Files:** Create `scripts/validate_state_files.py`
+```python
+"""validate_state_files.py — lightweight: parse + top-level type + not-empty (ไม่ทำ field schema).
+กัน torn/partial JSON (เช่น process ถูก hard-kill ตอนเขียน). รัน BMS_DATA_DIR=/opt/bms/data python ...
+"""
+import json, os, sys
+from pathlib import Path
+sys.stdout.reconfigure(encoding="utf-8")
+DATA = Path(os.environ.get("BMS_DATA_DIR", "/opt/bms/data"))
+# (filename, expected_type, allow_empty)
+SPEC = [
+    ("rss_queue.json", list, True), ("rss_seen_ids.json", list, False),
+    ("api_ingestion_state.json", dict, False), ("resolve_heartbeat.json", dict, True),
+    ("resolve_plane_state.json", dict, True),
+]
+fails = []
+for name, typ, allow_empty in SPEC:
+    p = DATA / name
+    if not p.exists():
+        continue  # ไม่มี = heal_legacy_state จะจัดการตอน start (ไม่ fail ที่นี่)
+    try:
+        v = json.loads(p.read_text(encoding="utf-8"))
+    except Exception as e:
+        fails.append(f"{name}: parse FAIL ({e}) — torn file?"); continue
+    if not isinstance(v, typ):
+        fails.append(f"{name}: type {type(v).__name__} != {typ.__name__}")
+    elif not allow_empty and len(v) == 0:
+        fails.append(f"{name}: ว่าง (ควรมีข้อมูล)")
+if fails:
+    print("❌ STATE VALIDATION FAIL:"); [print("  " + f) for f in fails]; sys.exit(1)
+print("✅ state files valid (parse + type + not-empty)")
+```
 
 Run:
 ```bash
+scp -i ~/.ssh/bms_vps scripts/validate_state_files.py bms@45.76.156.166:/opt/bms/app/scripts/  # ขึ้นชั่วคราว (จะตามมาใน git sync)
 ssh -i ~/.ssh/bms_vps bms@45.76.156.166 \
-  "python3 -c \"import json; print('queue:', len(json.load(open('/opt/bms/data/rss_queue.json')))); print('seen:', len(json.load(open('/opt/bms/data/rss_seen_ids.json'))))\""
+  "BMS_DATA_DIR=/opt/bms/data /opt/bms/venv/bin/python /opt/bms/app/scripts/validate_state_files.py"
 ```
-Expected: ตัวเลข > 0 และ ≥ ค่าก่อนหน้า (ไม่หาย)
+Expected: `✅ state files valid` (ถ้า ❌ = torn file → ใช้ backup ตัวนั้นแทน, อย่า proceed)
 
 ### Task 2.2: Reconcile code — diff VPS worktree vs origin/c077938 (หา hotfix เฉพาะ VPS)
 
@@ -386,7 +564,18 @@ Expected: confirm ใน runbook ว่าจัดการ B ครบ — เ
 
 - [ ] **Step 1: hard reset app → origin/main + clean untracked code (เก็บ data/ ไว้)**
 
-Run:
+**Run (v2: export `vps_vs_origin.patch` ก่อน reset — เครื่องย้อนเวลาเผื่อมี hotfix ที่ลืม):**
+```bash
+TS=$(ssh -i ~/.ssh/bms_vps bms@45.76.156.166 "cat /tmp/migration_ts.txt")
+ssh -i ~/.ssh/bms_vps bms@45.76.156.166 \
+  "cd /opt/bms/app && git diff origin/main > /opt/bms/backups/migration_$TS/vps_vs_origin.patch && \
+   git status --short > /opt/bms/backups/migration_$TS/vps_status_at_reset.txt && \
+   wc -l /opt/bms/backups/migration_$TS/vps_vs_origin.patch"
+scp -i ~/.ssh/bms_vps "bms@45.76.156.166:/opt/bms/backups/migration_$TS/vps_vs_origin.patch" "backups/vps_migration_$TS/"
+```
+Expected: patch ถูกเก็บทั้ง VPS + local (tracked diff ทั้งหมด; untracked = app.tgz Phase 0 คุมอยู่). **ห้าม reset จนกว่า patch ถูกเก็บ**
+
+แล้วจึง reset:
 ```bash
 ssh -i ~/.ssh/bms_vps bms@45.76.156.166 \
   "cd /opt/bms/app && git reset --hard origin/main && \
@@ -410,7 +599,16 @@ ssh -i ~/.ssh/bms_vps bms@45.76.156.166 \
 ```
 Expected: `OK` ทุกตัว
 
-**🔙 ROLLBACK (Phase 2):** restore จาก backup: `tar xzf /opt/bms/backups/migration_<TS>/app.tgz -C /opt/bms` + `data.tgz` → `systemctl start` timers. กลับสู่สภาพก่อน migrate ทุกอย่าง (< 5 นาที).
+**🔙 ROLLBACK (Phase 2):** restore จาก backup: `tar xzf /opt/bms/backups/migration_<TS>/app.tgz -C /opt/bms` + `data.tgz` → `systemctl start` timers + bms-api + tunnel. กลับสู่สภาพก่อน migrate ทุกอย่าง (< 5 นาที). (ถ้าเจอ hotfix หายทีหลัง → `git apply vps_vs_origin.patch`)
+
+**✅ EXIT CRITERIA (Phase 2):**
+- [ ] state copy ครบ + **checksum ตรงทุกไฟล์** (Task 2.1 Step 3)
+- [ ] `validate_state_files.py` = ✅ valid (ไม่มี torn file)
+- [ ] `vps_vs_origin.patch` ถูกเก็บทั้ง VPS + local (ก่อน reset)
+- [ ] reconcile: ไม่มีกลุ่ม B ค้าง (hotfix เฉพาะ VPS จัดการครบ)
+- [ ] VPS HEAD == origin/main · `git status` clean (เหลือแต่ data/)
+- [ ] import ทุก service OK (transitive deps ครบ)
+- [ ] **services ยัง stopped** (ยังไม่ start จนกว่า Phase 3 เริ่ม)
 
 ---
 
@@ -418,24 +616,18 @@ Expected: `OK` ทุกตัว
 
 > ตอบโจทย์ "failure surface ทีหลัง" — ต้องพิสูจน์ว่าไม่มี writer/reader ตกค้างชี้ app/data
 
-### Task 3.1: เพิ่ม startup log_paths ใน service หลัก
+### Task 3.1: ยืนยัน log_paths + heal อยู่บน VPS แล้ว (เพิ่มใน Phase 1.6, มากับ git sync Phase 2)
 
-**Files:** Modify `scripts/Sebastian_Enrichment_Worker.py`, `scripts/Sebastian_RSS_Notifier.py`, `scripts/health_deadman.py` (เพิ่มที่ต้น main)
+> log_paths + heal_legacy_state ถูกเพิ่มที่ service entry แล้วใน Task 1.6 และขึ้น VPS พร้อม git reset Phase 2.3 → **ไม่ต้องเพิ่มซ้ำ** แค่ยืนยัน
 
-- [ ] **Step 1: เพิ่ม 1 บรรทัดที่ entry แต่ละ service**
-```python
-bms_paths.log_paths("rss_queue.json", "rss_seen_ids.json", "api_ingestion_state.json", "resolve_heartbeat.json")
-```
-→ stderr จะพิมพ์ `[bms_paths] RUNTIME_DIR=/opt/bms/data` ทุกรอบ (verify dir เดียวกันจริง)
+- [ ] **Step 1: ยืนยันโค้ด entry มี heal+log_paths บน VPS**
 
-- [ ] **Step 2: commit + push + (sync VPS ด้วย git pull — ตอนนี้ทำได้แล้ว!)**
+Run:
 ```bash
-git add scripts/Sebastian_Enrichment_Worker.py scripts/Sebastian_RSS_Notifier.py scripts/health_deadman.py
-git commit -m "feat(observability): log_paths startup instrumentation (verify single runtime dir)"
-git push origin main
-ssh -i ~/.ssh/bms_vps bms@45.76.156.166 "cd /opt/bms/app && git pull --ff-only origin main && git rev-parse HEAD"
+ssh -i ~/.ssh/bms_vps bms@45.76.156.166 \
+  "cd /opt/bms/app && grep -l 'heal_legacy_state' scripts/Sebastian_Enrichment_Worker.py scripts/Sebastian_RSS_Notifier.py scripts/health_deadman.py && echo PRESENT"
 ```
-Expected: VPS HEAD เลื่อนตาม origin (**git pull ทำงานแล้ว = deploy debt หาย**)
+Expected: `PRESENT` (3 ไฟล์มี) — ถ้าไม่มี = git sync Phase 2 ไม่ครบ ให้ตรวจ
 
 ### Task 3.2: สร้าง verify_runtime_paths.py + restart timers + watch
 
@@ -462,23 +654,25 @@ if stale:
 print("✅ ไม่มี writer แตะ app/data หลัง cutoff (single source ของจริง)")
 ```
 
-- [ ] **Step 2: commit + push + pull VPS**
+- [ ] **Step 2: commit + push + pull VPS** (รวม validate_state_files.py จาก Phase 2 ให้เข้า git ด้วย)
 ```bash
-git add scripts/verify_runtime_paths.py
-git commit -m "feat(verify): runtime-path leak detector (48h watch)"
+git add scripts/verify_runtime_paths.py scripts/validate_state_files.py
+git commit -m "feat(verify): runtime-path leak detector + state validator (48h watch)"
 git push origin main
 ssh -i ~/.ssh/bms_vps bms@45.76.156.166 "cd /opt/bms/app && git pull --ff-only origin main"
 ```
 
-- [ ] **Step 3: บันทึก cutoff timestamp + restart timers**
+- [ ] **Step 3: validate state ก่อน start (กัน torn file) → บันทึก cutoff → restart ทุก service (รวม bms-api + tunnel ที่ stop ไป Phase 0)**
 ```bash
 ssh -i ~/.ssh/bms_vps bms@45.76.156.166 \
-  "date +%s > /opt/bms/data/migration_cutoff_ts.txt && \
+  "BMS_DATA_DIR=/opt/bms/data /opt/bms/venv/bin/python /opt/bms/app/scripts/validate_state_files.py && \
+   date +%s > /opt/bms/data/migration_cutoff_ts.txt && \
    sudo systemctl start bms-enrichment-worker.timer bms-rss-notifier.timer bms-line-sender.timer \
    bms-province-discovery.timer bms-canary.timer bms-deadman.timer bms-shadow-audit.timer \
-   bms-daily-digest.timer bms-daily-user-summary.timer bms-province-discovery-full-bkg.timer && echo STARTED"
+   bms-daily-digest.timer bms-daily-user-summary.timer bms-province-discovery-full-bkg.timer \
+   bms-api.service bms-tunnel.service && echo STARTED"
 ```
-Expected: `STARTED`
+Expected: `✅ state files valid` แล้ว `STARTED` (validate fail = ไม่ start, ใช้ backup ไฟล์นั้นก่อน). **bms-api + tunnel กลับมาแล้ว = ปิด maintenance window**
 
 - [ ] **Step 4: รอ 1-2 รอบ timer (enrichment ทุก 2 นาที) แล้ว verify log_paths ชี้ /opt/bms/data**
 ```bash
@@ -503,7 +697,21 @@ ssh -i ~/.ssh/bms_vps bms@45.76.156.166 \
 ```
 Expected: ไม่มี spike การส่ง (ถ้า sent พุ่ง = dedup หาย = ROLLBACK ทันที)
 
-**🔙 ROLLBACK (Phase 3):** ถ้า verify ❌ หรือ sent spike → `systemctl stop` timers, restore data.tgz backup, `git reset` กลับ commit ก่อน Phase 3, start timers. สอบ writer ที่หลุดใน local ก่อนลองใหม่.
+- [ ] **Step 7: ตั้ง cron heartbeat รัน verify_runtime_paths ทุก 6 ชม. ช่วง 48h** (เผื่อ writer หลุดโผล่ทีหลัง)
+```bash
+ssh -i ~/.ssh/bms_vps bms@45.76.156.166 \
+  "(crontab -l 2>/dev/null; echo '0 */6 * * * MIGRATION_CUTOFF_TS=\$(cat /opt/bms/data/migration_cutoff_ts.txt) /opt/bms/venv/bin/python /opt/bms/app/scripts/verify_runtime_paths.py >> /opt/bms/data/logs/leak_check.log 2>&1') | crontab - && echo CRON_SET"
+```
+Expected: `CRON_SET` (ลบ cron นี้ออก Phase 4 หลังครบ 48h)
+
+**🔙 ROLLBACK (Phase 3):** ถ้า verify ❌ หรือ sent spike → `systemctl stop` timers+bms-api+tunnel, restore data.tgz backup, `git reset` กลับ commit ก่อน Phase 3, start. สอบ writer ที่หลุดใน local ก่อนลองใหม่. **heal_legacy_state จะ self-heal ไฟล์ที่ copy พลาด + log เตือน** (ไม่ outage ทันที แต่ต้องสืบ).
+
+**✅ EXIT CRITERIA (Phase 3):**
+- [ ] `log_paths` ทุก service journal แสดง `RUNTIME_DIR=/opt/bms/data` (ไม่ใช่ app/data)
+- [ ] `verify_runtime_paths.py` = ✅ (0 writer แตะ app/data) — **ต่อเนื่อง 48h ผ่าน cron**
+- [ ] ไม่เห็น `DUAL-READ HEAL` log (ถ้าเห็น = copy พลาด, สืบก่อน)
+- [ ] delivery_log ไม่ spike (ไม่ส่งงานซ้ำ) · queue ทำงานปกติ
+- [ ] bms-api + tunnel กลับมา (window ปิด)
 
 ---
 
@@ -564,7 +772,32 @@ ssh -i ~/.ssh/bms_vps bms@45.76.156.166 "MIGRATION_CUTOFF_TS=\$(cat /opt/bms/dat
 ```
 Expected: ✅ ผ่าน → ปิด migration. อัปเดต memory `project_deploy_debt` ว่า #1+#2 RESOLVED
 
-**🔙 ROLLBACK (Phase 4):** revert commits (git history สะอาดแล้ว) + pull VPS. low risk เพราะ state แยกเรียบร้อยแล้ว.
+### Task 4.3: ถอด dual-read transition + leak-check cron (หลัง 48h verify ผ่าน, v2)
+
+> heal_legacy_state เป็น transition ชั่วคราว — เมื่อ verify 48h แล้วว่าไม่มี writer หลุด ก็ถอดออก (กลับสู่ fail-loud แท้)
+
+- [ ] **Step 1: ลบบรรทัด heal_legacy_state() ที่ service entry (เก็บ log_paths ไว้ได้ — มีประโยชน์ต่อ)**
+
+แก้ทุก service entry: ลบ `bms_paths.heal_legacy_state(*_STATE_FILES)` (คง `log_paths` ไว้)
+
+- [ ] **Step 2: ลบ leak-check cron + commit/push/pull**
+```bash
+ssh -i ~/.ssh/bms_vps bms@45.76.156.166 "crontab -l 2>/dev/null | grep -v verify_runtime_paths | crontab - && echo CRON_CLEAN"
+git add scripts/Sebastian_Enrichment_Worker.py scripts/Sebastian_RSS_Notifier.py scripts/Sebastian_RSS_Scraper.py scripts/health_deadman.py
+git commit -m "chore(transition): ถอด heal_legacy_state หลัง 48h verify (กลับ fail-loud แท้)"
+git push origin main
+ssh -i ~/.ssh/bms_vps bms@45.76.156.166 "cd /opt/bms/app && git pull --ff-only origin main && echo DONE"
+```
+Expected: `CRON_CLEAN` + `DONE`
+
+**🔙 ROLLBACK (Phase 4):** revert commits (git history สะอาดแล้ว) + pull VPS. low risk เพราะ state แยกเรียบร้อยแล้ว. (ถ้าถอด heal เร็วไป → revert Task 4.3 commit กลับมาได้)
+
+**✅ EXIT CRITERIA (Phase 4):**
+- [ ] runtime-state untrack + gitignore แล้ว (app/data ไม่มี runtime-state)
+- [ ] VPS HEAD == origin/main · `git status` clean
+- [ ] deploy ทดสอบผ่าน git pull สำเร็จจริง (ทำมาแล้วตั้งแต่ Phase 3.2)
+- [ ] heal_legacy_state ถอดแล้ว (หลัง 48h) · leak-check cron ลบแล้ว
+- [ ] memory `project_deploy_debt` = #1+#2 RESOLVED
 
 ---
 

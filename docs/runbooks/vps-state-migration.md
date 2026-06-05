@@ -99,3 +99,11 @@ bms-backup.timer
 **Lessons:** (L) validator ต้อง utf-8-sig · (L) `.git` root-owned จาก sudo-git เก่า = blocker ซ่อน → chown เป็นส่วนของ migration · (L) Phase 0 lsof no-op เพราะ sudo เงียบ → ต้อง verify sudo ก่อน trust audit
 
 **RESULT: #1 Deploy-Debt + #2 Data Split-Brain = RESOLVED.** เหลือ Phase 3 (48h watch, cutoff set) + Phase 4 (gitignore app/data state + ถอด heal) = non-disruptive follow-up
+
+### 2026-06-06 ~00:00 — Phase 3 leak-watch จับ missed writer (Phase 1 inventory พลาด) → fix
+- **leak จริง:** `app/data/api_ingestion_state.json` ถูกเขียนหลัง cutoff. ต้นเหตุ = **vps_canary** (เขียน api_ingestion_state ลง app/data ทุก 30น — docstring บอกจงใจ "worker อ่าน app/data") + **Sebastian_LINE_Sender** (อ่าน app/data = stale). worker อ่าน /opt/bms/data → **canary→worker WAF signal ขาด** = functional split-brain
+- Phase 1 inventory โฟกัส enrichment/rss/health แต่พลาด canary+line-sender (เพราะ grep แรกไม่ครอบ DATA_DIR-variable + ไม่ได้ enumerate ทุก timer-service)
+- **fix (commit 5dec644):** wire vps_canary + Sebastian_LINE_Sender + seed_self_notify → bms_paths.runtime_path. deploy via `git pull` (ไม่ scp!) + restart canary/line-sender + sync api_ingestion_state app/data→/opt/bms/data + reset cutoff
+- **verify:** trigger canary → เขียน /opt/bms/data (16:56) ✓, app/data frozen (16:43) ✓, canary HEALTHY signal ทำงาน. leak_watch.sh = 0 leak
+- **Phase 3 watch active:** cron `*/30 * * * * /opt/bms/data/leak_watch.sh` (48h) → log /opt/bms/data/logs/leak_watch.log
+- L-008: inventory ต้อง enumerate **ทุก active timer-service** ไม่ใช่แค่ grep pattern (canary/line-sender หลุดเพราะ grep แรกแคบ). Phase 3 leak-watch = safety net จับของที่ inventory พลาด (ทำงานจริง!)

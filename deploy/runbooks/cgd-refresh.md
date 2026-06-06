@@ -33,5 +33,42 @@ token: `.env` → `OPEND_USER_TOKEN`. quota CGD ~1000 calls/วัน (แชร
 ## ปรับจังหวัด/ปี
 แก้ default ใน `cgd_winner_refresh.main(years=, provinces=)` หรือเรียก `main(years=["2569"], provinces=["นครพนม","บึงกาฬ","..."])`
 
-## Rollback
+## Rollback (Phase 1)
 หยุด: `Disable-ScheduledTask -TaskName BidMaster_CGD_Winner_Refresh`. ข้อมูลเป็น additive (INSERT OR IGNORE, PK project_id) — ไม่แก้/ลบ row เดิม
+
+---
+
+# Phase 2 — sync subset → VPS (`cgd_winners`)
+
+ป้อน competitive intel ใน LINE: ผู้ชนะพื้นที่เป้าหมาย (นครพนม+บึงกาฬ) จาก `winner_history.db` → VPS `bms_customers.db` table `cgd_winners`.
+
+> หมายเหตุ: `winner_history.db` ปัจจุบันมี**เฉพาะ นครพนม+บึงกาฬ** (build จาก target provinces) → subset = ทั้ง DB (~617K, 2558-2568).
+
+## องค์ประกอบ
+| ที่ | หน้าที่ |
+|---|---|
+| `Sebastian_Customer_DB._migrate_v119` | สร้าง `cgd_winners` (12 col) บน VPS |
+| `cgd_sync_to_vps.py` | `extract_subset` (residential) · `merge_winners`/`get_cgd_winners` (VPS) · main `--push`/`--merge-from` |
+
+## รัน sync (เครื่องบ้าน → VPS)
+```
+python scripts/cgd_sync_to_vps.py --push
+```
+flow: `extract_subset(winner_history.db)` → เขียน `data/cgd_subset.jsonl.gz` → scp → ssh ให้ VPS `--merge-from` (stream + executemany batch 5000, INSERT OR REPLACE idempotent)
+
+env override: `VPS_HOST` (root@45.76.156.166), `VPS_KEY` (~/.ssh/bms_vps), `BMS_REMOTE_DATA` (/opt/bms/data), `BMS_REMOTE_PY` (/opt/bms/venv/bin/python), `BMS_REMOTE_APP` (/opt/bms/app)
+
+## deploy code ใหม่ขึ้น VPS
+`git push origin main` → VPS: `cd /opt/bms/app && git pull --ff-only` → migrate: `sudo -u bms BMS_DATA_DIR=/opt/bms/data /opt/bms/venv/bin/python -c "import sys;sys.path.insert(0,'/opt/bms/app/scripts');import Sebastian_Customer_DB as db;db.init_schema()"`
+
+## verify บน VPS
+```
+sudo -u bms BMS_DATA_DIR=/opt/bms/data /opt/bms/venv/bin/python -c "import sys;sys.path.insert(0,'/opt/bms/app/scripts');import cgd_sync_to_vps as s;print(len(s.get_cgd_winners('นครพนม')))"
+```
+
+## ⚠️ Followup (ยังไม่ทำ)
+- **sync incremental** — ตอนนี้ `--push` extract ทั้ง 617K ทุกครั้ง (361MB→gzip). ยังไม่ schedule รายวัน. ถ้าจะ schedule ต้องทำ incremental (เฉพาะ project_id ใหม่/ปีล่าสุด) กัน re-push ก้อนใหญ่
+- ป้อน feature competitive intel ใน line-sender (query `cgd_winners` by area + work-type)
+
+## Rollback (Phase 2)
+`DROP TABLE cgd_winners` บน VPS (additive, ไม่กระทบ Follow/Winner Poller — คนละตาราง). backup ก่อน migrate: `bms_customers_pre_v119_*.db`

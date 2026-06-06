@@ -83,6 +83,7 @@ data/road_distance_cache.json
 data/_discover_alljobs_cache.json
 data/cgd_projectid_cache.json
 data/refresh_pending_cursor.json
+data/cgd_subset.jsonl*
 
 # ── Customer database (sensitive) ──
 data/bms_customers.db

@@ -1,6 +1,6 @@
 # CGD Competitive Intel ใน D0 Notification — Design Spec
 
-**วันที่:** 2026-06-06 · **สถานะ:** approved (reviewer: กัญจน์, "approved with minor revisions")
+**วันที่:** 2026-06-06 · **สถานะ:** ✅ APPROVED & FROZEN (reviewer: กัญจน์) — median + ≥2-token fallback + descriptive-only
 
 ## เป้าหมาย
 เมื่อแจ้ง "เปิดประมูลแล้ว" (B0→D0, source_stage=`followed_bid_open`) ให้แนบ **ราคาอ้างอิงจากผู้ชนะงานคล้ายในพื้นที่** (จาก `cgd_winners` บน VPS) เพื่อช่วยครอบครัวเข้าใจ **สนามแข่งขัน** ก่อนตัดสินใจยื่น
@@ -34,7 +34,7 @@ format_notification(source_stage="followed_bid_open")
 
 ### `compute_stats(rows) -> dict`
 - `count` = len(rows)
-- `avg_discount` = mean ของ `discount_pct` ที่ไม่ null (อาจ None ถ้าไม่มี valid)
+- `discount_median`, `discount_p25`, `discount_p75` = median / p25 / p75 ของ `discount_pct` ที่ไม่ null (ทั้งสามเป็น None ถ้าไม่มี valid). **median แทน avg — ทนต่อ outlier (ราคาประมูลมัก skew), สื่อสาร "ตลาดทั่วไป" แม่นกว่า**
 - `price_lo`, `price_hi` = percentile 10 / 90 ของ `win_price` (ตัด outlier)
 - `top_winners` = `Counter(winner).most_common(3)` → list[(name, count)]
 
@@ -60,7 +60,7 @@ return [format lines ...]
 ```
 💡 ราคาอ้างอิง (งานถนนในนครพนม)
 📊 จาก 142 งานย้อนหลัง
-📉 ชนะเฉลี่ยต่ำกว่าราคากลาง 8.3%
+📉 ส่วนลดที่พบบ่อย 6–9%
 💵 ช่วงราคาชนะ 0.9–2.4 ลบ.
 🏆 ผู้ชนะบ่อย:
   • หจก.อุบลรัตน์ (12)
@@ -68,7 +68,7 @@ return [format lines ...]
   • หจก.X (5)
 ```
 - หัวข้อระบุ work-type หลัก (token แรก) + จังหวัด
-- `avg_discount` None → ข้าม บรรทัด 📉
+- บรรทัด 📉 = ช่วง **p25–p75** ("ส่วนลดที่พบบ่อย {p25:.0f}–{p75:.0f}%") — คำว่า "พบบ่อย" สื่อความเสี่ยงต่ำกว่า "เฉลี่ย". ถ้า discount ทั้งหมด null → ข้ามบรรทัดนี้
 - ช่วงราคาแปลงเป็น "ลบ." (ล้านบาท) 1 ตำแหน่ง
 
 ## Wiring — `Sebastian_LINE_Sender.format_notification`
@@ -94,13 +94,12 @@ if source_stage == "followed_bid_open":
 ## Testing (TDD) — `scripts/test_cgd_intel.py`
 1. `match_keywords("ก่อสร้างถนน คสล.")` ⊇ {ถนน, คสล} ; ชื่อไม่มี work-type → []
 2. `query_similar` (inject conn + fixture cgd_winners): filter province + min_overlap (≥2 ตัด งาน token เดียว, ≥1 รับ)
-3. `compute_stats`: count/avg_discount/price_lo-hi/top_winners(+count) ถูกต้อง
+3. `compute_stats`: count / discount_median+p25+p75 / price_lo-hi / top_winners(+count) ถูกต้อง ; discount ทั้งหมด null → ทั้งสามเป็น None
 4. `intel_lines` < min_count → [] ; ≥ min_count → บรรทัดตาม format ; fallback 1-token เมื่อ 2-token ไม่พอ
 5. graceful: cgd_winners ไม่มี table → [] (ไม่ throw)
 
 ## Future (ยังไม่ทำ)
-- **discount median + p25–p75** แทน avg (median แข็งแรงกว่า, outlier-resistant) → "📉 ส่วนลดที่พบบ่อย 6–9%". ทำได้แทบฟรี (sort ชุดเดียวกับ price range) — flip ได้เมื่อกัญจน์ตัดสิน
-- เทียบงบงานปัจจุบัน vs ช่วงราคาชนะ
+- เทียบงบงานปัจจุบัน vs ช่วงราคาชนะ ("งบนี้อยู่ช่วงไหนของตลาด")
 - on-demand button / competitive intel เต็มรูป (รายชื่อคู่แข่งทั้งหมด)
 
 ## Rollback

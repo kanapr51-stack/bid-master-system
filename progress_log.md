@@ -4768,3 +4768,28 @@ brainstorming → spec `docs/superpowers/specs/2026-06-06-cgd-competitive-intel-
 ### Followup
 - ❌ อย่า build Agency Intel จนกว่าจะมี evidence จากพ่อ
 - observe: D0 intel engagement (ยังไม่มี instrumentation ว่าอ่านไหม)
+
+
+## งานที่ N+100: Tambon-Level Competitor Intel — code เสร็จ, deploy ติด push (2026-06-07)
+
+### สถานะ: 🚧 Tasks 1-7 เสร็จ+commit (local), Task 8 deploy BLOCKED (git push hang)
+
+### Build (brainstorm→spec→plan→TDD inline, executing-plans)
+- spec `docs/superpowers/specs/2026-06-07-tambon-competitor-intel-design.md` + plan `docs/superpowers/plans/2026-06-07-tambon-competitor-intel.md`
+- **T1+2** migrate v121 (cgd_winners +district +subdistrict) + cgd_sync ส่งผ่าน (commit 24fadaa)
+- **T3-7** cgd_intel: resolve_tambon (name/dept ฟรี ไม่เรียก API — INC-001), select_competitors ไล่ระดับ ตำบล→อำเภอ→จังหวัด + derive อำเภอจาก data (ambiguity→province), company_stats (ประวัติบริษัท กลบ sparsity), confidence_label (ป้ายสี+IQR), rewrite intel_lines, wire dept_name (commit 873e60f). ลบ query_similar/compute_stats
+- **tests 7/7 PASS** (test_cgd_intel) + test_cgd_sync PASS
+- competitive-set filter ทั้ง selection (_fetch) + per-company stat (_fetch_winner) — กัญจน์เน้น
+
+### 🚨 BLOCKER: git push ค้าง (transfer hang)
+- `git push origin main` timeout (EXITCODE=124) ทั้ง foreground + HTTP/1.1 + fail-fast
+- `git ls-remote` (read) สำเร็จ → auth/network read OK, เฉพาะ push transfer ค้าง
+- น่าจะ GitHub push endpoint สะดุดชั่วคราว (push รอบก่อนๆ วันนี้ขึ้นได้)
+- **4 commits ค้าง local:** spec, plan, v121+sync, intel
+- Task 8 (deploy) blocked ทั้งหมด: VPS pull code จาก GitHub → re-sync 617K ต้องมี v121 code บน VPS ก่อน (init_schema ใน --merge-from). ไม่มี non-GitHub path ที่ clean (scp code = แตก git authority, ดู project_deploy_debt)
+
+### NEXT (เมื่อ push ใช้ได้)
+1. `git push origin main`
+2. VPS pull --ff-only + backup pre-v121
+3. `python scripts/cgd_sync_to_vps.py --push` (re-sync 617K +district+subdistrict)
+4. sanity: rows 617K, district populated, intel ตัวอย่าง (competitor-profile + ป้ายสี)

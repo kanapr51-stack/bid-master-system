@@ -1,0 +1,15 @@
+[Unit]
+Description=BMS Winner Poller (⭐ followed jobs → ประกาศผู้ชนะ + competitive intel)
+After=network.target
+
+[Service]
+Type=oneshot
+User=bms
+Group=bms
+WorkingDirectory=/opt/bms/app
+EnvironmentFile=/opt/bms/app/.env
+ExecStart=/opt/bms/venv/bin/python /opt/bms/app/scripts/Sebastian_Winner_Poller.py
+Nice=10
+TimeoutStartSec=600
+StandardOutput=journal
+StandardError=journal

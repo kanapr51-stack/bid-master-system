@@ -1,0 +1,10 @@
+[Unit]
+Description=BMS Winner Poller — ทุก 6 ชม. (00,06,12,18 UTC = 07,13,19,01 ไทย)
+
+[Timer]
+OnCalendar=*-*-* 00,06,12,18:15:00
+Persistent=true
+Unit=bms-winner-poller.service
+
+[Install]
+WantedBy=timers.target

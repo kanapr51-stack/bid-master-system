@@ -33,3 +33,12 @@ systemctl daemon-reload && systemctl enable --now bms-province-discovery-full-nk
 ## Live timers อื่นบน VPS (ยังไม่ version-controlled)
 bms-province-discovery (07/13/19, incremental) · bms-enrichment-worker (2 นาที) · bms-line-sender ·
 bms-daily-digest (08:00 UTC=15:00 ไทย) · bms-backup (03:00) · bms-rss-scraper / bms-rss-notifier (จะ RETIRE ใน P5)
+
+## bms-winner-poller (⭐ Phase 2 — ประกาศผู้ชนะ + competitive intel)
+**ทุก 6 ชม.** (00,06,12,18:15 UTC) — poll getProcureResult ของงานที่ติดตาม (B0/D0) ที่ยังไม่ได้ผู้ชนะ
+→ มีผล: แจ้งผู้ชนะ+คู่แข่ง+ราคา (source_stage=followed_winner, line-sender render) + เก็บ bid_results
+→ ไม่มีผล >60 วัน: ปิด (กัน loop). rate-limit: poll เฉพาะงานติดตาม (น้อย) + cooldown 3s
+```
+scp deploy/systemd/bms-winner-poller.* root@VPS:/etc/systemd/system/
+systemctl daemon-reload && systemctl enable --now bms-winner-poller.timer
+```

@@ -57,3 +57,32 @@ def query_similar(province: str, tokens: list, min_overlap: int, conn=None) -> l
     finally:
         if own:
             conn.close()
+
+
+def _pct(values: list, p: float):
+    """percentile แบบ linear interpolation (deterministic). values ไม่ต้อง sort มาก่อน."""
+    if not values:
+        return None
+    v = sorted(values)
+    k = (len(v) - 1) * p / 100.0
+    f = int(k)
+    c = min(f + 1, len(v) - 1)
+    if f == c:
+        return v[f]
+    return v[f] + (v[c] - v[f]) * (k - f)
+
+
+def compute_stats(rows: list) -> dict:
+    """สถิติตลาด: count, ส่วนลด median/p25/p75, ช่วงราคาชนะ p10/p90, ผู้ชนะบ่อย top3+count."""
+    discs = [r["discount_pct"] for r in rows if r.get("discount_pct") is not None]
+    prices = [r["win_price"] for r in rows if r.get("win_price")]
+    winners = Counter(r["winner"] for r in rows if r.get("winner"))
+    return {
+        "count": len(rows),
+        "discount_median": _pct(discs, 50),
+        "discount_p25": _pct(discs, 25),
+        "discount_p75": _pct(discs, 75),
+        "price_lo": _pct(prices, 10),
+        "price_hi": _pct(prices, 90),
+        "top_winners": winners.most_common(3),
+    }

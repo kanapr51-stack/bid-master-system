@@ -45,7 +45,24 @@ def test_query_similar():
     print("✅ query_similar")
 
 
+def test_compute_stats():
+    rows = [{"win_price": p, "discount_pct": d, "winner": w} for p, d, w in [
+        (1_000_000, 2.0, "หจก.A"), (1_200_000, 3.0, "หจก.A"), (1_500_000, 4.0, "หจก.A"),
+        (2_000_000, 5.0, "หจก.B"), (3_000_000, 20.0, "หจก.B"), (1_100_000, 4.0, "หจก.C")]]
+    s = ci.compute_stats(rows)
+    assert s["count"] == 6
+    assert s["discount_median"] == 4.0, s["discount_median"]   # median ของ [2,3,4,4,5,20]
+    assert s["discount_p25"] == 3.25 and s["discount_p75"] == 4.75, (s["discount_p25"], s["discount_p75"])
+    assert s["top_winners"][0] == ("หจก.A", 3), s["top_winners"]
+    assert s["price_lo"] is not None and s["price_hi"] >= s["price_lo"]
+    # discount ทั้งหมด null → median/p25/p75 = None
+    s2 = ci.compute_stats([{"win_price": 100, "discount_pct": None, "winner": "X"}])
+    assert s2["discount_median"] is None and s2["discount_p25"] is None
+    print("✅ compute_stats")
+
+
 if __name__ == "__main__":
     test_match_keywords()
     test_query_similar()
-    print("ALL PASS (Task 1-2)")
+    test_compute_stats()
+    print("ALL PASS (Task 1-3)")

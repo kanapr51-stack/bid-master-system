@@ -4677,3 +4677,35 @@ brainstorming → spec `docs/superpowers/specs/2026-06-06-cgd-competitive-intel-
 ### Followup
 - median/p25/p75 ของ discount เกาะ 0 — ถ้าอยากให้ informative กว่า: อาจโชว์ "% งานที่มีส่วนลด" แทน (รอ reviewer ตัดสิน)
 - ช่วงราคา "0.0 ลบ." เมื่อ p10 เล็ก (งานหลักหมื่น) — แสดงบาทถ้า <0.1 ลบ. (future, minor)
+
+---
+
+## งานที่ N+97: CHECKPOINT — ก่อนเปลี่ยน session (2026-06-06)
+
+### สถานะ: ⏸ pause เปลี่ยน session (คุยจบ ChatGPT แล้ว ทุกจุด ✅ — รอ implement proc_type enhancement)
+
+### ✅ เสร็จแล้ว session นี้ (CGD ทั้งสาย LIVE)
+- **Phase 1** refresh winner_history (GATE: FY2569 ยังไม่ publish, lag 260วัน) + Windows Task `BidMaster_CGD_Winner_Refresh` 21:30 (`bc24eda`)
+- **Phase 2** sync → VPS `cgd_winners` = 617,357 rows (`10017ba`)
+- **Competitive Intel ใน D0** LIVE: `cgd_intel.py` (5 task TDD) แนบราคา/ผู้ชนะงานคล้าย (`44b2287`)
+- **ปรึกษา ChatGPT (report-to-chatgpt 2 รอบ) → agree 100%**: ต้อง filter proc_type (CGD 91% เฉพาะเจาะจง disc=0; e-bidding แข่งจริง ลด 17.7%)
+
+### 🎯 NEXT ACTION (session หน้า): implement proc_type enhancement ให้ cgd_intel
+**Decision frozen (Claude+ChatGPT+กัญจน์ เห็นตรงกัน) — verify ด้วยข้อมูลจริงแล้ว:**
+1. **migrate v120** ใน `scripts/Sebastian_Customer_DB.py` — เพิ่ม column `proc_type TEXT` เข้า `cgd_winners` (ALTER ADD COLUMN, additive)
+2. `scripts/cgd_sync_to_vps.py` → `extract_subset` เพิ่ม `proc_type` ใน SELECT (winner_history มี col นี้) → **re-sync 617K ขึ้น VPS** (`python scripts/cgd_sync_to_vps.py --push`, gzip ~36MB, idempotent INSERT OR REPLACE)
+3. `scripts/cgd_intel.py` `query_similar` → เพิ่ม filter `fiscal_year IN ('2566','2567','2568')` + `proc_type IN (competitive-set)`
+   - competitive-set = `("ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)","ประกวดราคาด้วยวิธีการทางอิเล็กทรอนิกส์","สอบราคา","คัดเลือก")`
+   - (verify: e-bidding-only ≈ competitive-set แทบเท่ากัน 673 vs 701 → ใช้ชุดไหนก็ได้, เลือก competitive-set ตาม ChatGPT prod rec)
+4. `intel_lines` fallback hierarchy: L1 จว.+work-type(≥2)+comp → L2 ≥1+comp → L3 จว.+comp → L4 omit
+5. **TODO ใส่ในโค้ด:** ถ้าวันหนึ่ง enrich proc_type ของงาน D0 ได้ → upgrade เป็น e-bidding-only matching (precision สูงสุด). projects_seen ตอนนี้มีแค่ announce_type ไม่มี proc_type
+6. update `test_cgd_intel.py` (fixture เพิ่ม proc_type + fiscal_year) → TDD → deploy VPS (git pull) → verify discount เด้งเป็น ~17%
+- skill: `superpowers:executing-plans` หรือทำ inline TDD ตรงๆ (งานชัดแล้ว). spec: `docs/superpowers/specs/2026-06-06-cgd-competitive-intel-design.md` (อาจ amend section query/Future)
+- ⚠️ **re-sync แตะ production VPS** (idempotent ปลอดภัย แต่ confirm กับกัญจน์ก่อน push ตาม pattern เดิม)
+
+### Defer (feature ถัดไป — ChatGPT เสนอ, กัญจน์ยังไม่สั่ง)
+- **Agency Intelligence** — relationship market (เฉพาะเจาะจง 91%): "อบต.X ใช้เฉพาะเจาะจง Y% ผู้รับเหมาประจำ A,B" (aggregate ระดับ dept, cgd_winners มี field dept). แยกจาก Competitive Intelligence (e-bidding)
+
+### ค้าง/ระวัง
+- `cgd_winners` ตอนนี้ **ยังไม่มี proc_type col** (verify แล้ว) → intel ปัจจุบันรวมทุกวิธี discount เลยเกาะ 0 (โชว์เฉพาะ p75>0 กันลวงไว้แล้ว ชั่วคราว)
+- uncommitted = runtime data + pre-existing untracked (`scripts/_audit_sent_jobs.py`, `dashboard/parents/.gitignore`) — ไม่ใช่งาน intel

@@ -208,7 +208,19 @@ def init_schema():
     _migrate_v118()
     _migrate_v119()
     _migrate_v120()
+    _migrate_v121()
     print(f"Schema v1.13 ready: {DB_PATH}")
+
+
+def _migrate_v121():
+    """cgd_winners +district +subdistrict — competitor intel ระดับตำบล/อำเภอ (winner_history
+    มี district 100%, subdistrict 91%). additive ALTER (idempotent). ต้อง re-sync 617K หลัง migrate."""
+    with get_connection() as conn:
+        for col in ("district", "subdistrict"):
+            try:
+                conn.execute(f"ALTER TABLE cgd_winners ADD COLUMN {col} TEXT")
+            except sqlite3.OperationalError:
+                pass  # already exists
 
 
 def _migrate_v120():

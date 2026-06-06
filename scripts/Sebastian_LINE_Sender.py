@@ -48,15 +48,15 @@ TYPE_LABELS = {
 # ── Feedback postback (P2 — ปุ่มกดใน LINE) ──────────────────────────────────
 # action labels (ตรงกับ feedback table + bms_api postback handler)
 FB_ACTIONS = {
-    "interested":   "👍 สนใจ/น่าติดตาม",
-    "relevant_low": "🤔 เกี่ยวข้องแต่ไม่น่าสนใจ",
-    "irrelevant":   "👎 ไม่เกี่ยวข้องเลย",
+    "star":       "⭐ ติดตามงานนี้",
+    "irrelevant": "❌ ไม่เกี่ยว",
 }
 
 
 def build_postback_data(action: str, project_id: str) -> str:
-    """สร้าง postback data string: fb:<action>:<project_id>"""
-    return f"fb:{action}:{project_id}"
+    """postback data: star → 'star:<pid>' (handler ใหม่ — ติดตามงาน) ·
+    อื่นๆ → 'fb:<action>:<pid>' (handler feedback เดิม)"""
+    return f"star:{project_id}" if action == "star" else f"fb:{action}:{project_id}"
 
 
 def parse_postback_data(data: str):

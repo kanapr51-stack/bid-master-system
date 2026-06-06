@@ -1,17 +1,37 @@
-"""test_cgd_resource_catalog.py — map ปี→resource_id จาก CKAN package."""
+"""test_cgd_resource_catalog.py — list resource_ids ต่อปี จาก package egp-contact-{year}."""
 import sys; from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent)); sys.stdout.reconfigure(encoding="utf-8")
+import requests
 import cgd_resource_catalog as cat
 
-# fake CKAN package_show payload: 1 package มีหลาย resource (ต่อปี)
+# โครงสร้างจริง: 1 package/ปี (egp-contact-2569) มีหลาย resource (10 ไฟล์)
 FAKE_PKG = {"result": {"resources": [
-    {"id": "rid-2568", "name": "ข้อมูลจัดซื้อจัดจ้าง ปีงบประมาณ 2568"},
-    {"id": "rid-2569", "name": "ข้อมูลจัดซื้อจัดจ้าง ปีงบประมาณ 2569"},
+    {"id": "r1", "name": "2569-egp-contract-1"},
+    {"id": "r2", "name": "2569-egp-contract-2"},
 ]}}
-rid = cat.resource_id_for_year("2569", fetch=lambda pkg_id: FAKE_PKG)
-assert rid == "rid-2569", rid
-rid68 = cat.resource_id_for_year("2568", fetch=lambda pkg_id: FAKE_PKG)
-assert rid68 == "rid-2568", rid68
-# ไม่เจอปี → None
-assert cat.resource_id_for_year("2570", fetch=lambda pkg_id: FAKE_PKG) is None
+
+def fetch_ok(pkg):
+    assert pkg == "egp-contact-2569", pkg
+    return FAKE_PKG
+
+ids = cat.resource_ids_for_year("2569", fetch=fetch_ok)
+assert ids == ["r1", "r2"], ids
+
+# ปีที่ยังไม่ publish → package 404 → คืน [] (ไม่ throw)
+def fetch_404(pkg):
+    resp = requests.Response(); resp.status_code = 404
+    raise requests.HTTPError("404 Not Found", response=resp)
+
+assert cat.resource_ids_for_year("2570", fetch=fetch_404) == []
+
+# error อื่น (เช่น 403 token ว่าง / quota) ต้อง re-raise — ห้ามกลืนเป็น "ไม่ publish"
+def fetch_403(pkg):
+    resp = requests.Response(); resp.status_code = 403
+    raise requests.HTTPError("403 Forbidden", response=resp)
+
+try:
+    cat.resource_ids_for_year("2568", fetch=fetch_403)
+    assert False, "403 ต้อง raise ไม่ใช่คืน []"
+except requests.HTTPError:
+    pass
 print("✅ PASS cgd_resource_catalog")

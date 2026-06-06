@@ -26,19 +26,28 @@ def parse_thai_date(s: str):
         return None
 
 
-def report(db_path: str) -> dict:
+def report(db_path: str, year: str = None) -> dict:
+    """รายงาน count/ปี + max announce_date ของปีเป้าหมาย (default = ปีล่าสุดที่มี data) + lag วัน."""
     conn = sqlite3.connect(db_path)
     out = {}
-    for fy, n in conn.execute("SELECT fiscal_year, COUNT(*) FROM winner_history GROUP BY fiscal_year"):
+    counts = conn.execute(
+        "SELECT fiscal_year, COUNT(*) FROM winner_history GROUP BY fiscal_year").fetchall()
+    for fy, n in counts:
         out[fy] = {"count": n}
-    # max announce_date (parse Thai) ของปีล่าสุด
+    if year is None:
+        years = [fy for fy, _ in counts if fy]
+        year = max(years) if years else None
+    # max announce_date (parse Thai) ของปีเป้าหมาย
     latest = None
-    for (ad,) in conn.execute("SELECT announce_date FROM winner_history WHERE fiscal_year='2569'"):
-        d = parse_thai_date(ad)
-        if d and (latest is None or d > latest):
-            latest = d
+    if year is not None:
+        for (ad,) in conn.execute(
+                "SELECT announce_date FROM winner_history WHERE fiscal_year=?", (year,)):
+            d = parse_thai_date(ad)
+            if d and (latest is None or d > latest):
+                latest = d
     conn.close()
-    out["latest_2569"] = latest.isoformat() if latest else None
+    out["target_year"] = year
+    out[f"latest_{year}"] = latest.isoformat() if latest else None
     if latest:
         out["lag_days"] = (_dt.date.today() - latest).days
     return out

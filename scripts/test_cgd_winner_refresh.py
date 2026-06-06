@@ -20,7 +20,7 @@ def fake_search(rid, province, limit, offset):
     if offset > 0: return {"result": {"records": [], "total": 2}}
     return {"result": {"records": [rec("P1", province, "ถนน"), rec("P2", province, "อาคาร")], "total": 2}}
 
-n1 = wr.refresh_year(DB, "2569", "rid-x", ["นครพนม"], search=fake_search)
+n1 = wr.refresh_year(DB, "2569", ["rid-x"], ["นครพนม"], search=fake_search)
 assert n1 == 2, n1
 c = sqlite3.connect(DB)
 assert c.execute("SELECT COUNT(*) FROM winner_history").fetchone()[0] == 2
@@ -28,7 +28,7 @@ assert c.execute("SELECT win_price FROM winner_history WHERE project_id='P1'").f
 c.close()
 
 # รอบ 2: records เดิม → INSERT OR IGNORE → ไม่เพิ่ม (idempotent)
-n2 = wr.refresh_year(DB, "2569", "rid-x", ["นครพนม"], search=fake_search)
+n2 = wr.refresh_year(DB, "2569", ["rid-x"], ["นครพนม"], search=fake_search)
 c = sqlite3.connect(DB)
 assert c.execute("SELECT COUNT(*) FROM winner_history").fetchone()[0] == 2, "idempotent fail"
 c.close()

@@ -106,7 +106,9 @@ def intel_lines(province: str, project_name: str, min_count: int = 10, conn=None
         s = compute_stats(rows)
         lines = [f"💡 ราคาอ้างอิง (งาน{tokens[0]}ใน{province})",
                  f"📊 จาก {s['count']} งานย้อนหลัง"]
-        if s["discount_p25"] is not None:
+        # discount: โชว์เฉพาะเมื่อมี signal จริง (p75>0). CGD ~80% ชนะที่ราคากลางพอดี (disc=0)
+        # → ถ้า p75=0 บรรทัด "0–0%" ไม่ให้ข้อมูล + misleading → omit (descriptive, ไม่ลวง)
+        if s["discount_p75"]:
             lines.append(f"📉 ส่วนลดที่พบบ่อย {s['discount_p25']:.0f}–{s['discount_p75']:.0f}%")
         if s["price_lo"] is not None:
             lines.append(f"💵 ช่วงราคาชนะ {s['price_lo']/1e6:.1f}–{s['price_hi']/1e6:.1f} ลบ.")

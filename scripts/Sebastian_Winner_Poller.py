@@ -34,8 +34,10 @@ def poll_winners(store, resolve_result, now: str = None, log=print,
     mode จาก env BMS_PROVINCE_NOTIFY_MODE (live=enqueue, อื่น=shadow log)."""
     now = now or _dt.datetime.now().isoformat()
     mode = os.environ.get("BMS_PROVINCE_NOTIFY_MODE", "preview")
+    # poll เฉพาะ D0 (เปิดประมูลแล้ว = มีโอกาสมีผู้ชนะ). B0 ยังไม่ bidding → ไม่ poll (กันเปลือง API/INC-001)
+    # B0 จะถูกเลื่อนเป็น D0 โดย bid_open pass ก่อน แล้วค่อยเข้า winner poll
     follows = [f for f in store.get_active_follows()
-               if (f.get("last_stage_notified") or "") in ("B0", "D0")]
+               if (f.get("last_stage_notified") or "") == "D0"]
     by_pid = {}
     for f in follows:
         by_pid.setdefault(f["project_id"], []).append(f)

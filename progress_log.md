@@ -4619,6 +4619,11 @@ plan's goal "refresh ถึง FY2569 ให้สด" **ทำไม่ได�
 ### ⚠️ premise สำคัญ (ยืนยัน)
 CGD breadth = ผู้ชนะ "ย้อนหลังครบ" (analytics/competitor history) **ไม่ใช่ winner สด**. winner สด = Follow Phase 2 (getProcureResult ตอน W0, live). CGD publish per-completed-FY ตามหลัง ~8-9 เดือน
 
+### Scheduler (กัญจน์เลือก "ตั้ง Windows Task เบา") ✅
+- Task `BidMaster_CGD_Winner_Refresh` daily **21:30** (กัน quota/เวลากับ CGD_Discovery 05:00) + wrapper `_run_cgd_winner_refresh.ps1` (log→logs/cgd, rotate 7, ไม่ push git)
+- verify trigger จริง: LastTaskResult=0, log ถูก → auto-ingest FY2569 เมื่อ DGA publish
+- runbook `deploy/runbooks/cgd-refresh.md` (+ วิธีย้าย mini PC x86 ภายหลัง) · commit `4ac2f0a`
+
 ### Followup
-- **Phase 2 (sync subset → VPS) = แตะ production VPS** (migrate v119 cgd_winners + scp + scheduler) → รอ confirm จังหวะจากกัญจน์ (เป็น action นอก project)
-- ทางเลือกเบา: ตั้ง Windows Task รัน `cgd_winner_refresh.py` รายวันบนเครื่องบ้าน → auto-ingest 2569 วันที่ DGA publish (ไม่ต้องแตะ VPS)
+- **Phase 2 (sync subset → VPS)** ยังไม่ทำ — แตะ production VPS (migrate v119 cgd_winners + scp) → รอกัญจน์สั่งจังหวะ (action นอก project)
+- เฝ้าดู: DGA publish `egp-contact-2569` เมื่อไหร่ (task จะ ingest ให้อัตโนมัติ)

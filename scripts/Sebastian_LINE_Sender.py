@@ -296,6 +296,41 @@ def send_line_push(token: str, line_user_id: str, text: str) -> tuple[bool, str,
         return False, "retryable", str(e)[:200]
 
 
+def _fmt_baht(v) -> str:
+    """ราคา (str/num) → '1,234,567' (ตัดทศนิยม). คืน str เดิมถ้า parse ไม่ได้."""
+    try:
+        return f"{int(round(float(v))):,}"
+    except (ValueError, TypeError):
+        return str(v or "")
+
+
+def format_winner(project_name: str, winner: str, price_agree: str,
+                  competitors: list = None, budget=0, project_id: str = "") -> str:
+    """การ์ดแจ้งผู้ชนะของงานที่ติดตาม (⭐) — ผู้ชนะ + ราคา + คู่แข่งทุกราย + ราคา (competitive intel).
+    competitors: list[{'name','price'}] (ไม่รวมผู้ชนะ, dedupe แล้วโดย caller)."""
+    competitors = competitors or []
+    lines = ["⭐ งานที่คุณติดตาม — ประกาศผู้ชนะแล้ว"]
+    if project_name:
+        lines.append(f"🏗️ {project_name[:80]}")
+    lines.append(f"🏆 ผู้ชนะ: {winner}")
+    lines.append(f"💵 ราคาที่ชนะ {_fmt_baht(price_agree)} บาท")
+    try:
+        if budget and float(budget) > 0 and float(price_agree) > 0:
+            disc = (1 - float(price_agree) / float(budget)) * 100
+            lines.append(f"📉 ต่ำกว่าราคากลาง {disc:.1f}%")
+    except (ValueError, TypeError, ZeroDivisionError):
+        pass
+    if competitors:
+        lines.append(f"\n👥 คู่แข่งที่ยื่น ({len(competitors)} ราย):")
+        for c in competitors:
+            lines.append(f"  • {(c.get('name') or '?')[:32]} — {_fmt_baht(c.get('price'))}")
+    else:
+        lines.append("\n👤 ผู้ยื่นรายเดียว (ไม่มีคู่แข่ง)")
+    if project_id:
+        lines.append(f"\n🔑 {project_id}")
+    return "\n".join(lines)
+
+
 def _deadline_from_db(project_id: str) -> tuple[str, str]:
     """fallback อ่าน deadline ที่ resolve+เก็บไว้ใน project_locations (สำหรับงาน province_api
     ที่ไม่มี pdf_url ให้ enrich — เช่น ⭐ bid-open followup). คืน (date 'YYYY-MM-DD', time 'HH:MM')."""

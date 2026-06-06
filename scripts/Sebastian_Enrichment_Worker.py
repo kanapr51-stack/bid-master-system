@@ -280,7 +280,7 @@ def qualify_province_api(store, log) -> int:
     with get_connection() as conn:
         cands = conn.execute("""
             SELECT pl.project_id, pl.enrichment_attempts, ps.province, ps.announce_type,
-                   ps.budget, ps.project_name, ps.dept_name
+                   ps.budget, ps.project_name, ps.dept_name, ps.announce_date
             FROM project_locations pl
             LEFT JOIN projects_seen ps ON ps.project_id = pl.project_id
             WHERE pl.source='province_api' AND pl.qualification_status='pending'
@@ -305,6 +305,14 @@ def qualify_province_api(store, log) -> int:
         # match proc-aware (จ้าง=ก่อสร้าง / ซื้อ=วัสดุ BSC) + location จากชื่อ (ไม่ resolve API = INC-001 safe)
         # อยู่ก่อน keyword-first (ซึ่งเช็คคำก่อสร้างอย่างเดียว → จะตัดงานซื้อวัสดุผิด)
         if (c.get("announce_type") or "").upper().startswith("B"):
+            # freshness gate: B0 comment period สั้น + backlog เก่า first_seen=วันนี้ →
+            # ส่งเฉพาะ announce_date ใน N วันล่าสุด (กัน blast backlog 400+ งาน, env BMS_TOR_FRESH_DAYS)
+            tor_days = int(os.environ.get("BMS_TOR_FRESH_DAYS", "14"))
+            if jm is None or not jm.tor_is_fresh(c.get("announce_date") or "", days=tor_days):
+                with get_connection() as conn:
+                    conn.execute("UPDATE project_locations SET qualification_status='suppressed_tor_stale' WHERE project_id=?", (pid,))
+                stats["expired"] = stats.get("expired", 0) + 1
+                continue
             src_stage = "province_tor_review"
             if jm is not None and mmode != "off":
                 decision, mdet = jm.match_job(c.get("project_name") or "", c["province"],

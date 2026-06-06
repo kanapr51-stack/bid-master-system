@@ -55,6 +55,20 @@ def _kw_hit(k: str, name: str) -> bool:
 _PROC_METHOD_PREFIXES = ("ประกวดราคาอิเล็กทรอนิกส์", "ประกวดราคา", "สอบราคา")
 
 
+def tor_is_fresh(announce_date: str, today=None, days: int = 14) -> bool:
+    """B0 รับฟังคำวิจารณ์ freshness gate: True ถ้า announce_date อยู่ใน N วันล่าสุด.
+    กัน backlog blast (B0 เก่าหลายร้อยงาน first_seen=วันนี้) + ตรงช่วง comment period สั้น.
+    parse ไม่ได้/ว่าง → False (conservative — ไม่ส่งดีกว่า blast)."""
+    import datetime as _dt
+    if today is None:
+        today = _dt.date.today()
+    try:
+        ad = _dt.date.fromisoformat((announce_date or "")[:10])
+    except (ValueError, TypeError):
+        return False
+    return 0 <= (today - ad).days <= days
+
+
 def is_procurement(name: str) -> bool:
     """True ถ้าเป็นงาน 'ซื้อ' (จัดหาสินค้า) ไม่ใช่ 'จ้าง' (ก่อสร้าง/บริการ).
     ใช้ leading-token (ตัดคำวิธีนำหน้าแล้วดู ซื้อ/จัดซื้อ) → กันงานจ้างที่มีคำ 'ซื้อ' กลางชื่อ."""

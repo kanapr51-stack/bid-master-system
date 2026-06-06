@@ -6,7 +6,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 sys.stdout.reconfigure(encoding="utf-8")
-from job_matcher import match_job, is_procurement  # noqa: E402
+from datetime import date  # noqa: E402
+from job_matcher import match_job, is_procurement, tor_is_fresh  # noqa: E402
 
 CFG = {
     "target_tambons": {"นครพนม": ["บ้านแพง"], "บึงกาฬ": ["บึงโขงหลง"]},
@@ -70,6 +71,16 @@ chk(d == "soft_include", f"จ้างก่อสร้าง ไม่ระ�
 # ซื้อ ในจังหวัดไม่ target → cut (province ก่อน หรือ proc ก็ได้ ขอแค่ cut)
 d, info = match_job("ประกวดราคาซื้อครุภัณฑ์", "ขอนแก่น", cfg=CFG)
 chk(d == "cut", f"ซื้อ จังหวัดไม่ target ควร cut, ได้ {d}")
+
+# ── tor_is_fresh: B0 freshness gate (กัน backlog blast + ตรงช่วงรับฟังคำวิจารณ์) ──
+TODAY = date(2026, 6, 6)
+chk(tor_is_fresh("2026-06-05", TODAY, days=14), "B0 เมื่อวาน ควร fresh=True")
+chk(tor_is_fresh("2026-06-06", TODAY, days=14), "B0 วันนี้ ควร fresh=True")
+chk(tor_is_fresh("2026-05-24", TODAY, days=14), "B0 13 วันก่อน ควร fresh=True (ขอบใน)")
+chk(not tor_is_fresh("2026-05-20", TODAY, days=14), "B0 17 วันก่อน ควร fresh=False (เกิน)")
+chk(not tor_is_fresh("2026-01-01", TODAY, days=14), "B0 เก่ามาก ควร fresh=False (backlog)")
+chk(not tor_is_fresh("", TODAY, days=14), "announce_date ว่าง ควร fresh=False (conservative กัน blast)")
+chk(not tor_is_fresh("ไม่ใช่วันที่", TODAY, days=14), "parse ไม่ได้ ควร fresh=False")
 
 if fails:
     print(f"❌ FAIL {len(fails)} assertions:")

@@ -201,7 +201,20 @@ def init_schema():
     _migrate_v111()
     _migrate_v112()
     _migrate_v113()
+    _migrate_v114()
     print(f"Schema v1.13 ready: {DB_PATH}")
+
+
+def _migrate_v114():
+    """Add announce_date to projects_seen — สำหรับ B0 รับฟังคำวิจารณ์ freshness gate (2026-06-06).
+    B0 comment period สั้น (~3วัน) + backlog เก่า first_seen=วันนี้ → ต้องดู announce_date จริง
+    เพื่อกัน blast + ส่งเฉพาะช่วงรับฟังฯ. NULL = ไม่รู้ (เก่า/RSS) → gate ถือว่า not-fresh.
+    """
+    with get_connection() as conn:
+        try:
+            conn.execute("ALTER TABLE projects_seen ADD COLUMN announce_date TEXT")
+        except sqlite3.OperationalError:
+            pass  # already exists
 
 
 def _migrate_v113():

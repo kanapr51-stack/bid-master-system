@@ -279,12 +279,13 @@ def ingest(records: list[dict]) -> tuple[int, int]:
             conn.execute("""
                 INSERT INTO projects_seen
                   (project_id, announce_type, province, budget, project_name,
-                   dept_id, dept_name, extraction_confidence, source, first_seen_at)
-                VALUES (?,?,?,?,?,?,?,?,?,?)
+                   dept_id, dept_name, extraction_confidence, source, first_seen_at,
+                   announce_date)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?)
             """, (
                 r["project_id"], r["announce_type"], r["province"], r["budget"],
                 r["project_name"], "", r["dept_name"], "hard_province_api",
-                "province_api", now,
+                "province_api", now, r.get("announce_date") or "",
             ))
             new += 1
         conn.commit()

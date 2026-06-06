@@ -4491,3 +4491,28 @@ probe ยืนยัน announceType=1=B0=stepId U03. ปลดล็อก = �
 - discovery timer (BMS_ANNOUNCE_TYPES live) จะหา B0 ใหม่ทุกวันเอง
 - cust1 (test) B0 fail = noise (is_test_data excluded จาก metrics)
 - ดู feedback พ่อต่อ B0: มีค่ากว่า D0 จริงไหม (validate North-Star)
+
+---
+
+## งานที่ N+90: ⭐ Follow/Star Phase 1 — event-centric lifecycle (2026-06-06)
+
+### สถานะ: ✅ LIVE บน VPS
+
+### สิ่งที่ทำ (TDD ทุก task, brainstorm→spec→plan→execute)
+- **1.1** followed_jobs watchlist + helpers + job_followups
+- **1.2** ปุ่ม ⭐ติดตาม/❌ไม่เกี่ยว (แทน 👍🤔👎)
+- **1.3** postback handler `star:` → _record_follow (targeted)
+- **1.4** B0→D0 followup: advance-stage ingest (projects_seen สะท้อน lifecycle จริง) + stage_updated_at + notify_bid_open_followups (targeted, shadow-safe)
+
+### Architecture decision (สำคัญ): event-centric queue
+- notification_queue dedup: **(customer,project) → (customer,project,source_stage)** (migrate v117, A+ ultra-conservative: backup→count→rebuild→verify, 84 rows ครบ)
+- business dedup = followed_jobs.last_stage_notified · delivery dedup = queue ต่อ event
+- BMS เปลี่ยนจาก "ระบบแจ้งงาน" → "ระบบติดตาม lifecycle" (B0→D0→W0)
+- 2 design wrinkles เจอ+แก้ระหว่างทาง: projects_seen dedup (แก้ด้วย advance-stage UPSERT) + queue cross-stage dedup (แก้ด้วย source_stage ใน unique)
+
+### deploy
+backup bms_customers_premig_*.db → migrate verify (84 ครบ, 3-col unique, NULL=0) → restart bms-api ✓
+
+### Followup
+- **Phase 2 หยุดที่ 2.0 PROBE getProcureResult ก่อนเสมอ** (กัญจน์สั่ง — verify ก่อนสร้าง poller)
+- ปุ่ม ⭐ live แล้ว → ดูว่าครอบครัวเริ่มติดดาวไหม (North-Star signal จริง)

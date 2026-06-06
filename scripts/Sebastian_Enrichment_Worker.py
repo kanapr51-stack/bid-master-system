@@ -449,6 +449,47 @@ def qualify_province_api(store, log) -> int:
 
 # ── Main ─────────────────────────────────────────────────────────────────────
 
+def notify_bid_open_followups(store, log) -> int:
+    """⭐ B0→D0: งานที่ติดดาวตอนรับฟังฯ เลื่อนเป็นประมูลแล้ว → แจ้งเฉพาะคนติดดาว (targeted, ไม่ fan-out).
+    อ่าน stage ปัจจุบันจาก projects_seen (advance-stage ทำให้สะท้อน lifecycle จริง). ไม่ยิง eGP API.
+    preview = shadow (log/Discord ไม่ mark, non-consuming) · live = enqueue + mark D0."""
+    import job_followups as jf
+    follows = store.get_active_follows()
+    if not follows:
+        return 0
+    pids = list({f["project_id"] for f in follows})
+    qs = ",".join("?" * len(pids))
+    with get_connection() as conn:
+        rows = conn.execute(
+            f"SELECT project_id, announce_type, province, budget, project_name, dept_name "
+            f"FROM projects_seen WHERE project_id IN ({qs})", pids).fetchall()
+    meta = {r["project_id"]: dict(r) for r in rows}
+    cur = {pid: m["announce_type"] for pid, m in meta.items()}
+    due = jf.bid_open_followups([dict(f) for f in follows], cur)
+    mode = os.environ.get("BMS_PROVINCE_NOTIFY_MODE", "preview")
+    sent = 0
+    for cid, pid in due:
+        m = meta.get(pid)
+        if not m:
+            continue
+        if mode == "live":
+            n = store.enqueue_for_customer(cid, {
+                "project_id": pid, "province": m.get("province") or "",
+                "project_name": m.get("project_name") or "", "dept_name": m.get("dept_name") or "",
+                "source_stage": "followed_bid_open",
+            })
+            store.mark_stage_notified(cid, pid, "D0")
+            if n:
+                sent += 1
+                log(f"  ⭐→ bid-open followup ENQUEUED {pid} cust{cid}")
+        else:
+            _discord_safe(f"🔎 [SHADOW] ⭐ followup เปิดประมูล: {pid} cust{cid} | "
+                          f"{(m.get('project_name') or '')[:50]} (ยังไม่ส่ง/ไม่ mark)")
+    if due:
+        log(f"⭐ bid-open followups: {len(due)} due, {sent} enqueued (mode={mode})")
+    return sent
+
+
 def main():
     # migration transition: heal state ที่ copy พลาด + log resolved dir (ถอด heal Phase 4)
     bms_paths.heal_legacy_state("api_ingestion_state.json", "resolve_plane_state.json", "resolve_heartbeat.json")
@@ -490,6 +531,12 @@ def main():
         qual_ok = qualify_province_api(store, log)
     except Exception as e:
         log(f"Province qual ERROR: {type(e).__name__}: {e}")
+
+    # ⭐ B0→D0 followups: แจ้งงานติดดาวที่เปิดประมูลแล้ว (ไม่ยิง API — รันได้แม้ก่อน cooldown check)
+    try:
+        notify_bid_open_followups(store, log)
+    except Exception as e:
+        log(f"Bid-open followups ERROR: {type(e).__name__}: {e}")
 
     # ถ้า Pass 3 ตั้ง cooldown (circuit-break) → หยุดทันที ไม่ยิง RSS passes ต่อ (กัน burst)
     in_cd, until = _resolve_in_cooldown()

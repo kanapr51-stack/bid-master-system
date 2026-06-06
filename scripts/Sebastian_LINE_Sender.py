@@ -223,7 +223,9 @@ def format_notification(project_id: str, province: str = "",
     # ชื่องาน (เต็ม) แสดงเป็น header ของการ์ด flex แล้ว — body ไม่ต้องซ้ำ
     lines = []
 
-    if source_stage.startswith("province_tor_review"):
+    if source_stage == "followed_bid_open":
+        lines.append("⭐ งานที่คุณติดตาม — เปิดประมูลแล้ว!")
+    elif source_stage.startswith("province_tor_review"):
         lines.append("📋 รับฟังคำวิจารณ์ (ร่าง TOR — ยังไม่เปิดประมูล)")
     elif is_backfill:
         lines.append("📦 โครงการที่ยังเปิดประมูลอยู่")

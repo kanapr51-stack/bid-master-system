@@ -202,7 +202,25 @@ def init_schema():
     _migrate_v112()
     _migrate_v113()
     _migrate_v114()
+    _migrate_v115()
     print(f"Schema v1.13 ready: {DB_PATH}")
+
+
+def _migrate_v115():
+    """followed_jobs — ⭐ watchlist (ติดตามงานข้าม stage B0→D0→W0).
+    last_stage_notified = stage ล่าสุดที่แจ้งแล้ว (dedup). status active|closed.
+    """
+    with get_connection() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS followed_jobs (
+                customer_id          INTEGER NOT NULL,
+                project_id           TEXT NOT NULL,
+                starred_at           TEXT NOT NULL,
+                starred_stage        TEXT,
+                last_stage_notified  TEXT,
+                status               TEXT NOT NULL DEFAULT 'active',
+                PRIMARY KEY (customer_id, project_id)
+            )""")
 
 
 def _migrate_v114():
@@ -526,6 +544,35 @@ class SubscriptionStore:
                  project_name or None, dept_id or None, dept_name or None,
                  extraction_confidence or None, source or "rss", _now()),
             )
+
+    # ── ⭐ Follow/Star watchlist (followed_jobs) ──
+    def add_follow(self, customer_id: int, project_id: str, starred_stage: str, now: str = None) -> None:
+        now = now or _now()
+        with get_connection() as conn:
+            conn.execute("""
+                INSERT INTO followed_jobs
+                  (customer_id, project_id, starred_at, starred_stage, last_stage_notified, status)
+                VALUES (?,?,?,?,?,'active')
+                ON CONFLICT(customer_id, project_id) DO UPDATE SET status='active'
+            """, (customer_id, project_id, now, starred_stage, starred_stage))
+
+    def get_active_follows(self) -> list[dict]:
+        with get_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            return [dict(r) for r in conn.execute(
+                "SELECT * FROM followed_jobs WHERE status='active'")]
+
+    def mark_stage_notified(self, customer_id: int, project_id: str, stage: str) -> None:
+        with get_connection() as conn:
+            conn.execute(
+                "UPDATE followed_jobs SET last_stage_notified=? WHERE customer_id=? AND project_id=?",
+                (stage, customer_id, project_id))
+
+    def close_follow(self, project_id: str, customer_id: int) -> None:
+        with get_connection() as conn:
+            conn.execute(
+                "UPDATE followed_jobs SET status='closed' WHERE customer_id=? AND project_id=?",
+                (customer_id, project_id))
 
     def enqueue_notifications(self, project: dict,
                                min_confidence: str = "high",

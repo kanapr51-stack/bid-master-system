@@ -1,0 +1,39 @@
+"""test_followed_jobs.py — ⭐ watchlist upsert + stage dedup + B0→D0 followers."""
+import os, tempfile, sys
+from pathlib import Path
+os.environ["BMS_DATA_DIR"] = tempfile.mkdtemp()
+sys.path.insert(0, str(Path(__file__).parent))
+sys.stdout.reconfigure(encoding="utf-8")
+import Sebastian_Customer_DB as db  # noqa: E402
+
+db.init_schema()
+s = db.SubscriptionStore()
+
+# add follow
+s.add_follow(customer_id=2, project_id="P1", starred_stage="B0", now="2026-06-06T10:00:00")
+act = s.get_active_follows()
+assert any(f["project_id"] == "P1" and f["customer_id"] == 2 for f in act), act
+assert [f for f in act if f["project_id"] == "P1"][0]["last_stage_notified"] == "B0"
+
+# upsert idempotent (กดซ้ำ)
+s.add_follow(2, "P1", "B0", "2026-06-06T11:00:00")
+assert len([f for f in s.get_active_follows() if f["project_id"] == "P1" and f["customer_id"] == 2]) == 1
+
+# mark stage notified
+s.mark_stage_notified(2, "P1", "D0")
+assert [f for f in s.get_active_follows() if f["project_id"] == "P1"][0]["last_stage_notified"] == "D0"
+
+# close → ไม่อยู่ active
+s.close_follow("P1", 2)
+assert not any(f["project_id"] == "P1" and f["customer_id"] == 2 for f in s.get_active_follows())
+
+# ── B0→D0 followers (job_followups) ──
+s.add_follow(3, "P2", "B0", "2026-06-06T09:00:00")
+import job_followups as jf  # noqa: E402
+assert jf.followers_due_for_stage(s, "P2", "D0") == [3], jf.followers_due_for_stage(s, "P2", "D0")
+s.mark_stage_notified(3, "P2", "D0")
+assert jf.followers_due_for_stage(s, "P2", "D0") == []
+# งานที่ไม่มีคนติดตาม → ว่าง
+assert jf.followers_due_for_stage(s, "P_NONE", "D0") == []
+
+print("✅ PASS followed_jobs + job_followups")

@@ -331,6 +331,27 @@ def format_winner(project_name: str, winner: str, price_agree: str,
     return "\n".join(lines)
 
 
+def _winner_card_from_results(item: dict, results: list) -> tuple:
+    """สร้าง (alt_text, flex) การ์ดผู้ชนะ จาก bid_results — เลือกผู้ชนะ + dedupe คู่แข่งตามชื่อบริษัท
+    (getProcureResult คืน per-line-item อาจซ้ำ). ไม่มีปุ่ม (lifecycle จบที่ W0)."""
+    win = next((b for b in results if b.get("is_winner")), None)
+    seen, comps = set(), []
+    for b in results:
+        if b.get("is_winner"):
+            continue
+        nm = b.get("bidder_name")
+        if nm and nm not in seen:
+            seen.add(nm)
+            comps.append({"name": nm, "price": b.get("price_proposal")})
+    pname = item.get("project_name") or item.get("project_id", "")
+    text = format_winner(
+        pname, win["bidder_name"] if win else "—",
+        win["price_agree"] if win else "", comps,
+        budget=float(item.get("budget") or 0), project_id=item.get("project_id", ""))
+    flex = build_job_flex(item.get("project_id", ""), "🏆 ประกาศผู้ชนะ", text, with_feedback=False)
+    return ("ประกาศผู้ชนะ | " + text)[:400], flex
+
+
 def _deadline_from_db(project_id: str) -> tuple[str, str]:
     """fallback อ่าน deadline ที่ resolve+เก็บไว้ใน project_locations (สำหรับงาน province_api
     ที่ไม่มี pdf_url ให้ enrich — เช่น ⭐ bid-open followup). คืน (date 'YYYY-MM-DD', time 'HH:MM')."""
@@ -426,6 +447,26 @@ def main():
         f"Acquired queue_id={item['id']} project={item['project_id']} "
         f"customer={item['customer_id']} retry={item['retry_count']}"
     )
+
+    # ⭐ winner notification (followed_winner): render จาก bid_results — ไม่ต้อง enrich/PDF
+    # (source_stage-gated → inert กับ notification อื่นทั้งหมด)
+    if item.get("source_stage") == "followed_winner":
+        results = store.get_bid_results(item["project_id"])
+        alt_text, flex = _winner_card_from_results(item, results)
+        if dry_run:
+            log("─── DRY RUN: winner card ───")
+            for ln in flex["body"]["contents"][1]["text"].splitlines():
+                log("  " + ln)
+            store.mark_delivery_result(item["id"], item["customer_id"], item["project_id"],
+                                       status="failed", error="dry_run", error_type="retryable")
+            log("=== LINE Sender done (winner dry-run) ===")
+            return
+        ok, et, em = send_line_flex(token, item["line_user_id"], alt_text, flex)
+        store.mark_delivery_result(item["id"], item["customer_id"], item["project_id"],
+                                   status="sent" if ok else "failed", error=em, error_type=et)
+        log(f"⭐ winner sent={ok} {item['project_id']} cust{item['customer_id']} ({em})")
+        log("=== LINE Sender done (winner) ===")
+        return
 
     # Step 4a: API enrichment (opportunistic — skip if WAF state unknown/blocked)
     dept_name   = item.get("dept_name") or ""

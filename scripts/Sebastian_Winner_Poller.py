@@ -1,0 +1,109 @@
+"""Sebastian_Winner_Poller.py — ⭐ Phase 2: poll ผู้ชนะของงานที่ติดตาม (B0/D0) → แจ้ง + เก็บ bid_results.
+
+flow: followed_jobs (last in B0/D0, active) → getProcureResult (AES-token, ไม่ browser)
+  • มีผล  → record_bid_results + enqueue followed_winner (line-sender render การ์ดผู้ชนะ+คู่แข่ง) + mark W0 + close
+  • ไม่มีผล → รอรอบหน้า (จนเกิน BMS_WINNER_POLL_MAX_DAYS=60 วัน → ปิด กัน loop)
+rate-limit: poll เฉพาะงานติดตาม (น้อย) + cooldown ระหว่างงาน (INC-001 discipline). timer ~6 ชม.
+รัน: python Sebastian_Winner_Poller.py           (live ตาม env BMS_PROVINCE_NOTIFY_MODE)
+"""
+import datetime as _dt
+import os
+import sys
+import time
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent))
+from Sebastian_Customer_DB import SubscriptionStore, get_connection  # noqa: E402
+
+POLL_SLEEP_SEC = 3       # cooldown ระหว่างงาน (กัน burst)
+MAX_DAYS = int(os.environ.get("BMS_WINNER_POLL_MAX_DAYS", "60"))
+
+
+def _too_old(starred_at: str, now: str, max_days: int) -> bool:
+    try:
+        s = _dt.datetime.fromisoformat((starred_at or "")[:19])
+        n = _dt.datetime.fromisoformat((now or "")[:19])
+        return (n - s).days > max_days
+    except (ValueError, TypeError):
+        return False
+
+
+def poll_winners(store, resolve_result, now: str = None, log=print,
+                 max_days: int = MAX_DAYS, sleep_sec: int = 0) -> dict:
+    """core (testable): resolve_result(pid) → {} หรือ {winner, bidders[...]}.
+    mode จาก env BMS_PROVINCE_NOTIFY_MODE (live=enqueue, อื่น=shadow log)."""
+    now = now or _dt.datetime.now().isoformat()
+    mode = os.environ.get("BMS_PROVINCE_NOTIFY_MODE", "preview")
+    follows = [f for f in store.get_active_follows()
+               if (f.get("last_stage_notified") or "") in ("B0", "D0")]
+    by_pid = {}
+    for f in follows:
+        by_pid.setdefault(f["project_id"], []).append(f)
+    stats = {"polled": 0, "notified": 0, "no_result": 0, "closed_stale": 0}
+    # ชื่องาน (snapshot)
+    names = {}
+    if by_pid:
+        with get_connection() as conn:
+            qs = ",".join("?" * len(by_pid))
+            for r in conn.execute(
+                f"SELECT project_id, project_name, province, budget FROM projects_seen "
+                f"WHERE project_id IN ({qs})", list(by_pid)):
+                names[r[0]] = {"project_name": r[1] or "", "province": r[2] or "", "budget": r[3] or 0}
+
+    for pid, fs in by_pid.items():
+        stats["polled"] += 1
+        try:
+            res = resolve_result(pid) or {}
+        except Exception as e:
+            log(f"  poll {pid} error: {type(e).__name__}: {e}")
+            res = {}
+        if res.get("bidders") and res.get("winner"):
+            store.record_bid_results(pid, res["bidders"])
+            meta = names.get(pid, {})
+            for f in fs:
+                cid = f["customer_id"]
+                if mode == "live":
+                    store.enqueue_for_customer(cid, {
+                        "project_id": pid, "province": meta.get("province", ""),
+                        "project_name": meta.get("project_name", ""),
+                        "source_stage": "followed_winner"})
+                    store.mark_stage_notified(cid, pid, "W0")
+                    store.close_follow(pid, cid)
+                    log(f"  ⭐→ winner ENQUEUED {pid} cust{cid} ({res.get('winner')})")
+                else:
+                    log(f"  [SHADOW] winner {pid} cust{cid}: {res.get('winner')} "
+                        f"{res.get('winning_price')} + {len(res['bidders'])} bidders")
+            stats["notified"] += 1
+        else:
+            stats["no_result"] += 1
+            for f in fs:
+                if _too_old(f.get("starred_at"), now, max_days):
+                    store.close_follow(pid, f["customer_id"])
+                    stats["closed_stale"] += 1
+                    log(f"  ⏹ stale (>{max_days}วัน) ปิด {pid} cust{f['customer_id']}")
+        if sleep_sec:
+            time.sleep(sleep_sec)
+    return stats
+
+
+def main():
+    sys.stdout.reconfigure(encoding="utf-8")
+
+    def log(m):
+        print(f"[{_dt.datetime.now().isoformat(timespec='seconds')}] {m}", flush=True)
+
+    log("=== Winner Poller start ===")
+    from Sebastian_Customer_DB import init_schema
+    init_schema()
+    store = SubscriptionStore()
+    try:
+        from process5_http_client import get_procure_result
+    except Exception as e:
+        log(f"ABORT: import get_procure_result fail: {e}")
+        return
+    stats = poll_winners(store, get_procure_result, log=log, sleep_sec=POLL_SLEEP_SEC)
+    log(f"=== Winner Poller done — {stats} ===")
+
+
+if __name__ == "__main__":
+    main()

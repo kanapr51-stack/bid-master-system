@@ -4596,3 +4596,29 @@ plan's goal "refresh ถึง FY2569 ให้สด" **ทำไม่ได�
 ### Followup (รอ decision)
 - ถ้ากัญจน์เอา CGD breadth ต่อ: rework `cgd_resource_catalog` (package-per-year + list 10 rids) + `row_from_rec` เก็บ `วันที่เกิดรายการ` + poll egp-contact-2569 เมื่อ DGA publish (เช็คเป็นระยะ)
 - Phase 2 (sync subset → VPS) ยังไม่เริ่ม (ขึ้นกับ decision)
+
+---
+
+## งานที่ N+94: CGD GATE decision = A → rework + Phase 1 ✅ (2026-06-06)
+
+### สถานะ: ✅ Phase 1 เสร็จ+verify (CGD breadth pipeline พร้อม ingest 2569 ทันทีที่ publish)
+
+### กัญจน์เลือก A (rework + เดินต่อ) → rework ตรงโครงสร้าง CGD จริง (TDD ทุกตัว)
+- `cgd_resource_catalog.resource_ids_for_year()` → คืน **list** (1 package/ปี `egp-contact-{year}` × 10 res). แยก **404 (ไม่ publish→[]) vs 403/quota (raise ไม่กลืน)** — เจอ bug token ว่าง (main ไม่ได้ set env ให้ catalog) แก้แล้ว
+- `cgd_winner_refresh.refresh_year(rids: list)` + `main()` (load token→set env→refresh→report)
+- `cgd_freshness.report(year=)` default ปีล่าสุด + lag
+- `_winner_history_build.row_from_rec` → announce_date จาก `วันที่เกิดรายการ` (fallback)
+- commit: `045f2aa` (winner-history) + `78af46c` (cgd rework). Phase 1 modules: `0fea88e`/`413b7a9`/`77f0aab`/`827396c`
+
+### RUN จริง (เครื่องบ้าน residential) + verify
+- **2569 → 404 ข้าม** (DGA ยังไม่ publish FY2569 จริง — confirm)
+- **2568 → 10 res × 2 จว. → +0 row** (idempotent: winner_history.db มี นครพนม/บึงกาฬ 2568 ครบจาก full build)
+- **พิสูจน์ pull จริง:** 1 res × นครพนม ลง temp DB ว่าง = **5,640 row** (winner/ราคา/province filter ถูก)
+- **CGD lag = 260 วัน** (ใหม่สุด 2025-09-19). winner_history.db = 617,357 งาน (2558–2568)
+
+### ⚠️ premise สำคัญ (ยืนยัน)
+CGD breadth = ผู้ชนะ "ย้อนหลังครบ" (analytics/competitor history) **ไม่ใช่ winner สด**. winner สด = Follow Phase 2 (getProcureResult ตอน W0, live). CGD publish per-completed-FY ตามหลัง ~8-9 เดือน
+
+### Followup
+- **Phase 2 (sync subset → VPS) = แตะ production VPS** (migrate v119 cgd_winners + scp + scheduler) → รอ confirm จังหวะจากกัญจน์ (เป็น action นอก project)
+- ทางเลือกเบา: ตั้ง Windows Task รัน `cgd_winner_refresh.py` รายวันบนเครื่องบ้าน → auto-ingest 2569 วันที่ DGA publish (ไม่ต้องแตะ VPS)

@@ -4464,3 +4464,30 @@ scp ไฟล์เดียว → `/opt/bms/app/scripts/` (VPS app repo อย
 ### Followup
 - Phase 3 leak-watch cron รัน 48h → Phase 4 (gitignore app/data state + ถอด heal) หลัง clean
 - material_keywords อาจ refine เพิ่มถ้า BSC ขายของอื่น (ดู feedback)
+
+---
+
+## งานที่ N+89: รับฟังคำวิจารณ์ (B0) GO-LIVE — North-Star delivered (2026-06-06)
+
+### สถานะ: ✅✅ LIVE ส่งถึงครอบครัวจริงแล้ว
+
+### insight (กัญจน์): D0 พ่อรู้อยู่แล้ว, งานใหม่จริงอยู่ B0 (รับฟังคำวิจารณ์ ก่อนประมูล)
+probe ยืนยัน announceType=1=B0=stepId U03. ปลดล็อก = ดึง B0 + ส่ง = พ่อเห็นงานก่อนใคร
+
+### สิ่งที่ทำ (TDD ทุกชิ้น)
+1. **discovery**: parametrize announce-types (env BMS_ANNOUNCE_TYPES=1,2) — incremental bound
+2. **freshness gate**: `tor_is_fresh(announce_date, days=14)` + migrate v114 (projects_seen.announce_date) → กัน backlog blast (428+228 เก่า) ส่งเฉพาะช่วง comment period
+3. **qualifier B0 branch**: match proc-aware + location-from-name (ไม่ resolve API=INC-001 safe) → enqueue province_tor_review **ข้าม bidding-deadline gate**
+4. **LINE label**: "📋 รับฟังคำวิจารณ์ (ร่าง TOR — ยังไม่เปิดประมูล)"
+5. **subscription**: announce_types D0 → D0,B0 (5 customers)
+
+### go-live (controlled: stop sender→enqueue→ตรวจ→start)
+- 17 B0 ingest (incremental) → gate: filtered_no_match 6, suppressed_tor_stale 1 (กัน B0 36วัน), enqueued 5
+- **sent 5 งาน → ครอบครัวจริง** (กัญจน์/Hong/ณฐมน/Mr.suvit), cust1=test fail (ปกติ)
+- **B0 project_id ไม่ซ้ำ D0 เลย (0)** = งานที่พ่อยังไม่เคยเห็นจริง = North-Star
+- commit ab53a65 (feature) + e511e2d (freshness gate)
+
+### Followup
+- discovery timer (BMS_ANNOUNCE_TYPES live) จะหา B0 ใหม่ทุกวันเอง
+- cust1 (test) B0 fail = noise (is_test_data excluded จาก metrics)
+- ดู feedback พ่อต่อ B0: มีค่ากว่า D0 จริงไหม (validate North-Star)

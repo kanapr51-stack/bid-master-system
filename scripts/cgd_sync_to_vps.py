@@ -10,6 +10,7 @@ merge_winners()/get_cgd_winners() ใช้ Sebastian_Customer_DB (bms_customers
 extract_subset() อ่าน winner_history.db (ฝั่ง residential).
 """
 import argparse
+import gzip
 import json
 import os
 import shutil
@@ -30,20 +31,28 @@ REMOTE_PY = os.environ.get("BMS_REMOTE_PY", "/opt/bms/venv/bin/python")
 REMOTE_APP = os.environ.get("BMS_REMOTE_APP", "/opt/bms/app")
 
 
-def merge_winners(rows: list, now: str = None) -> int:
-    """upsert cgd_winners (idempotent ตาม project_id). ใช้ทั้งฝั่ง VPS รับ + test."""
+_MERGE_SQL = """INSERT OR REPLACE INTO cgd_winners
+    (project_id, province, dept, project_name, winner, winner_tin, budget,
+     win_price, discount_pct, announce_date, fiscal_year, synced_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)"""
+_BATCH = 5000
+
+
+def merge_winners(rows, now: str = None) -> int:
+    """upsert cgd_winners (idempotent ตาม project_id). รับ list หรือ generator (memory-safe
+    สำหรับ 6 แสนแถวบน VPS RAM น้อย — executemany เป็น batch). ใช้ฝั่ง VPS รับ + test."""
     now = now or _now()
     n = 0
+    buf = []
     with get_connection() as conn:
         for r in rows:
-            conn.execute("""INSERT OR REPLACE INTO cgd_winners
-                (project_id, province, dept, project_name, winner, winner_tin, budget,
-                 win_price, discount_pct, announce_date, fiscal_year, synced_at)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
-                (r["project_id"], r.get("province"), r.get("dept"), r.get("project_name"),
-                 r.get("winner"), r.get("winner_tin"), r.get("budget"), r.get("win_price"),
-                 r.get("discount_pct"), r.get("announce_date"), r.get("fiscal_year"), now))
-            n += 1
+            buf.append((r["project_id"], r.get("province"), r.get("dept"), r.get("project_name"),
+                        r.get("winner"), r.get("winner_tin"), r.get("budget"), r.get("win_price"),
+                        r.get("discount_pct"), r.get("announce_date"), r.get("fiscal_year"), now))
+            if len(buf) >= _BATCH:
+                conn.executemany(_MERGE_SQL, buf); n += len(buf); buf = []
+        if buf:
+            conn.executemany(_MERGE_SQL, buf); n += len(buf)
     return n
 
 
@@ -70,35 +79,38 @@ def extract_subset(wh_db_path: str, provinces=TARGET) -> list[dict]:
 # ── orchestration (Task 2.3) ────────────────────────────────────────────────
 
 def _merge_from_jsonl(path: str) -> int:
-    rows = [json.loads(line) for line in open(path, encoding="utf-8") if line.strip()]
-    n = merge_winners(rows)
+    """อ่าน jsonl (รองรับ .gz) → merge. batch commit กัน lock นาน."""
+    opener = gzip.open if path.endswith(".gz") else open
+    with opener(path, "rt", encoding="utf-8") as f:
+        n = merge_winners(json.loads(line) for line in f if line.strip())   # stream (ไม่โหลดทั้งไฟล์)
     print(f"✅ merge {n} cgd_winners เข้า bms_customers.db")
     return n
 
 
 def push(wh_db_path: str = None, provinces=TARGET) -> int:
-    """residential: extract → jsonl → scp → ssh merge บน VPS."""
+    """residential: extract → jsonl.gz → scp → ssh merge บน VPS (gzip — jsonl ใหญ่)."""
     wh_db_path = wh_db_path or str(Path(__file__).parent.parent / "data" / "winner_history.db")
     subset = extract_subset(wh_db_path, provinces)
-    out = Path(__file__).parent.parent / "data" / "cgd_subset.jsonl"
-    with open(out, "w", encoding="utf-8") as f:
+    gz = Path(__file__).parent.parent / "data" / "cgd_subset.jsonl.gz"
+    with gzip.open(gz, "wt", encoding="utf-8") as f:
         for r in subset:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
-    print(f"extract {len(subset)} row ({','.join(provinces)}) → {out.name}")
+    print(f"extract {len(subset)} row ({','.join(provinces)}) → {gz.name} "
+          f"({gz.stat().st_size // (1024*1024)} MB)")
     if not shutil.which("scp"):
         print("❌ ไม่เจอ scp ใน PATH"); return 1
-    remote_jsonl = f"{REMOTE_DATA}/cgd_subset.jsonl"
+    remote_gz = f"{REMOTE_DATA}/cgd_subset.jsonl.gz"
     scp = ["scp", "-i", VPS_KEY, "-o", "StrictHostKeyChecking=accept-new",
-           "-o", "ConnectTimeout=15", str(out), f"{VPS_HOST}:{remote_jsonl}"]
+           "-o", "ConnectTimeout=15", str(gz), f"{VPS_HOST}:{remote_gz}"]
     r = subprocess.run(scp, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if r.returncode != 0:
         print(f"❌ scp ล้มเหลว (rc={r.returncode}): {r.stderr.strip()[:200]}"); return 2
-    print(f"✅ scp → {VPS_HOST}:{remote_jsonl}")
-    remote_cmd = (f"sudo -u bms BMS_DATA_DIR={REMOTE_DATA} {REMOTE_PY} "
-                  f"{REMOTE_APP}/scripts/cgd_sync_to_vps.py --merge-from {remote_jsonl}")
+    print(f"✅ scp → {VPS_HOST}:{remote_gz}")
+    remote_cmd = (f"chmod 644 {remote_gz}; sudo -u bms BMS_DATA_DIR={REMOTE_DATA} {REMOTE_PY} "
+                  f"{REMOTE_APP}/scripts/cgd_sync_to_vps.py --merge-from {remote_gz}")
     ssh = ["ssh", "-i", VPS_KEY, "-o", "StrictHostKeyChecking=accept-new",
            "-o", "ConnectTimeout=20", VPS_HOST, remote_cmd]
-    r2 = subprocess.run(ssh, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
+    r2 = subprocess.run(ssh, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600)
     print((r2.stdout or "").strip())
     if r2.returncode != 0:
         print(f"❌ ssh merge ล้มเหลว (rc={r2.returncode}): {r2.stderr.strip()[:200]}"); return 3

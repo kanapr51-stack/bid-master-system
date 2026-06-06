@@ -87,6 +87,10 @@ def row_from_rec(r, yr):
     win = _f(r.get("ราคาตกลงซื้อ/จ้าง"))
     valid = 1 if (win > 0 and mid > 0 and win <= mid * 1.5) else 0
     disc = round((mid - win) / mid * 100, 2) if (valid and mid > 0) else None
+    # วันที่ประกาศ ใน CGD ส่วนใหญ่เป็น '-' (ว่าง) → fallback วันที่เกิดรายการ (มีค่าจริง, ใช้วัด freshness)
+    adate = _s(r.get("วันที่ประกาศ"))
+    if not adate or adate == "-":
+        adate = _s(r.get("วันที่เกิดรายการ"))
     return (
         _s(r.get("รหัสโครงการ")),
         _s(r.get("ปีงบประมาณ")) or yr,
@@ -100,7 +104,7 @@ def row_from_rec(r, yr):
         _s(r.get("เลขนิติบุคคล")),
         int(_f(r.get("งบประมาณ(บาท)"))),
         int(mid), int(win), disc, valid,
-        _s(r.get("วันที่ประกาศ")),
+        adate,
         _s(r.get("เลขที่สัญญา")),
         _s(r.get("วันที่ลงนามสัญญา")),
         _s(r.get("สถานะโครงการ")),
@@ -125,13 +129,22 @@ def save_ckpt(done):
     json.dump(sorted(done), open(CKPT, "w", encoding="utf-8"), ensure_ascii=False)
 
 
+def load_rids():
+    """รวม RID ทุกปีจากทุกไฟล์ที่มี + 2568 จาก client"""
+    rids = {"2568": cg.EGP_CONTRACT_2568_RIDS}
+    for f in ["data/_cgd_rids_67_66.json", "data/_cgd_rids_58_65.json"]:
+        if os.path.exists(f):
+            rids.update(json.load(open(f, encoding="utf-8")))
+    return rids
+
+
 def fetch_all():
-    rids = json.load(open("data/_cgd_rids_67_66.json", encoding="utf-8"))
-    rids["2568"] = cg.EGP_CONTRACT_2568_RIDS
+    rids = load_rids()
     conn = init_db()
     done = load_ckpt()
     calls = 0
-    for yr in ["2568", "2567", "2566"]:
+    years = sorted(rids.keys(), reverse=True)   # 2568 → 2558
+    for yr in years:
         for prov in PROVS:
             for ri, rid in enumerate(rids[yr]):
                 key = f"{yr}|{prov}|{rid}"
@@ -139,10 +152,14 @@ def fetch_all():
                     continue
                 offset = 0
                 n = 0
+                errored = False
                 while calls < CALL_BUDGET:
                     res = cg._datastore_search(rid, filters={"จังหวัด": prov}, limit=PAGE, offset=offset)
                     calls += 1
-                    if not res or not res.get("records"):
+                    if res is None:           # HTTP error / quota หมด → อย่า mark done
+                        errored = True
+                        break
+                    if not res.get("records"):  # จบ resource ปกติ (empty)
                         break
                     recs = res["records"]
                     total = res.get("total", 0)
@@ -153,6 +170,11 @@ def fetch_all():
                     offset += PAGE
                     if offset >= total:
                         break
+                if errored:
+                    print(f"⚠️ {yr} {prov} file{ri+1}: API None (quota/error) — abort ไม่ mark done, resume ได้ | calls={calls}")
+                    save_ckpt(done)
+                    _print_stats(conn)
+                    return
                 if calls >= CALL_BUDGET:
                     print(f"⚠️ ชน CALL_BUDGET {CALL_BUDGET} — checkpoint+หยุด (รันใหม่เพื่อ resume)")
                     save_ckpt(done)
@@ -160,8 +182,8 @@ def fetch_all():
                     return
                 done.add(key)
                 save_ckpt(done)
-                print(f"{yr} {prov} file{ri+1}: +{n} | calls={calls} | total in DB={conn.execute('SELECT COUNT(*) FROM winner_history').fetchone()[0]:,}")
-    print(f"\n✅ เสร็จครบ | total calls: {calls}")
+                print(f"{yr} {prov} file{ri+1}: +{n} | calls={calls} | DB={conn.execute('SELECT COUNT(*) FROM winner_history').fetchone()[0]:,}")
+    print(f"\n✅ เสร็จครบทุกปี | total calls: {calls}")
     _print_stats(conn)
 
 

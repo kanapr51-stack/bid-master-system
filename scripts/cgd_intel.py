@@ -1,6 +1,7 @@
-"""cgd_intel.py — competitive intel จาก cgd_winners: ผู้ชนะงานคล้ายในพื้นที่ + ราคา/ส่วนลด.
+"""cgd_intel.py — competitor intel ระดับท้องถิ่นจาก cgd_winners: ใครคือคู่แข่งงานนี้ + เขาลดราคายังไง.
 descriptive เท่านั้น (ตลาดเป็นยังไง) ไม่ prescriptive (ไม่บอกราคาที่ควรยื่น).
-ใช้แนบการ์ด D0 (source_stage=followed_bid_open). intel = value-add — ห้ามทำ notification พัง."""
+พระเอก = โปรไฟล์คู่แข่งรายบริษัท (selection ไล่ระดับ ตำบล→อำเภอ→จังหวัด, stat จากประวัติบริษัท)
++ ภาพรวมเสริม + ป้ายความเชื่อมั่น. ใช้แนบการ์ด D0 (followed_bid_open). intel = value-add — ห้ามทำ notification พัง."""
 import json
 import sqlite3
 import sys
@@ -12,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 _KW_PATH = Path(__file__).parent.parent / "config" / "matching_preferences.json"
 
 # competitive-set: เฉพาะวิธีที่ "แข่งราคาจริง" — CGD 91% เป็นเฉพาะเจาะจง/ตกลงราคา (disc≈0)
-# ลาก median ลง 0 ทำให้ตัวเลขลวง. e-bidding ลดจริง ~14% (ดู project_cgd_market_insight).
+# ลาก median ลง 0 ทำให้ตัวเลขลวง. คู่แข่ง = บริษัทที่เล่นในสนามประมูลเท่านั้น (กัญจน์เน้น).
 COMPETITIVE_SET = (
     "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
     "ประกวดราคาด้วยวิธีการทางอิเล็กทรอนิกส์",
@@ -21,6 +22,11 @@ COMPETITIVE_SET = (
 )
 # 3 ปีงบล่าสุด — ราคาตลาดเก่าไม่สะท้อนปัจจุบัน (เงินเฟ้อ/ราคาวัสดุ)
 RECENT_FY = ("2566", "2567", "2568")
+
+MIN_COMPETITORS = 2     # distinct winners ขั้นต่ำก่อนหยุด fallback
+SHOW_N = 3              # จำนวนบริษัทที่โชว์
+MIN_GAMES_FOR_IQR = 3   # ต่ำกว่านี้โชว์แค่ median
+IQR_WIDE = 20           # p75-p25 เกินนี้ = ช่วงกว้าง (ลดความเชื่อมั่น)
 
 
 def _load_keywords() -> list:
@@ -38,40 +44,14 @@ def match_keywords(project_name: str, keywords: list = None) -> list:
     return out
 
 
-def query_similar(province: str, tokens: list, min_overlap: int, conn=None) -> list:
-    """งานใน cgd_winners ที่ province ตรง + win_price>0 + competitive-set + 3 ปีงบล่าสุด,
-    และชื่อมี ≥ min_overlap ของ tokens. candidate fetch = LIKE ANY token (ใช้ idx province)
-    → filter overlap ใน Python. ไม่มี work-type ก็ไม่คิวรี (intel ไม่ข้ามหมวด — ดู intel_lines).
-    conn inject ได้ (test); default = Sebastian_Customer_DB.get_connection()."""
-    if not province or not tokens:
-        return []
-    own = conn is None
-    if own:
-        from Sebastian_Customer_DB import get_connection
-        conn = get_connection()
+def resolve_tambon(project_name: str, dept_name: str = "") -> str:
+    """ตำบลของงาน D0 จาก name → dept (ฟรี ไม่เรียก API — บทเรียน INC-001: resolve API ใน
+    notify path ทำ WAF block). resolve ไม่ได้ → '' (intel_lines degrade เป็นจังหวัด)."""
     try:
-        fy_ph = ",".join("?" for _ in RECENT_FY)
-        pt_ph = ",".join("?" for _ in COMPETITIVE_SET)
-        like = " OR ".join("project_name LIKE ?" for _ in tokens)
-        params = [province, *RECENT_FY, *COMPETITIVE_SET] + [f"%{t}%" for t in tokens]
-        try:
-            cur = conn.execute(
-                "SELECT project_name, winner, win_price, discount_pct FROM cgd_winners "
-                f"WHERE province=? AND win_price>0 AND fiscal_year IN ({fy_ph}) "
-                f"AND proc_type IN ({pt_ph}) AND ({like})", params)
-            fetched = cur.fetchall()
-        except sqlite3.OperationalError:
-            return []   # ไม่มี table/column cgd_winners → graceful
-        out = []
-        for row in fetched:
-            pname, winner, win_price, disc = row[0], row[1], row[2], row[3]
-            if sum(1 for t in tokens if t in (pname or "")) >= min_overlap:
-                out.append({"project_name": pname, "winner": winner,
-                            "win_price": win_price, "discount_pct": disc})
-        return out
-    finally:
-        if own:
-            conn.close()
+        import job_matcher as jm
+        return jm.tambon_from_name(project_name) or jm.tambon_from_dept(dept_name)
+    except Exception:
+        return ""
 
 
 def _pct(values: list, p: float):
@@ -87,59 +67,132 @@ def _pct(values: list, p: float):
     return v[f] + (v[c] - v[f]) * (k - f)
 
 
-def compute_stats(rows: list) -> dict:
-    """สถิติตลาด: count, ส่วนลด median/p25/p75, ช่วงราคาชนะ p10/p90, ผู้ชนะบ่อย top3+count."""
-    discs = [r["discount_pct"] for r in rows if r.get("discount_pct") is not None]
-    prices = [r["win_price"] for r in rows if r.get("win_price")]
-    winners = Counter(r["winner"] for r in rows if r.get("winner"))
-    return {
-        "count": len(rows),
-        "discount_median": _pct(discs, 50),
-        "discount_p25": _pct(discs, 25),
-        "discount_p75": _pct(discs, 75),
-        "price_lo": _pct(prices, 10),
-        "price_hi": _pct(prices, 90),
-        "top_winners": winners.most_common(3),
-    }
+def _fetch(conn, province: str, tokens: list, *, subdistrict=None, district=None) -> list:
+    """ดึงงาน competitive ของ work-type (LIKE any token) ใน province + (เลือก subdistrict/district).
+    คืน list[dict] (รวม district/subdistrict). graceful [] ถ้าไม่มี table/column."""
+    fy_ph = ",".join("?" for _ in RECENT_FY)
+    pt_ph = ",".join("?" for _ in COMPETITIVE_SET)
+    like = " OR ".join("project_name LIKE ?" for _ in tokens)
+    where = ["province=?", "win_price>0", f"fiscal_year IN ({fy_ph})",
+             f"proc_type IN ({pt_ph})", f"({like})"]
+    params = [province, *RECENT_FY, *COMPETITIVE_SET] + [f"%{t}%" for t in tokens]
+    if subdistrict is not None:
+        where.append("subdistrict=?"); params.append(subdistrict)
+    if district is not None:
+        where.append("district=?"); params.append(district)
+    try:
+        cur = conn.execute(
+            "SELECT project_name, winner, win_price, discount_pct, district, subdistrict "
+            "FROM cgd_winners WHERE " + " AND ".join(where), params)
+        return [{"project_name": r[0], "winner": r[1], "win_price": r[2],
+                 "discount_pct": r[3], "district": r[4], "subdistrict": r[5]}
+                for r in cur.fetchall()]
+    except sqlite3.OperationalError:
+        return []   # ไม่มี table/column cgd_winners → graceful
 
 
-def intel_lines(province: str, project_name: str, min_count: int = 10, conn=None) -> list:
-    """บรรทัด 💡 competitive intel สำหรับแนบการ์ด D0. คืน [] ถ้าข้อมูลไม่พอ/error.
-    fallback: L1 จว.+work-type(≥2)+comp → L2 ≥1+comp → omit. ทุก level กรอง
-    competitive-set + 3 ปีล่าสุดแล้ว. ห่อ try/except — ห้าม throw.
+def _distinct_winners(rows: list) -> int:
+    return len({r["winner"] for r in rows if r.get("winner")})
 
-    ไม่มี fallback ข้ามหมวดงาน (เคยมี L3 จว.+comp ทุก work-type — ตัดออก 2026-06-07):
-    discount/ราคาข้ามหมวด (ถนน vs อาคาร vs ไฟฟ้า dynamics ต่างกัน) มี descriptive value ต่ำ
-    + misleading risk สูง → ยอมไม่โชว์ดีกว่าโชว์สิ่งที่ตีความผิดได้ (descriptive principle).
-    งานถนนพื้นที่เป้าหมายมี e-bidding มากพอถึง min_count (นพ.673/บก.439) → L1/L2 พอ.
 
-    TODO: ถ้า enrich proc_type ของงาน D0 ได้ (projects_seen มีแค่ announce_type) →
-    upgrade เป็น e-bidding-only เพื่อ precision สูงสุด (ตอนนี้ competitive-set กว้างพอ)."""
+def select_competitors(province: str, tokens: list, tambon: str, conn) -> tuple:
+    """เลือกคู่แข่งไล่ระดับ ตำบล→อำเภอ→จังหวัด. คืน (rows, scope_label, level).
+    อำเภอ derive จาก cgd_winners (DISTINCT district ของตำบล) — หลายอำเภอ=ambiguous→province.
+    competitive-set ถูกกรองใน _fetch แล้ว (เฉพาะเจาะจงไม่หลุด)."""
+    wt = tokens[0] if tokens else "งาน"
+    if tambon:
+        trows = _fetch(conn, province, tokens, subdistrict=tambon)
+        districts = {r["district"] for r in trows if r.get("district")}
+        if len(districts) == 1:
+            d = next(iter(districts))
+            if _distinct_winners(trows) >= MIN_COMPETITORS:
+                return trows, f"งาน{wt} ต.{tambon} อ.{d}", "tambon"
+            arows = _fetch(conn, province, tokens, district=d)   # widen → อำเภอ
+            if _distinct_winners(arows) >= MIN_COMPETITORS:
+                return arows, f"งาน{wt} อ.{d}", "amphoe"
+        # ambiguous (หลายอำเภอ) / ไม่มี / ไม่พอ → province
+    prows = _fetch(conn, province, tokens)
+    if _distinct_winners(prows) >= 1:
+        return prows, f"งาน{wt}ใน{province}", "province"
+    return [], "", "province"
+
+
+def _fetch_winner(conn, winner: str, tokens: list) -> list:
+    """ส่วนลดของ winner รายนั้น (work-type เดียวกัน, competitive, recent FY). คือประวัติบริษัท
+    (cgd_winners = subset target provinces อยู่แล้ว → ไม่ต้อง filter province)."""
+    fy_ph = ",".join("?" for _ in RECENT_FY)
+    pt_ph = ",".join("?" for _ in COMPETITIVE_SET)
+    like = " OR ".join("project_name LIKE ?" for _ in tokens)
+    params = [winner, *RECENT_FY, *COMPETITIVE_SET] + [f"%{t}%" for t in tokens]
+    try:
+        cur = conn.execute(
+            "SELECT discount_pct FROM cgd_winners WHERE winner=? AND win_price>0 "
+            f"AND fiscal_year IN ({fy_ph}) AND proc_type IN ({pt_ph}) AND ({like})", params)
+        return [r[0] for r in cur.fetchall()]
+    except sqlite3.OperationalError:
+        return []
+
+
+def company_stats(winner: str, tokens: list, conn) -> dict:
+    """median (+IQR ถ้า games≥MIN_GAMES_FOR_IQR) ส่วนลดจากประวัติบริษัท."""
+    rows = _fetch_winner(conn, winner, tokens)
+    discs = [d for d in rows if d is not None]
+    out = {"games": len(rows), "median": _pct(discs, 50), "p25": None, "p75": None}
+    if len(discs) >= MIN_GAMES_FOR_IQR:
+        out["p25"], out["p75"] = _pct(discs, 25), _pct(discs, 75)
+    return out
+
+
+def confidence_label(area_n: int, p25, p75) -> str:
+    """ป้ายความเชื่อมั่นทางสถิติ (จาก n + ความกว้าง IQR). คนละมิติกับ relevance (= header level)."""
+    wide = p25 is not None and p75 is not None and (p75 - p25) > IQR_WIDE
+    if area_n < 10:
+        return "🔴 ข้อมูลน้อย — โปรดใช้วิจารณญาณ"
+    if area_n < 30 or wide:
+        return "🟡 เชื่อมั่นปานกลาง — ข้อมูลน้อย/ช่วงกว้าง (ดูเป็นแนวโน้ม ไม่ใช่ราคาตายตัว)"
+    return "🟢 เชื่อถือได้ — ข้อมูลมากพอ"
+
+
+def intel_lines(province: str, project_name: str, dept_name: str = "", conn=None) -> list:
+    """บรรทัด 💡 competitor intel ระดับท้องถิ่นสำหรับการ์ด D0. คืน [] ถ้าไม่มีคู่แข่ง/error.
+    พระเอก=โปรไฟล์คู่แข่งรายบริษัท (selection ไล่ระดับ ตำบล→อำเภอ→จังหวัด, stat จากประวัติบริษัท)
+    + ภาพรวมเสริม + ป้ายความเชื่อมั่น. competitive-set กรองทั้ง selection+stat. ห่อ try/except."""
     try:
         tokens = match_keywords(project_name)
         if not tokens:
-            return []                                          # นิยาม "คล้าย" ไม่ได้ → omit
-        if len(tokens) >= 2:
-            rows = query_similar(province, tokens, 2, conn=conn)        # L1
-            if len(rows) < min_count:
-                rows = query_similar(province, tokens, 1, conn=conn)    # L2 widen
-        else:
-            rows = query_similar(province, tokens, 1, conn=conn)        # L2
-        if len(rows) < min_count:
-            return []                                                  # omit (กัน stat หลอก)
-        s = compute_stats(rows)
-        lines = [f"💡 ราคาอ้างอิง (งาน{tokens[0]}ใน{province})",
-                 f"📊 จาก {s['count']} งานย้อนหลัง"]
-        # discount: โชว์เฉพาะเมื่อมี signal จริง (p75>0). CGD ~80% ชนะที่ราคากลางพอดี (disc=0)
-        # → ถ้า p75=0 บรรทัด "0–0%" ไม่ให้ข้อมูล + misleading → omit (descriptive, ไม่ลวง)
-        if s["discount_p75"]:
-            lines.append(f"📉 ส่วนลดที่พบบ่อย {s['discount_p25']:.0f}–{s['discount_p75']:.0f}%")
-        if s["price_lo"] is not None:
-            lines.append(f"💵 ช่วงราคาชนะ {s['price_lo']/1e6:.1f}–{s['price_hi']/1e6:.1f} ลบ.")
-        if s["top_winners"]:
-            lines.append("🏆 ผู้ชนะบ่อย:")
-            for nm, cnt in s["top_winners"]:
-                lines.append(f"  • {(nm or '?')[:32]} ({cnt})")
-        return lines
+            return []
+        own = conn is None
+        if own:
+            from Sebastian_Customer_DB import get_connection
+            conn = get_connection()
+        try:
+            tambon = resolve_tambon(project_name, dept_name)
+            rows, scope, _level = select_competitors(province, tokens, tambon, conn)
+            if not rows:
+                return []
+            counts = Counter(r["winner"] for r in rows if r.get("winner"))
+            lines = [f"💡 ราคาอ้างอิง ({scope})", "🏆 คู่แข่งแถบนี้:"]
+            for winner, _ in counts.most_common(SHOW_N):
+                cs = company_stats(winner, tokens, conn)
+                nm = (winner or "?")[:28]
+                if cs["p25"] is not None:
+                    lines.append(f"  • {nm} · {cs['games']} งาน · ลด {cs['median']:.0f}% "
+                                 f"({cs['p25']:.0f}–{cs['p75']:.0f}%)")
+                elif cs["median"] is not None:
+                    lines.append(f"  • {nm} · {cs['games']} งาน · ลด {cs['median']:.0f}%")
+                else:
+                    lines.append(f"  • {nm} · {cs['games']} งาน")
+            discs = [r["discount_pct"] for r in rows if r.get("discount_pct") is not None]
+            area_n = len(rows)
+            p25, p75 = _pct(discs, 25), _pct(discs, 75)
+            if p75:
+                lines.append(f"📊 ภาพรวม {area_n} งาน · ลด {p25:.0f}–{p75:.0f}%")
+            else:
+                lines.append(f"📊 ภาพรวม {area_n} งาน")
+            lines.append(confidence_label(area_n, p25, p75))
+            return lines
+        finally:
+            if own:
+                conn.close()
     except Exception:
         return []

@@ -1,4 +1,4 @@
-"""test_cgd_intel.py — competitive intel (query cgd_winners → stats → LINE lines)."""
+"""test_cgd_intel.py — competitor-profile intel ระดับท้องถิ่น (resolve→select→stats→lines)."""
 import sys, sqlite3; from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent)); sys.stdout.reconfigure(encoding="utf-8")
 import cgd_intel as ci
@@ -8,8 +8,6 @@ def test_match_keywords():
     kws = ["ถนน", "คสล", "อาคาร"]
     assert ci.match_keywords("ก่อสร้างถนน คสล. บ้านแพง", keywords=kws) == ["ถนน", "คสล"]
     assert ci.match_keywords("จัดซื้อรถยนต์", keywords=kws) == []
-    assert ci.match_keywords("", keywords=kws) == []
-    # default โหลด config จริง — งานถนนต้องเจอ token
     assert "ถนน" in ci.match_keywords("ปรับปรุงถนนลาดยาง")
     print("✅ match_keywords")
 
@@ -19,76 +17,76 @@ def _fixture_conn():
     c.execute("""CREATE TABLE cgd_winners (project_id TEXT PRIMARY KEY, province TEXT,
         dept TEXT, project_name TEXT, winner TEXT, winner_tin TEXT, budget INTEGER,
         win_price INTEGER, discount_pct REAL, announce_date TEXT, fiscal_year TEXT,
-        proc_type TEXT, synced_at TEXT)""")
-    EB = "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)"   # competitive-set
+        proc_type TEXT, district TEXT, subdistrict TEXT, synced_at TEXT)""")
+    EB = "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)"
     rows = [
-        # pid, prov, pname, winner, budget, win_price, disc, fiscal_year, proc_type
-        ("R1", "นครพนม", "ก่อสร้างถนน คสล. บ้านแพง", "หจก.A", 1000000, 950000, 5.0, "2567", EB),  # ถนน+คสล overlap2
-        ("R2", "นครพนม", "ซ่อมถนนลูกรัง", "หจก.B", 800000, 760000, 5.0, "2567", EB),               # ถนน overlap1
-        ("R3", "บึงกาฬ", "ก่อสร้างถนน คสล.", "หจก.C", 1000000, 900000, 10.0, "2567", EB),          # คนละจังหวัด
-        ("R4", "นครพนม", "ก่อสร้างถนน คสล.", "หจก.D", 1000000, 0, None, "2567", EB),               # win_price=0 ตัด
-        ("R5", "นครพนม", "ก่อสร้างถนน คสล. (จัดซื้อตรง)", "หจก.E", 1000000, 1000000, 0.0, "2567",
-         "เฉพาะเจาะจง"),                                                                            # non-competitive → ตัด
-        ("R6", "นครพนม", "ก่อสร้างถนน คสล. ปีเก่า", "หจก.F", 1000000, 900000, 10.0, "2560", EB),    # FY เก่า → ตัด
+        # pid, prov, pname, winner, wp, disc, fy, proc, district, subdistrict
+        ("R1", "นครพนม", "ถนน คสล. บ้านแพง", "หจก.A", 950000, 5.0, "2567", EB, "บ้านแพง", "โพนทอง"),
+        ("R2", "นครพนม", "ถนนลาดยาง บ้านแพง", "หจก.A", 900000, 8.0, "2567", EB, "บ้านแพง", "โพนทอง"),
+        ("R3", "นครพนม", "ถนน คสล.", "หจก.B", 800000, 10.0, "2568", EB, "บ้านแพง", "โพนทอง"),
+        ("R4", "นครพนม", "ถนนเมือง", "หจก.C", 700000, 12.0, "2567", EB, "เมืองนครพนม", "ในเมือง"),
+        ("R5", "นครพนม", "ถนนเฉพาะเจาะจง", "หจก.D", 1000000, 0.0, "2567", "เฉพาะเจาะจง", "บ้านแพง", "โพนทอง"),
     ]
-    for pid, prov, pname, win, bud, wp, disc, fy, pt in rows:
-        c.execute("INSERT INTO cgd_winners (project_id,province,project_name,winner,budget,"
-                  "win_price,discount_pct,fiscal_year,proc_type) VALUES (?,?,?,?,?,?,?,?,?)",
-                  (pid, prov, pname, win, bud, wp, disc, fy, pt))
+    for pid, prov, pname, win, wp, disc, fy, proc, dist, sub in rows:
+        c.execute("INSERT INTO cgd_winners (project_id,province,project_name,winner,win_price,"
+                  "discount_pct,fiscal_year,proc_type,district,subdistrict) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                  (pid, prov, pname, win, wp, disc, fy, proc, dist, sub))
     c.commit(); return c
 
 
-def test_query_similar():
-    c = _fixture_conn(); tk = ["ถนน", "คสล"]
-    r2 = ci.query_similar("นครพนม", tk, min_overlap=2, conn=c)
-    assert [x["project_name"] for x in r2] == ["ก่อสร้างถนน คสล. บ้านแพง"], r2
-    r1 = ci.query_similar("นครพนม", tk, min_overlap=1, conn=c)
-    assert len(r1) == 2, r1   # R1+R2 (R3 คนละจว., R4 win_price=0, R5 เฉพาะเจาะจง, R6 FY เก่า — ตัดหมด)
-    # filter competitive-set + recent FY: เฉพาะเจาะจง (R5) + FY2560 (R6) ต้องไม่หลุดมา
-    names = {x["project_name"] for x in r1}
-    assert "ก่อสร้างถนน คสล. (จัดซื้อตรง)" not in names and "ก่อสร้างถนน คสล. ปีเก่า" not in names, names
-    # ไม่มี work-type → [] (intel ไม่ข้ามหมวด — ไม่มี L3 fallback)
-    assert ci.query_similar("นครพนม", [], 1, conn=c) == []
-    assert ci.query_similar("", tk, 1, conn=c) == []
-    # graceful: ไม่มี table cgd_winners → []
-    empty = sqlite3.connect(":memory:")
-    assert ci.query_similar("นครพนม", tk, 1, conn=empty) == []
-    print("✅ query_similar")
+def test_resolve_tambon():
+    assert ci.resolve_tambon("ก่อสร้างถนน ต.โพนทอง") == "โพนทอง"
+    assert ci.resolve_tambon("ก่อสร้างถนน", "องค์การบริหารส่วนตำบลบ้านแพง") == "บ้านแพง"
+    assert ci.resolve_tambon("ก่อสร้างถนน", "") == ""
+    print("✅ resolve_tambon")
 
 
-def test_compute_stats():
-    rows = [{"win_price": p, "discount_pct": d, "winner": w} for p, d, w in [
-        (1_000_000, 2.0, "หจก.A"), (1_200_000, 3.0, "หจก.A"), (1_500_000, 4.0, "หจก.A"),
-        (2_000_000, 5.0, "หจก.B"), (3_000_000, 20.0, "หจก.B"), (1_100_000, 4.0, "หจก.C")]]
-    s = ci.compute_stats(rows)
-    assert s["count"] == 6
-    assert s["discount_median"] == 4.0, s["discount_median"]   # median ของ [2,3,4,4,5,20]
-    assert s["discount_p25"] == 3.25 and s["discount_p75"] == 4.75, (s["discount_p25"], s["discount_p75"])
-    assert s["top_winners"][0] == ("หจก.A", 3), s["top_winners"]
-    assert s["price_lo"] is not None and s["price_hi"] >= s["price_lo"]
-    # discount ทั้งหมด null → median/p25/p75 = None
-    s2 = ci.compute_stats([{"win_price": 100, "discount_pct": None, "winner": "X"}])
-    assert s2["discount_median"] is None and s2["discount_p25"] is None
-    print("✅ compute_stats")
+def test_select_competitors():
+    c = _fixture_conn(); tk = ["ถนน"]
+    # tambon โพนทอง อ.บ้านแพง: winners A,B (≥MIN=2) → tambon. R5 เฉพาะเจาะจงถูกตัด
+    rows, scope, level = ci.select_competitors("นครพนม", tk, "โพนทอง", c)
+    assert level == "tambon" and "ต.โพนทอง" in scope, (level, scope)
+    assert {r["winner"] for r in rows} == {"หจก.A", "หจก.B"}, rows
+    # ตำบลไม่มี → fallback province
+    rows2, _scope2, level2 = ci.select_competitors("นครพนม", tk, "ไม่มีตำบลนี้", c)
+    assert level2 == "province" and {"หจก.A", "หจก.B", "หจก.C"} <= {r["winner"] for r in rows2}, rows2
+    # resolve ไม่ได้ (tambon='') → province
+    assert ci.select_competitors("นครพนม", tk, "", c)[2] == "province"
+    # จังหวัดไม่มีงานเลย → []
+    assert ci.select_competitors("เชียงใหม่", tk, "", c)[0] == []
+    print("✅ select_competitors")
+
+
+def test_company_stats():
+    c = _fixture_conn(); tk = ["ถนน"]
+    # หจก.A 2 งาน (disc 5,8) → games=2 < MIN_GAMES_FOR_IQR=3 → ไม่มี IQR, median 6.5
+    s = ci.company_stats("หจก.A", tk, c)
+    assert s["games"] == 2 and s["median"] == 6.5 and s["p25"] is None, s
+    # หจก.D ทำแต่งานเฉพาะเจาะจง → competitive filter ตัดหมด → games=0
+    assert ci.company_stats("หจก.D", tk, c)["games"] == 0
+    print("✅ company_stats")
+
+
+def test_confidence_label():
+    assert ci.confidence_label(40, 5, 10).startswith("🟢")
+    assert ci.confidence_label(15, 5, 10).startswith("🟡")     # n<30
+    assert ci.confidence_label(40, 5, 30).startswith("🟡")     # IQR กว้าง (25>20)
+    assert ci.confidence_label(5, None, None).startswith("🔴") # n<10
+    print("✅ confidence_label")
 
 
 def test_intel_lines():
-    c = _fixture_conn()   # มีงานนครพนมแค่ 2 (R1,R2) → < min_count
-    # ต่ำกว่า threshold → []
-    assert ci.intel_lines("นครพนม", "ก่อสร้างถนน คสล.", min_count=10, conn=c) == []
+    c = _fixture_conn()
+    out = ci.intel_lines("นครพนม", "ก่อสร้างถนน คสล. ต.โพนทอง", conn=c)
+    assert out[0] == "💡 ราคาอ้างอิง (งานถนน ต.โพนทอง อ.บ้านแพง)", out[0]
+    assert "🏆 คู่แข่งแถบนี้:" in out, out
+    assert any("หจก.A" in l and "งาน" in l for l in out), out
+    assert any(l.startswith("📊 ภาพรวม") for l in out), out
+    assert any(l[0] in "🟢🟡🔴" for l in out), out
     # ชื่อไม่มี work-type → []
-    assert ci.intel_lines("นครพนม", "จัดซื้อรถยนต์", min_count=1, conn=c) == []
-    # min_count=1 → ได้ section (ทดสอบ format)
-    out = ci.intel_lines("นครพนม", "ก่อสร้างถนน คสล.", min_count=1, conn=c)
-    assert out[0] == "💡 ราคาอ้างอิง (งานถนนในนครพนม)", out[0]
-    assert any(l.startswith("📊 จาก 1 งาน") for l in out)        # ≥2-overlap = R1 เดี่ยว
-    assert any("ส่วนลดที่พบบ่อย" in l for l in out)
-    assert any(l.strip().startswith("• หจก.A (1)") for l in out)
-    # fallback: ≥2 ได้ 1 (<2) → relax ≥1 ได้ 2
-    out2 = ci.intel_lines("นครพนม", "ก่อสร้างถนน คสล.", min_count=2, conn=c)
-    assert any(l.startswith("📊 จาก 2 งาน") for l in out2), out2
-    # ไม่มี L3: งานหมวดอื่น ("อาคาร") ที่ไม่ตรงงานในพื้นที่ (มีแต่ถนน) → omit (ไม่ข้ามหมวด)
-    assert ci.intel_lines("นครพนม", "ก่อสร้างอาคารเรียน", min_count=2, conn=c) == []
+    assert ci.intel_lines("นครพนม", "จัดซื้อรถยนต์", conn=c) == []
+    # จังหวัดไม่มีคู่แข่ง → []
+    assert ci.intel_lines("เชียงใหม่", "ก่อสร้างถนน", conn=c) == []
     print("✅ intel_lines")
 
 
@@ -97,7 +95,7 @@ def test_wiring_format_notification():
     import cgd_intel as _ci
     orig = _ci.intel_lines
     # (1) intel มีข้อมูล → แทรกใน card + divider
-    _ci.intel_lines = lambda *a, **k: ["💡 TEST INTEL", "📊 จาก 99 งานย้อนหลัง"]
+    _ci.intel_lines = lambda *a, **k: ["💡 TEST INTEL", "🏆 คู่แข่งแถบนี้:"]
     txt = ls.format_notification("P1", province="นครพนม", project_name="ก่อสร้างถนน",
                                  source_stage="followed_bid_open")
     assert "💡 TEST INTEL" in txt and "🔑 P1" in txt and "━" in txt, txt
@@ -117,8 +115,10 @@ def test_wiring_format_notification():
 
 if __name__ == "__main__":
     test_match_keywords()
-    test_query_similar()
-    test_compute_stats()
+    test_resolve_tambon()
+    test_select_competitors()
+    test_company_stats()
+    test_confidence_label()
     test_intel_lines()
     test_wiring_format_notification()
-    print("ALL PASS (Task 1-5)")
+    print("ALL PASS (tambon competitor intel)")

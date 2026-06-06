@@ -5,6 +5,9 @@ from cgd_freshness import parse_thai_date
 import datetime as dt
 assert parse_thai_date("9-เม.ย.-69") == dt.date(2026, 4, 9), parse_thai_date("9-เม.ย.-69")
 assert parse_thai_date("15-ม.ค.-68") == dt.date(2025, 1, 15)
+# real CGD format = space-separated 'วันที่เกิดรายการ'
+assert parse_thai_date("9 ก.ค. 68") == dt.date(2025, 7, 9), parse_thai_date("9 ก.ค. 68")
+assert parse_thai_date("30 ก.ย. 68") == dt.date(2025, 9, 30)
 assert parse_thai_date("-") is None
 assert parse_thai_date("") is None
 print("✅ PASS cgd_freshness parser")

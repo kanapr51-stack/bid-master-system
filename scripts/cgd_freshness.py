@@ -9,12 +9,14 @@ _TH_MONTH = {"ม.ค.": 1, "ก.พ.": 2, "มี.ค.": 3, "เม.ย.": 4, "
 
 
 def parse_thai_date(s: str):
-    """'9-เม.ย.-69' → date(2026,4,9). ปีเป็น พ.ศ. 2 หลัก (69=2569=2026 ค.ศ.). คืน None ถ้า parse ไม่ได้."""
+    """Thai short date → date. รองรับทั้งเว้นวรรค '9 ก.ค. 68' (วันที่เกิดรายการ, จริงใน CGD)
+    และขีด '9-เม.ย.-69'. ปีเป็น พ.ศ. 2 หลัก (69=2569=2026 ค.ศ.). คืน None ถ้า parse ไม่ได้."""
     s = (s or "").strip()
     if not s or s == "-":
         return None
+    parts = s.split("-") if "-" in s else s.split()
     try:
-        d, mon, yy = s.split("-")
+        d, mon, yy = parts
         m = _TH_MONTH.get(mon.strip())
         if not m:
             return None

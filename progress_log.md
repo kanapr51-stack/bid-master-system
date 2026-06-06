@@ -4516,3 +4516,26 @@ backup bms_customers_premig_*.db → migrate verify (84 ครบ, 3-col unique,
 ### Followup
 - **Phase 2 หยุดที่ 2.0 PROBE getProcureResult ก่อนเสมอ** (กัญจน์สั่ง — verify ก่อนสร้าง poller)
 - ปุ่ม ⭐ live แล้ว → ดูว่าครอบครัวเริ่มติดดาวไหม (North-Star signal จริง)
+
+---
+
+## งานที่ N+91: ⭐ Follow Phase 2 — winner + competitive intel (2026-06-06)
+
+### สถานะ: ✅ code+deploy เสร็จ (เหลือติดตั้ง timer = คำสั่ง root)
+
+### 2.0 PROBE ผ่าน
+getProcureResult ผ่าน AES-token บน VPS (ไม่ browser) → winner + bidders + priceProposal + priceAgree ครบ
+
+### Build (TDD, 10 test เขียว)
+- 2.1 bid_results table (v118) + record/get helpers
+- 2.3 format_winner (ผู้ชนะ+ราคา+คู่แข่ง+ส่วนลด%)
+- 2.2 Winner_Poller (poll D0 follows → getProcureResult → record + enqueue followed_winner + mark W0 + close; stale 60วันปิด) + line-sender winner-card branch (source_stage-gated, _winner_card_from_results dedupe คู่แข่ง)
+- 2.4 systemd bms-winner-poller.timer (6 ชม.)
+- fix: poll เฉพาะ D0 (ไม่ poll B0 = กันเปลือง API)
+
+### 🎯 North-Star signal แรก!
+ครอบครัวกด ⭐ แล้ว 4 งาน ภายใน ~30 นาทีหลัง onboarding (Mr.suvit 3, ณฐมน 1) — ทั้งหมด B0 ถนน/ผิวจราจร
+
+### Followup
+- ติดตั้ง timer: `scp deploy/systemd/bms-winner-poller.* root@VPS:/etc/systemd/system/ && systemctl enable --now bms-winner-poller.timer` (root)
+- รอ B0 follows เลื่อนเป็น D0 (full sweep) → ได้ "เปิดประมูล" → แล้ว winner poll

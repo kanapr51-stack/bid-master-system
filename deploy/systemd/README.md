@@ -16,16 +16,19 @@ scp deploy/systemd/bms-deadman.* root@VPS:/etc/systemd/system/
 systemctl daemon-reload && systemctl enable --now bms-deadman.timer
 ```
 
-## bms-province-discovery-full (P3 safety net + reconcile — 2026-05-31)
-**Daily** FULL re-paginate (00:30 UTC=07:30 ไทย) — ground truth กัน incremental พลาด + reconcile.
-discovery ปกติ (07/13/19) = incremental (หยุดเมื่อรู้หมด 2 หน้าติดกัน = margin กัน ties, ~95-98% req น้อยลง);
-full sweep = paginate ครบ TimeoutStartSec=1800 + **reconciliation**: ถ้าเจองานใหม่ announceDate เก่ากว่า 2 วัน
-= incremental น่าจะพลาด → Discord alert (พิสูจน์ ordering assumption ด้วย evidence ทุกวัน).
-หลัง 2-4 สัปดาห์พลาด 0 → ผ่อนกลับ weekly ได้. ใส่ --full บังคับ full ด้วยมือได้
+## bms-province-discovery-full-{nkp,bkg} (P3 safety net + reconcile)
+**Daily** FULL re-paginate per-province (ground truth กัน incremental พลาด + reconcile):
+- `full-nkp` (--moi 480000 นครพนม): 00:30 + 12:30 UTC = 07:30 + 19:30 ไทย
+- `full-bkg` (--moi 380000 บึงกาฬ): 01:30 + 13:30 UTC = 08:30 + 20:30 ไทย
+
+discovery ปกติ (07/13/19) = incremental (หยุดเมื่อรู้หมด 2 หน้าติดกัน, ~95-98% req น้อยลง);
+full sweep = paginate ครบ + reconciliation (เจองานใหม่ announceDate เก่า >2วัน = incremental พลาด → Discord alert).
+**แยกต่อจังหวัด** (ไม่ทำพร้อมกัน) เพื่อกัน rate-limit (2 จว.×~66หน้า > limit).
 ```
-scp deploy/systemd/bms-province-discovery-full.* root@VPS:/etc/systemd/system/
-systemctl daemon-reload && systemctl enable --now bms-province-discovery-full.timer
+scp deploy/systemd/bms-province-discovery-full-nkp.* deploy/systemd/bms-province-discovery-full-bkg.* root@VPS:/etc/systemd/system/
+systemctl daemon-reload && systemctl enable --now bms-province-discovery-full-nkp.timer bms-province-discovery-full-bkg.timer
 ```
+> ~~bms-province-discovery-full~~ (รวม 2 จว. รอบเดียว) = **RETIRED 2026-06-02** → แยกเป็น nkp/bkg ข้างบน (กัน rate-limit). ลบ unit แล้ว
 
 ## Live timers อื่นบน VPS (ยังไม่ version-controlled)
 bms-province-discovery (07/13/19, incremental) · bms-enrichment-worker (2 นาที) · bms-line-sender ·

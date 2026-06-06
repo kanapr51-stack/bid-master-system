@@ -206,7 +206,33 @@ def init_schema():
     _migrate_v116()
     _migrate_v117()
     _migrate_v118()
+    _migrate_v119()
     print(f"Schema v1.13 ready: {DB_PATH}")
+
+
+def _migrate_v119():
+    """cgd_winners — subset ผู้ชนะพื้นที่เป้าหมายจาก CGD (sync จาก residential node).
+    ป้อน feature competitive intel ใน LINE (ใครชนะงานคล้ายๆ ราคาเท่าไหร่). 1 row = 1 งาน.
+    sync จาก winner_history.db บนเครื่องบ้าน (CGD 403 จาก VPS) ผ่าน cgd_sync_to_vps.
+    """
+    with get_connection() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS cgd_winners (
+                project_id   TEXT PRIMARY KEY,
+                province     TEXT,
+                dept         TEXT,
+                project_name TEXT,
+                winner       TEXT,
+                winner_tin   TEXT,
+                budget       INTEGER,
+                win_price    INTEGER,
+                discount_pct REAL,
+                announce_date TEXT,
+                fiscal_year  TEXT,
+                synced_at    TEXT
+            )""")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_cgdw_province ON cgd_winners(province)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_cgdw_winner ON cgd_winners(winner)")
 
 
 def _migrate_v118():

@@ -4709,3 +4709,35 @@ brainstorming → spec `docs/superpowers/specs/2026-06-06-cgd-competitive-intel-
 ### ค้าง/ระวัง
 - `cgd_winners` ตอนนี้ **ยังไม่มี proc_type col** (verify แล้ว) → intel ปัจจุบันรวมทุกวิธี discount เลยเกาะ 0 (โชว์เฉพาะ p75>0 กันลวงไว้แล้ว ชั่วคราว)
 - uncommitted = runtime data + pre-existing untracked (`scripts/_audit_sent_jobs.py`, `dashboard/parents/.gitignore`) — ไม่ใช่งาน intel
+
+
+## งานที่ N+98: CGD Intel proc_type enhancement — โค้ด+test เสร็จ (2026-06-06)
+
+### สถานะ: 🚧 โค้ด/test เสร็จ commit 6b9d80e — รอ confirm deploy VPS (re-sync 617K)
+
+### สิ่งที่ทำ (TDD, executing-plans skill)
+- **migrate v120** (Sebastian_Customer_DB): `cgd_winners ADD COLUMN proc_type` (additive, idempotent)
+- **cgd_sync_to_vps**: extract_subset SELECT +proc_type, _MERGE_SQL +proc_type col, merge buf tuple +proc_type
+- **cgd_intel.query_similar**: filter `proc_type IN COMPETITIVE_SET` + `fiscal_year IN RECENT_FY(2566-68)`; tokens=[] → ตัด work-type (รองรับ L3)
+- **intel_lines**: L3 fallback (จว.+comp ตัด work-type) + honest header "งานแข่งราคา" + TODO comment (Task 5)
+- **tests**: fixture +proc_type/+fiscal_year, filter (R5 เฉพาะเจาะจง/R6 FY เก่า ต้องถูกตัด) + L3 assertion → test_cgd_intel 5/5 + test_cgd_sync PASS
+- spec amended (query_similar + L1→L4 + proc_type enhancement note)
+
+### Verify ข้อมูลจริง (winner_history residential)
+- target FY2566-68 win_price>0: e-bidding 3,462 งาน avg_disc **13.89%** vs เฉพาะเจาะจง 184,220 งาน avg_disc 1.14% → ยืนยัน decision frozen ตรงข้อมูล
+
+### Followup (รอ confirm)
+- DEPLOY VPS: git push → VPS git pull → `python scripts/cgd_sync_to_vps.py --push` (re-sync 617K, แตะ production) → verify discount เด้ง ~14-17%
+- row เก่าบน VPS proc_type=NULL → intel คืน [] จนกว่า re-sync เสร็จ (graceful)
+
+### ✅ DEPLOY สำเร็จ (discipline) — Sanity Check ALL PASS
+- pre-deploy: tests 5/5 + cgd_sync PASS · git push 2cf0c74..6b9d80e
+- VPS ff-only pull → HEAD 6b9d80e · backup `bms_customers_pre_v120_20260606_235800.db` (382M)
+- **เจอ + fix infra 2 จุด**: `.git/objects/01/` เป็น root:root (git op รันด้วย root ก่อนหน้า) + `/opt/bms/data/backups` root:root → chown -R bms:bms ทั้งคู่
+- re-sync: extract 617,357 +proc_type → gzip 37MB → scp → VPS merge (init_schema v120) idempotent
+- **Sanity**: rows 617,357 (เท่าเดิม) · proc_type populated 617,357 (100%, ไม่มี NULL) · intel_lines(นครพนม,ถนน) = **📉 ส่วนลดที่พบบ่อย 11–28%** (ก่อนหน้า suppress p75=0) → goal "discount เด้ง ~17%" สำเร็จ
+
+### สถานะ: ✅ เสร็จ (LIVE บน production)
+### Followup ที่เหลือ
+- Task 5 TODO (ในโค้ด): enrich proc_type ของงาน D0 → upgrade e-bidding-only matching (ตอนนี้ competitive-set กว้างพอ)
+- Agency Intelligence — defer (ChatGPT เสนอ, กัญจน์ยังไม่สั่ง)

@@ -296,6 +296,24 @@ def send_line_push(token: str, line_user_id: str, text: str) -> tuple[bool, str,
         return False, "retryable", str(e)[:200]
 
 
+def _deadline_from_db(project_id: str) -> tuple[str, str]:
+    """fallback อ่าน deadline ที่ resolve+เก็บไว้ใน project_locations (สำหรับงาน province_api
+    ที่ไม่มี pdf_url ให้ enrich — เช่น ⭐ bid-open followup). คืน (date 'YYYY-MM-DD', time 'HH:MM')."""
+    try:
+        from Sebastian_Customer_DB import get_connection
+        with get_connection() as conn:
+            r = conn.execute("SELECT deadline FROM project_locations WHERE project_id=?",
+                             (project_id,)).fetchone()
+        dl = (r[0] if r else "") or ""
+        if not dl:
+            return "", ""
+        date = dl[:10]
+        tm = dl[11:16] if len(dl) >= 16 else ""
+        return date, tm
+    except Exception:
+        return "", ""
+
+
 def send_line_flex(token: str, line_user_id: str, alt_text: str,
                    flex_contents: dict) -> tuple[bool, str, str]:
     """ส่ง flex message. Returns (success, error_type, error_msg). โครงเดียวกับ send_line_push"""
@@ -457,6 +475,14 @@ def main():
                 f"dl={penrich.get('pdf_download_ms')}ms parse={penrich.get('pdf_parse_ms')}ms")
         except Exception as e:
             log(f"  PDF enrich failed (non-fatal): {e}")
+
+    # Step 4c: fallback — province_api (ไม่มี pdf_url) อ่าน deadline ที่ resolve เก็บไว้ใน DB
+    # (เช่น ⭐ bid-open followup ที่ resolve ตอนเลื่อน B0→D0)
+    if not bid_submit_date:
+        d_date, d_time = _deadline_from_db(item["project_id"])
+        if d_date:
+            bid_submit_date, bid_submit_time = d_date, d_time
+            log(f"  deadline จาก DB: {bid_submit_date} {bid_submit_time}")
 
     # Step 5: format message
     text = format_notification(

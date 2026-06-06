@@ -449,9 +449,11 @@ def qualify_province_api(store, log) -> int:
 
 # ── Main ─────────────────────────────────────────────────────────────────────
 
-def notify_bid_open_followups(store, log) -> int:
+def notify_bid_open_followups(store, log, resolve_deadline=None) -> int:
     """⭐ B0→D0: งานที่ติดดาวตอนรับฟังฯ เลื่อนเป็นประมูลแล้ว → แจ้งเฉพาะคนติดดาว (targeted, ไม่ fan-out).
-    อ่าน stage ปัจจุบันจาก projects_seen (advance-stage ทำให้สะท้อน lifecycle จริง). ไม่ยิง eGP API.
+    อ่าน stage ปัจจุบันจาก projects_seen (advance-stage สะท้อน lifecycle จริง).
+    resolve deadline เฉพาะงานที่เลื่อนจริง (น้อยมาก = ปลอดภัย INC-001) → เก็บ project_locations.deadline
+    → line-sender อ่านตอนส่ง (การ์ดมี ⏰ ยื่นซอง). resolve_deadline inject ได้สำหรับ test.
     preview = shadow (log/Discord ไม่ mark, non-consuming) · live = enqueue + mark D0."""
     import job_followups as jf
     follows = store.get_active_follows()
@@ -468,6 +470,31 @@ def notify_bid_open_followups(store, log) -> int:
     due = jf.bid_open_followups([dict(f) for f in follows], cur)
     mode = os.environ.get("BMS_PROVINCE_NOTIFY_MODE", "preview")
     sent = 0
+    if not due:
+        return 0
+
+    # resolve deadline ครั้งเดียวต่อ pid (เฉพาะที่เลื่อนจริง = น้อย) → เก็บ project_locations.deadline
+    if resolve_deadline is None:
+        try:
+            from deadline_service import DeadlineService, make_deadline_provider
+            _dsvc = DeadlineService(make_deadline_provider())
+
+            def resolve_deadline(pid):
+                r = _dsvc.resolve(pid)
+                return str(r.deadline) if getattr(r, "deadline", None) else None
+        except Exception as e:
+            log(f"  followup deadline resolver unavailable ({e}) — แจ้งโดยไม่มี deadline")
+
+            def resolve_deadline(pid):
+                return None
+    for pid in {p for _, p in due}:
+        try:
+            dl = resolve_deadline(pid)
+            if dl:
+                with get_connection() as conn:
+                    conn.execute("UPDATE project_locations SET deadline=? WHERE project_id=?", (dl, pid))
+        except Exception as e:
+            log(f"  followup resolve {pid} fail (non-fatal): {e}")
     for cid, pid in due:
         m = meta.get(pid)
         if not m:

@@ -4566,3 +4566,33 @@ getProcureResult ผ่าน AES-token บน VPS (ไม่ browser) → winne
 ### ค้าง/ระวัง
 - git push hang เป็นช่วง (network ไป GitHub) → ใช้ background/retry (sandbox-disabled push ติด)
 - CGD 403 จาก VPS = ต้อง residential เสมอ
+
+---
+
+## งานที่ N+93: CGD Winner Refresh — Phase 1 Task 1.1–1.4 + GATE STOP (2026-06-06)
+
+### สถานะ: ⏸ pause ที่ GATE (Phase 1 modules เสร็จ+test เขียว, รอกัญจน์ตัดสิน premise ก่อน Phase 2)
+
+### ✅ Build (TDD inline, executing-plans, รันบนเครื่องบ้าน residential)
+- **Task 1.1** `cgd_resource_catalog.py` — `resource_id_for_year` (test เขียว) · commit `0fea88e`
+- **Task 1.2** `cgd_winner_refresh.py` — `refresh_year` incremental INSERT OR IGNORE + idempotent (test เขียว) · commit `413b7a9`. reuse `whb.COLS`/`row_from_rec` (schema 21-col ตรง `init_db` เป๊ะ), `cgd_winner` adaptive รับ field `ชื่อผู้ชนะ` จริงได้
+- **Task 1.3** `cgd_freshness.py` — `parse_thai_date` + report (test เขียว) · commit `77f0aab`
+- **fix** parser robust เว้นวรรค+ขีด · commit `827396c`
+
+### 🚪 GATE (Task 1.4) — probe จริง CKAN (เครื่องบ้าน, residential ผ่าน) → STOP
+3 mismatch ระหว่าง plan-assumption กับ data จริง:
+1. **FY2569 ไม่มี dataset** — org dga มีแค่ `egp-contact-2568` (count=1). `egp-contact-2569` → HTTP 404
+2. **โครงสร้าง = 1 package/ปี × 10 resources** (`2568-egp-contract-1..10`) ไม่ใช่ 1-package-หลายปี (plan สมมติผิด) → `resource_id_for_year` คืน rid เดียวไม่พอ ต้องคืน list 10 ตัว + map package ต่อปี
+3. **วันที่จริง = `วันที่เกิดรายการ` format `'9 ก.ค. 68'` (เว้นวรรค)** — `วันที่ประกาศ` ส่วนใหญ่ `'-'` (ว่าง). ⚠️ `row_from_rec` เก็บ announce_date จาก `วันที่ประกาศ` → freshness จาก DB ใช้ไม่ได้ ต้องเก็บ `วันที่เกิดรายการ`
+
+### 📏 CGD lag จริง = ~249 วัน
+- data ใหม่สุด `วันที่เกิดรายการ` = **2025-09-30** (= สิ้น FY2568) | today 2026-06-06 → lag 249 วัน
+- CGD publish แบบ **per-completed-fiscal-year** (ไม่ continuous) → ตอนนี้ FY2569 (ต.ค.2025–ก.ย.2026) ยังไม่ publish เลย
+- local winner_history.db = 617,357 งาน (2558–2568), 2568 = 61,517
+
+### ⛔ premise เปลี่ยน — ต้องให้กัญจน์ตัดสินก่อน Phase 2
+plan's goal "refresh ถึง FY2569 ให้สด" **ทำไม่ได้ตอนนี้** (CGD ยังไม่มี 2569 + ตามหลัง ~8 เดือน). CGD breadth ให้ "ผู้ชนะย้อนหลังครบ" (analytics/competitor history) แต่ **ไม่ใช่ winner สด** — winner สดต้องพึ่ง Follow Phase 2 (getProcureResult ตอน W0) เหมือนเดิม
+
+### Followup (รอ decision)
+- ถ้ากัญจน์เอา CGD breadth ต่อ: rework `cgd_resource_catalog` (package-per-year + list 10 rids) + `row_from_rec` เก็บ `วันที่เกิดรายการ` + poll egp-contact-2569 เมื่อ DGA publish (เช็คเป็นระยะ)
+- Phase 2 (sync subset → VPS) ยังไม่เริ่ม (ขึ้นกับ decision)

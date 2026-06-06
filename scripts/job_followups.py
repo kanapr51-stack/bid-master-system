@@ -11,3 +11,14 @@ def followers_due_for_stage(store, project_id: str, new_stage: str) -> list:
     return [f["customer_id"] for f in store.get_active_follows()
             if f["project_id"] == project_id
             and _STAGE_ORDER.get(f["last_stage_notified"] or "", -1) < nv]
+
+
+def bid_open_followups(active_follows: list, current_stage_by_pid: dict) -> list:
+    """[(customer_id, project_id)] ที่ติดดาวตอน B (รับฟังฯ) + งานเลื่อนเป็น D (ประมูล) แล้ว
+    + ยังไม่แจ้ง D. pure — caller (enrichment) สร้าง current_stage_by_pid จาก projects_seen."""
+    out = []
+    for f in active_follows:
+        if (f["last_stage_notified"] or "").startswith("B") \
+                and current_stage_by_pid.get(f["project_id"], "").startswith("D"):
+            out.append((f["customer_id"], f["project_id"]))
+    return out

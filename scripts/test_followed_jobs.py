@@ -36,4 +36,14 @@ assert jf.followers_due_for_stage(s, "P2", "D0") == []
 # งานที่ไม่มีคนติดตาม → ว่าง
 assert jf.followers_due_for_stage(s, "P_NONE", "D0") == []
 
+# ── bid_open_followups: ติดดาวตอน B0 + งานเลื่อนเป็น D แล้ว → ต้องแจ้ง ──
+follows = [
+    {"customer_id": 5, "project_id": "X1", "last_stage_notified": "B0"},  # B0 → D = แจ้ง
+    {"customer_id": 6, "project_id": "X2", "last_stage_notified": "D0"},  # แจ้ง D แล้ว = ข้าม
+    {"customer_id": 7, "project_id": "X3", "last_stage_notified": "B0"},  # ยังเป็น B0 = ข้าม
+]
+current = {"X1": "D0", "X2": "D0", "X3": "B0"}
+due = jf.bid_open_followups(follows, current)
+assert due == [(5, "X1")], due
+
 print("✅ PASS followed_jobs + job_followups")

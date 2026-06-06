@@ -261,20 +261,33 @@ def in_target_amphoe(rec: dict) -> bool:
     return any(a in hay for a in amphoes)
 
 
-def ingest(records: list[dict]) -> tuple[int, int]:
-    """insert ลง projects_seen (source='province_api'), คืน (new, skipped)"""
+def _stage_rank(announce_type: str) -> int:
+    """ลำดับ lifecycle ตามอักษรแรก: B(รับฟัง)=0 < D(ประมูล)=1 < W(ผู้ชนะ)=2. อื่น=-1."""
+    return {"B": 0, "D": 1, "W": 2}.get((announce_type or "")[:1], -1)
+
+
+def ingest(records: list[dict]) -> tuple[int, int, int]:
+    """upsert ลง projects_seen (source='province_api'), คืน (new, skipped, advanced).
+    advance-stage: เจอ project เดิมที่ stage สูงขึ้น (B0→D0→W0) → update announce_type +
+    stage_updated_at → projects_seen สะท้อน lifecycle ปัจจุบันจริง (ไม่ใช่แค่ stage แรกที่เห็น)."""
     conn = sqlite3.connect(_db_path())
-    new = skipped = 0
+    new = skipped = advanced = 0
     now = _utc_now()
     try:
         for r in records:
             if r["project_status"] == "R":   # ยกเลิก — ไม่เก็บ
                 continue
-            exists = conn.execute(
-                "SELECT 1 FROM projects_seen WHERE project_id=?", (r["project_id"],)
+            cur = conn.execute(
+                "SELECT announce_type FROM projects_seen WHERE project_id=?", (r["project_id"],)
             ).fetchone()
-            if exists:
-                skipped += 1
+            if cur:
+                if _stage_rank(r["announce_type"]) > _stage_rank(cur[0]):
+                    conn.execute(
+                        "UPDATE projects_seen SET announce_type=?, stage_updated_at=? WHERE project_id=?",
+                        (r["announce_type"], now, r["project_id"]))
+                    advanced += 1
+                else:
+                    skipped += 1
                 continue
             conn.execute("""
                 INSERT INTO projects_seen
@@ -291,7 +304,7 @@ def ingest(records: list[dict]) -> tuple[int, int]:
         conn.commit()
     finally:
         conn.close()
-    return new, skipped
+    return new, skipped, advanced
 
 
 def mark_discovery_confirmed(project_ids: list[str]) -> int:
@@ -427,8 +440,8 @@ def main():
     ingested = 0
     marked = 0
     if args.ingest and not args.dry_run:
-        ingested, skipped = ingest(chosen)
-        print(f"\n💾 ingest: +{ingested} ใหม่, {skipped} มีอยู่แล้ว (source=province_api)")
+        ingested, skipped, advanced = ingest(chosen)
+        print(f"\n💾 ingest: +{ingested} ใหม่, {advanced} เลื่อน stage, {skipped} เดิม (source=province_api)")
         # RSS Shadow Mode: ประทับตรา discovery_confirmed=1 ให้ทุก project ที่ scan เจอ (claim RSS-first)
         marked = mark_discovery_confirmed([r["project_id"] for r in active])
         print(f"🏷  ประทับตรา Discovery: {marked} งาน (claim RSS-first)")

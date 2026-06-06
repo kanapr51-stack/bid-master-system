@@ -203,7 +203,75 @@ def init_schema():
     _migrate_v113()
     _migrate_v114()
     _migrate_v115()
+    _migrate_v116()
+    _migrate_v117()
     print(f"Schema v1.13 ready: {DB_PATH}")
+
+
+def _migrate_v117():
+    """notification_queue dedup model: (customer,project) → (customer,project,source_stage).
+    BMS เปลี่ยนเป็น event-centric — งานเดียวแจ้งได้ 1 ครั้ง/stage (B0→D0→W0) แทน 1 ครั้ง/งาน.
+    business dedup อยู่ที่ followed_jobs.last_stage_notified · queue = delivery dedup ต่อ event.
+    idempotent (rebuild เฉพาะถ้ายังเป็น 2-col unique) + เก็บข้อมูลครบ (copy explicit column).
+    ⚠️ rebuild table — ต้อง backup DB ก่อน deploy (A+ guardrail).
+    """
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='notification_queue'"
+        ).fetchone()
+        if not row:
+            return  # table ยังไม่มี (จะถูกสร้างใหม่จาก CREATE — แต่ยังเป็น 2-col, รอบหน้า migrate)
+        ddl = " ".join(row[0].split())
+        if "source_stage)" in ddl:  # 3-col unique มีแล้ว → migrated
+            return
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(notification_queue)")]
+        if "source_stage" not in cols:
+            conn.execute("ALTER TABLE notification_queue ADD COLUMN source_stage TEXT")
+            cols.append("source_stage")
+        conn.execute("UPDATE notification_queue SET source_stage='legacy' "
+                     "WHERE source_stage IS NULL OR source_stage=''")
+        conn.execute("""
+            CREATE TABLE notification_queue_new (
+                id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+                customer_id           INTEGER NOT NULL REFERENCES customers(id),
+                project_id            TEXT NOT NULL,
+                status                TEXT NOT NULL DEFAULT 'pending',
+                retry_count           INTEGER NOT NULL DEFAULT 0,
+                next_retry_at         TEXT,
+                sending_at            TEXT,
+                worker_id             TEXT,
+                last_error            TEXT,
+                last_error_type       TEXT,
+                created_at            TEXT NOT NULL,
+                processed_at          TEXT,
+                province_snapshot     TEXT,
+                project_name_snapshot TEXT,
+                dept_name_snapshot    TEXT,
+                is_backfill           INTEGER NOT NULL DEFAULT 0,
+                source_stage          TEXT,
+                is_test_data          INTEGER NOT NULL DEFAULT 0,
+                UNIQUE(customer_id, project_id, source_stage)
+            )""")
+        ordered = ["id", "customer_id", "project_id", "status", "retry_count", "next_retry_at",
+                   "sending_at", "worker_id", "last_error", "last_error_type", "created_at",
+                   "processed_at", "province_snapshot", "project_name_snapshot",
+                   "dept_name_snapshot", "is_backfill", "source_stage", "is_test_data"]
+        common = ",".join(c for c in ordered if c in cols)
+        conn.execute(f"INSERT INTO notification_queue_new ({common}) SELECT {common} FROM notification_queue")
+        conn.execute("DROP TABLE notification_queue")
+        conn.execute("ALTER TABLE notification_queue_new RENAME TO notification_queue")
+
+
+def _migrate_v116():
+    """projects_seen.stage_updated_at — เวลาที่ announce_type เลื่อน stage (B0→D0→W0).
+    เก็บ lifecycle timing ไว้คำนวณ B0→D0 ใช้กี่วัน (โดยไม่ต้อง event-history เต็มรูป).
+    NULL = ยังไม่เคยเลื่อน (stage แรกที่เห็น = announce_date/first_seen_at).
+    """
+    with get_connection() as conn:
+        try:
+            conn.execute("ALTER TABLE projects_seen ADD COLUMN stage_updated_at TEXT")
+        except sqlite3.OperationalError:
+            pass  # already exists
 
 
 def _migrate_v115():
@@ -573,6 +641,23 @@ class SubscriptionStore:
             conn.execute(
                 "UPDATE followed_jobs SET status='closed' WHERE customer_id=? AND project_id=?",
                 (customer_id, project_id))
+
+    def enqueue_for_customer(self, customer_id: int, project: dict, is_test_data: int = 0) -> int:
+        """targeted enqueue ให้ลูกค้าคนเดียว (followup ⭐ — ไม่ fan-out ตาม subscription
+        เพราะคนติดดาวคือคนเดียวที่ควรได้). dedup ด้วย (customer,project,source_stage).
+        คืน 1 ถ้า insert ใหม่, 0 ถ้าซ้ำ stage เดิม."""
+        pid = project.get("project_id", "")
+        src = project.get("source_stage", "api_enriched") or "api_enriched"
+        with get_connection() as conn:
+            cur = conn.execute(
+                "INSERT OR IGNORE INTO notification_queue "
+                "(customer_id, project_id, status, created_at, province_snapshot, "
+                " project_name_snapshot, dept_name_snapshot, is_backfill, source_stage, is_test_data) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?)",
+                (customer_id, pid, "pending", _now(),
+                 project.get("province") or None, project.get("project_name") or None,
+                 project.get("dept_name") or None, 0, src, 1 if is_test_data else 0))
+        return 1 if cur.lastrowid else 0
 
     def enqueue_notifications(self, project: dict,
                                min_confidence: str = "high",

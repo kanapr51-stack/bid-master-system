@@ -216,6 +216,27 @@ def _record_feedback_by_project(user_id: str, action: str, project_id: str):
     return pname, project_id
 
 
+def _record_follow(user_id: str, project_id: str):
+    """⭐ ติดตามงาน → followed_jobs (upsert, stage จาก projects_seen). คืน (pname, pid) | None."""
+    with get_conn() as conn:
+        cust = conn.execute("SELECT id FROM customers WHERE line_user_id=?", (user_id,)).fetchone()
+        if not cust:
+            return None
+        cid = cust["id"]
+        row = conn.execute(
+            "SELECT announce_type, project_name FROM projects_seen WHERE project_id=?", (project_id,)
+        ).fetchone()
+        ann = (row["announce_type"] if row else "") or "D0"
+        pname = (row["project_name"] if row else "") or project_id
+        conn.execute("""
+            INSERT INTO followed_jobs
+              (customer_id, project_id, starred_at, starred_stage, last_stage_notified, status)
+            VALUES (?,?,?,?,?,'active')
+            ON CONFLICT(customer_id, project_id) DO UPDATE SET status='active'
+        """, (cid, project_id, _now(), ann, ann))
+    return pname, project_id
+
+
 # -- Feedback flex (postback): ตอบกลับรายละเอียดงาน + ปุ่มแก้ไข -----------------
 FB_FULL_LABEL = {
     "interested":   "\U0001f44d สนใจ/น่าติดตาม",
@@ -547,6 +568,19 @@ async def line_webhook(
                         "type": "flex", "altText": "แก้ไข feedback",
                         "contents": _choose_flex(project_id, d),
                     }])
+                continue
+
+            # ⭐ ติดตามงาน: star:<project_id>
+            if data.startswith("star:"):
+                project_id = data.split(":", 1)[1]
+                if project_id:
+                    res = _record_follow(user_id, project_id)
+                    if reply_token:
+                        pname = res[0] if res else project_id
+                        await reply_raw(reply_token, [{
+                            "type": "text",
+                            "text": f"⭐ ติดตามงานนี้แล้ว\n{pname[:50]}\nจะแจ้งเมื่อเปิดประมูล + ประกาศผู้ชนะ",
+                        }])
                 continue
 
             # เลือก feedback: fb:<action>:<project_id>

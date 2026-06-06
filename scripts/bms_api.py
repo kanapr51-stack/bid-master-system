@@ -283,6 +283,40 @@ def _detail_info_line(d: dict) -> str:
     return "  ".join(parts)
 
 
+def _follow_deadline(project_id: str) -> str:
+    """อ่าน deadline ที่ resolve ไว้ (project_locations) — แสดงในการ์ดยืนยันถ้ามี. คืน '' ถ้าไม่มี."""
+    try:
+        with get_conn() as conn:
+            row = conn.execute("SELECT deadline FROM project_locations WHERE project_id=?",
+                               (project_id,)).fetchone()
+        dl = (row["deadline"] if row else "") or ""
+        return dl[:16].replace("T", " ") if dl else ""
+    except Exception:
+        return ""
+
+
+def _follow_confirm_flex(project_id: str, d: dict, deadline: str = "") -> dict:
+    """bubble: ⭐ ติดตามงานนี้แล้ว + รายละเอียดงานที่ติดตาม + (deadline ถ้ามี) + สิ่งที่จะแจ้งต่อ."""
+    body = [
+        {"type": "text", "text": "⭐ ติดตามงานนี้แล้ว",
+         "weight": "bold", "size": "md", "color": "#1DB446"},
+        {"type": "separator", "margin": "md"},
+        {"type": "text", "text": "\U0001f3d7️ " + d.get("project_name", project_id)[:300],
+         "size": "sm", "margin": "md", "wrap": True, "weight": "bold"},
+        {"type": "text", "text": _detail_info_line(d),
+         "size": "xs", "color": "#888888", "margin": "sm", "wrap": True},
+    ]
+    if deadline:
+        body.append({"type": "text", "text": "⏰ ยื่นซอง " + deadline,
+                     "size": "xs", "color": "#D9534F", "margin": "sm", "wrap": True})
+    body.append({"type": "separator", "margin": "md"})
+    body.append({"type": "text", "text": "\U0001f514 จะแจ้งให้เมื่อ:\n  • งานเปิดประมูล\n  • ประกาศผู้ชนะ",
+                 "size": "xs", "color": "#555555", "margin": "md", "wrap": True})
+    body.append({"type": "text", "text": "\U0001f511 " + project_id,
+                 "size": "xxs", "color": "#aaaaaa", "margin": "md"})
+    return {"type": "bubble", "body": {"type": "box", "layout": "vertical", "contents": body}}
+
+
 def _confirm_flex(action: str, project_id: str, d: dict) -> dict:
     """bubble: ✅ บันทึกแล้ว + label + รายละเอียดงาน + ปุ่ม ✏️ แก้ไข feedback"""
     label = FB_FULL_LABEL.get(action, "")
@@ -574,12 +608,12 @@ async def line_webhook(
             if data.startswith("star:"):
                 project_id = data.split(":", 1)[1]
                 if project_id:
-                    res = _record_follow(user_id, project_id)
+                    _record_follow(user_id, project_id)
                     if reply_token:
-                        pname = res[0] if res else project_id
+                        d = _project_detail(project_id)
                         await reply_raw(reply_token, [{
-                            "type": "text",
-                            "text": f"⭐ ติดตามงานนี้แล้ว\n{pname[:50]}\nจะแจ้งเมื่อเปิดประมูล + ประกาศผู้ชนะ",
+                            "type": "flex", "altText": "⭐ ติดตามงานนี้แล้ว",
+                            "contents": _follow_confirm_flex(project_id, d, _follow_deadline(project_id)),
                         }])
                 continue
 

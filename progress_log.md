@@ -4652,3 +4652,28 @@ CGD breadth = ผู้ชนะ "ย้อนหลังครบ" (analytics/
 - **sync incremental** — `--push` ตอนนี้ extract ทั้ง 617K ทุกครั้ง. **ยังไม่ schedule รายวัน** (ถ้าจะ schedule ต้องทำ incremental เฉพาะ project_id ใหม่/ปีล่าสุด กัน re-push ก้อนใหญ่)
 - ป้อน feature competitive intel ใน line-sender (query `cgd_winners` by area + work-type) — ขั้นต่อไป
 - DB น้อยที่ใช้ของ winner สด ยังพึ่ง Follow Phase 2 (getProcureResult W0) เหมือนเดิม
+
+---
+
+## งานที่ N+96: Competitive Intel ใน D0 card — LIVE ✅ (2026-06-06)
+
+### สถานะ: ✅ เสร็จ+deploy+verify real data (brainstorm→spec→plan→TDD inline, reviewer=กัญจน์ 2 รอบ)
+
+### Flow (superpowers เต็มรูป)
+brainstorming → spec `docs/superpowers/specs/2026-06-06-cgd-competitive-intel-design.md` (reviewer approve 2 รอบ: ≥2-token fallback, **median+p25/p75 แทน avg**, descriptive-only, min_count=10) → writing-plans → executing-plans inline 5 task
+
+### Build (`scripts/cgd_intel.py` + wiring) — TDD เขียวทั้ง 6 test
+- `match_keywords` (reuse matching_preferences keywords) · `query_similar` (province+overlap, graceful missing-table) · `compute_stats` (median/p25/p75 + price p10/p90 + top_winners+count) · `intel_lines` (strict ≥2-token → relax ≥1 → silence <10) · `_pct` helper
+- wiring `Sebastian_LINE_Sender.format_notification` source_stage=`followed_bid_open` → แทรก intel ก่อน 🔑 (try/except — value-add ห้ามพัง)
+- commit `0135450`→`88f4e32` (+fix `bb08f9c`)
+
+### Deploy + verify real (VPS cgd_winners 617K)
+- push → VPS pull (ไม่มี migration). intel_lines("นครพนม","ก่อสร้างถนน คสล.") → 1,857 งาน, ผู้ชนะบ่อย หจก.รัตนชาติการโยธา (76)/ตั้งท่งเชียง (72) — **ทำงานจริง**
+
+### 🔍 Data finding สำคัญ (business insight)
+**discount=0 ใน 80% ของ records** (496,908/617,357). มีส่วนลด >0 แค่ 11%, >5% แค่ 4% → **ตลาดท้องถิ่นนครพนม/บึงกาฬ ส่วนใหญ่ชนะที่ราคากลางพอดี** (ไม่ค่อยตัดราคา — น่าจะ วิธีเฉพาะเจาะจง/คัดเลือก/ความสัมพันธ์ มากกว่าแข่งราคา)
+- → fix: โชว์บรรทัดส่วนลดเฉพาะ p75>0 (กัน "0–0%" ลวง ตาม principle reviewer). ถนน=โชว์ "0–1%", อาคาร=omit
+
+### Followup
+- median/p25/p75 ของ discount เกาะ 0 — ถ้าอยากให้ informative กว่า: อาจโชว์ "% งานที่มีส่วนลด" แทน (รอ reviewer ตัดสิน)
+- ช่วงราคา "0.0 ลบ." เมื่อ p10 เล็ก (งานหลักหมื่น) — แสดงบาทถ้า <0.1 ลบ. (future, minor)

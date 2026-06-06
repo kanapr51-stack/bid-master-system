@@ -301,6 +301,42 @@ def qualify_province_api(store, log) -> int:
     for c in cands:
         pid = c["project_id"]
 
+        # ── B0 รับฟังคำวิจารณ์ (early-radar): ไม่มี bidding deadline → ข้าม deadline gate ──
+        # match proc-aware (จ้าง=ก่อสร้าง / ซื้อ=วัสดุ BSC) + location จากชื่อ (ไม่ resolve API = INC-001 safe)
+        # อยู่ก่อน keyword-first (ซึ่งเช็คคำก่อสร้างอย่างเดียว → จะตัดงานซื้อวัสดุผิด)
+        if (c.get("announce_type") or "").upper().startswith("B"):
+            src_stage = "province_tor_review"
+            if jm is not None and mmode != "off":
+                decision, mdet = jm.match_job(c.get("project_name") or "", c["province"],
+                                              "", c.get("dept_name") or "", cfg=mcfg)
+                log(f"  match[tor:{mmode}] {pid}: {decision} ({mdet.get('reason')})")
+                if mmode == "enforce" and decision == "cut":
+                    with get_connection() as conn:
+                        conn.execute("UPDATE project_locations SET qualification_status='filtered_no_match' WHERE project_id=?", (pid,))
+                    stats["filtered"] += 1
+                    continue
+                if decision == "soft_include":
+                    src_stage = "province_tor_review_soft"; stats["soft"] += 1
+            if mode == "live":
+                n = store.enqueue_notifications({
+                    "project_id": pid, "province": c["province"], "announce_type": "B0",
+                    "budget": int(c.get("budget") or 0), "project_name": c.get("project_name") or "",
+                    "dept_name": c.get("dept_name") or "", "extraction_confidence": "high",
+                    "is_backfill": False, "source_stage": src_stage,
+                }, min_confidence="high")
+                status = "enqueued" if n > 0 else "enqueued_dedup"
+                if n > 0:
+                    stats["enqueued"] += 1
+                    log(f"  → ENQUEUED(รับฟังคำวิจารณ์) {pid} {c['province']} [{src_stage}]")
+            else:
+                _discord_safe(
+                    f"🔎 [PREVIEW] รับฟังคำวิจารณ์ (ยังไม่ส่ง LINE)\n"
+                    f"{pid} | {c['province']} | ฿{int(c.get('budget') or 0):,}\n{(c.get('project_name') or '')[:60]}")
+                status = "preview_held"; stats["preview"] += 1
+            with get_connection() as conn:
+                conn.execute("UPDATE project_locations SET qualification_status=? WHERE project_id=?", (status, pid))
+            continue
+
         # ── keyword-first pre-filter: กรองก่อน resolve (deadline PDF + tambon = 2 API call) ──
         if jm is not None and kwmode != "off":
             kw_pass, kw_reason = jm.passes_keyword(c.get("project_name") or "", mcfg)

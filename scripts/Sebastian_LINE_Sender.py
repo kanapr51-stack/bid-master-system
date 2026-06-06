@@ -223,7 +223,9 @@ def format_notification(project_id: str, province: str = "",
     # ชื่องาน (เต็ม) แสดงเป็น header ของการ์ด flex แล้ว — body ไม่ต้องซ้ำ
     lines = []
 
-    if is_backfill:
+    if source_stage.startswith("province_tor_review"):
+        lines.append("📋 รับฟังคำวิจารณ์ (ร่าง TOR — ยังไม่เปิดประมูล)")
+    elif is_backfill:
         lines.append("📦 โครงการที่ยังเปิดประมูลอยู่")
     else:
         lines.append("🔔 พบโครงการใหม่")
@@ -253,7 +255,7 @@ def format_notification(project_id: str, province: str = "",
 
     if source_stage == "rss_provisional":
         lines.append("📡 ข้อมูลเบื้องต้นจาก RSS")
-    elif source_stage == "province_soft_location":
+    elif source_stage in ("province_soft_location", "province_tor_review_soft"):
         lines.append("⚠️ พื้นที่ไม่ชัด — โปรดตรวจสอบว่าอยู่ในเขตที่รับงาน")
 
     return "\n".join(lines)

@@ -141,12 +141,14 @@ def _get(token: str, params: dict, path: str = "") -> dict | None:
         return None
 
 
-def count_d0(token: str, moi_id: str, budget_year: str) -> tuple[int, int]:
+def count_d0(token: str, moi_id: str, budget_year: str,
+             announce_type: str = ANNOUNCE_TYPE_D0) -> tuple[int, int]:
     """คืน (recordsTotal, totalPages) จาก sumProjectMoneyAndCount
+    announce_type: 2=D0(ประมูล, default) / 1=B0(รับฟังคำวิจารณ์)
     sentinel: (-1,-1)=token reject/error, (-2,-2)=rate limited"""
     try:
         body = _get(token, {
-            "budgetYear": budget_year, "moiId": moi_id, "announceType": ANNOUNCE_TYPE_D0,
+            "budgetYear": budget_year, "moiId": moi_id, "announceType": announce_type,
         }, path="/sumProjectMoneyAndCount")
     except RateLimited:
         return -2, -2
@@ -158,11 +160,12 @@ def count_d0(token: str, moi_id: str, budget_year: str) -> tuple[int, int]:
     return int(d.get("recordsTotal") or 0), int(d.get("totalPages") or 0)
 
 
-def fetch_page(token: str, moi_id: str, budget_year: str, page: int) -> list[dict]:
+def fetch_page(token: str, moi_id: str, budget_year: str, page: int,
+               announce_type: str = ANNOUNCE_TYPE_D0) -> list[dict]:
     # P1: ปล่อย RateLimited propagate (ไม่ swallow) → fetch_all_d0 abort ทันที กัน balloon
     body = _get(token, {
         "budgetYear": budget_year, "moiId": moi_id,
-        "announceType": ANNOUNCE_TYPE_D0, "page": str(page),
+        "announceType": announce_type, "page": str(page),
     })
     if not body:
         return []
@@ -171,17 +174,19 @@ def fetch_page(token: str, moi_id: str, budget_year: str, page: int) -> list[dic
 
 
 def fetch_all_d0(token: str, moi_id: str, budget_year: str,
-                 known_ids: set | None = None) -> list[dict]:
+                 known_ids: set | None = None,
+                 announce_type: str = ANNOUNCE_TYPE_D0) -> list[dict]:
     """ดึงหน้าของจังหวัด (เรียง announceDate ใหม่→เก่า).
+    announce_type: 2=D0(ประมูล, default) / 1=B0(รับฟังคำวิจารณ์)
     incremental (known_ids != None): หยุดเมื่อเจอหน้าที่ project_id รู้จักทั้งหมด
     (หน้าถัดไปเก่ากว่า = ingest แล้ว) → ลด req ~90% (P3 2026-05-31)"""
     province = PROVINCE_MOI.get(moi_id, moi_id)
     incremental = known_ids is not None
-    total, pages = count_d0(token, moi_id, budget_year)
+    total, pages = count_d0(token, moi_id, budget_year, announce_type)
     if total == -2:
         print(f"  ⚠️ {province}: rate limited — พัก {COOLDOWN_SEC}s แล้ว retry count")
         time.sleep(COOLDOWN_SEC)
-        total, pages = count_d0(token, moi_id, budget_year)
+        total, pages = count_d0(token, moi_id, budget_year, announce_type)
     if total == -2:
         # P1: abort ทันที (ไม่ return [] แล้วปล่อยจังหวัดถัดไปโดนซ้ำ) → main เขียน heartbeat+alert
         raise RateLimited(f"{province}: count rate-limited (ยังโดนหลัง retry)")
@@ -195,7 +200,7 @@ def fetch_all_d0(token: str, moi_id: str, budget_year: str,
     consec_known = 0
     for p in range(1, pages + 1):
         try:
-            items = fetch_page(token, moi_id, budget_year, p)
+            items = fetch_page(token, moi_id, budget_year, p, announce_type)
         except RateLimited:
             raise RateLimited(f"{province}: หน้า {p} rate-limited — abort (กัน balloon)")
         _rate_limit_tick()
@@ -208,7 +213,7 @@ def fetch_all_d0(token: str, moi_id: str, budget_year: str,
             print(f"    ⚠️ หน้า {p} ว่าง — พัก {COOLDOWN_SEC}s retry ({consec_empty}/{MAX_CONSEC_EMPTY})")
             time.sleep(COOLDOWN_SEC)
             try:
-                items = fetch_page(token, moi_id, budget_year, p)
+                items = fetch_page(token, moi_id, budget_year, p, announce_type)
             except RateLimited:
                 raise RateLimited(f"{province}: หน้า {p} retry rate-limited — abort")
             _rate_limit_tick()
@@ -337,6 +342,9 @@ def main():
                     help="read-only: อ่าน token จาก cache ไม่ harvest (สำหรับ VPS)")
     ap.add_argument("--full", action="store_true",
                     help="full re-paginate (ปิด incremental — สำหรับ backfill/safety sweep)")
+    ap.add_argument("--announce-types", default=os.environ.get("BMS_ANNOUNCE_TYPES", "2"),
+                    help="comma list: 2=D0(ประมูล) 1=B0(รับฟังคำวิจารณ์). เช่น '1,2' ดึงทั้งคู่ "
+                         "(default จาก env BMS_ANNOUNCE_TYPES)")
     args = ap.parse_args()
 
     # token ผ่าน Token Service — VPS เป็น worker (allow_refresh=False) อ่าน token ที่ Windows push มา
@@ -365,15 +373,20 @@ def main():
     elif args.full and known is not None:
         print(f"\U0001f504 full sweep — known {len(known)} (paginate ครบ + reconcile incremental)")
 
+    ann_types = [t.strip() for t in args.announce_types.split(",") if t.strip()]
+    _AT_LABEL = {"1": "B0/รับฟังคำวิจารณ์", "2": "D0/ประมูล"}
     all_recs = []
     partial_abort = False
     try:
-        for moi in moi_ids:
-            province = PROVINCE_MOI.get(moi, moi)
-            items = fetch_all_d0(token, moi, args.budget_year,
-                                 known_ids=(known if incremental else None))
-            recs = [normalize(it, province) for it in items]
-            all_recs.extend(recs)
+        for at in ann_types:   # B0 ก่อน D0 (ถ้ามีทั้งคู่) → early-stage ได้ tag ก่อนถ้า project ซ้ำ
+            print(f"\n📡 announceType={at} ({_AT_LABEL.get(at, at)})")
+            for moi in moi_ids:
+                province = PROVINCE_MOI.get(moi, moi)
+                items = fetch_all_d0(token, moi, args.budget_year,
+                                     known_ids=(known if incremental else None),
+                                     announce_type=at)
+                recs = [normalize(it, province) for it in items]
+                all_recs.extend(recs)
     except RateLimited as e:
         # A (fix 2026-06-02): rate-limit → ไม่ทิ้ง! เก็บ all_recs ที่ paginate ได้แล้ว →
         # reconcile/ingest ต่อด้วย partial (เดิม sys.exit(2) ทิ้งทั้งหมด = full sweep เสียเปล่า

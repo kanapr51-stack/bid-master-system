@@ -253,6 +253,17 @@ def format_notification(project_id: str, province: str = "",
     if report_date:
         lines.append(f"📅 ประกาศ {report_date}")
 
+    # competitive intel (ราคาอ้างอิงจากผู้ชนะงานคล้ายในพื้นที่) — เฉพาะการ์ดเปิดประมูล D0
+    if source_stage == "followed_bid_open":
+        try:
+            import cgd_intel
+            _il = cgd_intel.intel_lines(province, project_name)
+            if _il:
+                lines.append("━━━━━━━━━━━━━")
+                lines.extend(_il)
+        except Exception:
+            pass   # intel = value-add — ห้ามทำ D0 notification พัง
+
     lines.append(f"\n🔑 {project_id}")
 
     if source_stage == "rss_provisional":

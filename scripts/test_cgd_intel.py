@@ -79,9 +79,33 @@ def test_intel_lines():
     print("✅ intel_lines")
 
 
+def test_wiring_format_notification():
+    import Sebastian_LINE_Sender as ls
+    import cgd_intel as _ci
+    orig = _ci.intel_lines
+    # (1) intel มีข้อมูล → แทรกใน card + divider
+    _ci.intel_lines = lambda *a, **k: ["💡 TEST INTEL", "📊 จาก 99 งานย้อนหลัง"]
+    txt = ls.format_notification("P1", province="นครพนม", project_name="ก่อสร้างถนน",
+                                 source_stage="followed_bid_open")
+    assert "💡 TEST INTEL" in txt and "🔑 P1" in txt and "━" in txt, txt
+    # (2) intel throw → card ยังออก (value-add ห้ามพัง)
+    _ci.intel_lines = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom"))
+    txt2 = ls.format_notification("P1", province="นครพนม", project_name="ก่อสร้างถนน",
+                                  source_stage="followed_bid_open")
+    assert "🔑 P1" in txt2 and "💡" not in txt2, txt2
+    # (3) source_stage อื่น → ไม่แตะ intel
+    _ci.intel_lines = lambda *a, **k: ["💡 SHOULD NOT APPEAR"]
+    txt3 = ls.format_notification("P2", province="นครพนม", project_name="ก่อสร้างถนน",
+                                  source_stage="api_enriched")
+    assert "💡" not in txt3, txt3
+    _ci.intel_lines = orig
+    print("✅ wiring format_notification")
+
+
 if __name__ == "__main__":
     test_match_keywords()
     test_query_similar()
     test_compute_stats()
     test_intel_lines()
-    print("ALL PASS (Task 1-4)")
+    test_wiring_format_notification()
+    print("ALL PASS (Task 1-5)")

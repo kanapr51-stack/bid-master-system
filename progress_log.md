@@ -4539,3 +4539,30 @@ getProcureResult ผ่าน AES-token บน VPS (ไม่ browser) → winne
 ### Followup
 - ติดตั้ง timer: `scp deploy/systemd/bms-winner-poller.* root@VPS:/etc/systemd/system/ && systemctl enable --now bms-winner-poller.timer` (root)
 - รอ B0 follows เลื่อนเป็น D0 (full sweep) → ได้ "เปิดประมูล" → แล้ว winner poll
+
+---
+
+## งานที่ N+92: CHECKPOINT — ก่อนเปลี่ยน session (2026-06-06)
+
+### สถานะ: ⏸ pause เปลี่ยน session — resume แบบ Inline ที่ CGD Phase 1
+
+### ✅ เสร็จแล้ววันนี้ (deploy + live)
+- **⭐ Follow Phase 1** LIVE: ปุ่ม ⭐ติดตาม/❌ไม่เกี่ยว (แทน 👍🤔👎) + followed_jobs + B0→D0 แจ้ง "เปิดประมูล"+deadline + event-centric queue (migrate v117) + advance-stage ingest + stage_updated_at
+- **⭐ Follow Phase 2** LIVE: Winner_Poller (timer 6ชม. ติดตั้งแล้ว) + bid_results (v118) + การ์ดผู้ชนะ+คู่แข่ง+ราคา+ส่วนลด% via getProcureResult (AES-token, probe ผ่าน). poll เฉพาะ D0
+- **⭐ confirm reply** = การ์ดรายละเอียดงาน+deadline
+- **star_metrics readout** (pull-based)
+- **North-Star signal แรก!** ครอบครัว ⭐ 4 งาน (Mr.suvit 3, ณฐมน 1) — ทั้งหมด B0 ถนน/ผิวจราจร, รอเลื่อน D0
+- onboarding re-send 4 คน + intro ปุ่ม (24 ข้อความ). โควต้า LINE 90/300
+
+### 🎯 NEXT ACTION (session หน้า): execute CGD Winner Refresh — **Inline, Phase 1**
+- **plan:** `docs/superpowers/plans/2026-06-06-cgd-winner-refresh.md`
+- **spec:** `docs/superpowers/specs/2026-06-06-cgd-winner-refresh-design.md`
+- เริ่ม Task 1.1 → 1.4 (TDD inline + checkpoint ทุก task) ผ่าน skill `superpowers:executing-plans`
+- ⚠️ **รันบนเครื่องบ้าน (residential) ไม่ใช่ VPS** — CGD 403 จาก VPS (datacenter block, พิสูจน์แล้ว local ผ่าน)
+- ⚠️ **GATE ที่ Task 1.4:** ยืนยัน CGD มี dataset FY2569 ไหม + วัด lag จริง → ถ้าไม่มี/lag มาก หยุดคุยกัญจน์ก่อนทำ Phase 2
+- ขอบเขต: CGD breadth (ผู้ชนะ+ราคาชนะ ทุกงาน) เท่านั้น — depth (คู่แข่งแพ้) = Follow Phase 2 เดิม
+- hardware อนาคต: **mini PC x86** (ไม่ใช่ RPi — browser/Turnstile พิสูจน์บน x86)
+
+### ค้าง/ระวัง
+- git push hang เป็นช่วง (network ไป GitHub) → ใช้ background/retry (sandbox-disabled push ติด)
+- CGD 403 จาก VPS = ต้อง residential เสมอ

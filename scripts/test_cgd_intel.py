@@ -47,9 +47,8 @@ def test_query_similar():
     # filter competitive-set + recent FY: เฉพาะเจาะจง (R5) + FY2560 (R6) ต้องไม่หลุดมา
     names = {x["project_name"] for x in r1}
     assert "ก่อสร้างถนน คสล. (จัดซื้อตรง)" not in names and "ก่อสร้างถนน คสล. ปีเก่า" not in names, names
-    # tokens ว่าง (L3) → คืนงานแข่งราคาทั้งจว. (ไม่กรอง work-type) = R1+R2
-    rL3 = ci.query_similar("นครพนม", [], 0, conn=c)
-    assert len(rL3) == 2, rL3
+    # ไม่มี work-type → [] (intel ไม่ข้ามหมวด — ไม่มี L3 fallback)
+    assert ci.query_similar("นครพนม", [], 1, conn=c) == []
     assert ci.query_similar("", tk, 1, conn=c) == []
     # graceful: ไม่มี table cgd_winners → []
     empty = sqlite3.connect(":memory:")
@@ -88,11 +87,8 @@ def test_intel_lines():
     # fallback: ≥2 ได้ 1 (<2) → relax ≥1 ได้ 2
     out2 = ci.intel_lines("นครพนม", "ก่อสร้างถนน คสล.", min_count=2, conn=c)
     assert any(l.startswith("📊 จาก 2 งาน") for l in out2), out2
-    # L3: งานมี work-type token ("อาคาร") แต่ไม่ตรงงานในพื้นที่ (มีแต่ถนน) → ตัด work-type,
-    # คืนราคาตลาด "งานแข่งราคา" ทั้งจว. + header ต้องเป็นกลาง (ไม่ลวงว่าเป็นงานอาคาร)
-    out3 = ci.intel_lines("นครพนม", "ก่อสร้างอาคารเรียน", min_count=2, conn=c)
-    assert out3 and out3[0] == "💡 ราคาอ้างอิง (งานแข่งราคาในนครพนม)", out3
-    assert "อาคาร" not in out3[0], out3
+    # ไม่มี L3: งานหมวดอื่น ("อาคาร") ที่ไม่ตรงงานในพื้นที่ (มีแต่ถนน) → omit (ไม่ข้ามหมวด)
+    assert ci.intel_lines("นครพนม", "ก่อสร้างอาคารเรียน", min_count=2, conn=c) == []
     print("✅ intel_lines")
 
 

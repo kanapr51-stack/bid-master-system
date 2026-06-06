@@ -40,10 +40,10 @@ def match_keywords(project_name: str, keywords: list = None) -> list:
 
 def query_similar(province: str, tokens: list, min_overlap: int, conn=None) -> list:
     """งานใน cgd_winners ที่ province ตรง + win_price>0 + competitive-set + 3 ปีงบล่าสุด,
-    และชื่อมี ≥ min_overlap ของ tokens. ถ้า tokens ว่าง → ไม่กรอง work-type (L3 fallback:
-    ราคาตลาด 'งานแข่งราคา' ทั้งจังหวัด). candidate fetch ใช้ idx province → overlap ใน Python.
+    และชื่อมี ≥ min_overlap ของ tokens. candidate fetch = LIKE ANY token (ใช้ idx province)
+    → filter overlap ใน Python. ไม่มี work-type ก็ไม่คิวรี (intel ไม่ข้ามหมวด — ดู intel_lines).
     conn inject ได้ (test); default = Sebastian_Customer_DB.get_connection()."""
-    if not province:
+    if not province or not tokens:
         return []
     own = conn is None
     if own:
@@ -52,23 +52,20 @@ def query_similar(province: str, tokens: list, min_overlap: int, conn=None) -> l
     try:
         fy_ph = ",".join("?" for _ in RECENT_FY)
         pt_ph = ",".join("?" for _ in COMPETITIVE_SET)
-        where = ["province=?", "win_price>0",
-                 f"fiscal_year IN ({fy_ph})", f"proc_type IN ({pt_ph})"]
-        params = [province, *RECENT_FY, *COMPETITIVE_SET]
-        if tokens:
-            where.append("(" + " OR ".join("project_name LIKE ?" for _ in tokens) + ")")
-            params += [f"%{t}%" for t in tokens]
+        like = " OR ".join("project_name LIKE ?" for _ in tokens)
+        params = [province, *RECENT_FY, *COMPETITIVE_SET] + [f"%{t}%" for t in tokens]
         try:
             cur = conn.execute(
                 "SELECT project_name, winner, win_price, discount_pct FROM cgd_winners "
-                "WHERE " + " AND ".join(where), params)
+                f"WHERE province=? AND win_price>0 AND fiscal_year IN ({fy_ph}) "
+                f"AND proc_type IN ({pt_ph}) AND ({like})", params)
             fetched = cur.fetchall()
         except sqlite3.OperationalError:
             return []   # ไม่มี table/column cgd_winners → graceful
         out = []
         for row in fetched:
             pname, winner, win_price, disc = row[0], row[1], row[2], row[3]
-            if not tokens or sum(1 for t in tokens if t in (pname or "")) >= min_overlap:
+            if sum(1 for t in tokens if t in (pname or "")) >= min_overlap:
                 out.append({"project_name": pname, "winner": winner,
                             "win_price": win_price, "discount_pct": disc})
         return out
@@ -108,8 +105,13 @@ def compute_stats(rows: list) -> dict:
 
 def intel_lines(province: str, project_name: str, min_count: int = 10, conn=None) -> list:
     """บรรทัด 💡 competitive intel สำหรับแนบการ์ด D0. คืน [] ถ้าข้อมูลไม่พอ/error.
-    fallback hierarchy: L1 จว.+work-type(≥2)+comp → L2 ≥1+comp → L3 จว.+comp (ตัด work-type)
-    → L4 omit. ทุก level กรอง competitive-set + 3 ปีล่าสุดแล้ว. ห่อ try/except — ห้าม throw.
+    fallback: L1 จว.+work-type(≥2)+comp → L2 ≥1+comp → omit. ทุก level กรอง
+    competitive-set + 3 ปีล่าสุดแล้ว. ห่อ try/except — ห้าม throw.
+
+    ไม่มี fallback ข้ามหมวดงาน (เคยมี L3 จว.+comp ทุก work-type — ตัดออก 2026-06-07):
+    discount/ราคาข้ามหมวด (ถนน vs อาคาร vs ไฟฟ้า dynamics ต่างกัน) มี descriptive value ต่ำ
+    + misleading risk สูง → ยอมไม่โชว์ดีกว่าโชว์สิ่งที่ตีความผิดได้ (descriptive principle).
+    งานถนนพื้นที่เป้าหมายมี e-bidding มากพอถึง min_count (นพ.673/บก.439) → L1/L2 พอ.
 
     TODO: ถ้า enrich proc_type ของงาน D0 ได้ (projects_seen มีแค่ announce_type) →
     upgrade เป็น e-bidding-only เพื่อ precision สูงสุด (ตอนนี้ competitive-set กว้างพอ)."""
@@ -123,16 +125,10 @@ def intel_lines(province: str, project_name: str, min_count: int = 10, conn=None
                 rows = query_similar(province, tokens, 1, conn=conn)    # L2 widen
         else:
             rows = query_similar(province, tokens, 1, conn=conn)        # L2
-        work_type_scoped = True
         if len(rows) < min_count:
-            rows = query_similar(province, [], 0, conn=conn)            # L3 drop work-type
-            work_type_scoped = False
-        if len(rows) < min_count:
-            return []                                                  # L4 omit
+            return []                                                  # omit (กัน stat หลอก)
         s = compute_stats(rows)
-        # header ซื่อตรงกับ scope: L1/L2 = งาน{work-type}, L3 = งานแข่งราคา (ไม่ลวงว่าตรงหมวด)
-        scope = f"งาน{tokens[0]}" if work_type_scoped else "งานแข่งราคา"
-        lines = [f"💡 ราคาอ้างอิง ({scope}ใน{province})",
+        lines = [f"💡 ราคาอ้างอิง (งาน{tokens[0]}ใน{province})",
                  f"📊 จาก {s['count']} งานย้อนหลัง"]
         # discount: โชว์เฉพาะเมื่อมี signal จริง (p75>0). CGD ~80% ชนะที่ราคากลางพอดี (disc=0)
         # → ถ้า p75=0 บรรทัด "0–0%" ไม่ให้ข้อมูล + misleading → omit (descriptive, ไม่ลวง)

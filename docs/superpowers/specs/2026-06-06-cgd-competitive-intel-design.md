@@ -45,7 +45,7 @@ format_notification(source_stage="followed_bid_open")
 - `top_winners` = `Counter(winner).most_common(3)` → list[(name, count)]
 
 ### `intel_lines(province, project_name, min_count=10) -> list[str]`
-orchestrate + format. fallback hierarchy **L1→L4** (ทุก level กรอง competitive-set + RECENT_FY แล้ว):
+orchestrate + format. fallback **L1 → L2 → omit** (ทุก level กรอง competitive-set + RECENT_FY แล้ว):
 ```
 tokens = match_keywords(project_name)
 if not tokens: return []                       # นิยาม "คล้าย" ไม่ได้ → omit
@@ -55,14 +55,11 @@ if len(tokens) >= 2:
         rows = query_similar(province, tokens, min_overlap=1)   # L2
 else:
     rows = query_similar(province, tokens, min_overlap=1)   # L2 (token เดียว)
-work_type_scoped = True
-if len(rows) < min_count:                       # L3: ตัด work-type — ราคาตลาดงานแข่งราคาทั้งจว.
-    rows = query_similar(province, [], 0); work_type_scoped = False
-if len(rows) < min_count: return []            # L4 omit (กัน stat หลอก)
+if len(rows) < min_count: return []            # omit (กัน stat หลอก)
 stats = compute_stats(rows)
-return [format lines ...]                       # header สลับตาม work_type_scoped (ดูล่าง)
+return [format lines ...]
 ```
-**L3 header honesty:** เมื่อ L3 ทำงาน (ตัด work-type) header เปลี่ยนเป็น `งานแข่งราคาใน{province}` แทน `งาน{work-type}ใน...` — กันลวงว่าตัวเลขมาจากหมวดงานเดียวกัน
+**ไม่มี cross-category fallback (L3 ตัดออก 2026-06-07, consult ChatGPT รอบ 3):** เคยมี L3 = "จว.+competitive ทุก work-type" แต่ discount/ราคาข้ามหมวด (ถนน vs อาคาร vs ไฟฟ้า dynamics ต่างกัน) มี descriptive value ต่ำ + misleading risk สูง แม้ header จะบอกตรงๆ → **ยอมไม่โชว์ดีกว่าโชว์สิ่งที่ตีความผิดได้**. งานถนนพื้นที่เป้าหมายมี e-bidding มากพอถึง min_count (นพ.673/บก.439) → L1/L2 พอ ไม่ต้องพึ่ง L3
 
 **min_count=10:** ข้อมูล 617K rows / 2 จว. / 10 ปี → work-type ทั่วไปถึง 10 ง่าย. ถ้าไม่ถึง = ข้อมูลน้อยเกินจะเชื่อ avg → omit section ทั้งหมด (ไม่โชว์ครึ่งๆ)
 

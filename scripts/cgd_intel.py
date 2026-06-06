@@ -25,3 +25,35 @@ def match_keywords(project_name: str, keywords: list = None) -> list:
         if kw and kw in name and kw not in out:
             out.append(kw)
     return out
+
+
+def query_similar(province: str, tokens: list, min_overlap: int, conn=None) -> list:
+    """งานใน cgd_winners ที่ province ตรง + ชื่อมี ≥ min_overlap ของ tokens + win_price>0.
+    candidate fetch = LIKE ANY token (ใช้ idx province) → filter overlap ใน Python.
+    conn inject ได้ (test); default = Sebastian_Customer_DB.get_connection()."""
+    if not province or not tokens:
+        return []
+    own = conn is None
+    if own:
+        from Sebastian_Customer_DB import get_connection
+        conn = get_connection()
+    try:
+        like = " OR ".join("project_name LIKE ?" for _ in tokens)
+        params = [province] + [f"%{t}%" for t in tokens]
+        try:
+            cur = conn.execute(
+                f"SELECT project_name, winner, win_price, discount_pct FROM cgd_winners "
+                f"WHERE province=? AND win_price>0 AND ({like})", params)
+            fetched = cur.fetchall()
+        except sqlite3.OperationalError:
+            return []   # ไม่มี table cgd_winners → graceful
+        out = []
+        for row in fetched:
+            pname, winner, win_price, disc = row[0], row[1], row[2], row[3]
+            if sum(1 for t in tokens if t in (pname or "")) >= min_overlap:
+                out.append({"project_name": pname, "winner": winner,
+                            "win_price": win_price, "discount_pct": disc})
+        return out
+    finally:
+        if own:
+            conn.close()

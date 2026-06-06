@@ -33,8 +33,8 @@ REMOTE_APP = os.environ.get("BMS_REMOTE_APP", "/opt/bms/app")
 
 _MERGE_SQL = """INSERT OR REPLACE INTO cgd_winners
     (project_id, province, dept, project_name, winner, winner_tin, budget,
-     win_price, discount_pct, announce_date, fiscal_year, synced_at)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)"""
+     win_price, discount_pct, announce_date, fiscal_year, proc_type, synced_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"""
 _BATCH = 5000
 
 
@@ -48,7 +48,8 @@ def merge_winners(rows, now: str = None) -> int:
         for r in rows:
             buf.append((r["project_id"], r.get("province"), r.get("dept"), r.get("project_name"),
                         r.get("winner"), r.get("winner_tin"), r.get("budget"), r.get("win_price"),
-                        r.get("discount_pct"), r.get("announce_date"), r.get("fiscal_year"), now))
+                        r.get("discount_pct"), r.get("announce_date"), r.get("fiscal_year"),
+                        r.get("proc_type"), now))
             if len(buf) >= _BATCH:
                 conn.executemany(_MERGE_SQL, buf); n += len(buf); buf = []
         if buf:
@@ -70,7 +71,7 @@ def extract_subset(wh_db_path: str, provinces=TARGET) -> list[dict]:
     qs = ",".join("?" * len(provinces))
     rows = [dict(r) for r in conn.execute(
         f"SELECT project_id, province, dept, project_name, winner, winner_tin, budget, "
-        f"win_price, discount_pct, announce_date, fiscal_year FROM winner_history "
+        f"win_price, discount_pct, announce_date, fiscal_year, proc_type FROM winner_history "
         f"WHERE province IN ({qs})", provinces)]
     conn.close()
     return rows

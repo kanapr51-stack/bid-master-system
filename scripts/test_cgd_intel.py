@@ -18,17 +18,23 @@ def _fixture_conn():
     c = sqlite3.connect(":memory:")
     c.execute("""CREATE TABLE cgd_winners (project_id TEXT PRIMARY KEY, province TEXT,
         dept TEXT, project_name TEXT, winner TEXT, winner_tin TEXT, budget INTEGER,
-        win_price INTEGER, discount_pct REAL, announce_date TEXT, fiscal_year TEXT, synced_at TEXT)""")
+        win_price INTEGER, discount_pct REAL, announce_date TEXT, fiscal_year TEXT,
+        proc_type TEXT, synced_at TEXT)""")
+    EB = "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)"   # competitive-set
     rows = [
-        ("R1", "นครพนม", "ก่อสร้างถนน คสล. บ้านแพง", "หจก.A", 1000000, 950000, 5.0),  # ถนน+คสล overlap2
-        ("R2", "นครพนม", "ซ่อมถนนลูกรัง", "หจก.B", 800000, 760000, 5.0),               # ถนน overlap1
-        ("R3", "บึงกาฬ", "ก่อสร้างถนน คสล.", "หจก.C", 1000000, 900000, 10.0),          # คนละจังหวัด
-        ("R4", "นครพนม", "ก่อสร้างถนน คสล.", "หจก.D", 1000000, 0, None),               # win_price=0 ตัด
+        # pid, prov, pname, winner, budget, win_price, disc, fiscal_year, proc_type
+        ("R1", "นครพนม", "ก่อสร้างถนน คสล. บ้านแพง", "หจก.A", 1000000, 950000, 5.0, "2567", EB),  # ถนน+คสล overlap2
+        ("R2", "นครพนม", "ซ่อมถนนลูกรัง", "หจก.B", 800000, 760000, 5.0, "2567", EB),               # ถนน overlap1
+        ("R3", "บึงกาฬ", "ก่อสร้างถนน คสล.", "หจก.C", 1000000, 900000, 10.0, "2567", EB),          # คนละจังหวัด
+        ("R4", "นครพนม", "ก่อสร้างถนน คสล.", "หจก.D", 1000000, 0, None, "2567", EB),               # win_price=0 ตัด
+        ("R5", "นครพนม", "ก่อสร้างถนน คสล. (จัดซื้อตรง)", "หจก.E", 1000000, 1000000, 0.0, "2567",
+         "เฉพาะเจาะจง"),                                                                            # non-competitive → ตัด
+        ("R6", "นครพนม", "ก่อสร้างถนน คสล. ปีเก่า", "หจก.F", 1000000, 900000, 10.0, "2560", EB),    # FY เก่า → ตัด
     ]
-    for pid, prov, pname, win, bud, wp, disc in rows:
+    for pid, prov, pname, win, bud, wp, disc, fy, pt in rows:
         c.execute("INSERT INTO cgd_winners (project_id,province,project_name,winner,budget,"
-                  "win_price,discount_pct) VALUES (?,?,?,?,?,?,?)",
-                  (pid, prov, pname, win, bud, wp, disc))
+                  "win_price,discount_pct,fiscal_year,proc_type) VALUES (?,?,?,?,?,?,?,?,?)",
+                  (pid, prov, pname, win, bud, wp, disc, fy, pt))
     c.commit(); return c
 
 
@@ -37,7 +43,13 @@ def test_query_similar():
     r2 = ci.query_similar("นครพนม", tk, min_overlap=2, conn=c)
     assert [x["project_name"] for x in r2] == ["ก่อสร้างถนน คสล. บ้านแพง"], r2
     r1 = ci.query_similar("นครพนม", tk, min_overlap=1, conn=c)
-    assert len(r1) == 2, r1   # R1+R2 (R3 คนละจังหวัด, R4 win_price=0)
+    assert len(r1) == 2, r1   # R1+R2 (R3 คนละจว., R4 win_price=0, R5 เฉพาะเจาะจง, R6 FY เก่า — ตัดหมด)
+    # filter competitive-set + recent FY: เฉพาะเจาะจง (R5) + FY2560 (R6) ต้องไม่หลุดมา
+    names = {x["project_name"] for x in r1}
+    assert "ก่อสร้างถนน คสล. (จัดซื้อตรง)" not in names and "ก่อสร้างถนน คสล. ปีเก่า" not in names, names
+    # tokens ว่าง (L3) → คืนงานแข่งราคาทั้งจว. (ไม่กรอง work-type) = R1+R2
+    rL3 = ci.query_similar("นครพนม", [], 0, conn=c)
+    assert len(rL3) == 2, rL3
     assert ci.query_similar("", tk, 1, conn=c) == []
     # graceful: ไม่มี table cgd_winners → []
     empty = sqlite3.connect(":memory:")
@@ -76,6 +88,11 @@ def test_intel_lines():
     # fallback: ≥2 ได้ 1 (<2) → relax ≥1 ได้ 2
     out2 = ci.intel_lines("นครพนม", "ก่อสร้างถนน คสล.", min_count=2, conn=c)
     assert any(l.startswith("📊 จาก 2 งาน") for l in out2), out2
+    # L3: งานมี work-type token ("อาคาร") แต่ไม่ตรงงานในพื้นที่ (มีแต่ถนน) → ตัด work-type,
+    # คืนราคาตลาด "งานแข่งราคา" ทั้งจว. + header ต้องเป็นกลาง (ไม่ลวงว่าเป็นงานอาคาร)
+    out3 = ci.intel_lines("นครพนม", "ก่อสร้างอาคารเรียน", min_count=2, conn=c)
+    assert out3 and out3[0] == "💡 ราคาอ้างอิง (งานแข่งราคาในนครพนม)", out3
+    assert "อาคาร" not in out3[0], out3
     print("✅ intel_lines")
 
 

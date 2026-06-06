@@ -27,10 +27,16 @@ format_notification(source_stage="followed_bid_open")
 คืน work-type tokens ที่ปรากฏในชื่องาน โดย reuse vocab จาก `config/matching_preferences.json["keywords"]` (vocab เดียวกับ job_matcher — consistency). ไม่ซ้ำ token.
 
 ### `query_similar(province, tokens, min_overlap, conn=None) -> list[dict]`
-- query `cgd_winners` WHERE `province=?` AND ชื่อ LIKE ANY token (candidate fetch) AND `win_price > 0`
+- query `cgd_winners` WHERE `province=?` AND `win_price > 0` AND **`proc_type IN COMPETITIVE_SET`** AND **`fiscal_year IN RECENT_FY`** AND ชื่อ LIKE ANY token (candidate fetch)
 - filter ใน Python: เก็บ row ที่ชื่อมี **≥ min_overlap** ของ tokens (overlap count)
+- `tokens=[]` → ข้าม work-type filter ทั้งหมด (รองรับ L3 fallback ด้านล่าง)
 - คืน list[dict] (project_name, winner, win_price, discount_pct)
 - `conn` inject ได้ (test); default = `Sebastian_Customer_DB.get_connection()`
+
+**proc_type enhancement (v120, 2026-06-06):** CGD 91% เป็น "เฉพาะเจาะจง/ตกลงราคา" (ไม่แข่ง → disc≈0) ลาก median ลง 0 → ตัวเลขลวง. กรองเฉพาะ competitive-set จึงสะท้อน "สนามแข่งจริง". verify ข้อมูลจริง target FY2566-68: e-bidding 3,462 งาน avg_disc **13.89%** vs เฉพาะเจาะจง 184K งาน avg_disc 1.14%.
+- `COMPETITIVE_SET = ("ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)","ประกวดราคาด้วยวิธีการทางอิเล็กทรอนิกส์","สอบราคา","คัดเลือก")`
+- `RECENT_FY = ("2566","2567","2568")` — 3 ปีงบล่าสุด (ราคาเก่าไม่สะท้อนปัจจุบัน)
+- ต้อง migrate v120 (`cgd_winners ADD COLUMN proc_type`) + re-sync 617K (row เก่า proc_type=NULL ถูกกรองออกจนกว่า re-sync)
 
 ### `compute_stats(rows) -> dict`
 - `count` = len(rows)
@@ -39,20 +45,24 @@ format_notification(source_stage="followed_bid_open")
 - `top_winners` = `Counter(winner).most_common(3)` → list[(name, count)]
 
 ### `intel_lines(province, project_name, min_count=10) -> list[str]`
-orchestrate + format. logic:
+orchestrate + format. fallback hierarchy **L1→L4** (ทุก level กรอง competitive-set + RECENT_FY แล้ว):
 ```
 tokens = match_keywords(project_name)
 if not tokens: return []                       # นิยาม "คล้าย" ไม่ได้ → omit
 if len(tokens) >= 2:
-    rows = query_similar(province, tokens, min_overlap=2)
-    if len(rows) < min_count:                  # ข้อมูลไม่พอ → fallback กว้างขึ้น
-        rows = query_similar(province, tokens, min_overlap=1)
+    rows = query_similar(province, tokens, min_overlap=2)   # L1
+    if len(rows) < min_count:                              # ข้อมูลไม่พอ → กว้างขึ้น
+        rows = query_similar(province, tokens, min_overlap=1)   # L2
 else:
-    rows = query_similar(province, tokens, min_overlap=1)   # งานมี token เดียว
-if len(rows) < min_count: return []            # ยังไม่ถึง 10 → omit (กัน stat หลอก)
+    rows = query_similar(province, tokens, min_overlap=1)   # L2 (token เดียว)
+work_type_scoped = True
+if len(rows) < min_count:                       # L3: ตัด work-type — ราคาตลาดงานแข่งราคาทั้งจว.
+    rows = query_similar(province, [], 0); work_type_scoped = False
+if len(rows) < min_count: return []            # L4 omit (กัน stat หลอก)
 stats = compute_stats(rows)
-return [format lines ...]
+return [format lines ...]                       # header สลับตาม work_type_scoped (ดูล่าง)
 ```
+**L3 header honesty:** เมื่อ L3 ทำงาน (ตัด work-type) header เปลี่ยนเป็น `งานแข่งราคาใน{province}` แทน `งาน{work-type}ใน...` — กันลวงว่าตัวเลขมาจากหมวดงานเดียวกัน
 
 **min_count=10:** ข้อมูล 617K rows / 2 จว. / 10 ปี → work-type ทั่วไปถึง 10 ง่าย. ถ้าไม่ถึง = ข้อมูลน้อยเกินจะเชื่อ avg → omit section ทั้งหมด (ไม่โชว์ครึ่งๆ)
 

@@ -207,7 +207,20 @@ def init_schema():
     _migrate_v117()
     _migrate_v118()
     _migrate_v119()
+    _migrate_v120()
     print(f"Schema v1.13 ready: {DB_PATH}")
+
+
+def _migrate_v120():
+    """cgd_winners.proc_type — วิธีจัดซื้อ (เฉพาะเจาะจง/e-bidding/สอบราคา/คัดเลือก/...).
+    ให้ cgd_intel กรองเฉพาะ competitive-set — งานเฉพาะเจาะจง 91% disc≈0 ลาก median ลง 0
+    ทำให้ตัวเลขลวง. additive ALTER (idempotent). ต้อง re-sync 617K จาก residential หลัง migrate
+    (row เก่า proc_type=NULL → ถูกกรองออกจาก intel จนกว่าจะ re-sync)."""
+    with get_connection() as conn:
+        try:
+            conn.execute("ALTER TABLE cgd_winners ADD COLUMN proc_type TEXT")
+        except sqlite3.OperationalError:
+            pass  # already exists
 
 
 def _migrate_v119():

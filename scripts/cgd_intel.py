@@ -86,3 +86,34 @@ def compute_stats(rows: list) -> dict:
         "price_hi": _pct(prices, 90),
         "top_winners": winners.most_common(3),
     }
+
+
+def intel_lines(province: str, project_name: str, min_count: int = 10, conn=None) -> list:
+    """บรรทัด 💡 competitive intel สำหรับแนบการ์ด D0. คืน [] ถ้าข้อมูลไม่พอ/error.
+    strict (≥2 token) → relax (≥1) → silence (<min_count). ห่อ try/except — ห้าม throw."""
+    try:
+        tokens = match_keywords(project_name)
+        if not tokens:
+            return []
+        if len(tokens) >= 2:
+            rows = query_similar(province, tokens, 2, conn=conn)
+            if len(rows) < min_count:
+                rows = query_similar(province, tokens, 1, conn=conn)   # widen
+        else:
+            rows = query_similar(province, tokens, 1, conn=conn)
+        if len(rows) < min_count:
+            return []
+        s = compute_stats(rows)
+        lines = [f"💡 ราคาอ้างอิง (งาน{tokens[0]}ใน{province})",
+                 f"📊 จาก {s['count']} งานย้อนหลัง"]
+        if s["discount_p25"] is not None:
+            lines.append(f"📉 ส่วนลดที่พบบ่อย {s['discount_p25']:.0f}–{s['discount_p75']:.0f}%")
+        if s["price_lo"] is not None:
+            lines.append(f"💵 ช่วงราคาชนะ {s['price_lo']/1e6:.1f}–{s['price_hi']/1e6:.1f} ลบ.")
+        if s["top_winners"]:
+            lines.append("🏆 ผู้ชนะบ่อย:")
+            for nm, cnt in s["top_winners"]:
+                lines.append(f"  • {(nm or '?')[:32]} ({cnt})")
+        return lines
+    except Exception:
+        return []

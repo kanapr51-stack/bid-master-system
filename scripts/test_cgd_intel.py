@@ -61,8 +61,27 @@ def test_compute_stats():
     print("✅ compute_stats")
 
 
+def test_intel_lines():
+    c = _fixture_conn()   # มีงานนครพนมแค่ 2 (R1,R2) → < min_count
+    # ต่ำกว่า threshold → []
+    assert ci.intel_lines("นครพนม", "ก่อสร้างถนน คสล.", min_count=10, conn=c) == []
+    # ชื่อไม่มี work-type → []
+    assert ci.intel_lines("นครพนม", "จัดซื้อรถยนต์", min_count=1, conn=c) == []
+    # min_count=1 → ได้ section (ทดสอบ format)
+    out = ci.intel_lines("นครพนม", "ก่อสร้างถนน คสล.", min_count=1, conn=c)
+    assert out[0] == "💡 ราคาอ้างอิง (งานถนนในนครพนม)", out[0]
+    assert any(l.startswith("📊 จาก 1 งาน") for l in out)        # ≥2-overlap = R1 เดี่ยว
+    assert any("ส่วนลดที่พบบ่อย" in l for l in out)
+    assert any(l.strip().startswith("• หจก.A (1)") for l in out)
+    # fallback: ≥2 ได้ 1 (<2) → relax ≥1 ได้ 2
+    out2 = ci.intel_lines("นครพนม", "ก่อสร้างถนน คสล.", min_count=2, conn=c)
+    assert any(l.startswith("📊 จาก 2 งาน") for l in out2), out2
+    print("✅ intel_lines")
+
+
 if __name__ == "__main__":
     test_match_keywords()
     test_query_similar()
     test_compute_stats()
-    print("ALL PASS (Task 1-3)")
+    test_intel_lines()
+    print("ALL PASS (Task 1-4)")

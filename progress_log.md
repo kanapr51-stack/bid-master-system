@@ -4741,3 +4741,30 @@ brainstorming → spec `docs/superpowers/specs/2026-06-06-cgd-competitive-intel-
 ### Followup ที่เหลือ
 - Task 5 TODO (ในโค้ด): enrich proc_type ของงาน D0 → upgrade e-bidding-only matching (ตอนนี้ competitive-set กว้างพอ)
 - Agency Intelligence — defer (ChatGPT เสนอ, กัญจน์ยังไม่สั่ง)
+
+
+## งานที่ N+99: ตัด L3 cross-category fallback + product priority decision (2026-06-07)
+
+### สถานะ: ✅ เสร็จ (LIVE 15b8ed0) — ปรึกษา ChatGPT รอบ 3, agree 100%
+
+### Decision (report-to-chatgpt 2 รอบ)
+- **Q1 คัดเลือก:** เก็บไว้ + observe (median ทน 6% minority). ตัดทีหลังถ้า e-bidding sample พอ
+- **Q2 L3 fallback:** **ตัดทิ้ง** — discount/ราคาข้ามหมวด (ถนน 11-28% vs อาคาร 5-25% vs ไฟฟ้า) ตีความผิดได้ แม้ header บอกตรง. descriptive value ต่ำ + misleading risk สูง → omit ดีกว่า. งานพื้นที่จริงถึง min_count ผ่าน L1/L2 (ถนน 49, อาคาร 309)
+- **Q3 Agency Intelligence:** ChatGPT ถอนคำแนะนำ #1 → demote เป็น research item. "coverage 91% ≠ actionability" (เฉพาะเจาะจง = จ้างตรง user ประมูลไม่ได้). Competitive Intel มี evidence of value, Agency Intel มีแค่ hypothesis
+
+### Priority ใหม่ (lock)
+1. refine D0 competitive intel + **observe usage** (พ่ออ่าน intel จริงไหม, 4 ⭐ signal)
+2. observe ⭐ signal
+3. research Agency Intel (ถามพ่อ: "รู้ว่า อบต.X จ้างตรง A บ่อย → จะทำอะไร?") ก่อน build
+
+### หลักการที่ตกผลึก
+- **"คุณค่า = จำนวนการตัดสินใจที่ดีขึ้น ไม่ใช่จำนวนงานที่วิเคราะห์ได้"**
+- **"build จาก evidence ก่อน hypothesis"**
+
+### Code
+- intel_lines: L1→L2→omit (ลบ L3 + work_type_scoped) · query_similar: ลบ empty-tokens support · tests 5/5 PASS
+- verify VPS: ถนน 49→11-28%, อาคาร 309→5-25% (header ถูกต้องแต่ละหมวด)
+
+### Followup
+- ❌ อย่า build Agency Intel จนกว่าจะมี evidence จากพ่อ
+- observe: D0 intel engagement (ยังไม่มี instrumentation ว่าอ่านไหม)

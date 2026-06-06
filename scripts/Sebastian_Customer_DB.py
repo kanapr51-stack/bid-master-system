@@ -205,7 +205,28 @@ def init_schema():
     _migrate_v115()
     _migrate_v116()
     _migrate_v117()
+    _migrate_v118()
     print(f"Schema v1.13 ready: {DB_PATH}")
+
+
+def _migrate_v118():
+    """bid_results — competitive intel: ผู้ยื่นทุกราย + ราคา ต่องาน (จาก getProcureResult).
+    เก็บถาวรเพื่อวิเคราะห์งานครั้งหน้า (ใครแข่ง/ราคาเท่าไหร่/ลดกี่ %). 1 row = 1 bidder.
+    """
+    with get_connection() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS bid_results (
+                project_id     TEXT NOT NULL,
+                bidder_name    TEXT,
+                bidder_tin     TEXT,
+                price_proposal TEXT,
+                price_agree    TEXT,
+                is_winner      INTEGER NOT NULL DEFAULT 0,
+                is_sme         INTEGER NOT NULL DEFAULT 0,
+                result_flag    TEXT,
+                fetched_at     TEXT,
+                PRIMARY KEY (project_id, bidder_tin)
+            )""")
 
 
 def _migrate_v117():
@@ -641,6 +662,34 @@ class SubscriptionStore:
             conn.execute(
                 "UPDATE followed_jobs SET status='closed' WHERE customer_id=? AND project_id=?",
                 (customer_id, project_id))
+
+    def record_bid_results(self, project_id: str, bidders: list, fetched_at: str = None) -> int:
+        """เก็บ bidders (จาก get_procure_result) ลง bid_results — competitive intel.
+        bidder dict: receiveNameTh, receiveTin, priceProposal, priceAgree, resultFlag, is_sme.
+        is_winner = มี priceAgree. idempotent (INSERT OR REPLACE ตาม project+tin). คืนจำนวน row."""
+        fetched_at = fetched_at or _now()
+        n = 0
+        with get_connection() as conn:
+            for b in bidders:
+                pa = (b.get("priceAgree") or "").strip()
+                conn.execute("""
+                    INSERT OR REPLACE INTO bid_results
+                      (project_id, bidder_name, bidder_tin, price_proposal, price_agree,
+                       is_winner, is_sme, result_flag, fetched_at)
+                    VALUES (?,?,?,?,?,?,?,?,?)
+                """, (project_id, b.get("receiveNameTh") or "", b.get("receiveTin") or "",
+                      b.get("priceProposal") or "", pa,
+                      1 if pa else 0, 1 if b.get("is_sme") else 0,
+                      b.get("resultFlag") or "", fetched_at))
+                n += 1
+        return n
+
+    def get_bid_results(self, project_id: str) -> list[dict]:
+        with get_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            return [dict(r) for r in conn.execute(
+                "SELECT * FROM bid_results WHERE project_id=? ORDER BY is_winner DESC, price_agree",
+                (project_id,))]
 
     def enqueue_for_customer(self, customer_id: int, project: dict, is_test_data: int = 0) -> int:
         """targeted enqueue ให้ลูกค้าคนเดียว (followup ⭐ — ไม่ fan-out ตาม subscription

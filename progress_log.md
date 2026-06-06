@@ -4625,5 +4625,30 @@ CGD breadth = ผู้ชนะ "ย้อนหลังครบ" (analytics/
 - runbook `deploy/runbooks/cgd-refresh.md` (+ วิธีย้าย mini PC x86 ภายหลัง) · commit `4ac2f0a`
 
 ### Followup
-- **Phase 2 (sync subset → VPS)** ยังไม่ทำ — แตะ production VPS (migrate v119 cgd_winners + scp) → รอกัญจน์สั่งจังหวะ (action นอก project)
 - เฝ้าดู: DGA publish `egp-contact-2569` เมื่อไหร่ (task จะ ingest ให้อัตโนมัติ)
+
+---
+
+## งานที่ N+95: CGD Phase 2 — sync subset → VPS LIVE ✅ (2026-06-06)
+
+### สถานะ: ✅ เสร็จ+verify บน production VPS (กัญจน์สั่ง "ลุย Phase 2 ได้เลย")
+
+### Build (TDD)
+- `_migrate_v119` (Sebastian_Customer_DB): table `cgd_winners` (12 col + idx province/winner)
+- `cgd_sync_to_vps.py`: `extract_subset` (residential) · `merge_winners`/`get_cgd_winners` (VPS) · `main --push/--merge-from`
+- orchestration: extract→**gzip**→scp→ssh `--merge-from` (stream generator + executemany batch 5000, INSERT OR REPLACE idempotent, memory-safe สำหรับ 6 แสนแถว)
+- test `test_cgd_sync.py` เขียว (v119 schema + merge idempotent + extract filter)
+- commit `5cce561` (code) + `1978b22` (gzip/stream perf) + `f021d37` (runbook+gitignore)
+
+### Deploy production VPS (45.76.156.166)
+- backup `bms_customers_pre_v119_20260606_153741.db` → `git pull --ff-only` → migrate v119 (as user bms) ✅
+- **sync จริง:** extract 617,357 row → gzip **36MB** (จาก 361MB jsonl, บีบ 10×) → scp → VPS merge
+
+### Verify ปลายทาง
+- VPS `cgd_winners` = **617,357 rows** (นครพนม 390,108 / บึงกาฬ 227,249, ปี 2558–2568)
+- `get_cgd_winners('นครพนม')` = 390,108 + sample จริง (บ.เมดิเซน อิมเมจ, 4,996,000, ปี 2567)
+
+### Followup
+- **sync incremental** — `--push` ตอนนี้ extract ทั้ง 617K ทุกครั้ง. **ยังไม่ schedule รายวัน** (ถ้าจะ schedule ต้องทำ incremental เฉพาะ project_id ใหม่/ปีล่าสุด กัน re-push ก้อนใหญ่)
+- ป้อน feature competitive intel ใน line-sender (query `cgd_winners` by area + work-type) — ขั้นต่อไป
+- DB น้อยที่ใช้ของ winner สด ยังพึ่ง Follow Phase 2 (getProcureResult W0) เหมือนเดิม

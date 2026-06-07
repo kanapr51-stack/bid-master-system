@@ -55,5 +55,16 @@ with db.get_connection() as cc:
                    "WHERE project_id='LOC1'").fetchone()
 assert r[0] == "480400" and r[1] == "โพนทอง", r
 assert r[2] == "17.9" and r[3] == "104.2", r  # swapped: stored latitude=real lat(17.9), longitude=real lng(104.2)
+# regression: ไม่มีพิกัด (production เจอแน่) → ต้องไม่พัง, เก็บ "" (มีแต่ moi)
+with db.get_connection() as cc:
+    cc.execute("INSERT OR IGNORE INTO project_locations (project_id, location_confidence, "
+               "enrichment_status, created_at) VALUES ('LOC2','unknown','pending','2026-06-07')")
+db.save_project_location_raw("LOC2", district_moi_id="480400", moi_name="บ้านแพง",
+                             api_latitude=None, api_longitude=None)  # ไม่มีพิกัด
+with db.get_connection() as cc:
+    r2 = cc.execute("SELECT moi_name, latitude, longitude FROM project_locations "
+                    "WHERE project_id='LOC2'").fetchone()
+assert r2[0] == "บ้านแพง" and r2[1] == "" and r2[2] == "", r2  # graceful: lat/lng ว่าง ไม่ throw
+print("✅ save_project_location_raw (missing coords graceful)")
 print("✅ save_project_location_raw (swap)")
 print("✅ PASS cgd_sync (v119 + merge idempotent + extract_subset)")

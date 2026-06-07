@@ -404,6 +404,10 @@ def qualify_province_api(store, log) -> int:
                     save_project_location_raw(pid, _d.get("district_moi_id") or "",
                                               _d.get("moi_name") or "",
                                               _d.get("latitude") or "", _d.get("longitude") or "")
+                    # coverage log (ไม่ persist) — วัด % lat/lng & moi ในงานจริง (calibrate Phase B)
+                    log(f"  loc captured {pid} has_moi={bool(_d.get('moi_name'))} "
+                        f"has_district={bool(_d.get('district_moi_id'))} "
+                        f"has_coord={bool(_d.get('latitude'))}")
                 decision, mdet = jm.match_job(c.get("project_name") or "", c["province"], tb,
                                               c.get("dept_name") or "", cfg=mcfg)
                 log(f"  match[{mmode}] {pid}: {decision} (tb={tb or '-'}, {mdet.get('reason')})")

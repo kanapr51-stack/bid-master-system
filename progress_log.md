@@ -4872,3 +4872,25 @@ confidence ส่วนใหญ่ LOW/MEDIUM เพราะ tambon centroid �
 ### tests: test_price_prediction + test_winner_poller + test_winner_card + test_cgd_intel เขียวครบ
 ### SP2 (defer): calibration/error-analysis (3ปีเก่าไป/วัสดุแกว่ง) — รอ accuracy data จาก SP1
 ### หมายเหตุ: closed-loop ให้ผลจริงเมื่องาน followed เดินถึงประกาศผล (W0) — Winner_Poller รอบถัดไป
+
+
+## งานที่ N+104: Fix 2 bugs (province='' + lat/lng swap) — verify งานจริง (2026-06-07)
+
+### สถานะ: ✅ เสร็จ LIVE (commit 7288330) — systematic-debugging (root cause ก่อนแก้)
+
+### Trigger: ทดสอบ price prediction กับงานจริง 69059075454 (พ่อสนใจ) → การ์ดว่างเปล่า → debug
+
+### Bug 1 — province='' (intel หาคู่แข่งไม่เจอ)
+- Root: projects_seen.province ว่าง (extraction จากชื่องานล้มเหลว — ชื่อไม่มี 'จังหวัด') ทั้งที่ project_locations.province_name='บึงกาฬ' มีอยู่ (MOI authoritative)
+- Fix: `backfill_provinces_from_locations()` (existing) + `_save_success` เขียน province กลับ projects_seen เมื่อว่าง (schema sanction). backfill VPS = 4 rows
+
+### Bug 2 — lat/lng swap (resolve amphoe ผิด → เชียงของ 8,018 กม.)
+- Root: eGP API mislabel (field latitude=longitude จริง). get_procurement_detail ส่งต่อ mislabel → consumer 2 ตัวจัดการต่างกัน (_enrich ไม่แก้/save_raw swap) = inconsistent
+- Fix ที่ source: get_procurement_detail swap read ที่เดียว + เอา swap ออกจาก save_project_location_raw (กัน double) + migrate v123 normalize row เก่า (latitude>90→สลับ)
+
+### Verify (งาน 69059075454)
+- province ='' → 'บึงกาฬ' · lat/lng 104/17.9 → 17.9/104 (ถูก) · resolve amphoe เชียงของ → **บึงโขงหลง**
+- การ์ด D0: "💡 ราคาอ้างอิง (งานถนน ต.โพธิ์หมากแข้ง อ.บึงโขงหลง)" + คู่แข่ง + คาดราคา 0.7–0.8 ลบ. ✅ ระดับตำบลครบ
+
+### tests: 5 suite เขียวครบ (cgd_sync v123+backfill · price_prediction · cgd_intel · winner_poller · winner_card)
+### บทเรียน: 1 source mislabel → compensate ที่ boundary ที่เดียว (ไม่ให้ consumer แก้เอง) · authoritative data (MOI) ควร backfill canonical field

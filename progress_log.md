@@ -4833,3 +4833,21 @@ confidence ส่วนใหญ่ LOW/MEDIUM เพราะ tambon centroid �
 - **Phase B (defer):** TIS-1099 รหัส→ชื่ออำเภอ → promote MOI ชั้น 1 (district_moi_id เก็บไว้แล้วตั้งแต่ A)
 - calibrate confidence (เก็บ 100-200 งาน) → ค่อยโชว์ UI
 - backfill งาน active ที่เหลือ (รอบนี้ limit 20, มี 11 candidate ทำครบแล้ว)
+
+
+## งานที่ N+102: Observe location resolution_source — ตั้ง weekly auto (2026-06-07)
+
+### สถานะ: ✅ เสร็จ LIVE (commit 52f18ad + systemd timer บน VPS)
+
+### ทำอะไร
+- `scripts/observe_location_resolution.py` — สรุป distribution ของ source/confidence (compute สด จาก resolve_location, read-only, ไม่ยิง API). `summarize()` TDD 2 test PASS
+- systemd `bms-observe-location.{service,timer}` บน VPS — รายสัปดาห์ (อาทิตย์ 20:30 ไทย) ส่ง Discord. verify service run = success + Discord ส่งสำเร็จ
+
+### 📊 Baseline (2026-06-07, intel universe 9 งาน)
+- **resolve อำเภอได้ 8/9 (88.9%)** — เดิม 0% (degrade จังหวัดหมด)
+- ชั้นที่ใช้: **geo=8** · province=1 → lat/lng ทำงานเกือบทั้งหมด → **ยืนยัน defer Phase B/TIS ถูก**
+- confidence: MEDIUM=4 · LOW=5 (ไม่มี HIGH — tambon centroid ห่างพิกัดงานหลาย km, แต่อำเภอถูก) → ต้อง calibrate threshold ก่อนโชว์ UI
+
+### ใช้ตัดสินใจ
+- Phase B (MOI/TIS): trigger = ถ้า geo coverage ตก หรือ lat/lng resolve อำเภอผิด (ตอนนี้ยังไม่เจอ) หรือต้องการ confidence HIGH authoritative
+- calibrate: เก็บ trend ราย wk → ปรับ distance threshold (LOW เยอะแต่อำเภอถูก = threshold strict ไป)

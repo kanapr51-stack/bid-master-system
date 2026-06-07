@@ -4793,3 +4793,16 @@ brainstorming → spec `docs/superpowers/specs/2026-06-06-cgd-competitive-intel-
 2. VPS pull --ff-only + backup pre-v121
 3. `python scripts/cgd_sync_to_vps.py --push` (re-sync 617K +district+subdistrict)
 4. sanity: rows 617K, district populated, intel ตัวอย่าง (competitor-profile + ป้ายสี)
+
+
+### ✅ DEPLOY สำเร็จ (push transient hang หายเอง — bg push จบ exit 0)
+- remote=local=VPS = 0738d6c · VPS backup pre-v121 (406M) · re-sync 617,357 rows
+- Sanity: rows 617,357 · district 100% · subdistrict 91% · intel competitor-profile ทำงาน (n+median+IQR+ป้ายสี)
+- บทเรียน: git push timeout (124) แต่จริงๆ สำเร็จ server-side (client ค้างก่อนยืนยัน) → เช็คด้วย ls-remote ไม่ใช่ exit code ของ push
+
+### ⚠️ LIMITATION พบหลัง deploy: ตำบลซ้ำอำเภอ → degrade จังหวัด
+- "ต.โพนทอง" ซ้ำ 2 อำเภอ (บ้านแพง+เรณูนคร) → ambiguous → fallback province (ตาม design)
+- **แต่โพนทอง/บ้านแพง = พื้นที่ครอบครัวพอดี** → เคสนี้ไม่ได้ value ระดับท้องถิ่น ทั้งที่ dept 'อบต.บ้านแพง' บอกอำเภอชัด
+- Follow-up เสนอ: disambiguate อำเภอจาก dept_name (อบต.X/เทศบาลตำบล X) → กัน ambiguity เคสสำคัญ. รอกัญจน์ตัดสิน (ไม่ขยาย scope เอง)
+
+### สถานะ: ✅ Tasks 1-8 เสร็จ LIVE (feature ทำงาน, degrade ปลอดภัย)

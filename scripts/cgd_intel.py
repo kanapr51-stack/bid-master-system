@@ -201,15 +201,15 @@ def confidence_label(area_n: int, p25, p75) -> str:
     return "🟢 เชื่อถือได้ — ข้อมูลมากพอ"
 
 
-def intel_lines(province: str, project_name: str, dept_name: str = "",
-                project_id: str = "", conn=None) -> list:
-    """บรรทัด 💡 competitor intel ระดับท้องถิ่นสำหรับการ์ด D0. คืน [] ถ้าไม่มีคู่แข่ง/error.
-    resolve (ตำบล,อำเภอ) runtime (geo→tambon→dept→province) → select → format. พระเอก=โปรไฟล์
-    คู่แข่งรายบริษัท + ภาพรวม + ป้ายความเชื่อมั่น. competitive-set กรองทั้ง selection+stat. ห่อ try/except."""
+def intel_context(province: str, project_name: str, dept_name: str = "",
+                  project_id: str = "", conn=None) -> dict | None:
+    """resolve+select+stats ครั้งเดียว → คืน context: lines (competitor block) + stats
+    (area_p25/area_p75/top_name/top_median) สำหรับ price prediction reuse (DRY).
+    None ถ้าไม่มี work-type/คู่แข่ง/error. ห่อ try/except — ห้าม throw."""
     try:
         tokens = match_keywords(project_name)
         if not tokens:
-            return []
+            return None
         own = conn is None
         if own:
             from Sebastian_Customer_DB import get_connection
@@ -221,10 +221,16 @@ def intel_lines(province: str, project_name: str, dept_name: str = "",
                       project_id, loc["source"], loc["location_confidence"], loc["amphoe"])
             rows, scope, _level = select_competitors(province, tokens, loc["tambon"], loc["amphoe"], conn)
             if not rows:
-                return []
+                return None
             counts = Counter(r["winner"] for r in rows if r.get("winner"))
+            discs = [r["discount_pct"] for r in rows if r.get("discount_pct") is not None]
+            area_n = len(rows)
+            p25, p75 = _pct(discs, 25), _pct(discs, 75)
+            top3 = counts.most_common(SHOW_N)
+            top_name = top3[0][0] if top3 else None
+            top_median = company_stats(top_name, tokens, conn)["median"] if top_name else None
             lines = [f"💡 ราคาอ้างอิง ({scope})", "🏆 คู่แข่งแถบนี้:"]
-            for winner, _ in counts.most_common(SHOW_N):
+            for winner, _ in top3:
                 cs = company_stats(winner, tokens, conn)
                 nm = (winner or "?")[:28]
                 if cs["p25"] is not None:
@@ -234,17 +240,23 @@ def intel_lines(province: str, project_name: str, dept_name: str = "",
                     lines.append(f"  • {nm} · {cs['games']} งาน · ลด {cs['median']:.0f}%")
                 else:
                     lines.append(f"  • {nm} · {cs['games']} งาน")
-            discs = [r["discount_pct"] for r in rows if r.get("discount_pct") is not None]
-            area_n = len(rows)
-            p25, p75 = _pct(discs, 25), _pct(discs, 75)
             if p75:
-                lines.append(f"📊 ภาพรวม {area_n} งาน · ลด {p25:.0f}–{p75:.0f}%")
+                lines.append(f"📊 ภาพรวม: งานแบบนี้แถบนี้มักลด {p25:.0f}–{p75:.0f}% จากราคากลาง")
             else:
                 lines.append(f"📊 ภาพรวม {area_n} งาน")
             lines.append(confidence_label(area_n, p25, p75))
-            return lines
+            return {"lines": lines, "scope": scope, "rows": rows,
+                    "area_p25": p25, "area_p75": p75,
+                    "top_name": top_name, "top_median": top_median}
         finally:
             if own:
                 conn.close()
     except Exception:
-        return []
+        return None
+
+
+def intel_lines(province: str, project_name: str, dept_name: str = "",
+                project_id: str = "", conn=None) -> list:
+    """บรรทัด 💡 competitor intel (back-compat wrapper รอบ intel_context). [] ถ้าไม่มีข้อมูล."""
+    ctx = intel_context(province, project_name, dept_name, project_id, conn)
+    return ctx["lines"] if ctx else []

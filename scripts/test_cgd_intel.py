@@ -103,6 +103,17 @@ def test_golden_amphoe_better_than_province():
     print("✅ golden: amphoe ตัดคู่แข่งคนละอำเภอ (โพนทองเรณู) ออกจริง")
 
 
+def test_intel_context():
+    c = _fixture_conn()
+    ctx = ci.intel_context("นครพนม", "ก่อสร้างถนน คสล. ต.โพนทอง", "", "", c)
+    assert ctx is not None and ctx["lines"][0].startswith("💡 ราคาอ้างอิง"), ctx
+    assert ctx["area_p25"] is not None and ctx["area_p75"] is not None, ctx
+    assert ctx["top_name"] and ctx["top_median"] is not None, ctx
+    assert ci.intel_context("นครพนม", "จัดซื้อรถยนต์", "", "", c) is None   # ไม่มี work-type
+    assert ci.intel_context("เชียงใหม่", "ก่อสร้างถนน", "", "", c) is None   # ไม่มีคู่แข่ง
+    print("✅ intel_context")
+
+
 def test_company_stats():
     c = _fixture_conn(); tk = ["ถนน"]
     s = ci.company_stats("หจก.A", tk, c)   # 2 งาน disc 5,8 → median 6.5, ไม่มี IQR
@@ -156,6 +167,7 @@ if __name__ == "__main__":
     test_resolve_location_fallbacks()
     test_select_competitors()
     test_golden_amphoe_better_than_province()
+    test_intel_context()
     test_company_stats()
     test_confidence_label()
     test_intel_lines()

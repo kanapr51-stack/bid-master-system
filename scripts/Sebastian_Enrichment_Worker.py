@@ -27,7 +27,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 import bms_paths  # noqa: E402  — runtime-state single authority (BMS_DATA_DIR)
-from Sebastian_Customer_DB import SubscriptionStore, init_schema, get_connection, _now, _now_plus
+from Sebastian_Customer_DB import (SubscriptionStore, init_schema, get_connection, _now, _now_plus,
+                                   save_project_location_raw)
 
 if sys.stdout and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -394,7 +395,15 @@ def qualify_province_api(store, log) -> int:
             # matching layer (keyword + tambon + soft-include) — shadow log / enforce apply
             src_stage = "province_qualified"
             if jm is not None and mmode != "off":
-                tb = jm.resolve_tambon(pid, c.get("dept_name") or "", c.get("project_name") or "")
+                # capture เต็มจาก getProcurementDetail (API call เท่าเดิม) — เก็บ raw location
+                # ให้ intel disambiguate ระดับตำบล/อำเภอ (MOI disambiguation Phase A)
+                from process5_http_client import get_procurement_detail
+                _d = get_procurement_detail(pid)
+                tb = (_d.get("moi_name") or "") or jm.tambon_from_dept(c.get("dept_name") or "")
+                if _d.get("valid"):
+                    save_project_location_raw(pid, _d.get("district_moi_id") or "",
+                                              _d.get("moi_name") or "",
+                                              _d.get("latitude") or "", _d.get("longitude") or "")
                 decision, mdet = jm.match_job(c.get("project_name") or "", c["province"], tb,
                                               c.get("dept_name") or "", cfg=mcfg)
                 log(f"  match[{mmode}] {pid}: {decision} (tb={tb or '-'}, {mdet.get('reason')})")

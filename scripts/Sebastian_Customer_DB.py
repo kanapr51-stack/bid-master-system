@@ -85,6 +85,20 @@ def get_connection() -> sqlite3.Connection:
     return conn
 
 
+def save_project_location_raw(project_id: str, district_moi_id: str = "", moi_name: str = "",
+                              api_latitude: str = "", api_longitude: str = "") -> None:
+    """persist raw location จาก getProcurementDetail (MOI disambiguation Phase A).
+    แก้ swap: eGP API field 'latitude' เก็บค่า longitude จริง → สลับเก็บให้ latitude=lat จริง.
+    เก็บเฉพาะ raw (district_moi_id/moi_name/lat/lng) — amphoe/confidence เป็น runtime-compute
+    (ไม่ persist, กัน stale). ไม่แตะ qualification/enrichment_status."""
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE project_locations SET district_moi_id=?, moi_name=?, latitude=?, longitude=? "
+            "WHERE project_id=?",
+            (district_moi_id or "", moi_name or "",
+             str(api_longitude or ""), str(api_latitude or ""), project_id))  # SWAP api lat/lng
+
+
 def init_schema():
     """Create all tables if not exist + migrate v1 → v1.1. Safe on every startup."""
     with get_connection() as conn:

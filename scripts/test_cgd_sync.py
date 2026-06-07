@@ -43,4 +43,17 @@ subset = sy.extract_subset(wh, provinces=["นครพนม", "บึงกา
 assert len(subset) == 1 and subset[0]["project_id"] == "A1", subset
 assert subset[0]["proc_type"] == "สอบราคา", subset[0]  # v120: extract_subset ดึง proc_type
 assert subset[0]["district"] == "บ้านแพง" and subset[0]["subdistrict"] == "โพนทอง", subset[0]  # v121
+
+# save_project_location_raw — persist raw location + swap lat/lng (eGP API mislabels)
+with db.get_connection() as cc:
+    cc.execute("INSERT OR IGNORE INTO project_locations (project_id, location_confidence, "
+               "enrichment_status, created_at) VALUES ('LOC1','unknown','pending','2026-06-07')")
+db.save_project_location_raw("LOC1", district_moi_id="480400", moi_name="โพนทอง",
+                             api_latitude="104.2", api_longitude="17.9")  # API: lat field=real lng
+with db.get_connection() as cc:
+    r = cc.execute("SELECT district_moi_id, moi_name, latitude, longitude FROM project_locations "
+                   "WHERE project_id='LOC1'").fetchone()
+assert r[0] == "480400" and r[1] == "โพนทอง", r
+assert r[2] == "17.9" and r[3] == "104.2", r  # swapped: stored latitude=real lat(17.9), longitude=real lng(104.2)
+print("✅ save_project_location_raw (swap)")
 print("✅ PASS cgd_sync (v119 + merge idempotent + extract_subset)")

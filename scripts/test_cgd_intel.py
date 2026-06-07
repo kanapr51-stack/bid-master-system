@@ -114,6 +114,26 @@ def test_intel_context():
     print("✅ intel_context")
 
 
+def test_predict_winning_price():
+    p = ci.predict_winning_price(2000000, 8.0, 15.0, "หจก.A", 11.0)
+    assert p["area_price_lo"] == 1700000 and p["area_price_hi"] == 1840000, p   # ×(1-.15), ×(1-.08)
+    assert p["top_price"] == 1780000, p
+    assert ci.predict_winning_price(0, 8, 15, "x", 11) is None              # ไม่มี budget
+    assert ci.predict_winning_price(2000000, None, None, None, None) is None  # ไม่มี stat
+    print("✅ predict_winning_price")
+
+
+def test_predict_lines():
+    p = ci.predict_winning_price(2100000, 8.0, 15.0, "หจก.ศิรประภา", 11.0)
+    lines = ci.predict_lines(p)
+    assert any("คาดราคาที่จะชนะ" in l for l in lines), lines
+    assert any("ลด 8–15%" in l for l in lines), lines           # % ก่อน
+    assert any("ลบ." in l for l in lines), lines                # ราคา
+    assert any("โปรดคำนวณต้นทุน" in l for l in lines), lines    # disclaimer
+    assert ci.predict_lines(None) == []
+    print("✅ predict_lines")
+
+
 def test_company_stats():
     c = _fixture_conn(); tk = ["ถนน"]
     s = ci.company_stats("หจก.A", tk, c)   # 2 งาน disc 5,8 → median 6.5, ไม่มี IQR
@@ -168,6 +188,8 @@ if __name__ == "__main__":
     test_select_competitors()
     test_golden_amphoe_better_than_province()
     test_intel_context()
+    test_predict_winning_price()
+    test_predict_lines()
     test_company_stats()
     test_confidence_label()
     test_intel_lines()

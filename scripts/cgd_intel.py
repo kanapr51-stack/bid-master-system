@@ -260,3 +260,31 @@ def intel_lines(province: str, project_name: str, dept_name: str = "",
     """บรรทัด 💡 competitor intel (back-compat wrapper รอบ intel_context). [] ถ้าไม่มีข้อมูล."""
     ctx = intel_context(province, project_name, dept_name, project_id, conn)
     return ctx["lines"] if ctx else []
+
+
+def predict_winning_price(budget, area_p25, area_p75, top_name=None, top_median=None) -> dict | None:
+    """คาดช่วงราคาชนะ = ราคากลาง × (1 − ส่วนลด). ช่วงตลาด p25/p75 + เจ้าตัวเต็ง. None ถ้าข้อมูลไม่พอ.
+    prediction เชิงสถิติ ไม่ใช่คำสั่ง (ดู predict_lines disclaimer)."""
+    if not budget or area_p25 is None or area_p75 is None:
+        return None
+    b = float(budget)
+    return {
+        "budget": b, "area_disc_lo": area_p25, "area_disc_hi": area_p75,
+        "area_price_lo": round(b * (1 - area_p75 / 100)), "area_price_hi": round(b * (1 - area_p25 / 100)),
+        "top_name": top_name, "top_disc": top_median,
+        "top_price": round(b * (1 - top_median / 100)) if top_median is not None else None,
+    }
+
+
+def predict_lines(p: dict) -> list:
+    """บรรทัด 💵 คาดราคา — โชว์ % (ที่มา) ก่อน → ราคา (ผล). framing คาดการณ์ ไม่ใช่คำสั่ง."""
+    if not p:
+        return []
+    out = [f"💵 คาดราคาที่จะชนะ (ราคากลาง {p['budget']/1e6:.1f} ลบ.):",
+           f"   • ตลาดแถบนี้ลด {p['area_disc_lo']:.0f}–{p['area_disc_hi']:.0f}% → "
+           f"ชนะราว {p['area_price_lo']/1e6:.1f}–{p['area_price_hi']/1e6:.1f} ลบ."]
+    if p.get("top_price") is not None:
+        out.append(f"   • เจ้าตัวเต็ง ({(p['top_name'] or '?')[:20]}) มักลด ~{p['top_disc']:.0f}% → "
+                   f"~{p['top_price']/1e6:.1f} ลบ.")
+    out.append("   * ประเมินจากสถิติ โปรดคำนวณต้นทุนจริงประกอบ")
+    return out

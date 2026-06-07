@@ -99,6 +99,47 @@ def save_project_location_raw(project_id: str, district_moi_id: str = "", moi_na
              str(api_longitude or ""), str(api_latitude or ""), project_id))  # SWAP api lat/lng
 
 
+def save_prediction(p: dict) -> None:
+    """เก็บคำทำนายราคาตอน D0 (idempotent ตาม project_id — เก็บค่าแรกที่โชว์). p ต้องมี project_id."""
+    cols = ("project_id", "budget", "area_disc_lo", "area_disc_hi", "area_price_lo",
+            "area_price_hi", "top_name", "top_disc", "top_price")
+    with get_connection() as conn:
+        conn.execute(
+            f"INSERT OR IGNORE INTO price_predictions ({','.join(cols)}, predicted_at) "
+            f"VALUES ({','.join('?' for _ in cols)}, ?)",
+            tuple(p.get(c) for c in cols) + (_now(),))
+
+
+def get_prediction(project_id: str) -> dict | None:
+    with get_connection() as conn:
+        conn.row_factory = sqlite3.Row
+        r = conn.execute("SELECT * FROM price_predictions WHERE project_id=?", (project_id,)).fetchone()
+        return dict(r) if r else None
+
+
+def update_prediction_actual(project_id: str, actual_price, in_range: int, error_pct: float) -> None:
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE price_predictions SET actual_price=?, in_range=?, error_pct=?, verified_at=? "
+            "WHERE project_id=?", (actual_price, in_range, error_pct, _now(), project_id))
+
+
+def prediction_accuracy_summary() -> dict:
+    """running credibility: in-range rate + mean error% จาก verified rows."""
+    with get_connection() as conn:
+        rows = conn.execute("SELECT in_range, error_pct FROM price_predictions "
+                            "WHERE verified_at IS NOT NULL").fetchall()
+    n = len(rows)
+    inr = sum(1 for r in rows if r[0] == 1)
+    errs = [r[1] for r in rows if r[1] is not None]
+    return {
+        "verified": n,
+        "in_range": inr,
+        "in_range_pct": round(inr * 100.0 / n, 1) if n else 0.0,
+        "mean_error_pct": round(sum(errs) / len(errs), 1) if errs else 0.0,
+    }
+
+
 def init_schema():
     """Create all tables if not exist + migrate v1 → v1.1. Safe on every startup."""
     with get_connection() as conn:
@@ -223,7 +264,25 @@ def init_schema():
     _migrate_v119()
     _migrate_v120()
     _migrate_v121()
+    _migrate_v122()
     print(f"Schema v1.13 ready: {DB_PATH}")
+
+
+def _migrate_v122():
+    """price_predictions — เก็บคำทำนายราคาชนะตอน D0 → เทียบจริงตอน W0 (credibility engine).
+    เก็บ raw prediction + ผลเทียบ (in_range/error คำนวณตอน verify, เก็บเพื่อ aggregate credibility).
+    additive (table ใหม่)."""
+    with get_connection() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS price_predictions (
+                project_id    TEXT PRIMARY KEY,
+                budget        INTEGER,
+                area_disc_lo  REAL, area_disc_hi REAL,
+                area_price_lo INTEGER, area_price_hi INTEGER,
+                top_name      TEXT, top_disc REAL, top_price INTEGER,
+                predicted_at  TEXT,
+                actual_price  INTEGER, in_range INTEGER, error_pct REAL, verified_at TEXT
+            )""")
 
 
 def _migrate_v121():

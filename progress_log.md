@@ -4806,3 +4806,30 @@ brainstorming → spec `docs/superpowers/specs/2026-06-06-cgd-competitive-intel-
 - Follow-up เสนอ: disambiguate อำเภอจาก dept_name (อบต.X/เทศบาลตำบล X) → กัน ambiguity เคสสำคัญ. รอกัญจน์ตัดสิน (ไม่ขยาย scope เอง)
 
 ### สถานะ: ✅ Tasks 1-8 เสร็จ LIVE (feature ทำงาน, degrade ปลอดภัย)
+
+
+## งานที่ N+101: MOI/พิกัด Location Disambiguation Phase A — LIVE (2026-06-07)
+
+### สถานะ: ✅ เสร็จ LIVE (commit 9cea29a) — checkpoint-based execution 3 จุด ผ่านครบ
+
+### Flow: brainstorm → spec (architect review 9.7/10 + 3 action items) → plan → executing-plans inline + checkpoint review
+- **Evidence trigger:** พ่อยืนยัน intel มีประโยชน์ + อยากได้ตำบลเป๊ะ → evidence-backed
+- **Checkpoint 1 Foundation:** geo_reverse.py (reverse_geocode + amphoes_of_tambon, self-contained) + capture location ตอน resolve (swap fix, 0 API เพิ่ม) + save_project_location_raw (persist raw only)
+- **Checkpoint 2 Intelligence:** resolve_location runtime chain (geo→tambon→dept→province) + confidence + trace(list) · select_competitors(amphoe) · wire project_id · ลบ resolve_tambon
+- **Checkpoint 3 Production:** golden test (amphoe>province) + resolution-source metric log + backfill (--dry-run default, --limit 20)
+
+### Deploy + verify (4 rollout conditions ครบ)
+- push 9cea29a · VPS backup pre_moidisambig (437M) · backfill --execute --limit 20 → 8/11 OK (3 skip ไม่มี location ใน API)
+- **spot-check 8 งาน: amphoe ถูกต้องทางภูมิศาสตร์ 8/8** (โพนทอง→บ้านแพง, โพธิ์หมากแข้ง→บึงโขงหลง, นากั้ง→ปากคาด, บ้านต้อง→เซกา)
+- **end-to-end:** 69059132412 → "งานอาคาร อ.บ้านแพง" (disambiguation สำเร็จ ไม่ degrade!) · 69059379413 → "ต.โพธิ์หมากแข้ง อ.บึงโขงหลง" (ตำบล!) · นาทม → province graceful (ข้อมูลน้อย)
+- precision: ไม่ลด (province→ตำบล/อำเภอ ที่ข้อมูลพอ) → ไม่ rollback
+
+### Insight (calibration)
+confidence ส่วนใหญ่ LOW/MEDIUM เพราะ tambon centroid ห่างพิกัดงานหลาย km — **แต่ "อำเภอ" ถูก** (อำเภอหยาบกว่า border error). ตอกย้ำ design ที่ defer confidence UI จน calibrate (architect action #3)
+
+### Guardrails ที่ผ่าน: INC-001 (0 API เพิ่ม + backfill low-rate) · precision preserve (amphoe=None→province ไม่ใช่ WHERE NULL) · persist raw/compute derived · traceability (resolution_trace)
+
+### Followup
+- **Phase B (defer):** TIS-1099 รหัส→ชื่ออำเภอ → promote MOI ชั้น 1 (district_moi_id เก็บไว้แล้วตั้งแต่ A)
+- calibrate confidence (เก็บ 100-200 งาน) → ค่อยโชว์ UI
+- backfill งาน active ที่เหลือ (รอบนี้ limit 20, มี 11 candidate ทำครบแล้ว)

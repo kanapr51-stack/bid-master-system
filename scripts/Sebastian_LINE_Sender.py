@@ -257,10 +257,18 @@ def format_notification(project_id: str, province: str = "",
     if source_stage == "followed_bid_open":
         try:
             import cgd_intel
-            _il = cgd_intel.intel_lines(province, project_name, dept_name, project_id)
-            if _il:
+            ctx = cgd_intel.intel_context(province, project_name, dept_name, project_id)
+            if ctx:
                 lines.append("━━━━━━━━━━━━━")
-                lines.extend(_il)
+                lines.extend(ctx["lines"])
+                # ราคาคาด (เชิงสถิติ) + เก็บไว้เทียบตอนประกาศผล (closed-loop)
+                pred = cgd_intel.predict_winning_price(
+                    budget, ctx["area_p25"], ctx["area_p75"], ctx["top_name"], ctx["top_median"])
+                if pred:
+                    lines.extend(cgd_intel.predict_lines(pred))
+                    if project_id:
+                        from Sebastian_Customer_DB import save_prediction
+                        save_prediction({"project_id": project_id, **pred})   # idempotent
         except Exception:
             pass   # intel = value-add — ห้ามทำ D0 notification พัง
 

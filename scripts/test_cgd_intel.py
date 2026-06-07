@@ -164,20 +164,23 @@ def test_intel_lines():
 def test_wiring_format_notification():
     import Sebastian_LINE_Sender as ls
     import cgd_intel as _ci
-    orig = _ci.intel_lines
-    _ci.intel_lines = lambda *a, **k: ["💡 TEST INTEL", "🏆 คู่แข่งแถบนี้:"]
+    orig_ctx, orig_pred = _ci.intel_context, _ci.predict_winning_price
+    _ci.predict_winning_price = lambda *a, **k: None   # ปิด predict/store ใน test wiring
+    _ci.intel_context = lambda *a, **k: {"lines": ["💡 TEST INTEL", "🏆 คู่แข่งแถบนี้:"],
+                                          "area_p25": 8, "area_p75": 15, "top_name": "x", "top_median": 11}
     txt = ls.format_notification("P1", province="นครพนม", project_name="ก่อสร้างถนน",
                                  source_stage="followed_bid_open")
     assert "💡 TEST INTEL" in txt and "🔑 P1" in txt and "━" in txt, txt
-    _ci.intel_lines = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom"))
+    _ci.intel_context = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom"))
     txt2 = ls.format_notification("P1", province="นครพนม", project_name="ก่อสร้างถนน",
                                   source_stage="followed_bid_open")
     assert "🔑 P1" in txt2 and "💡" not in txt2, txt2
-    _ci.intel_lines = lambda *a, **k: ["💡 SHOULD NOT APPEAR"]
+    _ci.intel_context = lambda *a, **k: {"lines": ["💡 SHOULD NOT APPEAR"], "area_p25": 0,
+                                          "area_p75": 0, "top_name": None, "top_median": None}
     txt3 = ls.format_notification("P2", province="นครพนม", project_name="ก่อสร้างถนน",
                                   source_stage="api_enriched")
     assert "💡" not in txt3, txt3
-    _ci.intel_lines = orig
+    _ci.intel_context, _ci.predict_winning_price = orig_ctx, orig_pred
     print("✅ wiring format_notification")
 
 

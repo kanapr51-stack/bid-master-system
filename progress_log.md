@@ -4851,3 +4851,24 @@ confidence ส่วนใหญ่ LOW/MEDIUM เพราะ tambon centroid �
 ### ใช้ตัดสินใจ
 - Phase B (MOI/TIS): trigger = ถ้า geo coverage ตก หรือ lat/lng resolve อำเภอผิด (ตอนนี้ยังไม่เจอ) หรือต้องการ confidence HIGH authoritative
 - calibrate: เก็บ trend ราย wk → ปรับ distance threshold (LOW เยอะแต่อำเภอถูก = threshold strict ไป)
+
+
+## งานที่ N+103: Price Prediction + Closed-Loop Verify (Credibility Engine) — LIVE (2026-06-07)
+
+### สถานะ: ✅ เสร็จ LIVE (commit dad735d) — executing-plans inline + checkpoint review 3 จุด (A/B/C)
+
+### Flow: brainstorm (flag prescriptive→reframe เป็น prediction+measurement) → spec (review 3/3 + real-time) → plan → TDD
+- **Checkpoint A (Prediction@D0):** v122 price_predictions + helpers · refactor intel_context (DRY) · predict_winning_price + predict_lines (โชว์ %→ราคา) · wire D0 (การ์ด + เก็บ idempotent)
+- **Checkpoint B (Closed-loop@W0):** compare_prediction (in-range+error%+update) · Winner_Poller verify_hook + Discord real-time (running accuracy) · การ์ดผู้ชนะบรรทัดเทียบคาด vs จริง
+- **Checkpoint C (Production):** push dad735d · VPS backup pre_priceprediction · v122 migrate · verify end-to-end
+
+### Deploy verify (production จริง)
+- การ์ด D0 (งาน 69059327097): "💵 คาดราคา 0.7–1.1 ลบ. (ลด 0–34% จากราคากลาง 1.1) · เจ้าตัวเต็ง บัญชาศรีสงคราม ~26%" + เก็บ prediction ลง DB ✅
+- accuracy summary: verified=0 (รองาน awarded — loop primed 1 prediction)
+
+### Principle (กัญจน์แก้ความเข้าใจ)
+ราคา = **prediction เชิงสถิติ ไม่ใช่คำสั่ง** (พ่อแม่คำนวณต้นทุนเอง) · คุณค่า = **credibility: คาดตรงสะสม → สถิติน่าเชื่อขึ้น** · closed-loop แจ้ง real-time ทุกครั้งที่มีผล (ไม่รอ weekly)
+
+### tests: test_price_prediction + test_winner_poller + test_winner_card + test_cgd_intel เขียวครบ
+### SP2 (defer): calibration/error-analysis (3ปีเก่าไป/วัสดุแกว่ง) — รอ accuracy data จาก SP1
+### หมายเหตุ: closed-loop ให้ผลจริงเมื่องาน followed เดินถึงประกาศผล (W0) — Winner_Poller รอบถัดไป

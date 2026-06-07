@@ -72,8 +72,16 @@ W0 (Winner_Poller เจอผล): actual = price_agree ผู้ชนะ
 ```
 ถ้าไม่มี prediction เก็บไว้ → การ์ดผู้ชนะออกปกติ (ไม่มีบรรทัดนี้)
 
-### Credibility metric — `scripts/observe_prediction_accuracy.py`
-สรุปจาก price_predictions ที่ verified แล้ว: **in-range rate %** + **mean error%** + count → Discord weekly (แบบเดียวกับ observe_location_resolution). นี่คือ "ความน่าเชื่อถือ" ที่วัดได้
+### Credibility metric — real-time ทุกครั้งที่มีผล (กัญจน์เลือก)
+ใน Winner_Poller หลัง UPDATE price_predictions ของงานนั้น → **คำนวณ running accuracy สะสม** (in-range rate % + mean error% จาก verified ทั้งหมด) → **ส่ง Discord ทันที** พร้อมผลงานนั้น:
+```
+🎯 ผลทำนาย: 69059xxx (งานถนน อ.บึงโขงหลง)
+   คาด 1.8–1.9 / จริง 1.95 → ✅ ตรง (คลาด 3%)
+   📊 สะสม: ตรง 7/9 (78%) · คลาดเฉลี่ย 6%
+```
+- ส่งทุกครั้งที่ closed-loop verify เกิด (real-time, ไม่รอ weekly) → กัญจน์เห็น credibility trend ทันที
+- helper `prediction_accuracy_summary(conn) -> dict` (in-range rate + mean error + count) แยกฟังก์ชัน (test ได้) ใช้ทั้ง real-time Discord + on-demand query
+- (การ์ด W0 ต่อพ่อ = verdict per-result มีอยู่แล้ว; running stat ส่ง Discord กัญจน์)
 
 ## ราคากลาง (budget) source
 ใช้จาก notification snapshot (`budget` ที่การ์ด D0 ใช้แสดงอยู่แล้ว). verify แหล่งที่แม่นสุดตอน plan (projects_seen.budget vs getProcurementDetail.budget — อาจ capture จาก resolve เหมือน location)
@@ -90,7 +98,7 @@ W0 (Winner_Poller เจอผล): actual = price_agree ผู้ชนะ
 2. in-range verdict + error% (actual ในช่วง→ตรง · นอกช่วง→ไม่ตรง + error ถูก)
 3. price_predictions: D0 INSERT idempotent (re-run ไม่เปลี่ยนค่าแรก) · W0 UPDATE actual/verdict
 4. Winner_Poller closed-loop: มี prediction→เทียบ+update+verdict ในการ์ด · ไม่มี prediction→การ์ดปกติ · actual parse ไม่ได้→ข้าม
-5. `observe_prediction_accuracy.summarize`: in-range rate + mean error% (+ empty case)
+5. `prediction_accuracy_summary`: in-range rate + mean error% + count (+ empty case)
 6. graceful: ทุก error swallow ไม่ทำ notification พัง
 
 ## Rollback

@@ -44,14 +44,61 @@ def match_keywords(project_name: str, keywords: list = None) -> list:
     return out
 
 
-def resolve_tambon(project_name: str, dept_name: str = "") -> str:
-    """ตำบลของงาน D0 จาก name → dept (ฟรี ไม่เรียก API — บทเรียน INC-001: resolve API ใน
-    notify path ทำ WAF block). resolve ไม่ได้ → '' (intel_lines degrade เป็นจังหวัด)."""
+def resolve_location(project_id: str, project_name: str, dept_name: str, province: str, conn) -> dict:
+    """runtime-compute (ไม่ persist) ตำบล+อำเภอ แม่น→หยาบ: [moi=phaseB] → geo(lat/lng) →
+    unique-tambon → dept → province. คืน {tambon, amphoe, location_confidence, source,
+    resolution_trace(list)}. query project_locations ครั้งเดียว. resolve ไม่ได้ → amphoe=None
+    (select_competitors degrade province เดิม — precision ไม่แย่กว่าเดิม)."""
+    import geo_reverse
+    import job_matcher as jm
+    trace = ["moi: deferred (phaseB)"]
+    moi_name = lat = lng = ""
+    if project_id:
+        try:
+            r = conn.execute("SELECT moi_name, latitude, longitude FROM project_locations "
+                             "WHERE project_id=?", (project_id,)).fetchone()
+            if r:
+                moi_name, lat, lng = (r[0] or ""), (r[1] or ""), (r[2] or "")
+        except sqlite3.OperationalError:
+            pass   # ไม่มี table → ข้ามไป fallback
     try:
-        import job_matcher as jm
-        return jm.tambon_from_name(project_name) or jm.tambon_from_dept(dept_name)
+        name_tb = jm.tambon_from_name(project_name) or ""
     except Exception:
-        return ""
+        name_tb = ""
+    tb = moi_name or name_tb
+    # ชั้น 2: geo (lat/lng corrected ตอน capture แล้ว — latitude=lat จริง)
+    geo = geo_reverse.reverse_geocode(lat, lng) if (lat and lng) else None
+    if geo:
+        _prov, amphoe, gtb, dist = geo
+        conf = "HIGH" if dist < 0.5 else "MEDIUM" if dist < 2 else "LOW"
+        trace.append(f"geo: {amphoe} dist={dist*1000:.0f}m → {conf}")
+        return {"tambon": tb or gtb, "amphoe": amphoe, "location_confidence": conf,
+                "source": "geo", "resolution_trace": trace}
+    trace.append("geo: no latlng")
+    # ชั้น 3: unique tambon (ไม่ซ้ำในจังหวัด)
+    if tb:
+        amphoes = geo_reverse.amphoes_of_tambon(province, tb)
+        if len(amphoes) == 1:
+            trace.append(f"tambon: {tb} unique → {amphoes[0]}")
+            return {"tambon": tb, "amphoe": amphoes[0], "location_confidence": "HIGH",
+                    "source": "tambon", "resolution_trace": trace}
+        trace.append(f"tambon: {tb} ambiguous({len(amphoes)})")
+    # ชั้น 4: dept เดาอำเภอ
+    try:
+        dtb = jm.tambon_from_dept(dept_name) or ""
+    except Exception:
+        dtb = ""
+    if dtb:
+        damphoes = geo_reverse.amphoes_of_tambon(province, dtb)
+        if len(damphoes) == 1:
+            trace.append(f"dept: {dtb} → {damphoes[0]}")
+            return {"tambon": tb or dtb, "amphoe": damphoes[0], "location_confidence": "MEDIUM",
+                    "source": "dept", "resolution_trace": trace}
+        trace.append(f"dept: {dtb} ambiguous/none")
+    # ชั้น 5: province degrade
+    trace.append("province degrade")
+    return {"tambon": tb, "amphoe": None, "location_confidence": "LOW",
+            "source": "province", "resolution_trace": trace}
 
 
 def _pct(values: list, p: float):
@@ -95,22 +142,20 @@ def _distinct_winners(rows: list) -> int:
     return len({r["winner"] for r in rows if r.get("winner")})
 
 
-def select_competitors(province: str, tokens: list, tambon: str, conn) -> tuple:
-    """เลือกคู่แข่งไล่ระดับ ตำบล→อำเภอ→จังหวัด. คืน (rows, scope_label, level).
-    อำเภอ derive จาก cgd_winners (DISTINCT district ของตำบล) — หลายอำเภอ=ambiguous→province.
-    competitive-set ถูกกรองใน _fetch แล้ว (เฉพาะเจาะจงไม่หลุด)."""
+def select_competitors(province: str, tokens: list, tambon: str, amphoe, conn) -> tuple:
+    """เลือกคู่แข่งจาก (ตำบล,อำเภอ) ที่ resolve มาแล้ว. คืน (rows, scope_label, level).
+    amphoe+tambon → tambon level (subdistrict+district) → fallback อำเภอ → จังหวัด.
+    amphoe=None → จังหวัด ทันที (precision preserve — ไม่ query district IS NULL).
+    competitive-set ถูกกรองใน _fetch แล้ว."""
     wt = tokens[0] if tokens else "งาน"
-    if tambon:
-        trows = _fetch(conn, province, tokens, subdistrict=tambon)
-        districts = {r["district"] for r in trows if r.get("district")}
-        if len(districts) == 1:
-            d = next(iter(districts))
-            if _distinct_winners(trows) >= MIN_COMPETITORS:
-                return trows, f"งาน{wt} ต.{tambon} อ.{d}", "tambon"
-            arows = _fetch(conn, province, tokens, district=d)   # widen → อำเภอ
-            if _distinct_winners(arows) >= MIN_COMPETITORS:
-                return arows, f"งาน{wt} อ.{d}", "amphoe"
-        # ambiguous (หลายอำเภอ) / ไม่มี / ไม่พอ → province
+    if amphoe and tambon:
+        trows = _fetch(conn, province, tokens, subdistrict=tambon, district=amphoe)
+        if _distinct_winners(trows) >= 1:
+            return trows, f"งาน{wt} ต.{tambon} อ.{amphoe}", "tambon"
+    if amphoe:
+        arows = _fetch(conn, province, tokens, district=amphoe)
+        if _distinct_winners(arows) >= MIN_COMPETITORS:
+            return arows, f"งาน{wt} อ.{amphoe}", "amphoe"
     prows = _fetch(conn, province, tokens)
     if _distinct_winners(prows) >= 1:
         return prows, f"งาน{wt}ใน{province}", "province"
@@ -153,10 +198,11 @@ def confidence_label(area_n: int, p25, p75) -> str:
     return "🟢 เชื่อถือได้ — ข้อมูลมากพอ"
 
 
-def intel_lines(province: str, project_name: str, dept_name: str = "", conn=None) -> list:
+def intel_lines(province: str, project_name: str, dept_name: str = "",
+                project_id: str = "", conn=None) -> list:
     """บรรทัด 💡 competitor intel ระดับท้องถิ่นสำหรับการ์ด D0. คืน [] ถ้าไม่มีคู่แข่ง/error.
-    พระเอก=โปรไฟล์คู่แข่งรายบริษัท (selection ไล่ระดับ ตำบล→อำเภอ→จังหวัด, stat จากประวัติบริษัท)
-    + ภาพรวมเสริม + ป้ายความเชื่อมั่น. competitive-set กรองทั้ง selection+stat. ห่อ try/except."""
+    resolve (ตำบล,อำเภอ) runtime (geo→tambon→dept→province) → select → format. พระเอก=โปรไฟล์
+    คู่แข่งรายบริษัท + ภาพรวม + ป้ายความเชื่อมั่น. competitive-set กรองทั้ง selection+stat. ห่อ try/except."""
     try:
         tokens = match_keywords(project_name)
         if not tokens:
@@ -166,8 +212,8 @@ def intel_lines(province: str, project_name: str, dept_name: str = "", conn=None
             from Sebastian_Customer_DB import get_connection
             conn = get_connection()
         try:
-            tambon = resolve_tambon(project_name, dept_name)
-            rows, scope, _level = select_competitors(province, tokens, tambon, conn)
+            loc = resolve_location(project_id, project_name, dept_name, province, conn)
+            rows, scope, _level = select_competitors(province, tokens, loc["tambon"], loc["amphoe"], conn)
             if not rows:
                 return []
             counts = Counter(r["winner"] for r in rows if r.get("winner"))

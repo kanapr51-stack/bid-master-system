@@ -257,7 +257,7 @@ def format_notification(project_id: str, province: str = "",
     if source_stage == "followed_bid_open":
         try:
             import cgd_intel
-            _il = cgd_intel.intel_lines(province, project_name, dept_name)
+            _il = cgd_intel.intel_lines(province, project_name, dept_name, project_id)
             if _il:
                 lines.append("━━━━━━━━━━━━━")
                 lines.extend(_il)

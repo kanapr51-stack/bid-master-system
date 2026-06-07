@@ -186,6 +186,12 @@ def _save_success(project_id: str, loc: dict) -> None:
         """, (loc["province_moi_id"], loc["district_moi_id"], loc["moi_name"],
               loc["province_name"], loc["latitude"], loc["longitude"],
               now, project_id))
+        # going-forward: เติม projects_seen.province จาก MOI (authoritative) เมื่อว่าง
+        # — กันเคส province extraction จากชื่องานล้มเหลว (schema: 'province may be updated by API enrich')
+        if loc.get("province_name"):
+            conn.execute("UPDATE projects_seen SET province=? "
+                         "WHERE project_id=? AND (province IS NULL OR province='')",
+                         (loc["province_name"], project_id))
 
 
 def _save_retry(project_id: str, current_attempts: int) -> bool:

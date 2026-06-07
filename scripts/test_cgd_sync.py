@@ -49,22 +49,50 @@ with db.get_connection() as cc:
     cc.execute("INSERT OR IGNORE INTO project_locations (project_id, location_confidence, "
                "enrichment_status, created_at) VALUES ('LOC1','unknown','pending','2026-06-07')")
 db.save_project_location_raw("LOC1", district_moi_id="480400", moi_name="โพนทอง",
-                             api_latitude="104.2", api_longitude="17.9")  # API: lat field=real lng
+                             latitude="17.9", longitude="104.2")  # source compensate แล้ว → ค่าจริง
 with db.get_connection() as cc:
     r = cc.execute("SELECT district_moi_id, moi_name, latitude, longitude FROM project_locations "
                    "WHERE project_id='LOC1'").fetchone()
 assert r[0] == "480400" and r[1] == "โพนทอง", r
-assert r[2] == "17.9" and r[3] == "104.2", r  # swapped: stored latitude=real lat(17.9), longitude=real lng(104.2)
+assert r[2] == "17.9" and r[3] == "104.2", r  # เก็บตามที่รับ ไม่ swap (latitude=lat จริง)
 # regression: ไม่มีพิกัด (production เจอแน่) → ต้องไม่พัง, เก็บ "" (มีแต่ moi)
 with db.get_connection() as cc:
     cc.execute("INSERT OR IGNORE INTO project_locations (project_id, location_confidence, "
                "enrichment_status, created_at) VALUES ('LOC2','unknown','pending','2026-06-07')")
 db.save_project_location_raw("LOC2", district_moi_id="480400", moi_name="บ้านแพง",
-                             api_latitude=None, api_longitude=None)  # ไม่มีพิกัด
+                             latitude=None, longitude=None)  # ไม่มีพิกัด
 with db.get_connection() as cc:
     r2 = cc.execute("SELECT moi_name, latitude, longitude FROM project_locations "
                     "WHERE project_id='LOC2'").fetchone()
 assert r2[0] == "บ้านแพง" and r2[1] == "" and r2[2] == "", r2  # graceful: lat/lng ว่าง ไม่ throw
 print("✅ save_project_location_raw (missing coords graceful)")
 print("✅ save_project_location_raw (swap)")
+
+# v123: migration normalize lat/lng ที่ swap (latitude>90 = สลับอยู่ → คืน)
+with db.get_connection() as cc:
+    cc.execute("INSERT OR IGNORE INTO project_locations (project_id, location_confidence, "
+               "enrichment_status, created_at) VALUES ('SWAP1','unknown','pending','2026-06-07')")
+    cc.execute("UPDATE project_locations SET latitude='104.09', longitude='17.94' WHERE project_id='SWAP1'")  # swapped
+db._migrate_v123()
+with db.get_connection() as cc:
+    sw = cc.execute("SELECT latitude, longitude FROM project_locations WHERE project_id='SWAP1'").fetchone()
+assert sw[0] == "17.94" and sw[1] == "104.09", sw   # สลับคืน latitude=lat จริง
+# LOC1 (latitude=17.9 ถูกอยู่แล้ว) ไม่ถูกแตะ
+with db.get_connection() as cc:
+    ok = cc.execute("SELECT latitude FROM project_locations WHERE project_id='LOC1'").fetchone()
+assert ok[0] == "17.9", ok
+print("✅ migrate v123 (normalize swapped lat/lng)")
+
+# Bug1: backfill projects_seen.province จาก project_locations.province_name
+with db.get_connection() as cc:
+    cc.execute("INSERT INTO projects_seen (project_id,announce_type,province,source,first_seen_at,project_name) "
+               "VALUES ('PV1','D0','','province_api','2026-06-07','ถนน ต.โพธิ์หมากแข้ง')")  # province ว่าง
+    cc.execute("INSERT OR IGNORE INTO project_locations (project_id, province_name, location_confidence, "
+               "enrichment_status, created_at) VALUES ('PV1','บึงกาฬ','hard','success','2026-06-07')")
+n = db.backfill_provinces_from_locations()
+with db.get_connection() as cc:
+    pv = cc.execute("SELECT province FROM projects_seen WHERE project_id='PV1'").fetchone()
+assert pv[0] == "บึงกาฬ", pv   # เติมจาก province_name
+assert n >= 1, n
+print("✅ backfill province from location (PV1 → บึงกาฬ)")
 print("✅ PASS cgd_sync (v119 + merge idempotent + extract_subset)")

@@ -86,9 +86,9 @@ def get_connection() -> sqlite3.Connection:
 
 
 def save_project_location_raw(project_id: str, district_moi_id: str = "", moi_name: str = "",
-                              api_latitude: str = "", api_longitude: str = "") -> None:
+                              latitude: str = "", longitude: str = "") -> None:
     """persist raw location จาก getProcurementDetail (MOI disambiguation Phase A).
-    แก้ swap: eGP API field 'latitude' เก็บค่า longitude จริง → สลับเก็บให้ latitude=lat จริง.
+    lat/lng ถูก compensate mislabel ที่ source (get_procurement_detail) แล้ว → เก็บตรงๆ ไม่ swap.
     เก็บเฉพาะ raw (district_moi_id/moi_name/lat/lng) — amphoe/confidence เป็น runtime-compute
     (ไม่ persist, กัน stale). ไม่แตะ qualification/enrichment_status."""
     with get_connection() as conn:
@@ -96,7 +96,7 @@ def save_project_location_raw(project_id: str, district_moi_id: str = "", moi_na
             "UPDATE project_locations SET district_moi_id=?, moi_name=?, latitude=?, longitude=? "
             "WHERE project_id=?",
             (district_moi_id or "", moi_name or "",
-             str(api_longitude or ""), str(api_latitude or ""), project_id))  # SWAP api lat/lng
+             str(latitude or ""), str(longitude or ""), project_id))
 
 
 def save_prediction(p: dict) -> None:
@@ -138,6 +138,22 @@ def prediction_accuracy_summary() -> dict:
         "in_range_pct": round(inr * 100.0 / n, 1) if n else 0.0,
         "mean_error_pct": round(sum(errs) / len(errs), 1) if errs else 0.0,
     }
+
+
+def backfill_provinces_from_locations() -> int:
+    """เติม projects_seen.province จาก project_locations.province_name (authoritative จาก MOI enrich)
+    เมื่อ province ว่าง — แก้เคส province extraction จากชื่องานล้มเหลว (ชื่อไม่มี 'จังหวัด').
+    schema sanction: 'province may be updated by API enrich'. คืนจำนวน row ที่อัปเดต."""
+    with get_connection() as conn:
+        cur = conn.execute("""
+            UPDATE projects_seen SET province = (
+                SELECT pl.province_name FROM project_locations pl
+                WHERE pl.project_id = projects_seen.project_id)
+            WHERE (province IS NULL OR province = '')
+              AND EXISTS (SELECT 1 FROM project_locations pl
+                          WHERE pl.project_id = projects_seen.project_id
+                            AND pl.province_name IS NOT NULL AND pl.province_name != '')""")
+        return cur.rowcount
 
 
 def init_schema():
@@ -265,7 +281,21 @@ def init_schema():
     _migrate_v120()
     _migrate_v121()
     _migrate_v122()
+    _migrate_v123()
     print(f"Schema v1.13 ready: {DB_PATH}")
+
+
+def _migrate_v123():
+    """normalize lat/lng ที่ swap (row จาก _enrich path เก่า ก่อน compensate mislabel ที่ source).
+    latitude ของไทย ≤ ~21 เสมอ → ถ้า latitude>90 = ค่าจริงเป็น longitude (swap อยู่) → สลับคืน.
+    idempotent (รอบสอง latitude<90 → ไม่แตะ)."""
+    with get_connection() as conn:
+        try:
+            conn.execute(
+                "UPDATE project_locations SET latitude=longitude, longitude=latitude "
+                "WHERE latitude IS NOT NULL AND latitude!='' AND CAST(latitude AS REAL) > 90")
+        except sqlite3.OperationalError:
+            pass
 
 
 def _migrate_v122():

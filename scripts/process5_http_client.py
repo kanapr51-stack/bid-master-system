@@ -283,8 +283,10 @@ def get_procurement_detail(project_id: str) -> dict:
         return {"valid": False}
 
     data = body.get("data", {}) or {}
-    lat = data.get("latitude") or []
-    lng = data.get("longtitude") or []
+    # ⚠️ eGP mislabel: field 'latitude' เก็บค่า longitude จริง, field 'longtitude'(พิมพ์ผิด) เก็บ latitude จริง
+    # → compensate ที่ source ที่เดียว (consumer ทุกตัวได้ lat/lng ถูกต้อง ไม่ต้อง swap เอง)
+    lat = data.get("longtitude") or []   # ← longtitude field = latitude จริง
+    lng = data.get("latitude") or []     # ← latitude field = longitude จริง
     return {
         "valid":             bool(data),
         "dept_sub_name":     data.get("deptSubName", "") or "",

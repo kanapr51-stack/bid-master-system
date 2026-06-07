@@ -48,3 +48,26 @@ assert not any(f["project_id"] == "W3" for f in s.get_active_follows()), "W3 ค
 assert stats["closed_stale"] == 1, stats
 
 print("✅ PASS winner poller")
+
+
+# ── closed-loop: verify_hook ถูกเรียกด้วย (pid, winning_price) เมื่อมีผล ──────────
+def test_verify_hook():
+    calls = []
+    class FakeStore:
+        def get_active_follows(self):
+            return [{"project_id": "V1", "customer_id": 1, "last_stage_notified": "D0",
+                     "starred_at": "2026-06-01T00:00:00"}]
+        def record_bid_results(self, *a): pass
+        def enqueue_for_customer(self, *a, **k): pass
+        def mark_stage_notified(self, *a): pass
+        def close_follow(self, *a): pass
+    res = {"winner": "บ.A", "winning_price": "1,750,000",
+           "bidders": [{"receiveTin": "1", "priceAgree": "1750000"}]}
+    wp.poll_winners(FakeStore(), lambda pid: res, now="2026-06-06T00:00:00",
+                    log=lambda m: None, verify_hook=lambda pid, price: calls.append((pid, price)))
+    assert calls == [("V1", "1,750,000")], calls
+    print("✅ verify_hook called with (pid, winning_price)")
+
+
+test_verify_hook()
+print("ALL PASS winner poller")

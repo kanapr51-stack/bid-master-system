@@ -19,6 +19,14 @@ POLL_SLEEP_SEC = 3       # cooldown ระหว่างงาน (กัน bu
 MAX_DAYS = int(os.environ.get("BMS_WINNER_POLL_MAX_DAYS", "60"))
 
 
+def _parse_money(s):
+    """'1,750,000' → 1750000.0 · None ถ้าแปลงไม่ได้."""
+    try:
+        return float(str(s).replace(",", "").strip())
+    except (TypeError, ValueError):
+        return None
+
+
 def _too_old(starred_at: str, now: str, max_days: int) -> bool:
     try:
         s = _dt.datetime.fromisoformat((starred_at or "")[:19])
@@ -29,9 +37,10 @@ def _too_old(starred_at: str, now: str, max_days: int) -> bool:
 
 
 def poll_winners(store, resolve_result, now: str = None, log=print,
-                 max_days: int = MAX_DAYS, sleep_sec: int = 0) -> dict:
+                 max_days: int = MAX_DAYS, sleep_sec: int = 0, verify_hook=None) -> dict:
     """core (testable): resolve_result(pid) → {} หรือ {winner, bidders[...]}.
-    mode จาก env BMS_PROVINCE_NOTIFY_MODE (live=enqueue, อื่น=shadow log)."""
+    mode จาก env BMS_PROVINCE_NOTIFY_MODE (live=enqueue, อื่น=shadow log).
+    verify_hook(pid, winning_price) = closed-loop เทียบราคาคาด vs จริง (inject ได้, ปลอดภัย)."""
     now = now or _dt.datetime.now().isoformat()
     mode = os.environ.get("BMS_PROVINCE_NOTIFY_MODE", "preview")
     # poll เฉพาะ D0 (เปิดประมูลแล้ว = มีโอกาสมีผู้ชนะ). B0 ยังไม่ bidding → ไม่ poll (กันเปลือง API/INC-001)
@@ -61,6 +70,12 @@ def poll_winners(store, resolve_result, now: str = None, log=print,
             res = {}
         if res.get("bidders") and res.get("winner"):
             store.record_bid_results(pid, res["bidders"])
+            # closed-loop: เทียบราคาคาด vs จริง (ก่อน enqueue → การ์ดอ่าน prediction ที่ update แล้ว)
+            if verify_hook is not None:
+                try:
+                    verify_hook(pid, res.get("winning_price"))
+                except Exception as e:
+                    log(f"  verify {pid} error: {type(e).__name__}: {e}")
             meta = names.get(pid, {})
             for f in fs:
                 cid = f["customer_id"]
@@ -103,7 +118,28 @@ def main():
     except Exception as e:
         log(f"ABORT: import get_procure_result fail: {e}")
         return
-    stats = poll_winners(store, get_procure_result, log=log, sleep_sec=POLL_SLEEP_SEC)
+    def verify_hook(pid, winning_price):
+        """closed-loop: เทียบราคาคาด vs จริง → update DB → Discord real-time + running accuracy."""
+        import cgd_intel
+        from Sebastian_Customer_DB import prediction_accuracy_summary
+        v = cgd_intel.compare_prediction(pid, _parse_money(winning_price))
+        if not v:
+            return
+        s = prediction_accuracy_summary()
+        verdict = "✅ ตรง" if v["in_range"] else "❌ ไม่ตรง"
+        msg = (f"🎯 ผลทำนาย {pid}\n"
+               f"   คาด {v['area_price_lo']/1e6:.1f}–{v['area_price_hi']/1e6:.1f} / "
+               f"จริง {v['actual']/1e6:.2f} ลบ. → {verdict} (คลาด {v['error_pct']:.0f}%)\n"
+               f"   📊 สะสม: ตรง {s['in_range']}/{s['verified']} ({s['in_range_pct']}%) · "
+               f"คลาดเฉลี่ย {s['mean_error_pct']}%")
+        try:
+            from Sebastian_Discord_Notify import load_env, get_credentials, send
+            load_env(); tok, ch = get_credentials(); send(tok, ch, msg)
+        except Exception as e:
+            log(f"  discord verify fail: {e}")
+
+    stats = poll_winners(store, get_procure_result, log=log, sleep_sec=POLL_SLEEP_SEC,
+                         verify_hook=verify_hook)
     log(f"=== Winner Poller done — {stats} ===")
 
 

@@ -30,6 +30,7 @@ MIN_COMPETITORS = 2     # distinct winners ขั้นต่ำก่อนห�
 SHOW_N = 3              # จำนวนบริษัทที่โชว์
 MIN_GAMES_FOR_IQR = 3   # ต่ำกว่านี้โชว์แค่ median
 IQR_WIDE = 20           # p75-p25 เกินนี้ = ช่วงกว้าง (ลดความเชื่อมั่น)
+TAMBON_MIN = 5          # ตำบลมีงาน < นี้ → โชว์บล็อกอำเภอคู่กันด้วย
 
 
 def _load_keywords() -> list:
@@ -165,30 +166,52 @@ def select_competitors(province: str, tokens: list, tambon: str, amphoe, conn) -
     return [], "", "province"
 
 
-def _fetch_winner(conn, winner: str, tokens: list) -> list:
-    """ส่วนลดของ winner รายนั้น (work-type เดียวกัน, competitive, recent FY). คือประวัติบริษัท
-    (cgd_winners = subset target provinces อยู่แล้ว → ไม่ต้อง filter province)."""
-    fy_ph = ",".join("?" for _ in RECENT_FY)
-    pt_ph = ",".join("?" for _ in COMPETITIVE_SET)
-    like = " OR ".join("project_name LIKE ?" for _ in tokens)
-    params = [winner, *RECENT_FY, *COMPETITIVE_SET] + [f"%{t}%" for t in tokens]
-    try:
-        cur = conn.execute(
-            "SELECT discount_pct FROM cgd_winners WHERE winner=? AND win_price>0 "
-            f"AND fiscal_year IN ({fy_ph}) AND proc_type IN ({pt_ph}) AND ({like})", params)
-        return [r[0] for r in cur.fetchall()]
-    except sqlite3.OperationalError:
-        return []
-
-
-def company_stats(winner: str, tokens: list, conn) -> dict:
-    """median (+IQR ถ้า games≥MIN_GAMES_FOR_IQR) ส่วนลดจากประวัติบริษัท."""
-    rows = _fetch_winner(conn, winner, tokens)
-    discs = [d for d in rows if d is not None]
-    out = {"games": len(rows), "median": _pct(discs, 50), "p25": None, "p75": None}
+def _company_stats_from_rows(rows: list, winner: str) -> dict:
+    """สถิติคู่แข่ง scope-local — นับเฉพาะงานของ winner ใน rows ที่ส่งมา (ไม่ใช่ประวัติทั้งบริษัท).
+    games<MIN_GAMES_FOR_IQR → ไม่มี IQR (จุดน้อยเกินจะมีช่วง)."""
+    discs = [r["discount_pct"] for r in rows
+             if r.get("winner") == winner and r.get("discount_pct") is not None]
+    games = sum(1 for r in rows if r.get("winner") == winner)
+    out = {"games": games, "median": _pct(discs, 50), "p25": None, "p75": None}
     if len(discs) >= MIN_GAMES_FOR_IQR:
         out["p25"], out["p75"] = _pct(discs, 25), _pct(discs, 75)
     return out
+
+
+def _conf_tag(n: int, p25, p75) -> str:
+    """ป้ายความเชื่อมั่นแบบสั้น (ต่อบล็อก)."""
+    wide = p25 is not None and p75 is not None and (p75 - p25) > IQR_WIDE
+    if n < 10:
+        return "🔴 ข้อมูลน้อย"
+    if n < 30 or wide:
+        return "🟡"
+    return "🟢"
+
+
+def _scope_block(rows: list, label: str) -> tuple:
+    """บล็อกคู่แข่ง 1 scope (ตำบล/อำเภอ/จังหวัด). สถิติทุกตัว scope-local จาก rows.
+    คืน (lines, p25, p75, n, top_name, top_median)."""
+    counts = Counter(r["winner"] for r in rows if r.get("winner"))
+    discs = [r["discount_pct"] for r in rows if r.get("discount_pct") is not None]
+    p25, p75 = _pct(discs, 25), _pct(discs, 75)
+    n = len(rows)
+    top3 = counts.most_common(SHOW_N)
+    top_name = top3[0][0] if top3 else None
+    top_median = _company_stats_from_rows(rows, top_name)["median"] if top_name else None
+    lines = [f"{label} — {n} งาน {_conf_tag(n, p25, p75)}"]
+    for w, _ in top3:
+        cs = _company_stats_from_rows(rows, w)
+        nm = (w or "?")[:24]
+        if cs["p25"] is not None:
+            lines.append(f"  • {nm} · {cs['games']} งาน · ลด {cs['median']:.0f}% "
+                         f"({cs['p25']:.0f}–{cs['p75']:.0f}%)")
+        elif cs["median"] is not None:
+            lines.append(f"  • {nm} · {cs['games']} งาน · ลด {cs['median']:.0f}%")
+        else:
+            lines.append(f"  • {nm} · {cs['games']} งาน")
+    if p75:
+        lines.append(f"  📊 ส่วนลด {p25:.0f}–{p75:.0f}%")
+    return lines, p25, p75, n, top_name, top_median
 
 
 def confidence_label(area_n: int, p25, p75) -> str:
@@ -201,11 +224,56 @@ def confidence_label(area_n: int, p25, p75) -> str:
     return "🟢 เชื่อถือได้ — ข้อมูลมากพอ"
 
 
+def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget) -> dict | None:
+    """ประกอบ intel dual-block จาก (ตำบล,อำเภอ) ที่ resolve มาแล้ว (แยกจาก resolve เพื่อ test ง่าย).
+    - บล็อกตำบล: เสมอ (ถ้ามีชื่อตำบล) — สถิติเฉพาะงานในตำบล. 0 งาน → 'ยังไม่มีงานประเภทนี้'
+    - บล็อกอำเภอ: เพิ่มเมื่อตำบล < TAMBON_MIN — สถิติเฉพาะงานในอำเภอ
+    - amphoe=None → บล็อกจังหวัดเดี่ยว. คาดราคาอิงตำบลก่อน (ไม่มี→อำเภอ/จังหวัด).
+    คืน {lines, prediction} · None ถ้าไม่มีคู่แข่งจริงเลย."""
+    wt = tokens[0] if tokens else "งาน"
+    blocks = []
+    pp25 = pp75 = ptop = ptopm = None
+    basis = ""
+    if amphoe:
+        header = (f"💡 ราคาอ้างอิง (งาน{wt}"
+                  + (f" ต.{tambon}" if tambon else "") + f" อ.{amphoe})")
+        t_rows = _fetch(conn, province, tokens, subdistrict=tambon, district=amphoe) if tambon else []
+        tn = len(t_rows)
+        if tambon:
+            if t_rows:
+                tl, t25, t75, _n, ttop, ttopm = _scope_block(t_rows, f"🏘 ในตำบล{tambon}")
+                blocks += tl
+                pp25, pp75, ptop, ptopm, basis = t25, t75, ttop, ttopm, "ตำบล"
+            else:
+                blocks.append(f"🏘 ในตำบล{tambon} — ยังไม่มีงานประเภทนี้")
+        if tn < TAMBON_MIN:                       # ตำบลน้อย → โชว์อำเภอคู่กัน
+            a_rows = _fetch(conn, province, tokens, district=amphoe)
+            if a_rows:
+                al, a25, a75, _n, atop, atopm = _scope_block(a_rows, f"🏙 ในอำเภอ{amphoe}")
+                blocks += al
+                if pp25 is None:                  # ตำบลไม่มี → คาดอิงอำเภอ
+                    pp25, pp75, ptop, ptopm, basis = a25, a75, atop, atopm, "อำเภอ"
+    else:
+        p_rows = _fetch(conn, province, tokens)
+        if not p_rows:
+            return None
+        pl, p25, p75, _n, ptopn, ptopmd = _scope_block(p_rows, f"🏙 ใน{province}")
+        blocks += pl
+        pp25, pp75, ptop, ptopm, basis = p25, p75, ptopn, ptopmd, "จังหวัด"
+        header = f"💡 ราคาอ้างอิง (งาน{wt}ใน{province})"
+    if not blocks or all("ยังไม่มีงาน" in b for b in blocks):
+        return None                               # ไม่มีคู่แข่งจริงเลย → omit
+    lines = [header, ""] + blocks
+    pred = predict_winning_price(budget, pp25, pp75, ptop, ptopm)
+    if pred:
+        lines += [""] + predict_lines(pred, basis)
+    return {"lines": lines, "prediction": pred}
+
+
 def intel_context(province: str, project_name: str, dept_name: str = "",
-                  project_id: str = "", conn=None) -> dict | None:
-    """resolve+select+stats ครั้งเดียว → คืน context: lines (competitor block) + stats
-    (area_p25/area_p75/top_name/top_median) สำหรับ price prediction reuse (DRY).
-    None ถ้าไม่มี work-type/คู่แข่ง/error. ห่อ try/except — ห้าม throw."""
+                  project_id: str = "", budget=0, conn=None) -> dict | None:
+    """resolve (ตำบล,อำเภอ) → ประกอบ dual-block intel + price prediction (scope-local).
+    คืน {lines, prediction(dict|None)} · None ถ้าไม่มี work-type/คู่แข่ง/error. ห่อ try/except."""
     try:
         tokens = match_keywords(project_name)
         if not tokens:
@@ -216,38 +284,9 @@ def intel_context(province: str, project_name: str, dept_name: str = "",
             conn = get_connection()
         try:
             loc = resolve_location(project_id, project_name, dept_name, province, conn)
-            # metric: aggregate location_resolution_source ภายหลัง (geo/tambon/dept/province %)
-            _log.info("intel_resolve project=%s source=%s conf=%s amphoe=%s",
-                      project_id, loc["source"], loc["location_confidence"], loc["amphoe"])
-            rows, scope, _level = select_competitors(province, tokens, loc["tambon"], loc["amphoe"], conn)
-            if not rows:
-                return None
-            counts = Counter(r["winner"] for r in rows if r.get("winner"))
-            discs = [r["discount_pct"] for r in rows if r.get("discount_pct") is not None]
-            area_n = len(rows)
-            p25, p75 = _pct(discs, 25), _pct(discs, 75)
-            top3 = counts.most_common(SHOW_N)
-            top_name = top3[0][0] if top3 else None
-            top_median = company_stats(top_name, tokens, conn)["median"] if top_name else None
-            lines = [f"💡 ราคาอ้างอิง ({scope})", "🏆 คู่แข่งแถบนี้:"]
-            for winner, _ in top3:
-                cs = company_stats(winner, tokens, conn)
-                nm = (winner or "?")[:28]
-                if cs["p25"] is not None:
-                    lines.append(f"  • {nm} · {cs['games']} งาน · ลด {cs['median']:.0f}% "
-                                 f"({cs['p25']:.0f}–{cs['p75']:.0f}%)")
-                elif cs["median"] is not None:
-                    lines.append(f"  • {nm} · {cs['games']} งาน · ลด {cs['median']:.0f}%")
-                else:
-                    lines.append(f"  • {nm} · {cs['games']} งาน")
-            if p75:
-                lines.append(f"📊 ภาพรวม: งานแบบนี้แถบนี้มักลด {p25:.0f}–{p75:.0f}% จากราคากลาง")
-            else:
-                lines.append(f"📊 ภาพรวม {area_n} งาน")
-            lines.append(confidence_label(area_n, p25, p75))
-            return {"lines": lines, "scope": scope, "rows": rows,
-                    "area_p25": p25, "area_p75": p75,
-                    "top_name": top_name, "top_median": top_median}
+            _log.info("intel_resolve project=%s source=%s amphoe=%s",
+                      project_id, loc["source"], loc["amphoe"])
+            return _build_intel(conn, province, tokens, loc["tambon"], loc["amphoe"], budget)
         finally:
             if own:
                 conn.close()
@@ -257,8 +296,8 @@ def intel_context(province: str, project_name: str, dept_name: str = "",
 
 def intel_lines(province: str, project_name: str, dept_name: str = "",
                 project_id: str = "", conn=None) -> list:
-    """บรรทัด 💡 competitor intel (back-compat wrapper รอบ intel_context). [] ถ้าไม่มีข้อมูล."""
-    ctx = intel_context(province, project_name, dept_name, project_id, conn)
+    """บรรทัด 💡 competitor intel (back-compat wrapper). [] ถ้าไม่มีข้อมูล."""
+    ctx = intel_context(province, project_name, dept_name, project_id, 0, conn)
     return ctx["lines"] if ctx else []
 
 
@@ -298,15 +337,12 @@ def compare_prediction(project_id: str, actual_price, conn=None) -> dict | None:
             "area_price_lo": lo, "area_price_hi": hi, "actual": round(actual)}
 
 
-def predict_lines(p: dict) -> list:
-    """บรรทัด 💵 คาดราคา — โชว์ % (ที่มา) ก่อน → ราคา (ผล). framing คาดการณ์ ไม่ใช่คำสั่ง."""
+def predict_lines(p: dict, basis: str = "ตำบล") -> list:
+    """บรรทัด 💵 คาดราคา — โชว์ % (ที่มา) ก่อน → ราคา (ผล) + บอก basis (ตำบล/อำเภอ/จังหวัด).
+    framing คาดการณ์ ไม่ใช่คำสั่ง. คู่แข่งโชว์ในบล็อกด้านบนแล้ว → ที่นี่เอาแค่ช่วงรวม."""
     if not p:
         return []
-    out = [f"💵 คาดราคาที่จะชนะ (ราคากลาง {p['budget']/1e6:.1f} ลบ.):",
-           f"   • ตลาดแถบนี้ลด {p['area_disc_lo']:.0f}–{p['area_disc_hi']:.0f}% → "
-           f"ชนะราว {p['area_price_lo']/1e6:.1f}–{p['area_price_hi']/1e6:.1f} ลบ."]
-    if p.get("top_price") is not None:
-        out.append(f"   • เจ้าตัวเต็ง ({(p['top_name'] or '?')[:20]}) มักลด ~{p['top_disc']:.0f}% → "
-                   f"~{p['top_price']/1e6:.1f} ลบ.")
-    out.append("   * ประเมินจากสถิติ โปรดคำนวณต้นทุนจริงประกอบ")
-    return out
+    return [f"💵 คาดราคาที่จะชนะ (ราคากลาง {p['budget']/1e6:.1f} ลบ.):",
+            f"   • อิง{basis} ลด {p['area_disc_lo']:.0f}–{p['area_disc_hi']:.0f}% → "
+            f"ชนะราว {p['area_price_lo']/1e6:.2f}–{p['area_price_hi']/1e6:.2f} ลบ.",
+            "   * ประเมินจากสถิติ โปรดคำนวณต้นทุนจริงประกอบ"]

@@ -28,6 +28,7 @@ def _fixture_conn():
         ("R4", "นครพนม", "ถนนเมือง", "หจก.C", 700000, 12.0, "2567", EB, "เมืองนครพนม", "ในเมือง"),
         ("R5", "นครพนม", "ถนนเฉพาะเจาะจง", "หจก.D", 1000000, 0.0, "2567", "เฉพาะเจาะจง", "บ้านแพง", "โพนทอง"),
         ("R6", "นครพนม", "ถนน คสล. เรณู", "หจก.X", 850000, 9.0, "2567", EB, "เรณูนคร", "โพนทอง"),  # โพนทองอีกอำเภอ
+        ("R7", "นครพนม", "ถนนลาดยาง ไผ่ล้อม", "หจก.C", 600000, 15.0, "2567", EB, "บ้านแพง", "ไผ่ล้อม"),  # อำเภอเดียวกัน ตำบลอื่น
     ]
     for pid, prov, pname, win, wp, disc, fy, proc, dist, sub in rows:
         c.execute("INSERT INTO cgd_winners (project_id,province,project_name,winner,win_price,"
@@ -103,14 +104,32 @@ def test_golden_amphoe_better_than_province():
     print("✅ golden: amphoe ตัดคู่แข่งคนละอำเภอ (โพนทองเรณู) ออกจริง")
 
 
+def test_build_intel_dual():
+    """dual-block: ตำบลโพนทอง(3 งาน A,A,B)<5 → โชว์อำเภอบ้านแพง(4 งาน +C) คู่กัน · คาดอิงตำบล."""
+    c = _fixture_conn(); tk = ["ถนน"]
+    ctx = ci._build_intel(c, "นครพนม", tk, "โพนทอง", "บ้านแพง", budget=1000000)
+    L = "\n".join(ctx["lines"])
+    assert ctx["lines"][0].startswith("💡 ราคาอ้างอิง (งานถนน ต.โพนทอง อ.บ้านแพง)"), ctx["lines"][0]
+    assert "🏘 ในตำบลโพนทอง" in L and "🏙 ในอำเภอบ้านแพง" in L, L      # 2 บล็อก
+    assert "หจก.C" not in L.split("ในอำเภอ")[0], "ตำบลไม่ควรมี C (อยู่ไผ่ล้อม)"  # scope-local ตำบล
+    assert "หจก.C" in L, "อำเภอควรมี C"                              # อำเภอรวม ไผ่ล้อม
+    assert "หจก.X" not in L, "เรณูนคร ไม่ควรโผล่ (คนละอำเภอ)"
+    assert "อิงตำบล" in L and "คาดราคาที่จะชนะ" in L, L              # คาดอิงตำบล
+    assert ctx["prediction"] and ctx["prediction"]["area_price_lo"] > 0, ctx["prediction"]
+    # ตำบลไม่มีงาน → "ยังไม่มี" + อำเภอยังโชว์
+    ctx2 = ci._build_intel(c, "นครพนม", tk, "หนองซน", "บ้านแพง", budget=1000000)
+    assert ctx2 and "🏘 ในตำบลหนองซน — ยังไม่มีงานประเภทนี้" in "\n".join(ctx2["lines"]), ctx2
+    print("✅ _build_intel dual-block (ตำบล+อำเภอ, scope-local)")
+
+
 def test_intel_context():
     c = _fixture_conn()
-    ctx = ci.intel_context("นครพนม", "ก่อสร้างถนน คสล. ต.โพนทอง", "", "", c)
-    assert ctx is not None and ctx["lines"][0].startswith("💡 ราคาอ้างอิง"), ctx
-    assert ctx["area_p25"] is not None and ctx["area_p75"] is not None, ctx
-    assert ctx["top_name"] and ctx["top_median"] is not None, ctx
-    assert ci.intel_context("นครพนม", "จัดซื้อรถยนต์", "", "", c) is None   # ไม่มี work-type
-    assert ci.intel_context("เชียงใหม่", "ก่อสร้างถนน", "", "", c) is None   # ไม่มีคู่แข่ง
+    # ไม่มี project_locations → resolve เป็น province (โพนทอง ambiguous) → block จังหวัด
+    ctx = ci.intel_context("นครพนม", "ก่อสร้างถนน คสล. ต.โพนทอง", "", "", 1000000, c)
+    assert ctx is not None and ctx["lines"][0].startswith("💡 ราคาอ้างอิง (งานถนน"), ctx
+    assert ctx.get("prediction") is not None, ctx                    # มี budget → คาดราคา
+    assert ci.intel_context("นครพนม", "จัดซื้อรถยนต์", "", "", 0, c) is None   # ไม่มี work-type
+    assert ci.intel_context("เชียงใหม่", "ก่อสร้างถนน", "", "", 0, c) is None   # ไม่มีคู่แข่ง
     print("✅ intel_context")
 
 
@@ -125,21 +144,25 @@ def test_predict_winning_price():
 
 def test_predict_lines():
     p = ci.predict_winning_price(2100000, 8.0, 15.0, "หจก.ศิรประภา", 11.0)
-    lines = ci.predict_lines(p)
+    lines = ci.predict_lines(p, "อำเภอ")
     assert any("คาดราคาที่จะชนะ" in l for l in lines), lines
-    assert any("ลด 8–15%" in l for l in lines), lines           # % ก่อน
+    assert any("อิงอำเภอ ลด 8–15%" in l for l in lines), lines   # basis + % ก่อน
     assert any("ลบ." in l for l in lines), lines                # ราคา
     assert any("โปรดคำนวณต้นทุน" in l for l in lines), lines    # disclaimer
     assert ci.predict_lines(None) == []
     print("✅ predict_lines")
 
 
-def test_company_stats():
+def test_scope_stats():
     c = _fixture_conn(); tk = ["ถนน"]
-    s = ci.company_stats("หจก.A", tk, c)   # 2 งาน disc 5,8 → median 6.5, ไม่มี IQR
+    rows = ci._fetch(c, "นครพนม", tk, subdistrict="โพนทอง", district="บ้านแพง")  # A,A,B (R5 เฉพาะเจาะจงตัด)
+    s = ci._company_stats_from_rows(rows, "หจก.A")   # 2 งาน disc 5,8 → median 6.5, ไม่มี IQR
     assert s["games"] == 2 and s["median"] == 6.5 and s["p25"] is None, s
-    assert ci.company_stats("หจก.D", tk, c)["games"] == 0   # เฉพาะเจาะจง → competitive filter ตัด
-    print("✅ company_stats")
+    assert ci._company_stats_from_rows(rows, "หจก.D")["games"] == 0   # ไม่อยู่ใน scope
+    lines, p25, p75, n, top, topm = ci._scope_block(rows, "🏘 ในตำบลโพนทอง")
+    assert n == 3 and lines[0].startswith("🏘 ในตำบลโพนทอง — 3 งาน"), (n, lines[0])
+    assert any("หจก.A" in l for l in lines), lines
+    print("✅ scope stats + block (scope-local)")
 
 
 def test_confidence_label():
@@ -154,8 +177,8 @@ def test_intel_lines():
     c = _fixture_conn()   # ไม่มี project_locations → resolve degrade province (graceful)
     out = ci.intel_lines("นครพนม", "ก่อสร้างถนน คสล. ต.โพนทอง", conn=c)
     assert out and out[0].startswith("💡 ราคาอ้างอิง (งานถนน"), out
-    assert "🏆 คู่แข่งแถบนี้:" in out and any("หจก." in l for l in out), out
-    assert any(l.startswith("📊 ภาพรวม") for l in out) and any(l[0] in "🟢🟡🔴" for l in out), out
+    assert any("• หจก." in l for l in out), out                  # มีคู่แข่ง
+    assert any("ส่วนลด" in l for l in out), out
     assert ci.intel_lines("นครพนม", "จัดซื้อรถยนต์", conn=c) == []
     assert ci.intel_lines("เชียงใหม่", "ก่อสร้างถนน", conn=c) == []
     print("✅ intel_lines")
@@ -164,10 +187,8 @@ def test_intel_lines():
 def test_wiring_format_notification():
     import Sebastian_LINE_Sender as ls
     import cgd_intel as _ci
-    orig_ctx, orig_pred = _ci.intel_context, _ci.predict_winning_price
-    _ci.predict_winning_price = lambda *a, **k: None   # ปิด predict/store ใน test wiring
-    _ci.intel_context = lambda *a, **k: {"lines": ["💡 TEST INTEL", "🏆 คู่แข่งแถบนี้:"],
-                                          "area_p25": 8, "area_p75": 15, "top_name": "x", "top_median": 11}
+    orig_ctx = _ci.intel_context
+    _ci.intel_context = lambda *a, **k: {"lines": ["💡 TEST INTEL", "🏘 ในตำบล"], "prediction": None}
     txt = ls.format_notification("P1", province="นครพนม", project_name="ก่อสร้างถนน",
                                  source_stage="followed_bid_open")
     assert "💡 TEST INTEL" in txt and "🔑 P1" in txt and "━" in txt, txt
@@ -175,12 +196,11 @@ def test_wiring_format_notification():
     txt2 = ls.format_notification("P1", province="นครพนม", project_name="ก่อสร้างถนน",
                                   source_stage="followed_bid_open")
     assert "🔑 P1" in txt2 and "💡" not in txt2, txt2
-    _ci.intel_context = lambda *a, **k: {"lines": ["💡 SHOULD NOT APPEAR"], "area_p25": 0,
-                                          "area_p75": 0, "top_name": None, "top_median": None}
+    _ci.intel_context = lambda *a, **k: {"lines": ["💡 SHOULD NOT APPEAR"], "prediction": None}
     txt3 = ls.format_notification("P2", province="นครพนม", project_name="ก่อสร้างถนน",
                                   source_stage="api_enriched")
     assert "💡" not in txt3, txt3
-    _ci.intel_context, _ci.predict_winning_price = orig_ctx, orig_pred
+    _ci.intel_context = orig_ctx
     print("✅ wiring format_notification")
 
 
@@ -190,10 +210,11 @@ if __name__ == "__main__":
     test_resolve_location_fallbacks()
     test_select_competitors()
     test_golden_amphoe_better_than_province()
+    test_build_intel_dual()
     test_intel_context()
     test_predict_winning_price()
     test_predict_lines()
-    test_company_stats()
+    test_scope_stats()
     test_confidence_label()
     test_intel_lines()
     test_wiring_format_notification()

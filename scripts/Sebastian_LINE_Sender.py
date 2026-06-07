@@ -257,18 +257,13 @@ def format_notification(project_id: str, province: str = "",
     if source_stage == "followed_bid_open":
         try:
             import cgd_intel
-            ctx = cgd_intel.intel_context(province, project_name, dept_name, project_id)
+            ctx = cgd_intel.intel_context(province, project_name, dept_name, project_id, budget)
             if ctx:
                 lines.append("━━━━━━━━━━━━━")
                 lines.extend(ctx["lines"])
-                # ราคาคาด (เชิงสถิติ) + เก็บไว้เทียบตอนประกาศผล (closed-loop)
-                pred = cgd_intel.predict_winning_price(
-                    budget, ctx["area_p25"], ctx["area_p75"], ctx["top_name"], ctx["top_median"])
-                if pred:
-                    lines.extend(cgd_intel.predict_lines(pred))
-                    if project_id:
-                        from Sebastian_Customer_DB import save_prediction
-                        save_prediction({"project_id": project_id, **pred})   # idempotent
+                if ctx.get("prediction") and project_id:   # เก็บคำทำนายไว้เทียบตอนประกาศผล (closed-loop)
+                    from Sebastian_Customer_DB import save_prediction
+                    save_prediction({"project_id": project_id, **ctx["prediction"]})   # idempotent
         except Exception:
             pass   # intel = value-add — ห้ามทำ D0 notification พัง
 
@@ -624,19 +619,25 @@ def main():
         log("=== LINE Sender done (dry-run) ===")
         return
 
-    # Step 5: send live — flex message + ปุ่ม feedback (เฉพาะ feedback authority)
+    # Step 5: send live
     full_name = _clean_project_name(item.get("project_name") or "") or item["project_id"]
-    _auth = _feedback_authority_ids()
-    _with_fb = (not _auth) or (item["customer_id"] in _auth)
-    flex = build_job_flex(
-        project_id=item["project_id"],
-        title=full_name,
-        detail=text,
-        doc_url=pdf_url,
-        with_feedback=_with_fb,
-    )
-    alt_text = (full_name + " | " + text)[:400]
-    success, error_type, error_msg = send_line_flex(token, item["line_user_id"], alt_text, flex)
+    if (item.get("source_stage") or "") == "followed_bid_open":
+        # ส่งเป็น text ธรรมดา — intel ตำบล+อำเภอ+คาดราคา ยาว จบใน 1 ข้อความ ไม่ truncate
+        # ไม่ต้องมีปุ่ม (งานนี้ติดดาวแล้ว). กัญจน์เลือก 2026-06-08
+        success, error_type, error_msg = send_line_push(
+            token, item["line_user_id"], full_name + "\n" + text)
+    else:
+        _auth = _feedback_authority_ids()
+        _with_fb = (not _auth) or (item["customer_id"] in _auth)
+        flex = build_job_flex(
+            project_id=item["project_id"],
+            title=full_name,
+            detail=text,
+            doc_url=pdf_url,
+            with_feedback=_with_fb,
+        )
+        alt_text = (full_name + " | " + text)[:400]
+        success, error_type, error_msg = send_line_flex(token, item["line_user_id"], alt_text, flex)
 
     # Step 6: mark result
     store.mark_delivery_result(

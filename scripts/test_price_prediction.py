@@ -34,7 +34,27 @@ def test_accuracy_summary():
     print("✅ accuracy summary")
 
 
+def test_compare_prediction():
+    import cgd_intel as ci
+    db.save_prediction({"project_id": "W1", "budget": 2000000, "area_disc_lo": 8, "area_disc_hi": 15,
+                        "area_price_lo": 1700000, "area_price_hi": 1840000, "top_name": "A",
+                        "top_disc": 11, "top_price": 1780000})
+    v = ci.compare_prediction("W1", 1750000)   # ในช่วง 1.70–1.84 (mid 1.77 → err ~1%)
+    assert v["in_range"] is True and v["error_pct"] <= 8, v
+    p = db.get_prediction("W1")
+    assert p["actual_price"] == 1750000 and p["in_range"] == 1, p
+    # นอกช่วง
+    db.save_prediction({"project_id": "W2", "budget": 2000000, "area_price_lo": 1700000, "area_price_hi": 1840000})
+    v2 = ci.compare_prediction("W2", 1500000)
+    assert v2["in_range"] is False, v2
+    # ไม่มี prediction / actual แปลงไม่ได้ → None
+    assert ci.compare_prediction("NOPE", 1) is None
+    assert ci.compare_prediction("W1", "ไม่ใช่ตัวเลข") is None
+    print("✅ compare_prediction")
+
+
 if __name__ == "__main__":
     test_prediction_crud()
     test_accuracy_summary()
+    test_compare_prediction()
     print("ALL PASS price_prediction")

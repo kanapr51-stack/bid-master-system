@@ -276,6 +276,28 @@ def predict_winning_price(budget, area_p25, area_p75, top_name=None, top_median=
     }
 
 
+def compare_prediction(project_id: str, actual_price, conn=None) -> dict | None:
+    """เทียบราคาจริง vs คำทำนาย → in_range + error% → update DB (closed-loop).
+    None ถ้าไม่มี prediction / actual แปลงเป็นตัวเลขไม่ได้."""
+    from Sebastian_Customer_DB import get_prediction, update_prediction_actual
+    try:
+        actual = float(actual_price)
+    except (TypeError, ValueError):
+        return None
+    if not actual:
+        return None
+    p = get_prediction(project_id)
+    if not p or p.get("area_price_lo") is None or p.get("area_price_hi") is None:
+        return None
+    lo, hi = p["area_price_lo"], p["area_price_hi"]
+    in_range = lo <= actual <= hi
+    mid = (lo + hi) / 2
+    error_pct = round(abs(actual - mid) / actual * 100, 1)
+    update_prediction_actual(project_id, round(actual), 1 if in_range else 0, error_pct)
+    return {"in_range": in_range, "error_pct": error_pct,
+            "area_price_lo": lo, "area_price_hi": hi, "actual": round(actual)}
+
+
 def predict_lines(p: dict) -> list:
     """บรรทัด 💵 คาดราคา — โชว์ % (ที่มา) ก่อน → ราคา (ผล). framing คาดการณ์ ไม่ใช่คำสั่ง."""
     if not p:

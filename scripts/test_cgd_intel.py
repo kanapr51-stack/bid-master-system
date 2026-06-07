@@ -27,6 +27,7 @@ def _fixture_conn():
         ("R3", "นครพนม", "ถนน คสล.", "หจก.B", 800000, 10.0, "2568", EB, "บ้านแพง", "โพนทอง"),
         ("R4", "นครพนม", "ถนนเมือง", "หจก.C", 700000, 12.0, "2567", EB, "เมืองนครพนม", "ในเมือง"),
         ("R5", "นครพนม", "ถนนเฉพาะเจาะจง", "หจก.D", 1000000, 0.0, "2567", "เฉพาะเจาะจง", "บ้านแพง", "โพนทอง"),
+        ("R6", "นครพนม", "ถนน คสล. เรณู", "หจก.X", 850000, 9.0, "2567", EB, "เรณูนคร", "โพนทอง"),  # โพนทองอีกอำเภอ
     ]
     for pid, prov, pname, win, wp, disc, fy, proc, dist, sub in rows:
         c.execute("INSERT INTO cgd_winners (project_id,province,project_name,winner,win_price,"
@@ -87,6 +88,21 @@ def test_select_competitors():
     print("✅ select_competitors (amphoe + province fallback)")
 
 
+def test_golden_amphoe_better_than_province():
+    """golden: โพนทองมี 2 อำเภอ (บ้านแพง=A,B · เรณูนคร=X). amphoe-level ต้องตัด X ออก
+    (เลือกเฉพาะคู่แข่งบ้านแพง) ขณะ province รวม X มาด้วย → พิสูจน์ disambiguation ดีขึ้นจริง."""
+    c = _fixture_conn(); tk = ["ถนน"]
+    amp_rows, _s, lv = ci.select_competitors("นครพนม", tk, "โพนทอง", "บ้านแพง", c)
+    amp_winners = {r["winner"] for r in amp_rows}
+    prov_rows, _s2, lv2 = ci.select_competitors("นครพนม", tk, "", None, c)
+    prov_winners = {r["winner"] for r in prov_rows}
+    assert lv == "tambon" and "หจก.X" not in amp_winners, amp_winners       # เรณูนคร ถูกตัด
+    assert amp_winners == {"หจก.A", "หจก.B"}, amp_winners
+    assert "หจก.X" in prov_winners and "หจก.C" in prov_winners, prov_winners # province รวมทุกอำเภอ
+    assert amp_winners < prov_winners                                       # amphoe เจาะกว่า province
+    print("✅ golden: amphoe ตัดคู่แข่งคนละอำเภอ (โพนทองเรณู) ออกจริง")
+
+
 def test_company_stats():
     c = _fixture_conn(); tk = ["ถนน"]
     s = ci.company_stats("หจก.A", tk, c)   # 2 งาน disc 5,8 → median 6.5, ไม่มี IQR
@@ -139,6 +155,7 @@ if __name__ == "__main__":
     test_resolve_location_geo()
     test_resolve_location_fallbacks()
     test_select_competitors()
+    test_golden_amphoe_better_than_province()
     test_company_stats()
     test_confidence_label()
     test_intel_lines()

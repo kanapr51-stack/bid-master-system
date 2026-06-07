@@ -3,12 +3,15 @@ descriptive เท่านั้น (ตลาดเป็นยังไง) �
 พระเอก = โปรไฟล์คู่แข่งรายบริษัท (selection ไล่ระดับ ตำบล→อำเภอ→จังหวัด, stat จากประวัติบริษัท)
 + ภาพรวมเสริม + ป้ายความเชื่อมั่น. ใช้แนบการ์ด D0 (followed_bid_open). intel = value-add — ห้ามทำ notification พัง."""
 import json
+import logging
 import sqlite3
 import sys
 from collections import Counter
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
+
+_log = logging.getLogger("cgd_intel")
 
 _KW_PATH = Path(__file__).parent.parent / "config" / "matching_preferences.json"
 
@@ -213,6 +216,9 @@ def intel_lines(province: str, project_name: str, dept_name: str = "",
             conn = get_connection()
         try:
             loc = resolve_location(project_id, project_name, dept_name, province, conn)
+            # metric: aggregate location_resolution_source ภายหลัง (geo/tambon/dept/province %)
+            _log.info("intel_resolve project=%s source=%s conf=%s amphoe=%s",
+                      project_id, loc["source"], loc["location_confidence"], loc["amphoe"])
             rows, scope, _level = select_competitors(province, tokens, loc["tambon"], loc["amphoe"], conn)
             if not rows:
                 return []

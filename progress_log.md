@@ -4894,3 +4894,23 @@ confidence ส่วนใหญ่ LOW/MEDIUM เพราะ tambon centroid �
 
 ### tests: 5 suite เขียวครบ (cgd_sync v123+backfill · price_prediction · cgd_intel · winner_poller · winner_card)
 ### บทเรียน: 1 source mislabel → compensate ที่ boundary ที่เดียว (ไม่ให้ consumer แก้เอง) · authoritative data (MOI) ควร backfill canonical field
+
+
+## งานที่ N+105: Scope-local stats + Dual-block + Plain-text delivery (2026-06-08)
+
+### สถานะ: 🚧 code เสร็จ+commit local (9441d0e), tests ครบ — รอ push ลง remote (transfer hang) → VPS verify
+
+### Flow: brainstorm (Q&A) → spec → autonomous build (กัญจน์สั่งไม่ต้อง checkpoint review, พักผ่อน)
+
+### Build (TDD)
+- **scope-local stats:** `_company_stats_from_rows` — per-company นับเฉพาะ scope rows (ไม่เอาประวัติบริษัท). ลบ company_stats/_fetch_winner (broad). แก้ความสับสน per-company% vs area%
+- **dual-block:** `_build_intel` — ตำบลเสมอ (0 งาน→"ยังไม่มี") + อำเภอเมื่อตำบล<TAMBON_MIN(5). คาดราคาอิงตำบล (ไม่มี→อำเภอ→จังหวัด). `_scope_block` + `_conf_tag` ต่อบล็อก
+- **plain-text delivery:** followed_bid_open ส่ง `send_line_push` (text, จบ 1 ข้อความ ไม่ flex/ปุ่ม — งาน followed แล้ว)
+- intel_context = resolve + _build_intel (budget param, คืน {lines, prediction})
+- tests: test_cgd_intel (13) + price_prediction + winner_poller + winner_card + cgd_sync เขียวครบ
+
+### Data finding (จากที่กัญจน์สงสัย "ตำบลมี 3 งาน")
+ต.โพธิ์หมากแข้ง งานถนน 3 ปี = 36 งาน แต่ **33 จ้างตรง (92%)** → เหลือ 3 e-bidding = สนามจริง. ยืนยัน 91% market เฉพาะเจาะจง → dual-block จำเป็น
+
+### คง 3 ปี (FY2566-68)
+### NEXT: push ลง remote → VPS pull → verify การ์ด text dual-block งาน 69059075454

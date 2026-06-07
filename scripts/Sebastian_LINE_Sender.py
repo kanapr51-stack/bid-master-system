@@ -367,6 +367,16 @@ def _winner_card_from_results(item: dict, results: list) -> tuple:
         pname, win["bidder_name"] if win else "—",
         win["price_agree"] if win else "", comps,
         budget=float(item.get("budget") or 0), project_id=item.get("project_id", ""))
+    # closed-loop: บรรทัดเทียบราคาคาด vs จริง (เมื่อ prediction verified แล้ว) — credibility
+    try:
+        from Sebastian_Customer_DB import get_prediction
+        p = get_prediction(item.get("project_id", ""))
+        if p and p.get("verified_at") and p.get("area_price_lo") is not None:
+            verdict = "✅ ตรง" if p.get("in_range") else "❌ ไม่ตรง"
+            text += (f"\n🎯 Sebastian คาด {p['area_price_lo']/1e6:.1f}–{p['area_price_hi']/1e6:.1f} ลบ. "
+                     f"→ {verdict} (คลาด {p.get('error_pct') or 0:.0f}%)")
+    except Exception:
+        pass
     flex = build_job_flex(item.get("project_id", ""), "🏆 ประกาศผู้ชนะ", text, with_feedback=False)
     return ("ประกาศผู้ชนะ | " + text)[:400], flex
 

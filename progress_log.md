@@ -4914,3 +4914,24 @@ confidence ส่วนใหญ่ LOW/MEDIUM เพราะ tambon centroid �
 
 ### คง 3 ปี (FY2566-68)
 ### NEXT: push ลง remote → VPS pull → verify การ์ด text dual-block งาน 69059075454
+
+
+## งานที่ N+106: ปรับ output การ์ด D0 ตามกัญจน์ 6 ข้อ — LIVE (2026-06-08)
+
+### สถานะ: ✅ เสร็จ LIVE (commit 51f1016) — ทำทีละสเต็ป (2 batch) + test ทุกสเต็ป (กัญจน์สั่ง กันพลาด)
+- N+105 (scope-local + dual-block + plain-text) commit 9441d0e ก็ LIVE ในรอบเดียวกัน
+
+### 6 ข้อที่ปรับ (verify งานจริง 69059075454)
+1. หัวข้อ → "⭐ งานที่คุณติดตามกำหนดวันยื่นซองแล้ว!" (จากเดิม "เปิดประมูลแล้ว")
+2. ชื่อบริษัทเต็ม — เอา `[:24]` ออกใน `_scope_block` (text ธรรมดาไม่จำกัดความยาว)
+3. ชื่องานเต็ม — เก็บ `plan_project_name` จาก getProcurementDetail ตอน capture (RSS title ตัด body ที่ "ทางหลว"; API ให้เต็ม "ทางหลวงชนบท (ทถ.7-201)")
+4. กำหนดยื่นซอง — ⏰ line มีใน format อยู่แล้ว + PDF enrichment resolve ได้ (9 มิ.ย. 09.00-12.00 + ⌛ เหลือ N วัน). resolve ตอน followed job เลื่อน B0→D0
+5. 📍 ต./อ. ในหัว — `intel_context` คืน tambon/amphoe → format_notification ใช้ "📍 ต.X อ.Y จ.Z"
+6. ลบ. → บาท — predict_lines โชว์บาทเต็ม + ปัดหลักพัน (705,000–779,000)
+
+### Delivery: followed_bid_open = `send_line_push` (text ธรรมดา จบ 1 ข้อความ ไม่ flex/ปุ่ม) [N+105]
+### bug fix รอบนี้: lat/lng swap (source) + province backfill + scope-local stats [N+104/105]
+
+### Followup (priority lock, ดู [[project_value_principle]])
+- **validate กับพ่อ** — ส่งการ์ดจริงให้ดู (กัญจน์กำลังทำ) → evidence ว่า intel/ราคาคาดช่วยตัดสินใจไหม
+- รองาน followed เลื่อน D0 → closed-loop เริ่มวัด credibility

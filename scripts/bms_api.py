@@ -12,16 +12,21 @@ import hmac
 import json
 import base64
 import os
+import sys
 import sqlite3
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 import httpx
 from fastapi import FastAPI, Request, Header, HTTPException
+from fastapi.responses import HTMLResponse
+
+sys.path.insert(0, str(Path(__file__).parent))
+import follow_token  # noqa: E402
 
 # -- Config -------------------------------------------------------------------
 
-DB_PATH              = Path("/opt/bms/data/bms_customers.db")
+DB_PATH              = Path(os.getenv("BMS_DB_PATH", "/opt/bms/data/bms_customers.db"))
 LINE_CHANNEL_SECRET  = os.getenv("SEBASTIAN_LINE_SECRET", "")
 LINE_ACCESS_TOKEN    = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "")
 BMS_INTERNAL_SECRET  = os.getenv("BMS_INTERNAL_SECRET", "")
@@ -235,6 +240,102 @@ def _record_follow(user_id: str, project_id: str):
             ON CONFLICT(customer_id, project_id) DO UPDATE SET status='active'
         """, (cid, project_id, _now(), ann, ann))
     return pname, project_id
+
+
+def _record_unfollow(user_id: str, project_id: str):
+    """ยกเลิกติดตาม → followed_jobs.status='unfollowed' (แยกจาก system 'closed'). คืน (pname, pid) | None."""
+    with get_conn() as conn:
+        cust = conn.execute("SELECT id FROM customers WHERE line_user_id=?", (user_id,)).fetchone()
+        if not cust:
+            return None
+        conn.execute(
+            "UPDATE followed_jobs SET status='unfollowed' WHERE customer_id=? AND project_id=?",
+            (cust["id"], project_id))
+        row = conn.execute(
+            "SELECT project_name FROM projects_seen WHERE project_id=?", (project_id,)).fetchone()
+        pname = (row["project_name"] if row else "") or project_id
+    return pname, project_id
+
+
+def _follow_status(user_id: str, project_id: str) -> str:
+    """'active' (กำลังติดตาม) | 'inactive' (unfollowed/closed/ไม่มี row) | 'no_customer'."""
+    with get_conn() as conn:
+        cust = conn.execute("SELECT id FROM customers WHERE line_user_id=?", (user_id,)).fetchone()
+        if not cust:
+            return "no_customer"
+        row = conn.execute(
+            "SELECT status FROM followed_jobs WHERE customer_id=? AND project_id=?",
+            (cust["id"], project_id)).fetchone()
+    return "active" if (row and row["status"] == "active") else "inactive"
+
+
+def _fmt_exp_th(exp_epoch: int) -> str:
+    """epoch → 'D ด. YYYY' (พ.ศ.) สำหรับแสดงวันหมดอายุลิงก์."""
+    if not exp_epoch:
+        return ""
+    dt = datetime.fromtimestamp(exp_epoch, TZ_TH)
+    months = ["", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+              "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."]
+    return f"{dt.day} {months[dt.month]} {dt.year + 543}"
+
+
+def _follow_page_html(token: str, state: str, d: dict, deadline: str, exp_epoch: int) -> str:
+    """HTML มือถือ-first. state: 'active' | 'inactive' | 'no_customer' | 'invalid'."""
+    import html as _html
+    head = (
+        "<!doctype html><html lang=\"th\"><head><meta charset=\"utf-8\">"
+        "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
+        "<title>ติดตามงาน</title><style>"
+        "body{font-family:-apple-system,'Segoe UI',sans-serif;margin:0;padding:24px;"
+        "background:#f5f6f8;color:#222}"
+        ".card{max-width:480px;margin:0 auto;background:#fff;border-radius:16px;padding:24px;"
+        "box-shadow:0 2px 12px rgba(0,0,0,.08)}"
+        ".h{font-size:18px;font-weight:700;margin:0 0 12px}"
+        ".name{font-size:16px;font-weight:600;margin:8px 0}"
+        ".meta{font-size:13px;color:#888;margin:4px 0}"
+        ".dl{font-size:13px;color:#d9534f;margin:4px 0}"
+        "button{width:100%;padding:16px;font-size:17px;font-weight:700;border:0;border-radius:12px;"
+        "margin-top:20px;color:#fff}"
+        ".follow{background:#1db446}.unfollow{background:#d9534f}"
+        ".exp{font-size:11px;color:#bbb;margin-top:18px;text-align:center}"
+        ".msg{font-size:15px;color:#555;margin:12px 0}"
+        "</style></head><body><div class=\"card\">"
+    )
+    foot = "</div></body></html>"
+
+    if state == "invalid":
+        return head + "<div class=\"h\">ลิงก์ไม่ถูกต้องหรือหมดอายุ</div>" \
+            "<div class=\"msg\">ลิงก์ติดตามนี้ใช้ไม่ได้แล้ว กรุณาเปิดจากข้อความแจ้งเตือนล่าสุดครับ</div>" + foot
+    if state == "no_customer":
+        return head + "<div class=\"h\">ยังไม่ได้เพิ่มเพื่อน</div>" \
+            "<div class=\"msg\">กรุณาเพิ่มเพื่อน Sebastian ก่อนติดตามงานครับ</div>" + foot
+
+    name = _html.escape(d.get("project_name", ""))
+    info = _html.escape(_detail_info_line(d))
+    body = [f"<div class=\"name\">🏗️ {name}</div>", f"<div class=\"meta\">{info}</div>"]
+    if deadline:
+        body.append(f"<div class=\"dl\">⏰ ยื่นซอง {_html.escape(deadline)}</div>")
+
+    tok = _html.escape(token)
+    if state == "active":
+        body.insert(0, "<div class=\"h\">✅ งานนี้ติดตามอยู่แล้ว</div>")
+        body.append(
+            f"<form method=\"post\" action=\"/follow\">"
+            f"<input type=\"hidden\" name=\"t\" value=\"{tok}\">"
+            f"<input type=\"hidden\" name=\"action\" value=\"unfollow\">"
+            f"<button class=\"unfollow\" type=\"submit\">ยกเลิกการติดตาม</button></form>")
+    else:  # inactive
+        body.insert(0, "<div class=\"h\">ติดตามงานนี้?</div>")
+        body.append(
+            f"<form method=\"post\" action=\"/follow\">"
+            f"<input type=\"hidden\" name=\"t\" value=\"{tok}\">"
+            f"<input type=\"hidden\" name=\"action\" value=\"follow\">"
+            f"<button class=\"follow\" type=\"submit\">⭐ ติดตามงานนี้</button></form>")
+
+    exp_str = _fmt_exp_th(exp_epoch)
+    if exp_str:
+        body.append(f"<div class=\"exp\">🔗 ลิงก์นี้ใช้ได้ถึง {exp_str} — ข้อมูลที่ติดตามไม่หาย</div>")
+    return head + "".join(body) + foot
 
 
 # -- Feedback flex (postback): ตอบกลับรายละเอียดงาน + ปุ่มแก้ไข -----------------

@@ -267,7 +267,7 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget) -> d
     pred = predict_winning_price(budget, pp25, pp75, ptop, ptopm)
     if pred:
         lines += [""] + predict_lines(pred, basis)
-    return {"lines": lines, "prediction": pred}
+    return {"lines": lines, "prediction": pred, "tambon": tambon, "amphoe": amphoe}
 
 
 def intel_context(province: str, project_name: str, dept_name: str = "",
@@ -342,7 +342,9 @@ def predict_lines(p: dict, basis: str = "ตำบล") -> list:
     framing คาดการณ์ ไม่ใช่คำสั่ง. คู่แข่งโชว์ในบล็อกด้านบนแล้ว → ที่นี่เอาแค่ช่วงรวม."""
     if not p:
         return []
+    lo = round(p["area_price_lo"] / 1000) * 1000   # ปัดหลักพัน — สื่อว่าเป็นค่าประมาณ
+    hi = round(p["area_price_hi"] / 1000) * 1000
     return [f"💵 คาดราคาที่จะชนะ (ราคากลาง {p['budget']:,.0f} บาท):",
             f"   • อิง{basis} ลด {p['area_disc_lo']:.0f}–{p['area_disc_hi']:.0f}% → "
-            f"ชนะราว {p['area_price_lo']:,.0f}–{p['area_price_hi']:,.0f} บาท",
+            f"ชนะราว {lo:,.0f}–{hi:,.0f} บาท",
             "   * ประเมินจากสถิติ โปรดคำนวณต้นทุนจริงประกอบ"]

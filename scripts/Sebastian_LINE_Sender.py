@@ -223,6 +223,15 @@ def format_notification(project_id: str, province: str = "",
     # ชื่องาน (เต็ม) แสดงเป็น header ของการ์ด flex แล้ว — body ไม่ต้องซ้ำ
     lines = []
 
+    # competitive intel: resolve ก่อน เพื่อใช้ ต./อ. ในบรรทัด 📍 ด้วย (เฉพาะ followed_bid_open)
+    intel_ctx = None
+    if source_stage == "followed_bid_open":
+        try:
+            import cgd_intel
+            intel_ctx = cgd_intel.intel_context(province, project_name, dept_name, project_id, budget)
+        except Exception:
+            intel_ctx = None   # intel = value-add — ห้ามทำ D0 notification พัง
+
     if source_stage == "followed_bid_open":
         lines.append("⭐ งานที่คุณติดตามกำหนดวันยื่นซองแล้ว!")
     elif source_stage.startswith("province_tor_review"):
@@ -232,7 +241,12 @@ def format_notification(project_id: str, province: str = "",
     else:
         lines.append("🔔 พบโครงการใหม่")
 
-    lines.append(f"📍 {province or 'ไม่ระบุจังหวัด'}")
+    # 📍 ระบุ ต./อ. ถ้า resolve ได้ (ละเอียดกว่าจังหวัดเฉยๆ)
+    if intel_ctx and intel_ctx.get("amphoe"):
+        _tb = f"ต.{intel_ctx['tambon']} " if intel_ctx.get("tambon") else ""
+        lines.append(f"📍 {_tb}อ.{intel_ctx['amphoe']} จ.{province}")
+    else:
+        lines.append(f"📍 {province or 'ไม่ระบุจังหวัด'}")
     lines.append(f"💰 ราคากลาง {_fmt_budget(budget)}")
 
     if dept_name:
@@ -253,19 +267,16 @@ def format_notification(project_id: str, province: str = "",
     if report_date:
         lines.append(f"📅 ประกาศ {report_date}")
 
-    # competitive intel (ราคาอ้างอิงจากผู้ชนะงานคล้ายในพื้นที่) — เฉพาะการ์ดเปิดประมูล D0
-    if source_stage == "followed_bid_open":
-        try:
-            import cgd_intel
-            ctx = cgd_intel.intel_context(province, project_name, dept_name, project_id, budget)
-            if ctx:
-                lines.append("━━━━━━━━━━━━━")
-                lines.extend(ctx["lines"])
-                if ctx.get("prediction") and project_id:   # เก็บคำทำนายไว้เทียบตอนประกาศผล (closed-loop)
-                    from Sebastian_Customer_DB import save_prediction
-                    save_prediction({"project_id": project_id, **ctx["prediction"]})   # idempotent
-        except Exception:
-            pass   # intel = value-add — ห้ามทำ D0 notification พัง
+    # competitive intel block (resolve ไว้ข้างบนแล้ว — เฉพาะการ์ดเปิดประมูล D0)
+    if intel_ctx:
+        lines.append("━━━━━━━━━━━━━")
+        lines.extend(intel_ctx["lines"])
+        if intel_ctx.get("prediction") and project_id:   # เก็บคำทำนายไว้เทียบตอนประกาศผล (closed-loop)
+            try:
+                from Sebastian_Customer_DB import save_prediction
+                save_prediction({"project_id": project_id, **intel_ctx["prediction"]})
+            except Exception:
+                pass
 
     lines.append(f"\n🔑 {project_id}")
 

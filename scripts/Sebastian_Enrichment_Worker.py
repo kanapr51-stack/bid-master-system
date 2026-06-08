@@ -414,6 +414,12 @@ def qualify_province_api(store, log) -> int:
                     log(f"  loc captured {pid} has_moi={bool(_d.get('moi_name'))} "
                         f"has_district={bool(_d.get('district_moi_id'))} "
                         f"has_coord={bool(_d.get('latitude'))}")
+                    # เก็บชื่อเต็มจาก API (RSS title ตัด body) — authoritative สำหรับ display
+                    _pn = _d.get("plan_project_name") or ""
+                    if _pn:
+                        with get_connection() as _cn:
+                            _cn.execute("UPDATE projects_seen SET project_name=? WHERE project_id=?",
+                                        (_pn, pid))
                 decision, mdet = jm.match_job(c.get("project_name") or "", c["province"], tb,
                                               c.get("dept_name") or "", cfg=mcfg)
                 log(f"  match[{mmode}] {pid}: {decision} (tb={tb or '-'}, {mdet.get('reason')})")

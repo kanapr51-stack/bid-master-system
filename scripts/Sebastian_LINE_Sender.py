@@ -29,6 +29,7 @@ import bms_paths  # noqa: E402  — single runtime-state authority (BMS_DATA_DIR
 from Sebastian_Customer_DB import (
     SubscriptionStore, init_schema, worker_id, _now,
 )
+import follow_token  # noqa: E402
 
 if sys.stdout and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -39,6 +40,7 @@ LINE_PUSH_URL = "https://api.line.me/v2/bot/message/push"
 BATCH_SIZE    = 1   # correctness > throughput during pilot
 LOG_DIR       = Path(__file__).parent.parent / "logs" / "line_sender"
 TZ_TH         = timezone(timedelta(hours=7))
+PUBLIC_BASE_URL = os.getenv("BMS_PUBLIC_BASE_URL", "https://api.butler-bms.com")
 
 TYPE_LABELS = {
     "D0": "ประกาศจัดซื้อจัดจ้าง",
@@ -310,6 +312,16 @@ def _quick_reply_items(project_id: str, following: bool) -> list:
         "type": "postback", "label": FB_ACTIONS["irrelevant"],
         "data": build_postback_data("irrelevant", project_id), "displayText": FB_ACTIONS["irrelevant"]}})
     return items
+
+
+def build_follow_link(line_user_id: str, project_id: str) -> str:
+    """ลิงก์ติดตามงาน (signed token, ต่อคน-ต่องาน). คืน '' ถ้า make_token พลาด (ห้ามทำ D0 พัง)."""
+    try:
+        return PUBLIC_BASE_URL.rstrip("/") + "/follow?t=" + \
+            follow_token.make_token(line_user_id, project_id)
+    except Exception as e:
+        log(f"  follow_token error (ส่งต่อไม่มีลิงก์): {e}")
+        return ""
 
 
 def send_line_push(token: str, line_user_id: str, text: str, quick_reply=None) -> tuple[bool, str, str]:
@@ -658,16 +670,13 @@ def main():
     # Step 5: send live
     full_name = _clean_project_name(item.get("project_name") or "") or item["project_id"]
     if (item.get("announce_type") or "") == "D0":
-        # งานเปิดยื่นซองทุกงานที่ match → text ธรรมดา + intel (ไม่ truncate) + ปุ่มลอย
-        # ⭐ ติดตาม (ถ้ายังไม่ตาม) / ❌ ไม่เกี่ยว — อุด follow-timing gap. กัญจน์เลือก 2026-06-08
-        try:
-            from Sebastian_Customer_DB import is_following
-            following = is_following(item["customer_id"], item["project_id"])
-        except Exception:
-            following = False
-        qr = _quick_reply_items(item["project_id"], following)
+        # งานเปิดยื่นซองทุกงานที่ match → text ธรรมดา + intel + ลิงก์ติดตาม (signed token).
+        # ลิงก์อยู่ในเนื้อข้อความ → เลื่อนกดงานเก่าได้ไม่หาย (แทน quick-reply ที่หายเมื่อหลายงาน).
+        # N+108 follow-link. กัญจน์เลือก 2026-06-08
+        link = build_follow_link(item["line_user_id"], item["project_id"])
+        link_block = ("\n\n⭐ ติดตามงานนี้:\n" + link) if link else ""
         success, error_type, error_msg = send_line_push(
-            token, item["line_user_id"], full_name + "\n" + text, quick_reply=qr)
+            token, item["line_user_id"], full_name + "\n" + text + link_block, quick_reply=None)
     else:
         _auth = _feedback_authority_ids()
         _with_fb = (not _auth) or (item["customer_id"] in _auth)

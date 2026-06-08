@@ -5043,3 +5043,38 @@ quick-reply ⭐ ใต้ข้อความ D0 **หายเมื่อห�
 - Portal Phase 2 = spec ถัดไป (รายการงานติดตาม + lifecycle + bid_results + โน้ตต่องาน)
 - `_quick_reply_items` ยังคงนิยามไว้ (unused) เผื่ออนาคต
 - ⏳ validate user-facing จริง: รอ D0 ใหม่เด้ง → ดูลิงก์ในข้อความ + ลองกด toggle
+
+---
+
+## งานที่ N+111: คาดราคาแยกประเภทผิวถนน (concrete vs asphalt) — implemented local, ⏸ รอ review/deploy (2026-06-09)
+
+### สถานะ: ✅ implement + test เสร็จ local (commit 76fee27) · ⏸ **ยังไม่ deploy** (รอกัญจน์ review — ราคาเป็นข้อมูลตัดสินใจ + มี caveat)
+
+### Requirement (กัญจน์ ก่อนนอน 2026-06-09)
+งานถนนมี 2 ประเภท (แอสฟัลท์ติก/คอนกรีต) %ลดจากราคากลางต่างกันมาก → คาดราคางานคอนกรีต ให้อ้างอิงเฉพาะถนนคอนกรีตในตำบลนั้น (ไม่เอาแอสฟัลต์ปน)
+
+### Evidence-first PROBE (ก่อน implement — `scripts/_probe_road_subtype_discount.py`, ผล `data/probe_road_subtype_discount.json`)
+ข้อมูลจริง winner_history.db 617K, competitive-set + FY2566-68 + **price_valid=1** + asphalt-precedence classify:
+- **concrete** n=723 median **25%** (p25-75 5.9-36) · **asphalt** n=468 median **14%** (p25-75 0.3-29.3 กว้างมาก) · unknown n=513 median 0.2%
+- ✅ ยืนยัน hypothesis: concrete vs asphalt ต่างกัน ~11 จุด + รูปร่างต่างกัน → ห้าม pool
+- **impact จริง** (นครพนม งบ1ล้าน): pooled ลด 0-35% (กว้างไร้ประโยชน์) → concrete-only 24-41% / asphalt-only 21-37% (แคบ ใช้ได้). pooled p25=0 ถูกลากด้วย asphalt-maintenance/unknown ที่ลด~0%
+
+### ⚠️ Caveats (เจอจาก probe — ต้อง flag ก่อน deploy)
+1. **asphalt bimodal**: เสริมผิว/บูรณะ (งานกรมทางหลวง win≈ราคากลาง) median ~9% vs ก่อสร้างใหม่ ~21%. variance สูงกว่า concrete
+2. **ต่างตามจังหวัด**: นครพนม asphalt 25% แต่ **บึงกาฬ asphalt 0.84%** (near-zero, highway-style) — subtype filter ช่วยตัด concrete contamination แต่ไม่แก้ confound job-nature/agency
+3. **`price_valid` flag**: cgd_intel `_fetch` **ไม่ได้เช็ค price_valid** (เดิม) → อาจมี quality issue เดิม. **แยกประเด็น ไม่ bundle** (จะกระทบ prediction ทุกหมวด ไม่ใช่แค่ถนน) — แนะนำพิจารณาเพิ่มทีหลัง
+
+### Implementation (cgd_intel.py, back-compat)
+- `road_subtype(name)` → 'asphalt'|'concrete'|None. **asphalt ชนะ concrete** ("แอสฟัลท์ติกคอนกรีต"=ผิวแอสฟัลต์)
+- `_fetch(..., subtype=)`: concrete→LIKE concrete-kw AND NOT asphalt-kw · asphalt→LIKE asphalt-kw · None→pool เดิม
+- `_build_intel(..., subtype=)` ส่งต่อ 3 _fetch · `intel_context` คำนวณ subtype จาก project_name อัตโนมัติ
+- back-compat: subtype default None (งานไม่ใช่ถนน/select_competitors legacy ไม่กระทบ)
+- sparsity: subtype ลด n → fallback ladder ตำบล→อำเภอ→จังหวัด + conf-tag เดิมรองรับ. ไม่มี concrete เลย→omit (ดีกว่าคาดผิดประเภท)
+
+### Test
+- `test_road_subtype.py` 4/4 (classifier asphalt-precedence + _fetch filter + _build_intel + intel_context e2e)
+- regression: test_cgd_intel 13/13 (ต้อง `BMS_DATA_DIR` set local) + test_price_prediction PASS
+
+### Next (รอกัญจน์)
+- review caveat → ตัดสินใจ deploy (push + VPS pull + restart bms-line-sender). cgd_winners บน VPS มี proc_type/district แล้ว schema เดียวกับ winner_history → SQL ใช้ได้
+- พิจารณา: classify "unknown" 30% (ลูกรัง/หินคลุก/บูรณะไม่ระบุผิว) ดีขึ้นได้ไหม · price_valid filter แยก ticket

@@ -1,0 +1,90 @@
+{
+  "competitive_recent_total": 3676,
+  "nonroad": 1972,
+  "road_total": 1704,
+  "coverage": {
+    "classified": 1191,
+    "unknown": 513,
+    "unknown_pct": 30.1
+  },
+  "discount_by_subtype": {
+    "concrete": {
+      "n": 723,
+      "median": 25.03,
+      "p25": 5.9,
+      "p75": 36.09,
+      "mean": 22.45,
+      "min": 0.0,
+      "max": 53.06
+    },
+    "asphalt": {
+      "n": 128,
+      "median": 0.21,
+      "p25": 0.07,
+      "p75": 0.43,
+      "mean": 2.82,
+      "min": 0.0,
+      "max": 41.65
+    },
+    "both": {
+      "n": 340,
+      "median": 24.01,
+      "p25": 5.63,
+      "p75": 32.6,
+      "mean": 20.86,
+      "min": -12.89,
+      "max": 47.79
+    },
+    "unknown": {
+      "n": 513,
+      "median": 0.19,
+      "p25": 0.09,
+      "p75": 1.05,
+      "mean": 2.67,
+      "min": -7.64,
+      "max": 46.52
+    }
+  },
+  "target_provinces": {
+    "นครพนม": {
+      "concrete": {
+        "n": 389,
+        "median": 29.56,
+        "p25": 11.86,
+        "p75": 38.53,
+        "mean": 25.58,
+        "min": 0.0,
+        "max": 53.06
+      },
+      "asphalt": {
+        "n": 58,
+        "median": 0.11,
+        "p25": 0.05,
+        "p75": 0.49,
+        "mean": 4.17,
+        "min": 0.02,
+        "max": 41.65
+      }
+    },
+    "บึงกาฬ": {
+      "concrete": {
+        "n": 334,
+        "median": 18.46,
+        "p25": 1.79,
+        "p75": 32.73,
+        "mean": 18.8,
+        "min": 0.0,
+        "max": 51.16
+      },
+      "asphalt": {
+        "n": 70,
+        "median": 0.28,
+        "p25": 0.11,
+        "p75": 0.42,
+        "mean": 1.7,
+        "min": 0.0,
+        "max": 36.58
+      }
+    }
+  }
+}

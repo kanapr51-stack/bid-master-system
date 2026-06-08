@@ -26,6 +26,14 @@ COMPETITIVE_SET = (
 # 3 ปีงบล่าสุด — ราคาตลาดเก่าไม่สะท้อนปัจจุบัน (เงินเฟ้อ/ราคาวัสดุ)
 RECENT_FY = ("2566", "2567", "2568")
 
+# road subtype — แยก reference set คาดราคา เพราะ %ลดต่างกันชัด (evidence:
+# data/probe_road_subtype_discount.json, กัญจน์ 2026-06-09 — concrete median ~25% vs
+# asphalt ~14% รูปร่างต่างกันมาก → pool รวมกันทำให้คาดราคา bias). asphalt ชนะ concrete
+# เพราะ "แอสฟัลท์ติกคอนกรีต" = ผิวแอสฟัลต์ (ไม่ใช่คอนกรีต).
+_ASPHALT_KW = ("แอสฟัลท์", "แอสฟัลต์", "แอสฟัลติก", "ลาดยาง", "พาราแอสฟัลต์",
+               "พาราแอสฟัลท์", "เคพซีล")
+_CONCRETE_KW = ("คอนกรีตเสริมเหล็ก", "คสล", "ค.ส.ล", "คอนกรีต")
+
 MIN_COMPETITORS = 2     # distinct winners ขั้นต่ำก่อนหยุด fallback
 SHOW_N = 3              # จำนวนบริษัทที่โชว์
 MIN_GAMES_FOR_IQR = 3   # ต่ำกว่านี้โชว์แค่ median
@@ -46,6 +54,18 @@ def match_keywords(project_name: str, keywords: list = None) -> list:
         if kw and kw in name and kw not in out:
             out.append(kw)
     return out
+
+
+def road_subtype(project_name: str):
+    """ประเภทผิวถนนจากชื่องาน: 'asphalt' | 'concrete' | None (ไม่ใช่ถนน/ระบุไม่ได้).
+    asphalt ชนะ concrete — 'แอสฟัลท์ติกคอนกรีต' = ผิวแอสฟัลต์. ใช้แยก reference set ตอนคาดราคา
+    (concrete vs asphalt %ลดต่างกันชัด). None → ไม่ filter subtype (pool เดิม)."""
+    n = project_name or ""
+    if any(k in n for k in _ASPHALT_KW):
+        return "asphalt"
+    if any(k in n for k in _CONCRETE_KW):
+        return "concrete"
+    return None
 
 
 def resolve_location(project_id: str, project_name: str, dept_name: str, province: str, conn) -> dict:
@@ -118,8 +138,9 @@ def _pct(values: list, p: float):
     return v[f] + (v[c] - v[f]) * (k - f)
 
 
-def _fetch(conn, province: str, tokens: list, *, subdistrict=None, district=None) -> list:
+def _fetch(conn, province: str, tokens: list, *, subdistrict=None, district=None, subtype=None) -> list:
     """ดึงงาน competitive ของ work-type (LIKE any token) ใน province + (เลือก subdistrict/district).
+    subtype='concrete'/'asphalt' → จำกัด reference เฉพาะประเภทผิวถนนเดียวกัน (ดู road_subtype).
     คืน list[dict] (รวม district/subdistrict). graceful [] ถ้าไม่มี table/column."""
     fy_ph = ",".join("?" for _ in RECENT_FY)
     pt_ph = ",".join("?" for _ in COMPETITIVE_SET)
@@ -131,6 +152,16 @@ def _fetch(conn, province: str, tokens: list, *, subdistrict=None, district=None
         where.append("subdistrict=?"); params.append(subdistrict)
     if district is not None:
         where.append("district=?"); params.append(district)
+    # subtype filter — concrete อ้างอิง concrete, asphalt อ้างอิง asphalt (asphalt ชนะ:
+    # concrete ต้องไม่มี keyword asphalt เลย เพื่อกัน 'แอสฟัลท์ติกคอนกรีต' หลุดเข้า concrete)
+    if subtype == "asphalt":
+        where.append("(" + " OR ".join("project_name LIKE ?" for _ in _ASPHALT_KW) + ")")
+        params += [f"%{k}%" for k in _ASPHALT_KW]
+    elif subtype == "concrete":
+        where.append("(" + " OR ".join("project_name LIKE ?" for _ in _CONCRETE_KW) + ")")
+        params += [f"%{k}%" for k in _CONCRETE_KW]
+        where.append("NOT (" + " OR ".join("project_name LIKE ?" for _ in _ASPHALT_KW) + ")")
+        params += [f"%{k}%" for k in _ASPHALT_KW]
     try:
         cur = conn.execute(
             "SELECT project_name, winner, win_price, discount_pct, district, subdistrict "
@@ -224,7 +255,7 @@ def confidence_label(area_n: int, p25, p75) -> str:
     return "🟢 เชื่อถือได้ — ข้อมูลมากพอ"
 
 
-def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget) -> dict | None:
+def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subtype=None) -> dict | None:
     """ประกอบ intel dual-block จาก (ตำบล,อำเภอ) ที่ resolve มาแล้ว (แยกจาก resolve เพื่อ test ง่าย).
     - บล็อกตำบล: เสมอ (ถ้ามีชื่อตำบล) — สถิติเฉพาะงานในตำบล. 0 งาน → 'ยังไม่มีงานประเภทนี้'
     - บล็อกอำเภอ: เพิ่มเมื่อตำบล < TAMBON_MIN — สถิติเฉพาะงานในอำเภอ
@@ -237,7 +268,7 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget) -> d
     if amphoe:
         header = (f"💡 ราคาอ้างอิง (งาน{wt}"
                   + (f" ต.{tambon}" if tambon else "") + f" อ.{amphoe})")
-        t_rows = _fetch(conn, province, tokens, subdistrict=tambon, district=amphoe) if tambon else []
+        t_rows = _fetch(conn, province, tokens, subdistrict=tambon, district=amphoe, subtype=subtype) if tambon else []
         tn = len(t_rows)
         if tambon:
             if t_rows:
@@ -247,14 +278,14 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget) -> d
             else:
                 blocks.append(f"🏘 ในตำบล{tambon} — ยังไม่มีงานประเภทนี้")
         if tn < TAMBON_MIN:                       # ตำบลน้อย → โชว์อำเภอคู่กัน
-            a_rows = _fetch(conn, province, tokens, district=amphoe)
+            a_rows = _fetch(conn, province, tokens, district=amphoe, subtype=subtype)
             if a_rows:
                 al, a25, a75, _n, atop, atopm = _scope_block(a_rows, f"🏙 ในอำเภอ{amphoe}")
                 blocks += al
                 if pp25 is None:                  # ตำบลไม่มี → คาดอิงอำเภอ
                     pp25, pp75, ptop, ptopm, basis = a25, a75, atop, atopm, "อำเภอ"
     else:
-        p_rows = _fetch(conn, province, tokens)
+        p_rows = _fetch(conn, province, tokens, subtype=subtype)
         if not p_rows:
             return None
         pl, p25, p75, _n, ptopn, ptopmd = _scope_block(p_rows, f"🏙 ใน{province}")
@@ -286,7 +317,8 @@ def intel_context(province: str, project_name: str, dept_name: str = "",
             loc = resolve_location(project_id, project_name, dept_name, province, conn)
             _log.info("intel_resolve project=%s source=%s amphoe=%s",
                       project_id, loc["source"], loc["amphoe"])
-            return _build_intel(conn, province, tokens, loc["tambon"], loc["amphoe"], budget)
+            return _build_intel(conn, province, tokens, loc["tambon"], loc["amphoe"],
+                                budget, road_subtype(project_name))
         finally:
             if own:
                 conn.close()

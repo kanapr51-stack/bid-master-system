@@ -258,3 +258,18 @@ winner_history มี field `proc_type` (วิธีจัดซื้อฯ) 2
 3. **Work-type trend over time** — เทรนด์งานแต่ละหมวดตามปีงบ (หมวดไหนโต/หด)
 
 หมายเหตุ: ทั้ง 3 ข้อ **พึ่ง classification ที่แม่น** — ดู open issue tie-break (precision สะพาน).
+
+---
+
+## [PORTAL] เว็บ follow = ฐานข้อมูลส่วนตัวของลูกค้า (2026-06-08)
+
+คุณกัญจน์เสนอตอนทำ follow-link: ให้หน้าเว็บ follow กลายเป็น Portal ส่วนตัวต่อ user
+
+- ดู "งานทั้งหมดที่ฉันติดตามอยู่" + สถานะ lifecycle (B0->D0->W0->ประกาศผล)
+- พองานถึงประกาศผู้ชนะ -> ข้อมูลผู้ประมูลทั้งหมด (ผู้ชนะ/คู่แข่ง/ราคา) ไปอยู่ในหน้านั้นเลย
+- โน้ตส่วนตัวต่องาน (เก็บไว้ว่าอยากจำอะไรเกี่ยวกับงานนี้)
+
+ข้อมูลส่วนใหญ่มีแล้ว (followed_jobs lifecycle + bid_results + closed-loop prediction)
+ที่ใหม่ = per-user token + dashboard list + notes table
+ตรงกับ project_client_surface_decision (LINE + Web Portal). วางเป็น Phase 2 หลัง follow-link
+spec: docs/superpowers/specs/2026-06-08-follow-link-signed-token-design.md (section Future work)

@@ -4980,3 +4980,27 @@ quick-reply (ปุ่มลอย ที่เพิ่งทำ N+107) LINE �
 4. identify user จาก LIFF (liff.getProfile userId → map customer)
 
 ### เริ่ม session ใหม่: บอก "ทำ LIFF follow link ต่อ" → resume จากนี่
+
+## งานที่ N+109: CHECKPOINT — ก่อนเปลี่ยน session (2026-06-08)
+
+### สถานะ: ⏸ pause เปลี่ยน session (กัญจน์ขอ execute ใน session หน้า)
+
+### ✅ เสร็จแล้ว session นี้ (brainstorm → spec → plan ครบ)
+- ตัดสินใจสถาปัตยกรรม: **follow-link ใช้ signed-token ไม่ใช่ LIFF** (bot รู้ userId อยู่แล้ว → ฝังใน token ได้, ไม่ต้องสร้าง LINE Login channel/LIFF SDK). LIFF เลื่อนไป Portal Phase 2
+- ยืนยัน infra: HTTPS พร้อม — `https://api.butler-bms.com` (Let's Encrypt+Certbot, nginx→FastAPI:8000, /health live)
+- Spec (approved): `docs/superpowers/specs/2026-06-08-follow-link-signed-token-design.md` (commits ea572e4, f692718, 32ceeb0)
+- Plan (7 tasks): `docs/superpowers/plans/2026-06-08-follow-link-signed-token.md` (commit 4efac8f)
+- Idea Portal Phase 2 เก็บลง `ideas/future_development.md` (uncommitted — ดูค้าง)
+
+### 🎯 NEXT ACTION (session หน้า)
+- **Execute plan แบบ subagent-driven** (กัญจน์เลือก): `docs/superpowers/plans/2026-06-08-follow-link-signed-token.md`
+- ใช้ skill `superpowers:subagent-driven-development` — dispatch subagent สดต่อ 1 task, review ระหว่าง task
+- ลำดับ: Task 1 (follow_token.py) → 2 (bms_api helpers) → 3 (routes) → 4 (sender wiring) → 5 (sanity) → 6 (deploy) → 7 (log)
+- ⚠️ **Task 6 = deploy VPS มี gate: ต้อง confirm กัญจน์ก่อน `git push`** (CLAUDE.md) + ตั้ง `BMS_FOLLOW_SECRET` ใน `/opt/bms/app/.env`
+- ⚠️ implementation จริงให้ log เป็น **N+110** (N+109 = checkpoint นี้แล้ว)
+
+### ค้าง/ระวัง
+- design ผ่าน review: expiry 120 วัน (โชว์ user) · status unfollow=`'unfollowed'` (แยกจาก system `'closed'`) · token bearer OK สำหรับ MVP · token เผื่อ portal (`p=None`)
+- VPS **ไม่มี sqlite3 CLI** → sanity ใช้ `python3 -c`
+- uncommitted: ideas/future_development.md (+ data/* runtime, settings.local.json — ปกติไม่ commit)
+- Portal Phase 2 = spec ถัดไป (รายการงานติดตาม + lifecycle + bid_results + โน้ตต่องาน)

@@ -4958,3 +4958,25 @@ intel เดิมขึ้นเฉพาะ followed_bid_open (ติดตา
 ### ผล: ทุกงาน D0 ที่ match → เห็น intel ทันที + กดติดตามได้จาก chip (ไม่ว่ากดก่อน/ตอน/หลัง D0)
 ### spec: docs/superpowers/specs/2026-06-08-intel-all-d0-quickreply-design.md
 ### NEXT: push → VPS pull → verify render งานใหม่ D0
+
+
+## งานที่ N+108: DECISION — follow link แบบ LIFF (option A) สำหรับ multi-job D0 (2026-06-08)
+
+### สถานะ: 📌 ตัดสินใจแล้ว — รอทำ session ใหม่ (กัญจน์ขอเปิด session ใหม่ก่อน)
+
+### ปัญหาที่เจอ (กัญจน์จับได้)
+quick-reply (ปุ่มลอย ที่เพิ่งทำ N+107) LINE โชว์**เฉพาะข้อความล่าสุด** → ถ้าหลายงาน D0 เด้งพร้อมกัน ปุ่ม ⭐ ของงานก่อนหน้าหาย กดติดตามไม่ได้
+
+### ตัดสินใจ: option A = LIFF follow link
+- ข้อความ D0 = text ธรรมดา + **ลิงก์ LIFF ในเนื้อข้อความ** (ต่องาน, เลื่อนกดของเก่าได้ ไม่หาย)
+- แตะลิงก์ → มินิเว็บใน LINE → กด "ติดตาม" 1 ครั้ง → endpoint บันทึก followed_jobs
+- ตรงแผน client = LINE + Web Portal (LIFF) [[project_client_surface_decision]]
+- quick-reply (N+107) = **interim** ใช้ต่อได้ระหว่างทำ (ดีตอนงานเดียว)
+
+### TODO session ใหม่
+1. **กัญจน์ต้อง register LIFF app** ใน LINE Developer Console เอง (ผมทำแทนไม่ได้) → ได้ LIFF ID
+2. brainstorm/spec: หน้า LIFF follow + endpoint (FastAPI bms_api) บันทึก follow จาก LIFF userId
+3. format_notification (D0) แทรกลิงก์ LIFF + เอา quick-reply ออก (หรือคงไว้คู่)
+4. identify user จาก LIFF (liff.getProfile userId → map customer)
+
+### เริ่ม session ใหม่: บอก "ทำ LIFF follow link ต่อ" → resume จากนี่

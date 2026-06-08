@@ -198,10 +198,15 @@ def test_wiring_format_notification():
     assert "🔑 P1" in txt2 and "💡" not in txt2, txt2
     _ci.intel_context = lambda *a, **k: {"lines": ["💡 SHOULD NOT APPEAR"], "prediction": None}
     txt3 = ls.format_notification("P2", province="นครพนม", project_name="ก่อสร้างถนน",
-                                  source_stage="api_enriched")
-    assert "💡" not in txt3, txt3
+                                  announce_type="B0", source_stage="province_tor_review")
+    assert "💡" not in txt3, txt3   # non-D0 (B0) → ไม่มี intel
+    # D0 ที่ยังไม่ได้ติดตาม (เจอใหม่) → ต้องมี intel + หัวข้อ "พบงานเปิดกำหนดวันยื่นซอง"
+    _ci.intel_context = lambda *a, **k: {"lines": ["💡 NEW D0 INTEL"], "prediction": None}
+    txt4 = ls.format_notification("P3", province="นครพนม", project_name="ก่อสร้างถนน",
+                                  announce_type="D0", source_stage="province_qualified")
+    assert "💡 NEW D0 INTEL" in txt4 and "พบงานเปิดกำหนดวันยื่นซอง" in txt4, txt4
     _ci.intel_context = orig_ctx
-    print("✅ wiring format_notification")
+    print("✅ wiring format_notification (D0 ทุก stage)")
 
 
 if __name__ == "__main__":

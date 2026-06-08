@@ -223,9 +223,10 @@ def format_notification(project_id: str, province: str = "",
     # ชื่องาน (เต็ม) แสดงเป็น header ของการ์ด flex แล้ว — body ไม่ต้องซ้ำ
     lines = []
 
-    # competitive intel: resolve ก่อน เพื่อใช้ ต./อ. ในบรรทัด 📍 ด้วย (เฉพาะ followed_bid_open)
+    # competitive intel: resolve ทุกงาน D0 (เปิดยื่นซอง) เพื่อใช้ ต./อ. ในบรรทัด 📍 + บล็อก intel
+    # — ไม่ผูกกับการติดตาม (กดติดตามตอน D0 ก็เห็น intel; อุด follow-timing gap)
     intel_ctx = None
-    if source_stage == "followed_bid_open":
+    if announce_type == "D0":
         try:
             import cgd_intel
             intel_ctx = cgd_intel.intel_context(province, project_name, dept_name, project_id, budget)
@@ -234,6 +235,8 @@ def format_notification(project_id: str, province: str = "",
 
     if source_stage == "followed_bid_open":
         lines.append("⭐ งานที่คุณติดตามกำหนดวันยื่นซองแล้ว!")
+    elif announce_type == "D0":
+        lines.append("🔔 พบงานเปิดกำหนดวันยื่นซองใหม่")
     elif source_stage.startswith("province_tor_review"):
         lines.append("📋 รับฟังคำวิจารณ์ (ร่าง TOR — ยังไม่เปิดประมูล)")
     elif is_backfill:
@@ -288,10 +291,32 @@ def format_notification(project_id: str, province: str = "",
     return "\n".join(lines)
 
 
-def send_line_push(token: str, line_user_id: str, text: str) -> tuple[bool, str, str]:
+def _text_message(text: str, quick_reply=None) -> dict:
+    """LINE text message dict + แนบ quickReply (ปุ่มลอย) ถ้ามี items."""
+    msg = {"type": "text", "text": text}
+    if quick_reply:
+        msg["quickReply"] = {"items": quick_reply}
+    return msg
+
+
+def _quick_reply_items(project_id: str, following: bool) -> list:
+    """ปุ่มลอยใต้ข้อความ D0: ⭐ ติดตาม (ถ้ายังไม่ตาม) + ❌ ไม่เกี่ยว. postback เดียวกับการ์ด flex."""
+    items = []
+    if not following:
+        items.append({"type": "action", "action": {
+            "type": "postback", "label": FB_ACTIONS["star"],
+            "data": build_postback_data("star", project_id), "displayText": FB_ACTIONS["star"]}})
+    items.append({"type": "action", "action": {
+        "type": "postback", "label": FB_ACTIONS["irrelevant"],
+        "data": build_postback_data("irrelevant", project_id), "displayText": FB_ACTIONS["irrelevant"]}})
+    return items
+
+
+def send_line_push(token: str, line_user_id: str, text: str, quick_reply=None) -> tuple[bool, str, str]:
     """
     Returns (success, error_type, error_msg).
     error_type: '' | 'retryable' | 'terminal'
+    quick_reply: list ของ quick-reply action items (None = ข้อความเปล่า เหมือนเดิม).
     """
     try:
         r = req_lib.post(
@@ -300,7 +325,7 @@ def send_line_push(token: str, line_user_id: str, text: str) -> tuple[bool, str,
                 "Authorization": f"Bearer {token}",
                 "Content-Type": "application/json",
             },
-            json={"to": line_user_id, "messages": [{"type": "text", "text": text}]},
+            json={"to": line_user_id, "messages": [_text_message(text, quick_reply)]},
             timeout=10,
         )
         if r.status_code == 200:
@@ -632,11 +657,17 @@ def main():
 
     # Step 5: send live
     full_name = _clean_project_name(item.get("project_name") or "") or item["project_id"]
-    if (item.get("source_stage") or "") == "followed_bid_open":
-        # ส่งเป็น text ธรรมดา — intel ตำบล+อำเภอ+คาดราคา ยาว จบใน 1 ข้อความ ไม่ truncate
-        # ไม่ต้องมีปุ่ม (งานนี้ติดดาวแล้ว). กัญจน์เลือก 2026-06-08
+    if (item.get("announce_type") or "") == "D0":
+        # งานเปิดยื่นซองทุกงานที่ match → text ธรรมดา + intel (ไม่ truncate) + ปุ่มลอย
+        # ⭐ ติดตาม (ถ้ายังไม่ตาม) / ❌ ไม่เกี่ยว — อุด follow-timing gap. กัญจน์เลือก 2026-06-08
+        try:
+            from Sebastian_Customer_DB import is_following
+            following = is_following(item["customer_id"], item["project_id"])
+        except Exception:
+            following = False
+        qr = _quick_reply_items(item["project_id"], following)
         success, error_type, error_msg = send_line_push(
-            token, item["line_user_id"], full_name + "\n" + text)
+            token, item["line_user_id"], full_name + "\n" + text, quick_reply=qr)
     else:
         _auth = _feedback_authority_ids()
         _with_fb = (not _auth) or (item["customer_id"] in _auth)

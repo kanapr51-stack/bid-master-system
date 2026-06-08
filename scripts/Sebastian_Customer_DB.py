@@ -99,6 +99,14 @@ def save_project_location_raw(project_id: str, district_moi_id: str = "", moi_na
              str(latitude or ""), str(longitude or ""), project_id))
 
 
+def is_following(customer_id: int, project_id: str) -> bool:
+    """ลูกค้ารายนี้ติดตามงานนี้อยู่ไหม (followed_jobs active) — ใช้กันโชว์ปุ่ม ⭐ ซ้ำ."""
+    with get_connection() as conn:
+        return conn.execute(
+            "SELECT 1 FROM followed_jobs WHERE customer_id=? AND project_id=? AND status='active'",
+            (customer_id, project_id)).fetchone() is not None
+
+
 def save_prediction(p: dict) -> None:
     """เก็บคำทำนายราคาตอน D0 (idempotent ตาม project_id — เก็บค่าแรกที่โชว์). p ต้องมี project_id."""
     cols = ("project_id", "budget", "area_disc_lo", "area_disc_hi", "area_price_lo",

@@ -69,10 +69,10 @@ POST /follow → verify → _record_follow / _record_unfollow → re-render ห�
   payload = `{"u": user_id, "p": project_id, "e": <epoch หมดอายุ>}`
   (`p=None` = portal token ระดับ user — เผื่อ Phase 2; follow-link จะส่ง project_id เสมอ)
   token = `base64url(json(payload)) + "." + base64url(hmac_sha256(secret, payload_b64))`
-- `verify_token(t) -> (user_id, project_id) | None`
+- `verify_token(t) -> (user_id, project_id, exp_epoch) | None`
   - แยก `.` → ตรวจ sig ด้วย `hmac.compare_digest` → reject ถ้าไม่ตรง
   - ตรวจ `e` > now → reject ถ้าหมดอายุ
-  - คืน `(u, p)`
+  - คืน `(u, p, e)` — คืน `e` ด้วยเพื่อให้หน้าเว็บแสดงวันหมดอายุลิงก์
 - secret = env **`BMS_FOLLOW_SECRET`** (sender มินต์ + api verify อยู่บน VPS เดียวกัน แชร์ env)
 - ใช้ `base64.urlsafe_b64encode` (ไม่มีอักขระต้อง URL-escape)
 
@@ -88,6 +88,8 @@ POST /follow → verify → _record_follow / _record_unfollow → re-render ห�
 
 - HTML: inline string, มือถือ-first, ปุ่มใหญ่แตะง่าย, ภาษาไทย — reuse `_project_detail()` +
   `_follow_deadline()` แสดงชื่องาน/จังหวัด/งบ/⏰ deadline
+- **footer แจ้งวันหมดอายุลิงก์:** อ่าน `e` จาก token → แสดง "🔗 ลิงก์นี้ใช้ได้ถึง <DD ด. YYYY>"
+  (ตัวเล็ก สีจาง) ให้ user รู้ว่าลิงก์มีอายุ — ข้อมูลที่ติดตามไม่หาย แต่ลิงก์เก่าจะกดไม่ได้หลัง 120 วัน
 - ใช้ `HTMLResponse` จาก `fastapi.responses`
 - ปุ่ม = `<form method="post" action="/follow">` + hidden `t` + hidden `action` → กัน prefetch
   auto-follow (side-effect เป็น POST เท่านั้น)

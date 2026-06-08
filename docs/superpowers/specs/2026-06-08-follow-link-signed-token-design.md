@@ -65,8 +65,9 @@ POST /follow → verify → _record_follow / _record_unfollow → re-render ห�
 
 ตัวมินต์/ตรวจ token แบบ stateless HMAC ไม่เก็บ DB
 
-- `make_token(user_id, project_id, ttl_days=120) -> str`
+- `make_token(user_id, project_id=None, ttl_days=120) -> str`
   payload = `{"u": user_id, "p": project_id, "e": <epoch หมดอายุ>}`
+  (`p=None` = portal token ระดับ user — เผื่อ Phase 2; follow-link จะส่ง project_id เสมอ)
   token = `base64url(json(payload)) + "." + base64url(hmac_sha256(secret, payload_b64))`
 - `verify_token(t) -> (user_id, project_id) | None`
   - แยก `.` → ตรวจ sig ด้วย `hmac.compare_digest` → reject ถ้าไม่ตรง
@@ -143,6 +144,18 @@ last_stage_notified, status)` · UNIQUE(customer_id, project_id)
 3. **Downstream filter:** ยืนยัน job_followups/Winner_Poller filter status='active' (ดู section Data)
 4. **End-to-end:** ส่ง D0 ทดสอบหา self → แตะลิงก์จริงบนมือถือ → กดติดตาม → re-tap เห็นปุ่มยกเลิก →
    กดยกเลิก → followed_jobs.status='unfollowed'
+
+## Future work: Web Portal (Phase 2 — spec แยก)
+
+กัญจน์ยืนยัน 2026-06-08: Portal ส่วนตัวเป็น feature ถัดไป (ทำ follow-link นี้ให้จบก่อน เป็นรากฐาน
+identity) Portal = หน้าแสดง "งานทั้งหมดที่ฉันติดตาม" + lifecycle + ผู้ชนะ/คู่แข่ง/ราคา (จาก
+`bid_results`) + คาดราคา vs จริง + **โน้ตส่วนตัวต่องาน** (ตาราง/คอลัมน์ใหม่) ตรงกับ
+`project_client_surface_decision` (LINE + Web Portal)
+
+**Forward-compat ที่ต้องเผื่อใน spec นี้:** ออกแบบ `make_token` ให้รองรับ token ระดับ user
+ในอนาคต — projectId เป็น optional (payload ไม่มี `p` = portal token ระดับ user, อายุยาวกว่า)
+เพื่อ Phase 2 reuse `verify_token` เดิมได้โดยไม่ต้องรื้อ ส่วน dashboard/notes/bid_results view
+เก็บไว้ Phase 2 (ไม่ทำตอนนี้)
 
 ## Deployment notes
 

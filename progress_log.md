@@ -4935,3 +4935,26 @@ confidence ส่วนใหญ่ LOW/MEDIUM เพราะ tambon centroid �
 ### Followup (priority lock, ดู [[project_value_principle]])
 - **validate กับพ่อ** — ส่งการ์ดจริงให้ดู (กัญจน์กำลังทำ) → evidence ว่า intel/ราคาคาดช่วยตัดสินใจไหม
 - รองาน followed เลื่อน D0 → closed-loop เริ่มวัด credibility
+
+
+## งานที่ N+107: intel + quick-reply ทุกงาน D0 ที่ match (อุด follow-timing gap) (2026-06-08)
+
+### สถานะ: 🚧 code+test เสร็จ (commit 93bb66d) — รอ push → VPS verify
+
+### Flow: brainstorm (กัญจน์จับ gap "กดสนใจตอน D0") → spec → TDD
+
+### Gap ที่แก้
+intel เดิมขึ้นเฉพาะ followed_bid_open (ติดตามตั้งแต่ B0 → เลื่อน D0). ถ้ากดสนใจตอน D0 เลย → last_stage_notified=D0 → bid_open_followups (ต้องการ B*) ไม่ทริก → ไม่ได้ intel
+
+### Build (TDD)
+- **gate intel/plain-text บน `announce_type=="D0"`** (ทุก stage ไม่ใช่แค่ followed) ใน format_notification
+- หัวข้องานใหม่ (ยังไม่ตาม) = "🔔 พบงานเปิดกำหนดวันยื่นซองใหม่" · ติดตามแล้ว = "⭐ งานที่ติดตามกำหนดวันยื่นซองแล้ว!"
+- **Quick Reply** (ปุ่มลอยใต้ text — text กดปุ่มในตัวไม่ได้): `send_line_push(+quick_reply)` + `_text_message` + `_quick_reply_items` (⭐ ติดตาม ถ้ายังไม่ตาม + ❌ ไม่เกี่ยว)
+- `is_following(customer_id, project_id)` (Customer_DB) กันโชว์ ⭐ ซ้ำ
+- send path: D0 → send_line_push(text, qr) · non-D0 → flex เดิม
+- webhook รับ postback star:/fb: อยู่แล้ว (ไม่ต้องแก้)
+- tests: test_d0_quickreply (4) + test_cgd_intel wiring (D0 ทุก stage) เขียว
+
+### ผล: ทุกงาน D0 ที่ match → เห็น intel ทันที + กดติดตามได้จาก chip (ไม่ว่ากดก่อน/ตอน/หลัง D0)
+### spec: docs/superpowers/specs/2026-06-08-intel-all-d0-quickreply-design.md
+### NEXT: push → VPS pull → verify render งานใหม่ D0

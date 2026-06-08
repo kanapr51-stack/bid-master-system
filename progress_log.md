@@ -5004,3 +5004,42 @@ quick-reply (ปุ่มลอย ที่เพิ่งทำ N+107) LINE �
 - VPS **ไม่มี sqlite3 CLI** → sanity ใช้ `python3 -c`
 - uncommitted: ideas/future_development.md (+ data/* runtime, settings.local.json — ปกติไม่ commit)
 - Portal Phase 2 = spec ถัดไป (รายการงานติดตาม + lifecycle + bid_results + โน้ตต่องาน)
+
+---
+
+## งานที่ N+110: follow-link signed-token toggle — LIVE (2026-06-09)
+
+### สถานะ: ✅ เสร็จ — deployed VPS + e2e verified (subagent-driven, 6 commits)
+
+### Root cause (อุดอะไร)
+quick-reply ⭐ ใต้ข้อความ D0 **หายเมื่อหลายงานเด้งพร้อมกัน** (LINE แสดง quick-reply เฉพาะข้อความล่าสุด — N+108 gap). เลื่อนกลับไปกดงานเก่าไม่ได้ → ติดตามไม่ทัน
+
+### Fix (signed-token ไม่ใช่ LIFF)
+ลิงก์ติดตาม **อยู่ในเนื้อข้อความ** (เลื่อนกดงานเก่าได้ไม่หาย) → หน้าเว็บ toggle ติดตาม/ยกเลิกตามสถานะจริง
+- `scripts/follow_token.py`: HMAC stateless token (u+p+exp, base64url.sig). secret=`BMS_FOLLOW_SECRET`, exp 120 วัน, p=None เผื่อ portal
+- `bms_api.py`: `_record_unfollow`(status=`'unfollowed'` แยกจาก system `'closed'`) / `_follow_status` / `_fmt_exp_th` / `_follow_page_html` (มือถือ-first, escape) + `DB_PATH` env override + GET/POST `/follow` (GET side-effect-free, write gated หลัง verify_token)
+- `Sebastian_LINE_Sender.py`: `build_follow_link` (มินต์ token, exception-safe คืน `''` ไม่ทำ D0 พัง) + D0 branch แทรกลิงก์ แทน quick-reply (`quick_reply=None`)
+
+### Process (subagent-driven-development + two-stage review)
+- 7 tasks, fresh subagent ต่อ task + spec-review → code-quality-review ทุก task
+- 🐛 **bug จับได้จาก review**: `build_follow_link` except เรียก `log()` แต่ `log` เป็น nested func ใน `main()` (ไม่ใช่ module global) → จะ `NameError` ถ้า make_token พลาด (อุด safety net รั่ว). fix → `print(stderr)` + เพิ่ม test exception path
+- 🐛 **bug fixture**: test seed `projects_seen` ขาด `first_seen_at` (NOT NULL no-default) → เติม
+
+### ผล (verified)
+- local test 5/5: token(roundtrip/tamper/expiry/portal) · bms_follow(toggle state machine) · follow_link(+exception path) · followed_jobs(regression) · idempotent(follow→unfollow→follow=1 row)
+- deploy VPS: push c73c0fb→97a8297 (5 feat/fix commits) · set .env (secret+base_url) · pull ff · restart bms-api active
+- **e2e production curl**: health ok · invalid-token page ok · GET inactive→POST follow(active)→POST unfollow(inactive) ครบ · DB `{active:8, unfollowed:1}` (8 real follows untouched, test row=unfollowed แยกถูก)
+- sender EnvironmentFile = .env เดียวกัน → timer รอบหน้ามินต์ลิงก์ได้
+
+### Commits
+- `c0bb1fb` follow_token.py + tests
+- `4e43d45` bms_api helpers + DB_PATH env
+- `fed250a` GET/POST /follow routes
+- `e5b0ac7` D0 follow-link แทน quick-reply
+- `97a8297` fix build_follow_link except (log NameError) + test
+- (+ N+110 progress)
+
+### Followup
+- Portal Phase 2 = spec ถัดไป (รายการงานติดตาม + lifecycle + bid_results + โน้ตต่องาน)
+- `_quick_reply_items` ยังคงนิยามไว้ (unused) เผื่ออนาคต
+- ⏳ validate user-facing จริง: รอ D0 ใหม่เด้ง → ดูลิงก์ในข้อความ + ลองกด toggle

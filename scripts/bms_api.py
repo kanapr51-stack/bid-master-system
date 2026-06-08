@@ -551,6 +551,40 @@ async def health():
     return {"ok": True, "db": DB_PATH.exists(), "ts": _now()}
 
 
+@app.get("/follow")
+async def follow_get(t: str = ""):
+    v = follow_token.verify_token(t)
+    if not v or not v[1]:           # invalid/expired หรือ portal token (ไม่มี project_id)
+        return HTMLResponse(_follow_page_html(t, "invalid", {}, "", v[2] if v else 0))
+    user_id, project_id, exp = v
+    state = _follow_status(user_id, project_id)
+    if state == "no_customer":
+        return HTMLResponse(_follow_page_html(t, "no_customer", {}, "", exp))
+    d = _project_detail(project_id)
+    return HTMLResponse(_follow_page_html(t, state, d, _follow_deadline(project_id), exp))
+
+
+@app.post("/follow")
+async def follow_post(request: Request):
+    from urllib.parse import parse_qs
+    form = parse_qs((await request.body()).decode("utf-8"))
+    t = (form.get("t") or [""])[0]
+    action = (form.get("action") or [""])[0]
+    v = follow_token.verify_token(t)
+    if not v or not v[1]:
+        raise HTTPException(status_code=400, detail="invalid token")
+    user_id, project_id, exp = v
+    if action == "follow":
+        _record_follow(user_id, project_id)
+    elif action == "unfollow":
+        _record_unfollow(user_id, project_id)
+    state = _follow_status(user_id, project_id)
+    if state == "no_customer":
+        return HTMLResponse(_follow_page_html(t, "no_customer", {}, "", exp))
+    d = _project_detail(project_id)
+    return HTMLResponse(_follow_page_html(t, state, d, _follow_deadline(project_id), exp))
+
+
 @app.post("/webhook/line")
 async def line_webhook(
     request: Request,

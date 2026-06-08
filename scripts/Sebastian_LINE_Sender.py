@@ -320,7 +320,7 @@ def build_follow_link(line_user_id: str, project_id: str) -> str:
         return PUBLIC_BASE_URL.rstrip("/") + "/follow?t=" + \
             follow_token.make_token(line_user_id, project_id)
     except Exception as e:
-        log(f"  follow_token error (ส่งต่อไม่มีลิงก์): {e}")
+        print(f"[build_follow_link] follow_token error (ส่งต่อไม่มีลิงก์): {e}", file=sys.stderr)
         return ""
 
 

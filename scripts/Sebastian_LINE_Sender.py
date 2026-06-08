@@ -224,7 +224,7 @@ def format_notification(project_id: str, province: str = "",
     lines = []
 
     if source_stage == "followed_bid_open":
-        lines.append("⭐ งานที่คุณติดตาม — เปิดประมูลแล้ว!")
+        lines.append("⭐ งานที่คุณติดตามกำหนดวันยื่นซองแล้ว!")
     elif source_stage.startswith("province_tor_review"):
         lines.append("📋 รับฟังคำวิจารณ์ (ร่าง TOR — ยังไม่เปิดประมูล)")
     elif is_backfill:

@@ -147,7 +147,7 @@ def test_predict_lines():
     lines = ci.predict_lines(p, "อำเภอ")
     assert any("คาดราคาที่จะชนะ" in l for l in lines), lines
     assert any("อิงอำเภอ ลด 8–15%" in l for l in lines), lines   # basis + % ก่อน
-    assert any("ลบ." in l for l in lines), lines                # ราคา
+    assert any("บาท" in l for l in lines), lines                # ราคาเป็นบาทเต็ม
     assert any("โปรดคำนวณต้นทุน" in l for l in lines), lines    # disclaimer
     assert ci.predict_lines(None) == []
     print("✅ predict_lines")

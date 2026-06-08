@@ -201,7 +201,7 @@ def _scope_block(rows: list, label: str) -> tuple:
     lines = [f"{label} — {n} งาน {_conf_tag(n, p25, p75)}"]
     for w, _ in top3:
         cs = _company_stats_from_rows(rows, w)
-        nm = (w or "?")[:24]
+        nm = w or "?"                       # ชื่อเต็ม (text ธรรมดา ไม่จำกัดความยาว)
         if cs["p25"] is not None:
             lines.append(f"  • {nm} · {cs['games']} งาน · ลด {cs['median']:.0f}% "
                          f"({cs['p25']:.0f}–{cs['p75']:.0f}%)")
@@ -342,7 +342,7 @@ def predict_lines(p: dict, basis: str = "ตำบล") -> list:
     framing คาดการณ์ ไม่ใช่คำสั่ง. คู่แข่งโชว์ในบล็อกด้านบนแล้ว → ที่นี่เอาแค่ช่วงรวม."""
     if not p:
         return []
-    return [f"💵 คาดราคาที่จะชนะ (ราคากลาง {p['budget']/1e6:.1f} ลบ.):",
+    return [f"💵 คาดราคาที่จะชนะ (ราคากลาง {p['budget']:,.0f} บาท):",
             f"   • อิง{basis} ลด {p['area_disc_lo']:.0f}–{p['area_disc_hi']:.0f}% → "
-            f"ชนะราว {p['area_price_lo']/1e6:.2f}–{p['area_price_hi']/1e6:.2f} ลบ.",
+            f"ชนะราว {p['area_price_lo']:,.0f}–{p['area_price_hi']:,.0f} บาท",
             "   * ประเมินจากสถิติ โปรดคำนวณต้นทุนจริงประกอบ"]

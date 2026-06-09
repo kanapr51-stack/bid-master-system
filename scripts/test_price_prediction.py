@@ -12,14 +12,22 @@ def test_prediction_crud():
     db.save_prediction({"project_id": "P1", "budget": 2000000, "area_disc_lo": 8, "area_disc_hi": 15,
                         "area_price_lo": 1700000, "area_price_hi": 1840000, "top_name": "หจก.A",
                         "top_disc": 11, "top_price": 1780000})
-    db.save_prediction({"project_id": "P1", "budget": 999})   # idempotent — เก็บค่าแรก
+    db.save_prediction({"project_id": "P1", "budget": 999, "area_disc_lo": 1, "area_disc_hi": 2,
+                        "area_price_lo": 500000, "area_price_hi": 600000, "top_name": "หจก.B",
+                        "top_disc": 5, "top_price": 550000})   # upsert — ทับด้วยค่าล่าสุด
     p = db.get_prediction("P1")
-    assert p["budget"] == 2000000 and p["area_price_lo"] == 1700000, p
+    assert p["budget"] == 999 and p["area_price_lo"] == 500000, p   # ทับแล้ว
     db.update_prediction_actual("P1", actual_price=1750000, in_range=1, error_pct=3.0)
     p2 = db.get_prediction("P1")
     assert p2["actual_price"] == 1750000 and p2["in_range"] == 1, p2
+    # re-save prediction หลัง W0 ต้องไม่ลบ actual
+    db.save_prediction({"project_id": "P1", "budget": 888, "area_disc_lo": 1, "area_disc_hi": 2,
+                        "area_price_lo": 400000, "area_price_hi": 500000, "top_name": "หจก.C",
+                        "top_disc": 5, "top_price": 450000})
+    p3 = db.get_prediction("P1")
+    assert p3["budget"] == 888 and p3["actual_price"] == 1750000, p3   # prediction ทับ, actual คง
     assert db.get_prediction("NOPE") is None
-    print("✅ prediction CRUD + idempotent")
+    print("✅ prediction CRUD + upsert")
 
 
 def test_accuracy_summary():

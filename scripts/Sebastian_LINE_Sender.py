@@ -420,6 +420,48 @@ def format_winner(project_name: str, winner: str, price_agree: str,
     return "\n".join(lines)
 
 
+_TAG_LABEL = {"warned": "✅เราเตือน", "regular_missed": "🔸เจ้าประจำที่หลุด top3", "newcomer": "หน้าใหม่"}
+
+
+def format_winner_detailed(project_name, winner, price_agree, budget, analyzed, cmp, acc, market_disc, project_id=""):
+    """Round 2 — ผู้ชนะ + ความแม่น(กรอบบน)+สะสม + breakdown ต่อราย(ประวัติ/ป้าย) + ส่วนลด vs ตลาด.
+    analyzed = cgd_intel.analyze_bidders(...). cmp = compare_prediction(...). acc = prediction_accuracy_summary()."""
+    lines = ["⭐ งานที่ติดตาม — ประกาศผู้ชนะแล้ว"]
+    if project_name:
+        lines.append(f"🏗 {project_name[:80]}")
+    win_disc = ""
+    try:
+        win_disc = f" (ลด {(1 - float(price_agree)/float(budget))*100:.1f}%)"
+    except (ValueError, TypeError, ZeroDivisionError):
+        pass
+    lines.append(f"🏆 ผู้ชนะ: {winner} · {_fmt_baht(price_agree)}{win_disc}")
+    if cmp and cmp.get("upper"):
+        side = "สูงกว่า" if not cmp["held"] else "ต่ำกว่า/เท่า"
+        line = f"🎯 ความแม่น (เทียบกรอบบน {_fmt_baht(cmp['upper'])}): จริง {_fmt_baht(price_agree)} → {side} {abs(cmp['error_pct']):.1f}%"
+        if acc and acc.get("verified"):
+            line += f" · สะสมอยู่ในกรอบ {acc['in_range']}/{acc['verified']}"
+        lines.append(line)
+    if analyzed:
+        lines.append(f"📊 ผู้ยื่น {len(analyzed)} ราย (เรียงราคา · เทียบประวัติพื้นที่):")
+        for i, b in enumerate(analyzed, 1):
+            crown = "🏆" if b["is_winner"] else "  "
+            h = b["hist"]
+            if h["n"] > 0:
+                hist_s = f"{h['scope']}เคย~{h['median']:.0f}%({h['n']}ครั้ง) {b['trend'] or ''}"
+            else:
+                hist_s = "ไม่มีประวัติ"
+            d = f"ลด{b['discount']:.0f}%" if b["discount"] is not None else ""
+            lines.append(f" {i}){crown} {b['name'][:24]} {_fmt_baht(b['price'])} {d} · {hist_s} · {_TAG_LABEL.get(b['tag'],'')}")
+    if market_disc is not None and analyzed:
+        wd = next((b["discount"] for b in analyzed if b["is_winner"]), None)
+        if wd is not None:
+            rel = "มากกว่า" if wd > market_disc + 1 else "น้อยกว่า" if wd < market_disc - 1 else "พอๆกัน"
+            lines.append(f"📉 ผู้ชนะลด {wd:.0f}% vs ตลาดตำบล {market_disc:.0f}% ({rel})")
+    if project_id:
+        lines.append(f"🔑 {project_id}")
+    return "\n".join(lines)
+
+
 def _winner_card_from_results(item: dict, results: list) -> tuple:
     """สร้าง (alt_text, flex) การ์ดผู้ชนะ จาก bid_results — เลือกผู้ชนะ + dedupe คู่แข่งตามชื่อบริษัท
     (getProcureResult คืน per-line-item อาจซ้ำ). ไม่มีปุ่ม (lifecycle จบที่ W0)."""

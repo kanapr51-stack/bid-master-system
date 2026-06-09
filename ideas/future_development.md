@@ -273,3 +273,30 @@ winner_history มี field `proc_type` (วิธีจัดซื้อฯ) 2
 ที่ใหม่ = per-user token + dashboard list + notes table
 ตรงกับ project_client_surface_decision (LINE + Web Portal). วางเป็น Phase 2 หลัง follow-link
 spec: docs/superpowers/specs/2026-06-08-follow-link-signed-token-design.md (section Future work)
+
+---
+
+## [PRICE] คาดราคาแยกตามประเภทถนน — แอสฟัลท์ติก vs คอนกรีต (2026-06-09)
+
+คุณกัญจน์ชี้: งานถนน 2 ประเภทมี % ลดจากราคากลาง **ต่างกันมาก** → ห้ามรวมกันตอนคาดราคา
+- ถนนคอนกรีต ในตำบล X → อ้างอิงเฉพาะถนนคอนกรีตในตำบล X เท่านั้น
+- ถนนแอสฟัลท์ติก → อ้างอิงเฉพาะแอสฟัลท์ติกในตำบลเดียวกัน
+- = เพิ่มมิติ road_subtype เข้า reference filter (เดิม proc_type=วิธีแข่งราคา + ตำบล)
+
+ก่อนทำต้อง probe ก่อน (evidence-first):
+1. classify road_subtype จากชื่องาน (keyword แอสฟัลต์/แอสฟัลท์ติก/ลาดยาง vs คอนกรีต/คสล.) + ตรวจ sample ว่าแยกได้จริง
+2. วัด discount เฉลี่ยแต่ละประเภท ว่าต่างกันจริงเท่าไร (ยืนยัน hypothesis ก่อน implement)
+3. ค่อย wire เข้า Price Prediction / cgd_intel / closed-loop
+
+memory: project_price_by_road_type · related: project_cgd_market_insight (proc_type filter), project_value_principle
+
+---
+
+## [SUB-2] Competitor Trend Learning Loop (2026-06-09, รอ spec หลัง Sub-1)
+
+กัญจน์ขอ: ทุก W0 → เก็บผล observe เอง (bid_results real-time) ลง DB ต่อยอด cgd_winners (lag เป็นเดือน)
+- คำนวณ **เทรนด์ส่วนลดต่อบริษัท**: บริษัทนี้ลดมาก/น้อย/เท่าครั้งก่อน — ทั้งในตำบลเดียวกัน + ข้ามตำบล
+- เก็บเทรนด์ลง DB → feed กลับเข้า prediction/intel ครั้งหน้า (บริษัทกำลังลดแรงขึ้น → ปรับคาดราคา)
+- = learning loop (สะสม→วิเคราะห์เทรนด์→ป้อนกลับ) คนละ concern จาก notification
+- พึ่ง W0 results ที่ Sub-1 (แจ้ง 2 รอบ) ทำให้ไหลเข้ามา
+- memory: reference_egp_prelim_summary_api, project_event_centric_queue

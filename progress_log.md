@@ -5046,9 +5046,9 @@ quick-reply ⭐ ใต้ข้อความ D0 **หายเมื่อห�
 
 ---
 
-## งานที่ N+111: คาดราคาแยกประเภทผิวถนน (concrete vs asphalt) — implemented local, ⏸ รอ review/deploy (2026-06-09)
+## งานที่ N+111: คาดราคาแยกประเภทผิวถนน (concrete vs asphalt) — ✅ LIVE บน VPS (2026-06-09)
 
-### สถานะ: ✅ implement + test เสร็จ local (commit 76fee27) · ⏸ **ยังไม่ deploy** (รอกัญจน์ review — ราคาเป็นข้อมูลตัดสินใจ + มี caveat)
+### สถานะ: ✅ implement + test + **deployed VPS** (commit 76fee27/3437bca, push→VPS pull ff 3437bca, กัญจน์ approve caveat). verified บน production cgd_winners จริง
 
 ### Requirement (กัญจน์ ก่อนนอน 2026-06-09)
 งานถนนมี 2 ประเภท (แอสฟัลท์ติก/คอนกรีต) %ลดจากราคากลางต่างกันมาก → คาดราคางานคอนกรีต ให้อ้างอิงเฉพาะถนนคอนกรีตในตำบลนั้น (ไม่เอาแอสฟัลต์ปน)
@@ -5075,6 +5075,10 @@ quick-reply ⭐ ใต้ข้อความ D0 **หายเมื่อห�
 - `test_road_subtype.py` 4/4 (classifier asphalt-precedence + _fetch filter + _build_intel + intel_context e2e)
 - regression: test_cgd_intel 13/13 (ต้อง `BMS_DATA_DIR` set local) + test_price_prediction PASS
 
-### Next (รอกัญจน์)
-- review caveat → ตัดสินใจ deploy (push + VPS pull + restart bms-line-sender). cgd_winners บน VPS มี proc_type/district แล้ว schema เดียวกับ winner_history → SQL ใช้ได้
-- พิจารณา: classify "unknown" 30% (ลูกรัง/หินคลุก/บูรณะไม่ระบุผิว) ดีขึ้นได้ไหม · price_valid filter แยก ticket
+### Deploy (✅ 2026-06-09)
+- กัญจน์ approve caveat → push origin main → VPS `git pull --ff-only` (ff 3437bca สะอาด). **ไม่ต้อง restart** (LINE_Sender/Winner_Poller เป็น timer-based หยิบโค้ดใหม่ทุกรอบ · bms-api ไม่ import cgd_intel)
+- verify บน VPS: test_road_subtype 4/4 + cgd_winners จริง (นครพนม ถนน งบ1ล้าน) pooled 0-35% → concrete 24-41%/asphalt 21-37% (ตรง local เป๊ะ n=700/289/145)
+
+### Next (รอ observe + เผื่อทำต่อ)
+- ⏳ validate ผลจริง: รอ D0 ถนนใหม่เด้ง → ดูการ์ดคาดราคาว่าแยกประเภทถูก (พ่อ review) + closed-loop accuracy เมื่อถึง W0
+- เผื่อ improve: classify "unknown" 30% (ลูกรัง/หินคลุก/บูรณะไม่ระบุผิว) · **price_valid filter = แยก ticket** (กระทบทุกหมวด)

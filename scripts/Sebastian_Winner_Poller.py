@@ -37,29 +37,61 @@ def _too_old(starred_at: str, now: str, max_days: int) -> bool:
 
 
 def poll_winners(store, resolve_result, now: str = None, log=print,
-                 max_days: int = MAX_DAYS, sleep_sec: int = 0, verify_hook=None) -> dict:
+                 max_days: int = MAX_DAYS, sleep_sec: int = 0, verify_hook=None,
+                 resolve_prelim=None) -> dict:
     """core (testable): resolve_result(pid) → {} หรือ {winner, bidders[...]}.
     mode จาก env BMS_PROVINCE_NOTIFY_MODE (live=enqueue, อื่น=shadow log).
-    verify_hook(pid, winning_price) = closed-loop เทียบราคาคาด vs จริง (inject ได้, ปลอดภัย)."""
+    verify_hook(pid, winning_price) = closed-loop เทียบราคาคาด vs จริง (inject ได้, ปลอดภัย).
+    resolve_prelim(pid) → {} หรือ {has_summary, lowest_price, num_bidders, ...} = prelim pass (Round 1)."""
     now = now or _dt.datetime.now().isoformat()
     mode = os.environ.get("BMS_PROVINCE_NOTIFY_MODE", "preview")
-    # poll เฉพาะ D0 (เปิดประมูลแล้ว = มีโอกาสมีผู้ชนะ). B0 ยังไม่ bidding → ไม่ poll (กันเปลือง API/INC-001)
-    # B0 จะถูกเลื่อนเป็น D0 โดย bid_open pass ก่อน แล้วค่อยเข้า winner poll
-    follows = [f for f in store.get_active_follows()
-               if (f.get("last_stage_notified") or "") == "D0"]
+    all_active = store.get_active_follows()
+    # formal pass: poll งานที่ stage D0 หรือ PRELIM
+    formal_follows = [f for f in all_active if (f.get("last_stage_notified") or "") in ("D0", "PRELIM")]
+    # prelim pass: เฉพาะ stage D0 ที่ยังไม่เคยแจ้งเบื้องต้น
+    prelim_follows = [f for f in all_active if (f.get("last_stage_notified") or "") == "D0"]
     by_pid = {}
-    for f in follows:
+    for f in formal_follows:
         by_pid.setdefault(f["project_id"], []).append(f)
-    stats = {"polled": 0, "notified": 0, "no_result": 0, "closed_stale": 0}
-    # ชื่องาน (snapshot)
+    prelim_by_pid = {}
+    for f in prelim_follows:
+        prelim_by_pid.setdefault(f["project_id"], []).append(f)
+    stats = {"polled": 0, "notified": 0, "no_result": 0, "closed_stale": 0, "notified_prelim": 0}
+    # ชื่องาน (snapshot) — ดึงครอบคลุมทั้ง formal + prelim
+    qpids = set(by_pid) | set(prelim_by_pid)
     names = {}
-    if by_pid:
+    if qpids:
         with get_connection() as conn:
-            qs = ",".join("?" * len(by_pid))
+            qs = ",".join("?" * len(qpids))
             for r in conn.execute(
                 f"SELECT project_id, project_name, province, budget FROM projects_seen "
-                f"WHERE project_id IN ({qs})", list(by_pid)):
+                f"WHERE project_id IN ({qs})", list(qpids)):
                 names[r[0]] = {"project_name": r[1] or "", "province": r[2] or "", "budget": r[3] or 0}
+
+    # --- Prelim pass (Round 1) ---
+    if resolve_prelim is not None:
+        for pid, fs in prelim_by_pid.items():
+            try:
+                pr = resolve_prelim(pid) or {}
+            except Exception as e:
+                log(f"  prelim {pid} error: {type(e).__name__}: {e}"); pr = {}
+            if not pr.get("has_summary"):
+                continue
+            meta = names.get(pid, {})
+            for f in fs:
+                cid = f["customer_id"]
+                if mode == "live":
+                    store.enqueue_for_customer(cid, {
+                        "project_id": pid, "province": meta.get("province", ""),
+                        "project_name": meta.get("project_name", ""),
+                        "source_stage": "followed_prelim"})
+                    store.mark_stage_notified(cid, pid, "PRELIM")
+                    log(f"  📊→ prelim ENQUEUED {pid} cust{cid} low={pr.get('lowest_price')}")
+                else:
+                    log(f"  [SHADOW] prelim {pid} cust{cid}: {pr.get('lowest_price')} / {pr.get('num_bidders')} ราย")
+            stats["notified_prelim"] += 1
+            if sleep_sec:
+                time.sleep(sleep_sec)
 
     for pid, fs in by_pid.items():
         stats["polled"] += 1
@@ -126,7 +158,7 @@ def main():
         if not v:
             return
         s = prediction_accuracy_summary()
-        verdict = "✅ ตรง" if v["in_range"] else "❌ ไม่ตรง"
+        verdict = "✅ อยู่ในกรอบ" if v["held"] else "❌ นอกกรอบ"
         msg = (f"🎯 ผลทำนาย {pid}\n"
                f"   คาด {v['area_price_lo']/1e6:.1f}–{v['area_price_hi']/1e6:.1f} / "
                f"จริง {v['actual']/1e6:.2f} ลบ. → {verdict} (คลาด {v['error_pct']:.0f}%)\n"

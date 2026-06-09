@@ -170,8 +170,12 @@ def main():
         except Exception as e:
             log(f"  discord verify fail: {e}")
 
+    def resolve_prelim(pid):
+        from prelim_summary import fetch_prelim_summary
+        return fetch_prelim_summary(pid)
+
     stats = poll_winners(store, get_procure_result, log=log, sleep_sec=POLL_SLEEP_SEC,
-                         verify_hook=verify_hook)
+                         verify_hook=verify_hook, resolve_prelim=resolve_prelim)
     log(f"=== Winner Poller done — {stats} ===")
 
 

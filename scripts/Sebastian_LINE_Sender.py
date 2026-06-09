@@ -511,6 +511,26 @@ def _deadline_from_db(project_id: str) -> tuple[str, str]:
         return "", ""
 
 
+def _round2_warned_names(conn, province, tokens, loc) -> list:
+    """ชื่อ top-3 คู่แข่งที่เตือนตอน D0 (= top3 ของ scope block ตำบล/อำเภอ/จังหวัด)."""
+    import cgd_intel as _ci
+    try:
+        rows, _scope, _lv = _ci.select_competitors(province, tokens, loc.get("tambon", ""), loc.get("amphoe"), conn)
+        from collections import Counter
+        return [w for w, _ in Counter(r["winner"] for r in rows if r.get("winner")).most_common(_ci.SHOW_N)]
+    except Exception:
+        return []
+
+
+def _round2_market_disc(ctx):
+    """ส่วนลดตลาด (median ของ scope) จาก prediction. None ถ้าไม่มี."""
+    if not ctx or not ctx.get("prediction"):
+        return None
+    p = ctx["prediction"]
+    lo, hi = p.get("area_disc_lo"), p.get("area_disc_hi")
+    return round((lo + hi) / 2, 1) if lo is not None and hi is not None else None
+
+
 def send_line_flex(token: str, line_user_id: str, alt_text: str,
                    flex_contents: dict) -> tuple[bool, str, str]:
     """ส่ง flex message. Returns (success, error_type, error_msg). โครงเดียวกับ send_line_push"""
@@ -589,23 +609,72 @@ def main():
         f"customer={item['customer_id']} retry={item['retry_count']}"
     )
 
-    # ⭐ winner notification (followed_winner): render จาก bid_results — ไม่ต้อง enrich/PDF
+    # 📊 prelim notification (followed_prelim): Round 1 — ราคาเบื้องต้น (ยังไม่ทางการ)
+    # (source_stage-gated → inert กับ notification อื่นทั้งหมด)
+    if item.get("source_stage") == "followed_prelim":
+        import prelim_summary as _ps
+        import cgd_intel as _ci
+        pid = item["project_id"]
+        budget = item.get("budget") or 0
+        pr = _ps.fetch_prelim_summary(pid)
+        cmp = _ci.compare_prediction_provisional(pid, pr.get("lowest_price")) if pr.get("has_price") else None
+        pname = _clean_project_name(item.get("project_name") or "") or pid
+        text = format_prelim_notification(pname, budget, pr, cmp, pid)
+        if dry_run:
+            log("─── DRY RUN: prelim notification ───")
+            for ln in text.splitlines():
+                log("  " + ln)
+            store.mark_delivery_result(item["id"], item["customer_id"], item["project_id"],
+                                       status="failed", error="dry_run", error_type="retryable")
+            log("=== LINE Sender done (prelim dry-run) ===")
+            return
+        success, error_type, error_msg = send_line_push(token, item["line_user_id"], text, quick_reply=None)
+        store.mark_delivery_result(item["id"], item["customer_id"], item["project_id"],
+                                   status="sent" if success else "failed",
+                                   error=error_msg, error_type=error_type)
+        log(f"📊 prelim sent={success} {item['project_id']} cust{item['customer_id']} ({error_msg})")
+        log("=== LINE Sender done (prelim) ===")
+        return
+
+    # ⭐ winner notification (followed_winner): Round 2 — ผู้ชนะ + ความแม่น + breakdown ต่อราย
     # (source_stage-gated → inert กับ notification อื่นทั้งหมด)
     if item.get("source_stage") == "followed_winner":
+        import cgd_intel as _ci
+        from Sebastian_Customer_DB import prediction_accuracy_summary, get_connection as _get_conn
         results = store.get_bid_results(item["project_id"])
-        alt_text, flex = _winner_card_from_results(item, results)
+        win = next((b for b in results if b.get("is_winner")), None)
+        winner_name = (win or {}).get("bidder_name", "?")
+        price_agree = (win or {}).get("price_agree") or (win or {}).get("price_proposal") or 0
+        budget = item.get("budget") or 0
+        pname = _clean_project_name(item.get("project_name") or "") or item["project_id"]
+        with _get_conn() as _c:
+            ctx = _ci.intel_context(item.get("province", ""), item.get("project_name", ""),
+                                    item.get("dept_name", ""), item["project_id"], budget, _c)
+            tokens = _ci.match_keywords(item.get("project_name", ""))
+            loc = _ci.resolve_location(item["project_id"], item.get("project_name", ""),
+                                       item.get("dept_name", ""), item.get("province", ""), _c)
+            warned = _round2_warned_names(_c, item.get("province", ""), tokens, loc)
+            analyzed = _ci.analyze_bidders(_c, item.get("province", ""), tokens,
+                                           loc["tambon"], loc["amphoe"],
+                                           budget, results, warned)
+            market_disc = _round2_market_disc(ctx)
+        cmp = _ci.compare_prediction(item["project_id"], float(price_agree) if price_agree else 0)
+        acc = prediction_accuracy_summary()
+        text = format_winner_detailed(pname, winner_name, price_agree, budget, analyzed, cmp, acc,
+                                      market_disc, item["project_id"])
         if dry_run:
-            log("─── DRY RUN: winner card ───")
-            for ln in flex["body"]["contents"][1]["text"].splitlines():
+            log("─── DRY RUN: winner detailed ───")
+            for ln in text.splitlines():
                 log("  " + ln)
             store.mark_delivery_result(item["id"], item["customer_id"], item["project_id"],
                                        status="failed", error="dry_run", error_type="retryable")
             log("=== LINE Sender done (winner dry-run) ===")
             return
-        ok, et, em = send_line_flex(token, item["line_user_id"], alt_text, flex)
+        success, error_type, error_msg = send_line_push(token, item["line_user_id"], text, quick_reply=None)
         store.mark_delivery_result(item["id"], item["customer_id"], item["project_id"],
-                                   status="sent" if ok else "failed", error=em, error_type=et)
-        log(f"⭐ winner sent={ok} {item['project_id']} cust{item['customer_id']} ({em})")
+                                   status="sent" if success else "failed",
+                                   error=error_msg, error_type=error_type)
+        log(f"⭐ winner sent={success} {item['project_id']} cust{item['customer_id']} ({error_msg})")
         log("=== LINE Sender done (winner) ===")
         return
 

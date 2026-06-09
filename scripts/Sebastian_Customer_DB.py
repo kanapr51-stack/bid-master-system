@@ -108,13 +108,17 @@ def is_following(customer_id: int, project_id: str) -> bool:
 
 
 def save_prediction(p: dict) -> None:
-    """เก็บคำทำนายราคาตอน D0 (idempotent ตาม project_id — เก็บค่าแรกที่โชว์). p ต้องมี project_id."""
+    """เก็บคำทำนายราคาตอน D0 — upsert ทับด้วยค่าล่าสุดที่ส่งจริง (กันค่าเก่าค้าง).
+    ON CONFLICT ทับเฉพาะคอลัมน์ prediction — ไม่แตะ actual_price/in_range/error_pct/verified_at."""
     cols = ("project_id", "budget", "area_disc_lo", "area_disc_hi", "area_price_lo",
             "area_price_hi", "top_name", "top_disc", "top_price")
+    upd = [c for c in cols if c != "project_id"] + ["predicted_at"]
     with get_connection() as conn:
         conn.execute(
-            f"INSERT OR IGNORE INTO price_predictions ({','.join(cols)}, predicted_at) "
-            f"VALUES ({','.join('?' for _ in cols)}, ?)",
+            f"INSERT INTO price_predictions ({','.join(cols)}, predicted_at) "
+            f"VALUES ({','.join('?' for _ in cols)}, ?) "
+            f"ON CONFLICT(project_id) DO UPDATE SET "
+            + ", ".join(f"{c}=excluded.{c}" for c in upd),
             tuple(p.get(c) for c in cols) + (_now(),))
 
 

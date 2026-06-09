@@ -350,7 +350,7 @@ def predict_winning_price(budget, area_p25, area_p75, top_name=None, top_median=
 def compare_prediction(project_id: str, actual_price, conn=None) -> dict | None:
     """เทียบราคาจริง vs คำทำนาย → in_range + error% → update DB (closed-loop).
     None ถ้าไม่มี prediction / actual แปลงเป็นตัวเลขไม่ได้."""
-    from Sebastian_Customer_DB import get_prediction, update_prediction_actual
+    from Sebastian_Customer_DB import get_prediction
     try:
         actual = float(actual_price)
     except (TypeError, ValueError):
@@ -360,13 +360,34 @@ def compare_prediction(project_id: str, actual_price, conn=None) -> dict | None:
     p = get_prediction(project_id)
     if not p or p.get("area_price_lo") is None or p.get("area_price_hi") is None:
         return None
-    lo, hi = p["area_price_lo"], p["area_price_hi"]
-    in_range = lo <= actual <= hi
-    mid = (lo + hi) / 2
-    error_pct = round(abs(actual - mid) / actual * 100, 1)
-    update_prediction_actual(project_id, round(actual), 1 if in_range else 0, error_pct)
-    return {"in_range": in_range, "error_pct": error_pct,
-            "area_price_lo": lo, "area_price_hi": hi, "actual": round(actual)}
+    return _compare_core(project_id, p, actual, commit=True)
+
+
+def compare_prediction_provisional(project_id: str, actual_price, conn=None):
+    """เทียบเบื้องต้น (Round 1) — เหมือน compare_prediction แต่ไม่เขียน DB/สถิติ."""
+    from Sebastian_Customer_DB import get_prediction
+    try:
+        actual = float(actual_price)
+    except (TypeError, ValueError):
+        return None
+    if not actual:
+        return None
+    p = get_prediction(project_id)
+    if not p or p.get("area_price_hi") is None:
+        return None
+    return _compare_core(project_id, p, actual, commit=False)
+
+
+def _compare_core(project_id: str, p: dict, actual: float, commit: bool) -> dict:
+    """core เทียบกรอบบน. held = actual <= area_price_hi. error% = (actual-hi)/hi (มีเครื่องหมาย)."""
+    from Sebastian_Customer_DB import update_prediction_actual
+    hi = p["area_price_hi"]
+    held = actual <= hi
+    error_pct = round((actual - hi) / hi * 100, 1)
+    if commit:
+        update_prediction_actual(project_id, round(actual), 1 if held else 0, error_pct)
+    return {"held": held, "error_pct": error_pct, "upper": hi,
+            "area_price_lo": p["area_price_lo"], "area_price_hi": hi, "actual": round(actual)}
 
 
 def predict_lines(p: dict, basis: str = "ตำบล") -> list:

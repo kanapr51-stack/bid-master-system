@@ -47,14 +47,20 @@ def test_compare_prediction():
     db.save_prediction({"project_id": "W1", "budget": 2000000, "area_disc_lo": 8, "area_disc_hi": 15,
                         "area_price_lo": 1700000, "area_price_hi": 1840000, "top_name": "A",
                         "top_disc": 11, "top_price": 1780000})
-    v = ci.compare_prediction("W1", 1750000)   # ในช่วง 1.70–1.84 (mid 1.77 → err ~1%)
-    assert v["in_range"] is True and v["error_pct"] <= 8, v
+    # 1750000 <= 1840000 (hi) → held=True, error_pct = (1750000-1840000)/1840000*100 ≈ -4.9%
+    v = ci.compare_prediction("W1", 1750000)
+    assert v["held"] is True and v["upper"] == 1840000, v
+    assert v["error_pct"] < 0, v   # actual < hi → negative error
     p = db.get_prediction("W1")
     assert p["actual_price"] == 1750000 and p["in_range"] == 1, p
-    # นอกช่วง
+    # actual 1500000 <= hi 1840000 → held=True (lower than upper bound)
     db.save_prediction({"project_id": "W2", "budget": 2000000, "area_price_lo": 1700000, "area_price_hi": 1840000})
     v2 = ci.compare_prediction("W2", 1500000)
-    assert v2["in_range"] is False, v2
+    assert v2["held"] is True and v2["upper"] == 1840000, v2
+    # actual สูงกว่า hi → held=False
+    db.save_prediction({"project_id": "W3", "budget": 2000000, "area_price_lo": 1700000, "area_price_hi": 1840000})
+    v3 = ci.compare_prediction("W3", 2000000)
+    assert v3["held"] is False, v3
     # ไม่มี prediction / actual แปลงไม่ได้ → None
     assert ci.compare_prediction("NOPE", 1) is None
     assert ci.compare_prediction("W1", "ไม่ใช่ตัวเลข") is None

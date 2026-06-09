@@ -20,12 +20,15 @@ def parse_prelim_text(text: str) -> dict:
     mb = _BIDDERS_RE.search(t)
     if mb:
         out["num_bidders"] = int(mb.group(1))
-    if "ราคาต่ำสุดที่เสนอ" in t and not ("ไม่มีการแสดงข้อมูลราคา" in t):
+    # has_price ตัดสินจาก "มีเลขราคาในบรรทัดรายการพิจารณาที่" ไม่ใช่ footer boilerplate
+    # ("ไม่มีการแสดงข้อมูลราคา" เป็นหมายเหตุที่ปรากฏทุกใบ — รวมงานที่มีราคา). 2-ซองจริง = item line ไม่มีเลข.
+    # findall เอาตัวท้าย = ราคา (กันเลขมิติ เช่น "กว้าง 4.00 เมตร" ที่อยู่ก่อนราคาในบรรทัดเดียวกัน).
+    if "ราคาต่ำสุดที่เสนอ" in t:
         for line in t.split("\n"):
             if "รายการพิจารณาที่" in line:
-                m = _NUM_RE.search(line)
-                if m:
-                    out["lowest_price"] = float(m.group(1).replace(",", ""))
+                nums = _NUM_RE.findall(line)
+                if nums:
+                    out["lowest_price"] = float(nums[-1].replace(",", ""))
                     out["has_price"] = True
                     break
     mr = _REVEAL_RE.search(t)

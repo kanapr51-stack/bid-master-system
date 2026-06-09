@@ -366,6 +366,33 @@ def _fmt_baht(v) -> str:
         return str(v or "")
 
 
+def format_prelim_notification(project_name: str, budget, prelim: dict, cmp: dict, project_id: str = "") -> str:
+    """Round 1 — สรุปราคาเบื้องต้น (ยังไม่ทางการ). cmp = compare_prediction_provisional หรือ None."""
+    lines = ["🔔 ผลเสนอราคาเบื้องต้น (ยังไม่ทางการ)"]
+    if project_name:
+        lines.append(f"🏗 {project_name[:80]}")
+    lines.append(f"💰 ราคากลาง {_fmt_baht(budget)} บาท")
+    n = prelim.get("num_bidders")
+    if prelim.get("has_price") and prelim.get("lowest_price"):
+        low = prelim["lowest_price"]
+        lines.append(f"📊 ราคาต่ำสุดที่เสนอ: {_fmt_baht(low)} บาท · ผู้เสนอ {n} ราย")
+        if cmp and cmp.get("upper"):
+            side = "สูงกว่า" if not cmp["held"] else "ต่ำกว่า/เท่า"
+            lines.append(f"🎯 เทียบกรอบบนที่เราคาด {_fmt_baht(cmp['upper'])}: "
+                         f"จริง {_fmt_baht(low)} → {side} {abs(cmp['error_pct']):.1f}%")
+            try:
+                d = (1 - float(low) / float(budget)) * 100
+                lines.append(f"   (ส่วนลดจริง {d:.0f}%)")
+            except (ValueError, TypeError, ZeroDivisionError):
+                pass
+    else:
+        lines.append(f"📊 มีผู้เสนอ {n} ราย · ราคายังไม่เปิดเผย (เกณฑ์ 2 ซอง) · รอผลทางการ")
+    lines.append("⏳ รอประกาศผู้ชนะทางการ — จะแจ้งรายชื่อ + คู่แข่งอีกครั้ง")
+    if project_id:
+        lines.append(f"🔑 {project_id}")
+    return "\n".join(lines)
+
+
 def format_winner(project_name: str, winner: str, price_agree: str,
                   competitors: list = None, budget=0, project_id: str = "") -> str:
     """การ์ดแจ้งผู้ชนะของงานที่ติดตาม (⭐) — ผู้ชนะ + ราคา + คู่แข่งทุกราย + ราคา (competitive intel).

@@ -173,6 +173,52 @@ def _fetch(conn, province: str, tokens: list, *, subdistrict=None, district=None
         return []   # ไม่มี table/column cgd_winners → graceful
 
 
+def company_area_history(conn, province, tokens, company, subdistrict, district) -> dict:
+    """ประวัติส่วนลดของบริษัทในพื้นที่ (competitive-set). ตำบลก่อน ไม่มี→ทั้งจังหวัด.
+    คืน {scope:'ตำบล'|'นอกตำบล'|'', n, median}."""
+    trows = [r for r in _fetch(conn, province, tokens, subdistrict=subdistrict, district=district)
+             if r.get("winner") == company]
+    if trows:
+        discs = [r["discount_pct"] for r in trows if r.get("discount_pct") is not None]
+        return {"scope": "ตำบล", "n": len(trows), "median": _pct(discs, 50)}
+    prows = [r for r in _fetch(conn, province, tokens) if r.get("winner") == company]
+    if prows:
+        discs = [r["discount_pct"] for r in prows if r.get("discount_pct") is not None]
+        return {"scope": "นอกตำบล", "n": len(prows), "median": _pct(discs, 50)}
+    return {"scope": "", "n": 0, "median": None}
+
+
+def analyze_bidders(conn, province, tokens, subdistrict, district, budget, bidders, warned) -> list:
+    """วิเคราะห์ผู้ยื่นทุกราย: เรียงราคา + ส่วนลดครั้งนี้ + ประวัติพื้นที่ + เทรนด์ + ป้าย.
+    bidders: list[{bidder_name, price_proposal, is_winner}]. warned: ชื่อ top-3 ที่เตือนตอน D0.
+    tag: 'warned' | 'regular_missed' (มีประวัติแต่ไม่เตือน) | 'newcomer'."""
+    def _price(b):
+        try:
+            return float(b.get("price_proposal") or 0)
+        except (TypeError, ValueError):
+            return 0.0
+    ranked = sorted([b for b in bidders if _price(b) > 0], key=_price)
+    out = []
+    b_ = float(budget) if budget else 0
+    for b in ranked:
+        name = b.get("bidder_name") or "?"
+        price = _price(b)
+        disc = round((1 - price / b_) * 100, 1) if b_ > 0 else None
+        hist = company_area_history(conn, province, tokens, name, subdistrict, district)
+        trend = None
+        if hist["median"] is not None and disc is not None:
+            trend = "↑" if disc > hist["median"] + 1 else "↓" if disc < hist["median"] - 1 else "→"
+        if name in warned:
+            tag = "warned"
+        elif hist["n"] > 0:
+            tag = "regular_missed"
+        else:
+            tag = "newcomer"
+        out.append({"name": name, "price": price, "discount": disc, "is_winner": bool(b.get("is_winner")),
+                    "hist": hist, "trend": trend, "tag": tag})
+    return out
+
+
 def _distinct_winners(rows: list) -> int:
     return len({r["winner"] for r in rows if r.get("winner")})
 

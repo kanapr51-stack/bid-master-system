@@ -45,3 +45,62 @@ def parse_prelim_pdf(pdf_bytes: bytes) -> dict:
         return parse_prelim_text(text)
     except Exception:
         return {"has_price": False, "lowest_price": None, "num_bidders": None, "revealed_at": None}
+
+
+import requests
+import process5_http_client as p
+
+PASSKEY = "0b3464ada27f4a3baaf863dc3e68f8b9"
+APIKEY_UUID = "0b3464ad-a27f-4a3b-aaf8-63dc3e68f8b9"
+MERCHANT_GENPRICE = "https://process5.gprocurement.go.th/egp-merchant-ebidding-service/common/genReportPrice"
+VIEWPDF = "https://process5.gprocurement.go.th/egp-template-service/FileViewer/viewPdf"
+TIMEOUT = 25
+
+
+def _hdr(token):
+    h = p.HEADERS_NO_AUTH.copy()
+    h["X-Announcement-Token"] = token
+    return h
+
+
+def _has_price_announcement(pid: str, token: str, method_id: str) -> bool:
+    """gate: greenBook list มี announceType 'price' ไหม (สรุปราคาเปิดเผยแล้ว)."""
+    try:
+        b = p._get(f"{p.API_BASE}/greenBook",
+                   {"mode": "LINK", "methodId": method_id, "tempProjectId": pid, "pageAnnounceType": "B0"},
+                   token=token)
+        docs = ((b or {}).get("data") or {}).get("greenBookAnnouncementTypeLinkDto") or []
+        return any((d.get("announceType") == "price") for d in docs)
+    except Exception:
+        return False
+
+
+def fetch_prelim_summary(pid: str, method_id: str = "16") -> dict:
+    """ดึงสรุปราคาเบื้องต้น (pure-API). คืน {"has_summary", + ฟิลด์จาก parse}. graceful."""
+    base = {"has_summary": False, "has_price": False, "lowest_price": None,
+            "num_bidders": None, "revealed_at": None}
+    try:
+        token = p._get_token(pid)
+        if not token or not _has_price_announcement(pid, token, method_id):
+            return base
+        h = _hdr(token)
+        enc_pid = requests.get(f"{p.API_BASE}/encryptApiKey",
+                               params={"passKey": PASSKEY, "sDataValue": pid}, headers=h, timeout=TIMEOUT).json().get("data")
+        enc_api = requests.get(f"{p.API_BASE}/encryptApiKey",
+                               params={"passKey": PASSKEY, "sDataValue": APIKEY_UUID}, headers=h, timeout=TIMEOUT).json().get("data")
+        if not enc_pid or not enc_api:
+            return base
+        uuid = requests.get(MERCHANT_GENPRICE, params={"projectId": enc_pid, "apiKey": enc_api},
+                            headers=h, timeout=TIMEOUT).json().get("data")
+        if not uuid:
+            return base
+        import base64
+        b64 = requests.post(f"{VIEWPDF}/{uuid}", json={}, headers=h, timeout=TIMEOUT).json().get("data")
+        if not b64:
+            return base
+        parsed = parse_prelim_pdf(base64.b64decode(b64))
+        parsed["has_summary"] = True
+        return parsed
+    except Exception as e:
+        print(f"[prelim] fetch error {pid}: {type(e).__name__}: {e}", file=sys.stderr)
+        return base

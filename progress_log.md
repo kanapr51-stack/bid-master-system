@@ -5137,3 +5137,27 @@ prediction เดิมใช้ percentile แบบ flat (ทุกงาน�
 - ▶ **Sub-2b**: ถ่วงน้ำหนัก "ผู้น่าจะยื่น" ใน prediction (speculative — รอ design)
 - ▶ **Sub-2c**: รายงานเทรนด์ตลาดรวม
 - ⏳ observe: bid_results สะสมเพิ่ม → recency จะมีน้ำหนักงานที่เรา observe เองมากขึ้น (ตอนนี้ส่วนใหญ่ยัง cgd_winners)
+
+---
+
+## งานที่ N+114: Portal Phase 2a — dashboard read-only — LIVE บน VPS (2026-06-10)
+
+### สถานะ: ✅ LIVE (subagent-driven 4 commits, test 5/5, ทุก task ผ่าน 2-stage review) + e2e curl ผ่าน
+
+### โจทย์
+ลูกค้าเห็นงานติดตามเฉพาะข้อความ LINE ทีละครั้ง — ไม่มี "ดูรวม". Portal = เว็บหน้าเดียวต่อยอด follow-link (`follow_token` p=None = portal-token ที่วางไว้ N+110)
+
+### Build (spec→plan→subagent-driven+TDD, 5 tasks, แตะ bms_api.py)
+- `_portal_jobs(user_id)`: followed_jobs (active+closed, ซ่อน unfollowed) → join projects_seen/locations/predictions/bid_results → จัดกลุ่ม **won/bidding/pre** (won = มีผู้ชนะ/announce W*)
+- `_portal_page_html(groups)`: การ์ดมือถือ-first จัดกลุ่ม stage + lifecycle dots ●━━●━━○ + คาดราคา + ผู้ชนะ/คู่แข่ง + empty state + escape (XSS)
+- `GET /portal?t=<portal_token p=None>`: verify → portal | invalid/no_customer (reuse `_follow_page_html`) · `_portal_link` + `PUBLIC_BASE_URL`
+- webhook keyword "งานของฉัน"/"portal" → reply ลิงก์ portal + เพิ่มใน help
+
+### Deploy + e2e (✅)
+- push → VPS pull ff dd434db → **restart bms-api** (route ใหม่) → active
+- e2e: mint portal token (customer 2 กัญจน์) → `curl /portal` → **"งานที่คุณติดตาม (5)"** + กลุ่ม กำลังประมูล/รับฟังความเห็น render ครบ
+- test 5/5 (2 ใหม่ + regression follow 3) ผ่าน · routes /follow + /portal
+
+### Followup → Portal 2b
+- โน้ตต่องาน (write + ตารางใหม่) · unfollow จาก portal · per-job detail page
+- ⏳ validate user-facing: กัญจน์ลองพิมพ์ "งานของฉัน" ใน LINE จริง + เปิดดูในมือถือ

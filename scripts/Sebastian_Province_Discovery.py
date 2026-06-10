@@ -491,12 +491,22 @@ def main():
                 prov_latest[p] = ad
         latest_str = " · ".join(f"{p} {dt}" for p, dt in prov_latest.items()) or "—"
         new_recs = [r for r in chosen if known is not None and r["project_id"] not in known]
+        new_in_target = [r for r in new_recs if in_target_amphoe(r)]
         if ingested > 0:
-            lines = [f"🆕 Discovery {now_th} — เจอ {ingested} งานใหม่!",
-                     f"scan {len(all_recs)} ({len(active)} active) · ในอำเภอเป้าหมาย {len(target)}",
-                     f"announce ล่าสุด: {latest_str}", "งานใหม่:"]
-            for r in new_recs[:8]:
-                lines.append(f"  • {r['province']} | ฿{r['budget']:,} | {r['project_name'][:42]}")
+            # แยกชัด: งานใหม่ทั้งจังหวัด (ingested) vs ใหม่ใน target จริง (= ที่จะแจ้ง LINE)
+            # กันสับสน: "ในอำเภอเป้าหมาย" เดิมนับงาน target ทั้งหมดใน scan (รวมที่รู้แล้ว+แจ้งไปแล้ว)
+            lines = [f"🆕 Discovery {now_th}",
+                     f"📍 งานใหม่ทั้งจังหวัด: {ingested} (นครพนม/บึงกาฬ)",
+                     f"🎯 ใหม่ในอำเภอเป้าหมาย: {len(new_in_target)} (matcher ตรวจตำบลต่อก่อนแจ้ง LINE)",
+                     f"scan {len(all_recs)} ({len(active)} active) · announce ล่าสุด: {latest_str}"]
+            if new_in_target:
+                lines.append("งานใหม่ในอำเภอเป้าหมาย:")
+                for r in new_in_target[:8]:
+                    lines.append(f"  🎯 {r['province']} | ฿{r['budget']:,} | {r['project_name'][:42]}")
+            else:
+                lines.append("ℹ️ งานใหม่ทั้งหมดอยู่นอกพื้นที่เป้าหมาย → ไม่แจ้ง LINE (ปกติ)")
+                for r in new_recs[:5]:
+                    lines.append(f"  • (นอกเป้า) {r['province']} | ฿{r['budget']:,} | {r['project_name'][:38]}")
             _discord("\n".join(lines))
         else:
             _discord(f"✅ Discovery {now_th} — ตรวจแล้วไม่มีงานใหม่\n"

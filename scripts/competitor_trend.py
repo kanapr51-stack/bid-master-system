@@ -61,7 +61,7 @@ def recency_adjusted_pct(values, p25, p75, alpha=ALPHA, min_n=MIN_N, cap=CAP):
 import cgd_intel as ci
 
 
-def _area_where(province, tokens, subdistrict, district, subtype, nature=None):
+def _area_where(province, tokens, subdistrict, district, subtype, nature=None, contested=False):
     """ประกอบ WHERE + params สำหรับ cgd_winners (สอดคล้อง cgd_intel._fetch + announce_date)."""
     fy_ph = ",".join("?" for _ in ci.RECENT_FY)
     pt_ph = ",".join("?" for _ in ci.COMPETITIVE_SET)
@@ -74,6 +74,8 @@ def _area_where(province, tokens, subdistrict, district, subtype, nature=None):
         where.append("project_name NOT LIKE ?"); params.append("%ซื้อ%")
     elif nature == "purchase":
         where.append("project_name LIKE ?"); params.append("%ซื้อ%")
+    if contested:                                 # งานแข่งจริง (สอดคล้อง cgd_intel contested_only)
+        where.append("discount_pct >= ?"); params.append(ci.CONTESTED_MIN_DISCOUNT)
     # match จากชื่องาน (เต็ม+ย่อ) OR คอลัมน์ — คอลัมน์ geocode เพี้ยน (สอดคล้อง cgd_intel._fetch)
     if subdistrict is not None:
         where.append("(subdistrict=? OR project_name LIKE ? OR project_name LIKE ?)")
@@ -92,9 +94,9 @@ def _area_where(province, tokens, subdistrict, district, subtype, nature=None):
     return " AND ".join(where), params
 
 
-def _cgd_rows(conn, province, tokens, subdistrict, district, subtype, winner=None, nature=None):
+def _cgd_rows(conn, province, tokens, subdistrict, district, subtype, winner=None, nature=None, contested=False):
     """(announce_date, discount_pct, winner) จาก cgd_winners. winner!=None → filter บริษัท."""
-    where, params = _area_where(province, tokens, subdistrict, district, subtype, nature)
+    where, params = _area_where(province, tokens, subdistrict, district, subtype, nature, contested)
     if winner is not None:
         where += " AND winner=?"; params.append(winner)
     try:
@@ -131,9 +133,11 @@ def _bidresult_rows(conn, province, bidder=None, winner_only=False):
     return out
 
 
-def area_win_series(conn, province, tokens, subdistrict=None, district=None, subtype=None, nature=None):
+def area_win_series(conn, province, tokens, subdistrict=None, district=None, subtype=None,
+                    nature=None, contested=False):
     """ส่วนลดผู้ชนะในพื้นที่ เรียงเก่า→ใหม่ (cgd_winners + bid_results winner). คืน list[float]."""
-    rows = [(d, disc) for d, disc, _w in _cgd_rows(conn, province, tokens, subdistrict, district, subtype, nature=nature)
+    rows = [(d, disc) for d, disc, _w in _cgd_rows(conn, province, tokens, subdistrict, district,
+                                                   subtype, nature=nature, contested=contested)
             if disc is not None]
     rows += _bidresult_rows(conn, province, winner_only=True)
     rows.sort(key=lambda x: x[0])

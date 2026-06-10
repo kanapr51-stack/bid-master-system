@@ -39,6 +39,7 @@ SHOW_N = 3              # จำนวนบริษัทที่โชว์
 MIN_GAMES_FOR_IQR = 3   # ต่ำกว่านี้โชว์แค่ median
 IQR_WIDE = 20           # p75-p25 เกินนี้ = ช่วงกว้าง (ลดความเชื่อมั่น)
 TAMBON_MIN = 5          # ตำบลมีงาน < นี้ → โชว์บล็อกอำเภอคู่กันด้วย
+CONTESTED_MIN_DISCOUNT = 15   # งานถนนชนะด้วยส่วนลด < นี้ ≈ ไม่มีคู่แข่งจริง (bimodal gap ~9-17%)
 
 
 def _load_keywords() -> list:
@@ -146,7 +147,7 @@ def _pct(values: list, p: float):
 
 
 def _fetch(conn, province: str, tokens: list, *, subdistrict=None, district=None,
-           subtype=None, include_old=False, nature=None) -> list:
+           subtype=None, include_old=False, nature=None, contested_only=False) -> list:
     """ดึงงาน competitive ของ work-type (LIKE any token) ใน province + (เลือก subdistrict/district).
     subtype='concrete'/'asphalt' → จำกัด reference เฉพาะประเภทผิวถนนเดียวกัน (ดู road_subtype).
     nature='construction'/'purchase' → จำกัดลักษณะงาน (จ้างก่อสร้าง vs ซื้อวัสดุ ลด%ต่างกันมาก).
@@ -161,6 +162,9 @@ def _fetch(conn, province: str, tokens: list, *, subdistrict=None, district=None
         where.append("project_name NOT LIKE ?"); params.append("%ซื้อ%")
     elif nature == "purchase":
         where.append("project_name LIKE ?"); params.append("%ซื้อ%")
+    # contested = เฉพาะงานที่มีคู่แข่งจริง (ตัดโหมด no-competition ~0% ที่ทำช่วงเพี้ยน)
+    if contested_only:
+        where.append("discount_pct >= ?"); params.append(CONTESTED_MIN_DISCOUNT)
     if not include_old:                       # default = 3 ปีงบล่าสุด (ราคาปัจจุบัน)
         fy_ph = ",".join("?" for _ in RECENT_FY)
         where.append(f"fiscal_year IN ({fy_ph})")
@@ -311,7 +315,7 @@ def _scope_block(rows: list, label: str) -> tuple:
             lines.append(f"  • {nm} · {cs['games']} งาน")
     if p75:
         lines.append(f"  📊 ส่วนลด {p25:.0f}–{p75:.0f}%")
-    return lines, p25, p75, n, top_name, top_median
+    return lines, p25, p75, n, top_name, top_median, _pct(discs, 50)
 
 
 def confidence_label(area_n: int, p25, p75) -> str:
@@ -324,72 +328,79 @@ def confidence_label(area_n: int, p25, p75) -> str:
     return "🟢 เชื่อถือได้ — ข้อมูลมากพอ"
 
 
-def _fetch_scope(conn, province, tokens, *, subdistrict=None, district=None, subtype=None, nature=None):
+def _fetch_scope(conn, province, tokens, *, subdistrict=None, district=None, subtype=None,
+                 nature=None, contested_only=False):
     """ดึง reference ของ scope — 3 ปีล่าสุดก่อน; ถ้าคู่แข่งน้อย (< MIN_COMPETITORS) ย้อนทุกปีงบ
     เพื่อให้พื้นที่ข้อมูลน้อย (อำเภอเล็ก/ใหม่) ยังคาดราคาได้. คืน (rows, used_old)."""
     rows = _fetch(conn, province, tokens, subdistrict=subdistrict, district=district,
-                  subtype=subtype, nature=nature)
+                  subtype=subtype, nature=nature, contested_only=contested_only)
     if _distinct_winners(rows) >= MIN_COMPETITORS:
         return rows, False
     old = _fetch(conn, province, tokens, subdistrict=subdistrict, district=district,
-                 subtype=subtype, nature=nature, include_old=True)
+                 subtype=subtype, nature=nature, contested_only=contested_only, include_old=True)
     return (old, True) if _distinct_winners(old) > _distinct_winners(rows) else (rows, False)
 
 
 def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subtype=None,
-                 nature=None) -> dict | None:
+                 nature=None, contested_only=False) -> dict | None:
     """ประกอบ intel dual-block จาก (ตำบล,อำเภอ) ที่ resolve มาแล้ว (แยกจาก resolve เพื่อ test ง่าย).
     - บล็อกตำบล: เสมอ (ถ้ามีชื่อตำบล) — สถิติเฉพาะงานในตำบล. 0 งาน → 'ยังไม่มีงานประเภทนี้'
     - บล็อกอำเภอ: เพิ่มเมื่อตำบล < TAMBON_MIN — สถิติเฉพาะงานในอำเภอ
     - amphoe=None → บล็อกจังหวัดเดี่ยว. คาดราคาอิงตำบลก่อน (ไม่มี→อำเภอ/จังหวัด).
+    contested_only=True → เฉพาะงานแข่งจริง (ตัด no-competition) + framing 'ถ้ามีคู่แข่ง'.
     คืน {lines, prediction} · None ถ้าไม่มีคู่แข่งจริงเลย."""
     wt = tokens[0] if tokens else "งาน"
+    cf = dict(subtype=subtype, nature=nature, contested_only=contested_only)
     blocks = []
-    pp25 = pp75 = ptop = ptopm = None
+    pp25 = pp75 = ptop = ptopm = pmed = None
     basis = ""
     basis_sub = basis_dist = None    # scope ที่ใช้คาดราคา (สำหรับ recency series)
     basis_old = False                # คาดราคาอิงข้อมูลย้อนเกิน 3 ปี (พื้นที่งานน้อย) → ติดป้าย
+    tag = " (งานแข่งจริง)" if contested_only else ""
     if amphoe:
         header = (f"💡 ราคาอ้างอิง (งาน{wt}"
-                  + (f" ต.{tambon}" if tambon else "") + f" อ.{amphoe})")
+                  + (f" ต.{tambon}" if tambon else "") + f" อ.{amphoe}){tag}")
         t_rows, t_old = _fetch_scope(conn, province, tokens, subdistrict=tambon,
-                                     district=amphoe, subtype=subtype, nature=nature) if tambon else ([], False)
+                                     district=amphoe, **cf) if tambon else ([], False)
         tn = len(t_rows)
         if tambon:
             if t_rows:
-                tl, t25, t75, _n, ttop, ttopm = _scope_block(t_rows, f"🏘 ในตำบล{tambon}")
+                tl, t25, t75, _n, ttop, ttopm, tmed = _scope_block(t_rows, f"🏘 ในตำบล{tambon}")
                 blocks += tl
-                pp25, pp75, ptop, ptopm, basis = t25, t75, ttop, ttopm, "ตำบล"
+                pp25, pp75, ptop, ptopm, pmed, basis = t25, t75, ttop, ttopm, tmed, "ตำบล"
                 basis_sub, basis_dist, basis_old = tambon, amphoe, t_old
             else:
                 blocks.append(f"🏘 ในตำบล{tambon} — ยังไม่มีงานประเภทนี้")
         if tn < TAMBON_MIN:                       # ตำบลน้อย → โชว์อำเภอคู่กัน
-            a_rows, a_old = _fetch_scope(conn, province, tokens, district=amphoe, subtype=subtype, nature=nature)
+            a_rows, a_old = _fetch_scope(conn, province, tokens, district=amphoe, **cf)
             if a_rows:
-                al, a25, a75, _n, atop, atopm = _scope_block(a_rows, f"🏙 ในอำเภอ{amphoe}")
+                al, a25, a75, _n, atop, atopm, amed = _scope_block(a_rows, f"🏙 ในอำเภอ{amphoe}")
                 blocks += al
                 if pp25 is None:                  # ตำบลไม่มี → คาดอิงอำเภอ
-                    pp25, pp75, ptop, ptopm, basis = a25, a75, atop, atopm, "อำเภอ"
+                    pp25, pp75, ptop, ptopm, pmed, basis = a25, a75, atop, atopm, amed, "อำเภอ"
                     basis_sub, basis_dist, basis_old = None, amphoe, a_old
     else:
-        p_rows, p_old = _fetch_scope(conn, province, tokens, subtype=subtype, nature=nature)
+        p_rows, p_old = _fetch_scope(conn, province, tokens, **cf)
         if not p_rows:
             return None
-        pl, p25, p75, _n, ptopn, ptopmd = _scope_block(p_rows, f"🏙 ใน{province}")
+        pl, p25, p75, _n, ptopn, ptopmd, pmedn = _scope_block(p_rows, f"🏙 ใน{province}")
         blocks += pl
-        pp25, pp75, ptop, ptopm, basis = p25, p75, ptopn, ptopmd, "จังหวัด"
+        pp25, pp75, ptop, ptopm, pmed, basis = p25, p75, ptopn, ptopmd, pmedn, "จังหวัด"
         basis_sub, basis_dist, basis_old = None, None, p_old
-        header = f"💡 ราคาอ้างอิง (งาน{wt}ใน{province})"
+        header = f"💡 ราคาอ้างอิง (งาน{wt}ใน{province}){tag}"
     if not blocks or all("ยังไม่มีงาน" in b for b in blocks):
         return None                               # ไม่มีคู่แข่งจริงเลย → omit
     lines = [header, ""] + blocks
     if pp25 is not None and pp75 is not None:
         import competitor_trend as _ct
-        _series = _ct.area_win_series(conn, province, tokens, basis_sub, basis_dist, subtype, nature)
-        pp25, pp75 = _ct.recency_adjusted_pct(_series, pp25, pp75)
-    pred = predict_winning_price(budget, pp25, pp75, ptop, ptopm)
+        _series = _ct.area_win_series(conn, province, tokens, basis_sub, basis_dist, subtype, nature, contested_only)
+        new25, new75 = _ct.recency_adjusted_pct(_series, pp25, pp75)
+        if pmed is not None and new25 is not None:    # เลื่อน median ตาม delta เดียวกัน
+            pmed += new25 - pp25
+        pp25, pp75 = new25, new75
+    pred = predict_winning_price(budget, pp25, pp75, ptop, ptopm, area_median=pmed)
     if pred:
-        lines += [""] + predict_lines(pred, basis)
+        lines += [""] + predict_lines(pred, basis, contested=contested_only)
         if basis_old:                             # อิงข้อมูลเก่ากว่า 3 ปี — แจ้งให้ผู้ใช้รู้
             lines.append("📜 รวมข้อมูลเก่ากว่า 3 ปี (พื้นที่นี้งานน้อย) — ใช้เป็นแนวโน้ม")
     return {"lines": lines, "prediction": pred, "tambon": tambon, "amphoe": amphoe}
@@ -411,8 +422,20 @@ def intel_context(province: str, project_name: str, dept_name: str = "",
             loc = resolve_location(project_id, project_name, dept_name, province, conn)
             _log.info("intel_resolve project=%s source=%s amphoe=%s",
                       project_id, loc["source"], loc["amphoe"])
-            return _build_intel(conn, province, tokens, loc["tambon"], loc["amphoe"],
-                                budget, road_subtype(project_name), work_nature(project_name))
+            sub, nat = road_subtype(project_name), work_nature(project_name)
+
+            def _b(contested):
+                return _build_intel(conn, province, tokens, loc["tambon"], loc["amphoe"],
+                                    budget, sub, nat, contested_only=contested)
+            # โฟกัสงานแข่งจริงก่อน (ตัด no-competition ที่ทำช่วงเพี้ยน)
+            ctx = _b(True)
+            if ctx and ctx.get("prediction"):
+                return ctx
+            # พื้นที่แทบไม่มีงานแข่ง → ใช้ทั้งหมด + แจ้งว่าแข่งน้อย
+            ctx = _b(False)
+            if ctx and ctx.get("prediction"):
+                ctx["lines"].append("⚠️ พื้นที่นี้แข่งขันน้อย — ราคาอาจไม่สะท้อนการแข่งขัน")
+            return ctx
         finally:
             if own:
                 conn.close()
@@ -427,15 +450,18 @@ def intel_lines(province: str, project_name: str, dept_name: str = "",
     return ctx["lines"] if ctx else []
 
 
-def predict_winning_price(budget, area_p25, area_p75, top_name=None, top_median=None) -> dict | None:
-    """คาดช่วงราคาชนะ = ราคากลาง × (1 − ส่วนลด). ช่วงตลาด p25/p75 + เจ้าตัวเต็ง. None ถ้าข้อมูลไม่พอ.
-    prediction เชิงสถิติ ไม่ใช่คำสั่ง (ดู predict_lines disclaimer)."""
+def predict_winning_price(budget, area_p25, area_p75, top_name=None, top_median=None,
+                          area_median=None) -> dict | None:
+    """คาดช่วงราคาชนะ = ราคากลาง × (1 − ส่วนลด). ช่วงตลาด p25/p75 + ค่าปกติ (median) + เจ้าตัวเต็ง.
+    None ถ้าข้อมูลไม่พอ. prediction เชิงสถิติ ไม่ใช่คำสั่ง (ดู predict_lines disclaimer)."""
     if not budget or area_p25 is None or area_p75 is None:
         return None
     b = float(budget)
     return {
         "budget": b, "area_disc_lo": area_p25, "area_disc_hi": area_p75,
         "area_price_lo": round(b * (1 - area_p75 / 100)), "area_price_hi": round(b * (1 - area_p25 / 100)),
+        "area_disc_med": area_median,
+        "area_price_med": round(b * (1 - area_median / 100)) if area_median is not None else None,
         "top_name": top_name, "top_disc": top_median,
         "top_price": round(b * (1 - top_median / 100)) if top_median is not None else None,
     }
@@ -484,14 +510,19 @@ def _compare_core(project_id: str, p: dict, actual: float, commit: bool) -> dict
             "area_price_lo": p["area_price_lo"], "area_price_hi": hi, "actual": round(actual)}
 
 
-def predict_lines(p: dict, basis: str = "ตำบล") -> list:
-    """บรรทัด 💵 คาดราคา — โชว์ % (ที่มา) ก่อน → ราคา (ผล) + บอก basis (ตำบล/อำเภอ/จังหวัด).
+def predict_lines(p: dict, basis: str = "ตำบล", contested: bool = False) -> list:
+    """บรรทัด 💵 คาดราคา — โชว์ % (ที่มา) ก่อน → ราคา (ผล) + ค่าปกติ (median) + basis.
+    contested=True → framing 'ถ้ามีคู่แข่ง ผู้ชนะลด' (โฟกัสงานแข่งจริง).
     framing คาดการณ์ ไม่ใช่คำสั่ง. คู่แข่งโชว์ในบล็อกด้านบนแล้ว → ที่นี่เอาแค่ช่วงรวม."""
     if not p:
         return []
     lo = round(p["area_price_lo"] / 1000) * 1000   # ปัดหลักพัน — สื่อว่าเป็นค่าประมาณ
     hi = round(p["area_price_hi"] / 1000) * 1000
-    return [f"💵 คาดราคาที่จะชนะ (ราคากลาง {p['budget']:,.0f} บาท):",
-            f"   • อิง{basis} ลด {p['area_disc_lo']:.0f}–{p['area_disc_hi']:.0f}% → "
-            f"ชนะราว {lo:,.0f}–{hi:,.0f} บาท",
+    head = "💵 ถ้ามีคู่แข่ง ผู้ชนะลด" if contested else "💵 คาดราคาที่จะชนะ"
+    med, medp = p.get("area_disc_med"), p.get("area_price_med")
+    med_txt = f" (ปกติ ~{med:.0f}%)" if med is not None else ""
+    medp_txt = (f" (ปกติ {round(medp / 1000) * 1000:,.0f})") if medp is not None else ""
+    return [f"{head} (ราคากลาง {p['budget']:,.0f} บาท):",
+            f"   • อิง{basis} ลด {p['area_disc_lo']:.0f}–{p['area_disc_hi']:.0f}%{med_txt} → "
+            f"ชนะราว {lo:,.0f}–{hi:,.0f} บาท{medp_txt}",
             "   * ประเมินจากสถิติ โปรดคำนวณต้นทุนจริงประกอบ"]

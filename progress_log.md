@@ -5244,3 +5244,27 @@ prediction เดิมใช้ percentile แบบ flat (ทุกงาน�
 
 ### Followup
 - Step 2: บีบ band/anchor (max = ส่วนลดลึกสุด, ช่วง ~5%) สำหรับ construction ที่มี outlier 0%
+
+## งานที่ N+118: Step 2 Contested-focus prediction (2026-06-11)
+
+### สถานะ: ✅ code เสร็จ (TDD + verified) · รอ deploy
+
+### Research ก่อน (docs/research_discount_factors_2026_06_11.md)
+ส่วนลด bimodal: no-competition (~0%) vs contested (~32-36%). ปัจจัย: ประเภทหน่วยงาน(อบต 32%/อบจ 1%) >
+ขนาดงบ(>10ลบ.→8%) > จังหวัด. เคสกัญจน์ อบต 1-3ลบ. แข่งจริง 82% ลด 31-42%. จำนวนคู่แข่งวัดไม่ได้ (bid_results ว่าง)
+
+### Fix (brainstorm → spec → TDD)
+- CONTESTED_MIN_DISCOUNT=15 + `_fetch(contested_only)` → ตัดงานลด<15% (no-competition mode)
+- thread intel_context→_build_intel→_fetch_scope→_fetch + competitor_trend (recency series ก็ contested)
+- intel_context: contested-first, ถ้าพื้นที่ไม่มีงานแข่ง → fallback ทั้งหมด + ป้าย "⚠️ แข่งขันน้อย"
+- เพิ่ม median ("ปกติ ~X%") + framing "ถ้ามีคู่แข่ง ผู้ชนะลด" + label "(งานแข่งจริง)"
+- auto ตัดงานใหญ่/อบจ/>10ลบ. (อยู่ใน low mode → ถูกตัด). TDD +3 tests
+
+### Verify real data (block = prediction สอดคล้อง)
+- 327097 ต.นาทม: 29-35% (ปกติ 32%) → 744k-815k (เดิม 5-32%/770k-1.08M)
+- 374770 โพธิ์หมากแข้ง: 28-33% (ปกติ 31%) → 649k-697k (เดิม 0-26% มี outlier)
+- 379413: 20-33% (ปกติ 25%) → 454k-543k
+
+### Followup
+- bid_results สะสม → อนาคตวัดจำนวนคู่แข่งจริงได้ → segment แม่นขึ้น
+- agency/budget segment (defer — contested-focus ครอบคลุมแล้ว)

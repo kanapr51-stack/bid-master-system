@@ -104,6 +104,57 @@ def test_golden_amphoe_better_than_province():
     print("✅ golden: amphoe ตัดคู่แข่งคนละอำเภอ (โพนทองเรณู) ออกจริง")
 
 
+def _contested_conn():
+    """fixture: ตำบลนาทม งานก่อสร้างคอนกรีต ส่วนลดผสม no-competition(2,8) + contested(25,32,35,38)."""
+    c = sqlite3.connect(":memory:")
+    c.execute("""CREATE TABLE cgd_winners (project_id TEXT PRIMARY KEY, province TEXT,
+        dept TEXT, project_name TEXT, winner TEXT, winner_tin TEXT, budget INTEGER,
+        win_price INTEGER, discount_pct REAL, announce_date TEXT, fiscal_year TEXT,
+        proc_type TEXT, district TEXT, subdistrict TEXT, synced_at TEXT)""")
+    EB = "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)"
+    data = [("C1", "หจก.ก", 2.0), ("C2", "หจก.ข", 8.0), ("C3", "หจก.ค", 25.0),
+            ("C4", "หจก.ง", 32.0), ("C5", "หจก.จ", 35.0), ("C6", "หจก.ฉ", 38.0)]
+    for pid, win, disc in data:
+        c.execute("INSERT INTO cgd_winners (project_id,province,project_name,winner,win_price,"
+                  "discount_pct,fiscal_year,proc_type,district,subdistrict) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                  (pid, "นครพนม", "จ้างก่อสร้างถนนคอนกรีตเสริมเหล็ก ตำบลนาทม", win,
+                   500000, disc, "2568", EB, "นาทม", "นาทม"))
+    c.commit(); return c
+
+
+def test_fetch_contested_only():
+    """contested_only=True → ตัดงานไม่มีคู่แข่ง (ลด < CONTESTED_MIN_DISCOUNT) ออก."""
+    c = _contested_conn()
+    allrows = ci._fetch(c, "นครพนม", ["คอนกรีต"], district="นาทม")
+    assert len(allrows) == 6, allrows
+    cont = ci._fetch(c, "นครพนม", ["คอนกรีต"], district="นาทม", contested_only=True)
+    assert all(r["discount_pct"] >= ci.CONTESTED_MIN_DISCOUNT for r in cont), cont
+    assert len(cont) == 4, cont                  # 25,32,35,38 (ตัด 2,8)
+    print("✅ _fetch contested_only (ตัดงานไม่มีคู่แข่ง)")
+
+
+def test_predict_includes_median():
+    """predict_winning_price + predict_lines มีค่าปกติ (median) สำหรับ framing 'ปกติ ~X%'."""
+    p = ci.predict_winning_price(1000000, 31, 42, area_median=35)
+    assert p["area_disc_med"] == 35, p
+    assert p["area_price_med"] == round(1000000 * (1 - 35 / 100)), p
+    lines = ci.predict_lines(p)
+    assert any("ปกติ" in ln for ln in lines), lines
+    print("✅ predict median (ค่าปกติ)")
+
+
+def test_build_intel_contested_focus():
+    """_build_intel(contested_only=True) → บล็อก+คาดราคา ใช้เฉพาะงานแข่งจริง + ป้าย."""
+    c = _contested_conn()
+    ctx = ci._build_intel(c, "นครพนม", ["คอนกรีต"], "นาทม", "นาทม", 1000000,
+                          "concrete", "construction", contested_only=True)
+    assert ctx and ctx["prediction"], ctx
+    assert ctx["prediction"]["area_disc_lo"] >= ci.CONTESTED_MIN_DISCOUNT, ctx["prediction"]
+    txt = "\n".join(ctx["lines"])
+    assert "แข่งจริง" in txt, txt
+    print("✅ _build_intel contested-focus + label")
+
+
 def test_fetch_matches_location_by_name_despite_wrong_column():
     """คอลัมน์ district/subdistrict (geocode จากพิกัด) เพี้ยน — snap ไปอำเภอเมือง.
     งานชื่อ 'ตำบลนาทม อำเภอนาทม' ถูก tag column='เมืองนครพนม/ในเมือง' → ต้อง match จากชื่องาน
@@ -282,9 +333,10 @@ def test_scope_stats():
     s = ci._company_stats_from_rows(rows, "หจก.A")   # 2 งาน disc 5,8 → median 6.5, ไม่มี IQR
     assert s["games"] == 2 and s["median"] == 6.5 and s["p25"] is None, s
     assert ci._company_stats_from_rows(rows, "หจก.D")["games"] == 0   # ไม่อยู่ใน scope
-    lines, p25, p75, n, top, topm = ci._scope_block(rows, "🏘 ในตำบลโพนทอง")
+    lines, p25, p75, n, top, topm, med = ci._scope_block(rows, "🏘 ในตำบลโพนทอง")
     assert n == 3 and lines[0].startswith("🏘 ในตำบลโพนทอง — 3 งาน"), (n, lines[0])
     assert any("หจก.A" in l for l in lines), lines
+    assert med is not None, med   # median ของ scope (สำหรับ 'ปกติ' ในคาดราคา)
     print("✅ scope stats + block (scope-local)")
 
 
@@ -340,6 +392,9 @@ if __name__ == "__main__":
     test_golden_amphoe_better_than_province()
     test_work_nature()
     test_fetch_filters_work_nature()
+    test_fetch_contested_only()
+    test_predict_includes_median()
+    test_build_intel_contested_focus()
     test_fetch_matches_location_by_name_despite_wrong_column()
     test_fetch_matches_abbreviated_location()
     test_fetch_include_old_years()

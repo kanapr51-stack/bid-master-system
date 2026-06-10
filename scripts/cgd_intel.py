@@ -204,10 +204,11 @@ def analyze_bidders(conn, province, tokens, subdistrict, district, budget, bidde
         name = b.get("bidder_name") or "?"
         price = _price(b)
         disc = round((1 - price / b_) * 100, 1) if b_ > 0 else None
-        hist = company_area_history(conn, province, tokens, name, subdistrict, district)
-        trend = None
-        if hist["median"] is not None and disc is not None:
-            trend = "↑" if disc > hist["median"] + 1 else "↓" if disc < hist["median"] - 1 else "→"
+        import competitor_trend as _ct
+        _discs, _scope = _ct.company_series(conn, province, tokens, name, subdistrict, district)
+        _t = _ct.ewma_trend(_discs)
+        hist = {"scope": _scope, "n": _t["n"], "median": _t["median"], "ewma": _t["ewma"]}
+        trend = _t["trend"]
         if name in warned:
             tag = "warned"
         elif hist["n"] > 0:

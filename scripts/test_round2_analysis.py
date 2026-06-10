@@ -50,6 +50,7 @@ def test_analyze_bidders():
     assert out[1]["tag"] == "regular_missed", out                          # Y มีประวัติ(นอกตำบล) แต่ไม่เตือน
     assert out[2]["tag"] == "newcomer", out                                # Z หน้าใหม่
     assert out[0]["hist"]["n"] == 2, out                                   # X ประวัติตำบล 2 ครั้ง
+    assert "ewma" in out[0]["hist"], out[0]            # มี ewma (recency) — Sub-2a
     print("✅ analyze_bidders")
 
 

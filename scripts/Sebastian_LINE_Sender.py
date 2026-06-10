@@ -447,7 +447,8 @@ def format_winner_detailed(project_name, winner, price_agree, budget, analyzed, 
             crown = "🏆" if b["is_winner"] else "  "
             h = b["hist"]
             if h["n"] > 0:
-                hist_s = f"{h['scope']}เคย~{h['median']:.0f}%({h['n']}ครั้ง) {b['trend'] or ''}"
+                _lv = h.get("ewma") if h.get("ewma") is not None else h["median"]
+                hist_s = f"{h['scope']}ล่าสุด~{_lv:.0f}%({h['n']}ครั้ง){b['trend'] or ''}"
             else:
                 hist_s = "ไม่มีประวัติ"
             d = f"ลด{b['discount']:.0f}%" if b["discount"] is not None else ""

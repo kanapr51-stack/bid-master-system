@@ -53,7 +53,23 @@ def test_company_series():
     print("✅ company_series (cgd win + bid proposal, scope ตำบล→จังหวัด)")
 
 
+def test_area_win_series_matches_by_name():
+    """คอลัมน์ location (geocode พิกัด) เพี้ยน — งานตำบลนาทม tag เป็นเมืองนครพนม.
+    trend series ต้อง match จากชื่องาน (สอดคล้อง cgd_intel._fetch) ไม่งั้นปรับ recency ไม่เห็นข้อมูล."""
+    c = _conn()
+    c.execute("INSERT INTO cgd_winners (project_id,province,project_name,winner,win_price,"
+              "discount_pct,announce_date,fiscal_year,proc_type,district,subdistrict) "
+              "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+              ("n1", "นครพนม", "ถนน คสล. ตำบลนาทม อำเภอนาทม", "หจก.นาทม", 100000,
+               18.0, "2567-01-01", "2567", EB, "เมืองนครพนม", "ในเมือง"))
+    c.commit()
+    s = ct.area_win_series(c, "นครพนม", ["ถนน"], subdistrict="นาทม", district="นาทม")
+    assert 18.0 in s, s                           # งานตำบลนาทม (ชื่อถูก/column ผิด) ต้องเข้า series
+    print("✅ area_win_series matches by name (geocode column เพี้ยน)")
+
+
 if __name__ == "__main__":
     test_area_win_series()
     test_company_series()
+    test_area_win_series_matches_by_name()
     print("\n✅ ALL test_competitor_trend_series PASS")

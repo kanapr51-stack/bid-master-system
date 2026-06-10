@@ -5191,3 +5191,27 @@ prediction เดิมใช้ percentile แบบ flat (ทุกงาน�
 - ⏳ **Round 2 e2e**: รอ getProcureResult มีผู้ชนะทางการ → poller formal pass ยิงเอง (follow @ PRELIM พร้อม)
 - ▶ Portal 2b (โน้ต/unfollow/detail) · Sub-2b (ถ่วงผู้น่าจะยื่น, speculative) · Sub-2c (รายงานตลาด)
 - VPS HEAD = 35390e3 (sync กับ main) · bms-api active · timers healthy · token harvest มี gap เป็นช่วงๆ (SPOF รู้อยู่)
+
+## งานที่ N+116: Fix followed-bid-open ไม่โชว์ราคาคาด (root cause = location column เพี้ยน) (2026-06-11)
+
+### สถานะ: ✅ code fix เสร็จ (TDD + verified real data) · backfill + deploy ค้าง
+
+### Root cause (systematic-debugging)
+- งาน 69059327097 (ต.นาทม อ.นาทม นครพนม) followed_bid_open ส่ง 06-10 21:03 ไม่มี 💵 คาดราคา
+- price_predictions พิสูจน์: 374770/379413 มี prediction ตอนส่ง (06-09) → resume note เดาผิดงาน. ตัวจริง = 327097
+- **คอลัมน์ cgd_winners.district/subdistrict เพี้ยน** (reverse-geocode พิกัด snap ไปอำเภอเมือง) → งานตำบลนาทมจริง 15 งาน competitive recent-3y ถูก tag เป็น ในเมือง/เมืองนครพนม/นาคู่ → `_fetch(district='นาทม')`=0 → `_build_intel` คืน None → ไม่มีบรรทัดราคาคาด
+- instinct กัญจน์ถูก: ข้อมูลมีจริง (ค้นด้วยชื่องาน "ตำบลนาทม" เจอ 105 งาน, competitive recent-3y 15 งาน)
+
+### Fix (กัญจน์เลือก: ทำทั้งคู่ + ย้อนลึกเมื่อข้อมูลน้อย+ป้าย)
+- **cgd_intel._fetch**: match location ด้วย `(subdistrict=? OR project_name LIKE %ตำบลX%)` + `(district=? OR %อำเภอY%)` — ชื่องาน = ground truth, column = belt-and-suspenders
+- **_fetch include_old + _fetch_scope**: recent-3y ก่อน, ถ้าคู่แข่ง<MIN_COMPETITORS ย้อนทุกปีงบ + ป้าย "📜 รวมข้อมูลเก่ากว่า 3 ปี"
+- **competitor_trend._area_where**: name-OR-column เหมือนกัน (สอดคล้อง _fetch — recency series เห็นข้อมูลตรงกัน)
+- TDD: +4 test ใหม่ (name-match, include_old, old-label, trend name-match). ทุก test (8 ไฟล์ที่ import) PASS
+
+### Verify real data (VPS, non-deploy)
+- 327097: ตำบลนาทม 4 งาน + อำเภอนาทม 13 งาน → 💵 คาด 815k–1.12M ✅ (เดิม None)
+- 374770/379413: ยังทำงาน + ข้อมูลมากขึ้น (name-match เจอเพิ่ม), 379413 โชว์ป้ายข้อมูลเก่า ✅ ไม่ regress
+
+### Followup
+- Backfill cgd_winners.district/subdistrict จากชื่องาน (617K rows, backup ก่อน) — task #3
+- Deploy VPS (confirm push) + e2e verify — task #4

@@ -69,10 +69,13 @@ def _area_where(province, tokens, subdistrict, district, subtype):
     where = ["province=?", "win_price>0", "discount_pct IS NOT NULL",
              f"fiscal_year IN ({fy_ph})", f"proc_type IN ({pt_ph})", f"({like})"]
     params = [province, *ci.RECENT_FY, *ci.COMPETITIVE_SET] + [f"%{t}%" for t in tokens]
+    # match จากชื่องาน OR คอลัมน์ — คอลัมน์ geocode เพี้ยน (สอดคล้อง cgd_intel._fetch)
     if subdistrict is not None:
-        where.append("subdistrict=?"); params.append(subdistrict)
+        where.append("(subdistrict=? OR project_name LIKE ?)")
+        params += [subdistrict, f"%ตำบล{subdistrict}%"]
     if district is not None:
-        where.append("district=?"); params.append(district)
+        where.append("(district=? OR project_name LIKE ?)")
+        params += [district, f"%อำเภอ{district}%"]
     if subtype == "asphalt":
         where.append("(" + " OR ".join("project_name LIKE ?" for _ in ci._ASPHALT_KW) + ")")
         params += [f"%{k}%" for k in ci._ASPHALT_KW]

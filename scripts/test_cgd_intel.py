@@ -104,6 +104,74 @@ def test_golden_amphoe_better_than_province():
     print("✅ golden: amphoe ตัดคู่แข่งคนละอำเภอ (โพนทองเรณู) ออกจริง")
 
 
+def test_fetch_matches_location_by_name_despite_wrong_column():
+    """คอลัมน์ district/subdistrict (geocode จากพิกัด) เพี้ยน — snap ไปอำเภอเมือง.
+    งานชื่อ 'ตำบลนาทม อำเภอนาทม' ถูก tag column='เมืองนครพนม/ในเมือง' → ต้อง match จากชื่องาน
+    (ground truth) ไม่งั้น intel จับคู่พื้นที่ไม่เจอ (bug งาน 69059327097)."""
+    c = sqlite3.connect(":memory:")
+    c.execute("""CREATE TABLE cgd_winners (project_id TEXT PRIMARY KEY, province TEXT,
+        dept TEXT, project_name TEXT, winner TEXT, winner_tin TEXT, budget INTEGER,
+        win_price INTEGER, discount_pct REAL, announce_date TEXT, fiscal_year TEXT,
+        proc_type TEXT, district TEXT, subdistrict TEXT, synced_at TEXT)""")
+    EB = "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)"
+    # ชื่อระบุนาทม ถูก แต่ column เพี้ยนเป็นเมืองนครพนม
+    c.execute("INSERT INTO cgd_winners (project_id,province,project_name,winner,win_price,"
+              "discount_pct,fiscal_year,proc_type,district,subdistrict) VALUES (?,?,?,?,?,?,?,?,?,?)",
+              ("M1", "นครพนม", "ก่อสร้างถนน คสล. บ้านดงสว่าง ตำบลนาทม อำเภอนาทม จังหวัดนครพนม",
+               "หจก.นาทม", 800000, 15.0, "2568", EB, "เมืองนครพนม", "ในเมือง"))
+    # งานที่ column ถูก (ไม่ได้ระบุตำบลในชื่อ) → ต้องยังเจอจาก column (belt-and-suspenders)
+    c.execute("INSERT INTO cgd_winners (project_id,province,project_name,winner,win_price,"
+              "discount_pct,fiscal_year,proc_type,district,subdistrict) VALUES (?,?,?,?,?,?,?,?,?,?)",
+              ("M2", "นครพนม", "ก่อสร้างถนน คสล. หมู่ 5", "หจก.คอลัมน์",
+               700000, 12.0, "2568", EB, "นาทม", "นาทม"))
+    c.commit()
+    arows = ci._fetch(c, "นครพนม", ["ถนน"], district="นาทม")
+    assert {r["winner"] for r in arows} == {"หจก.นาทม", "หจก.คอลัมน์"}, arows  # name OR column
+    trows = ci._fetch(c, "นครพนม", ["ถนน"], subdistrict="นาทม", district="นาทม")
+    assert {r["winner"] for r in trows} == {"หจก.นาทม", "หจก.คอลัมน์"}, trows
+    print("✅ _fetch matches location by name (geocode column เพี้ยน)")
+
+
+def _old_years_conn():
+    """fixture: ตำบลนาทม มีงาน competitive เฉพาะปีเก่า (2563,2564) ไม่มีใน 3 ปีล่าสุด."""
+    c = sqlite3.connect(":memory:")
+    c.execute("""CREATE TABLE cgd_winners (project_id TEXT PRIMARY KEY, province TEXT,
+        dept TEXT, project_name TEXT, winner TEXT, winner_tin TEXT, budget INTEGER,
+        win_price INTEGER, discount_pct REAL, announce_date TEXT, fiscal_year TEXT,
+        proc_type TEXT, district TEXT, subdistrict TEXT, synced_at TEXT)""")
+    EB = "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)"
+    rows = [
+        ("O1", "ถนน คสล. ตำบลนาทม อำเภอนาทม", "หจก.เก่า1", 800000, 20.0, "2563"),
+        ("O2", "ถนน คสล. ตำบลนาทม อำเภอนาทม", "หจก.เก่า2", 750000, 25.0, "2564"),
+    ]
+    for pid, pname, win, wp, disc, fy in rows:
+        c.execute("INSERT INTO cgd_winners (project_id,province,project_name,winner,win_price,"
+                  "discount_pct,fiscal_year,proc_type,district,subdistrict) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                  (pid, "นครพนม", pname, win, wp, disc, fy, EB, "นาทม", "นาทม"))
+    c.commit(); return c
+
+
+def test_fetch_include_old_years():
+    """พื้นที่ข้อมูลน้อย: 3 ปีล่าสุดไม่มีงาน แต่ย้อนลึกเจอ → include_old=True ดึงทุกปีงบ."""
+    c = _old_years_conn()
+    recent = ci._fetch(c, "นครพนม", ["ถนน"], district="นาทม")          # default = 3 ปีล่าสุด
+    assert recent == [], recent
+    allyears = ci._fetch(c, "นครพนม", ["ถนน"], district="นาทม", include_old=True)
+    assert {r["winner"] for r in allyears} == {"หจก.เก่า1", "หจก.เก่า2"}, allyears
+    print("✅ _fetch include_old (ย้อนลึกกว่า 3 ปี)")
+
+
+def test_build_intel_old_data_label():
+    """พื้นที่มีแต่ข้อมูลเก่า → ยังคาดราคาได้ + ติดป้าย 'รวมข้อมูลเก่า' ให้ผู้ใช้รู้."""
+    c = _old_years_conn()
+    ctx = ci._build_intel(c, "นครพนม", ["ถนน"], "นาทม", "นาทม", 1000000)
+    assert ctx is not None, "ต้องไม่ None — มีข้อมูลเก่าให้คาดได้"
+    assert ctx["prediction"] is not None, ctx
+    txt = "\n".join(ctx["lines"])
+    assert "ข้อมูลเก่า" in txt, txt
+    print("✅ _build_intel ติดป้ายข้อมูลเก่าเมื่อ fallback ปีเก่า")
+
+
 def test_build_intel_dual():
     """dual-block: ตำบลโพนทอง(3 งาน A,A,B)<5 → โชว์อำเภอบ้านแพง(4 งาน +C) คู่กัน · คาดอิงตำบล."""
     c = _fixture_conn(); tk = ["ถนน"]
@@ -215,6 +283,9 @@ if __name__ == "__main__":
     test_resolve_location_fallbacks()
     test_select_competitors()
     test_golden_amphoe_better_than_province()
+    test_fetch_matches_location_by_name_despite_wrong_column()
+    test_fetch_include_old_years()
+    test_build_intel_old_data_label()
     test_build_intel_dual()
     test_intel_context()
     test_predict_winning_price()

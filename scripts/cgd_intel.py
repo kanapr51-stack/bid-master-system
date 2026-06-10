@@ -311,6 +311,7 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
     blocks = []
     pp25 = pp75 = ptop = ptopm = None
     basis = ""
+    basis_sub = basis_dist = None    # scope ที่ใช้คาดราคา (สำหรับ recency series)
     if amphoe:
         header = (f"💡 ราคาอ้างอิง (งาน{wt}"
                   + (f" ต.{tambon}" if tambon else "") + f" อ.{amphoe})")
@@ -321,6 +322,7 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
                 tl, t25, t75, _n, ttop, ttopm = _scope_block(t_rows, f"🏘 ในตำบล{tambon}")
                 blocks += tl
                 pp25, pp75, ptop, ptopm, basis = t25, t75, ttop, ttopm, "ตำบล"
+                basis_sub, basis_dist = tambon, amphoe
             else:
                 blocks.append(f"🏘 ในตำบล{tambon} — ยังไม่มีงานประเภทนี้")
         if tn < TAMBON_MIN:                       # ตำบลน้อย → โชว์อำเภอคู่กัน
@@ -330,6 +332,7 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
                 blocks += al
                 if pp25 is None:                  # ตำบลไม่มี → คาดอิงอำเภอ
                     pp25, pp75, ptop, ptopm, basis = a25, a75, atop, atopm, "อำเภอ"
+                    basis_sub, basis_dist = None, amphoe
     else:
         p_rows = _fetch(conn, province, tokens, subtype=subtype)
         if not p_rows:
@@ -337,10 +340,15 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
         pl, p25, p75, _n, ptopn, ptopmd = _scope_block(p_rows, f"🏙 ใน{province}")
         blocks += pl
         pp25, pp75, ptop, ptopm, basis = p25, p75, ptopn, ptopmd, "จังหวัด"
+        basis_sub, basis_dist = None, None
         header = f"💡 ราคาอ้างอิง (งาน{wt}ใน{province})"
     if not blocks or all("ยังไม่มีงาน" in b for b in blocks):
         return None                               # ไม่มีคู่แข่งจริงเลย → omit
     lines = [header, ""] + blocks
+    if pp25 is not None and pp75 is not None:
+        import competitor_trend as _ct
+        _series = _ct.area_win_series(conn, province, tokens, basis_sub, basis_dist, subtype)
+        pp25, pp75 = _ct.recency_adjusted_pct(_series, pp25, pp75)
     pred = predict_winning_price(budget, pp25, pp75, ptop, ptopm)
     if pred:
         lines += [""] + predict_lines(pred, basis)

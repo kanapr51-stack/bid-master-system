@@ -33,6 +33,7 @@ BMS_INTERNAL_SECRET  = os.getenv("BMS_INTERNAL_SECRET", "")
 TZ_TH = timezone(timedelta(hours=7))
 
 LINE_API = "https://api.line.me/v2/bot"
+PUBLIC_BASE_URL = os.getenv("BMS_PUBLIC_BASE_URL", "https://api.butler-bms.com")
 
 # in-memory conversation state: {user_id: "waiting_province"}
 _conv_state: dict[str, str] = {}
@@ -473,6 +474,11 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0) -> str:
     return head + "".join(body) + foot
 
 
+def _portal_link(user_id: str) -> str:
+    """ลิงก์ portal ต่อ user (portal token p=None)."""
+    return PUBLIC_BASE_URL.rstrip("/") + "/portal?t=" + follow_token.make_token(user_id, None)
+
+
 # -- Feedback flex (postback): ตอบกลับรายละเอียดงาน + ปุ่มแก้ไข -----------------
 FB_FULL_LABEL = {
     "interested":   "\U0001f44d สนใจ/น่าติดตาม",
@@ -718,6 +724,17 @@ async def follow_post(request: Request):
         return HTMLResponse(_follow_page_html(t, "no_customer", {}, "", exp))
     d = _project_detail(project_id)
     return HTMLResponse(_follow_page_html(t, state, d, _follow_deadline(project_id), exp))
+
+
+@app.get("/portal")
+async def portal_get(t: str = ""):
+    v = follow_token.verify_token(t)
+    if not v:
+        return HTMLResponse(_follow_page_html(t, "invalid", {}, "", 0))
+    jobs = _portal_jobs(v[0])
+    if jobs is None:
+        return HTMLResponse(_follow_page_html(t, "no_customer", {}, "", v[2]))
+    return HTMLResponse(_portal_page_html(jobs, v[2]))
 
 
 @app.post("/webhook/line")

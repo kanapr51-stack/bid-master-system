@@ -5111,3 +5111,29 @@ W0 ไม่เด้งเพราะระบบตรวจ `getProcureResul
 - ⏳ **cadence timer 6h→2h**: แก้ไม่ได้ (bms มี NOPASSWD เฉพาะ systemctl ไม่รวม sed) → กัญจน์รันเอง: `sudo sed -i 's|^OnCalendar=.*|OnCalendar=*-*-* 00/2:15:00|' /etc/systemd/system/bms-winner-poller.timer && sudo systemctl daemon-reload && sudo systemctl restart bms-winner-poller.timer`
 - ⏳ **Round 2 e2e**: รอ getProcureResult มีผู้ชนะทางการ (poller formal pass จะยิง Round2 detailed อัตโนมัติ — follow @ PRELIM)
 - ▶ **Sub-2** (ถัดไป): Competitor Trend Learning Loop (เก็บ bid_results→เทรนด์ส่วนลดต่อบริษัท→feed กลับ prediction). ดู ideas/future_development.md
+
+---
+
+## งานที่ N+113: Competitor Trend — recency-weighted adaptive discount (Sub-2a) — LIVE บน VPS (2026-06-10)
+
+### สถานะ: ✅ LIVE (subagent-driven 5 commits, test 9/9, ทุก task ผ่าน 2-stage review) + real-data sanity ผ่าน
+
+### โจทย์ (กัญจน์)
+prediction เดิมใช้ percentile แบบ flat (ทุกงานน้ำหนักเท่ากัน ไม่สนวันที่) → ไม่เรียนจากผลล่าสุด. ขอ "คาดราคาปรับตามผลจริง — งานล่าสุดน้ำหนักมากสุด แต่ไม่เร็วเกิน + เทรนด์แยกบริษัท". คำถามทดสอบ design: "คาด 70 จริง 80 → ครั้งหน้า 79 ไหม" → **ไม่ (overfit)** ตอบด้วย EWMA: 70→73 หลังครั้งแรก → ~80 เมื่อ 5-7 งานยืนยัน
+
+### Build (spec→plan→subagent-driven+TDD, 5 tasks)
+- **`competitor_trend.py`** (ใหม่): `ewma`(α0.3, recency)/`median`/`ewma_trend`(↑↓→, n<3→None)/`recency_adjusted_pct`(เลื่อน percentile ตาม ewma-median delta, damped ≤CAP 8 จุด)
+- series รวม 2 แหล่ง เรียงเวลา: `area_win_series` (ผู้ชนะ — cgd_winners + bid_results winner) · `company_series` (พฤติกรรมบริษัท — cgd win + bid proposal, ตำบล→จังหวัด)
+- **prediction adaptive**: `_build_intel` track basis_sub/dist → `recency_adjusted_pct(area_win_series)` ก่อน predict (subtype-aware ตาม N+111)
+- **Round 2 เทรนด์ต่อบริษัท**: `analyze_bidders` ใช้ `company_series`+`ewma_trend` (แทน median เดิม) · format โชว์ "ล่าสุด~X%"
+- design: EWMA recency แต่ damped + guard n<MIN_N(3) ไม่ปรับ (กัน noise/sparse). closed-loop Sub-1 (เก็บ คาด vs จริง) = เชื้อเพลิงของ feedback
+
+### Deploy + sanity (✅)
+- push (4 feat commits) → VPS pull ff e371d76
+- real-data: **announce_date 100%** (617K) → recency ทำงานเต็ม. นครพนม concrete 289 จุด: median 33.7%→**ewma 27.8%** (ล่าสุดลดน้อยลง) → flat 23.6-40.6% → **adaptive 17.7-34.8%** (delta -5.9 = ปรับขึ้นราคา ตลาดแข่งน้อยลง). tambon sparse (โพธิ์หมากแข้ง) ไม่ over-adjust (robust)
+- test: 5 ใหม่ + regression (cgd_intel 13/13, price_prediction, compare_upper_bound, winner_poller_prelim) ผ่าน
+
+### Followup
+- ▶ **Sub-2b**: ถ่วงน้ำหนัก "ผู้น่าจะยื่น" ใน prediction (speculative — รอ design)
+- ▶ **Sub-2c**: รายงานเทรนด์ตลาดรวม
+- ⏳ observe: bid_results สะสมเพิ่ม → recency จะมีน้ำหนักงานที่เรา observe เองมากขึ้น (ตอนนี้ส่วนใหญ่ยัง cgd_winners)

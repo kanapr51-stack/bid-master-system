@@ -35,9 +35,31 @@
 ## ผลคาด
 งานถนนนาทม → ~25–38% (median ~36%) แทน 2–38%.
 
-## ออกนอกขอบเขต (Step 2 แยกทีหลัง)
-หลังกรองแล้ว ช่วงอาจยังกว้าง (construction p25–p75 = 0.4–34%) เพราะมี single-bidder/งานใหญ่ลดน้อย.
-การบีบ band/anchor (max = ส่วนลดลึกสุด, ช่วง ~5%) = ticket แยก ดูช่วงจริงหลังกรองก่อน.
+## Step 2: Contested-Focus Prediction (approved 2026-06-11)
+
+### หลักฐาน (research: docs/research_discount_factors_2026_06_11.md)
+ส่วนลด **bimodal**: งานไม่มีคู่แข่ง (~0%) vs แข่งจริง (~32–36%). งานใหญ่/อบจ/>10ลบ. = โหมดต่ำทั้งหมด
+→ โฟกัสกลุ่มแข่งจริงจะตัดออกอัตโนมัติ (ไม่ต้องกรอง agency/budget แยก). เคสกัญจน์ อบต 1-3ลบ.: 82% แข่งจริง ลด 31-42%.
+
+### Design
+1. `CONTESTED_MIN_DISCOUNT = 15` (config) — งานถนนชนะด้วยส่วนลด <15% ≈ ไม่มีคู่แข่งจริง (gap ใน data ~9-17%)
+2. `_fetch(contested_only=True)` → เพิ่ม `discount_pct >= 15`. thread ผ่าน `_fetch_scope` → `_build_intel` (เฉพาะ path คาดราคา) + `competitor_trend`
+3. บล็อก + คาดราคา ใช้กลุ่ม contested. label "(งานแข่งจริง)". เพิ่ม median ใน predict_winning_price/predict_lines
+4. Output:
+```
+🏘 ในตำบลนาทม (งานแข่งจริง) — 7 งาน
+   📊 ส่วนลด 32–38%
+💵 ถ้ามีคู่แข่ง ผู้ชนะลด: 32–38% (ปกติ ~35%)
+   → ราคา 707k–775k (ปกติ 741k)
+```
+5. **Fallback:** ไม่มี contested ในพื้นที่เลย (แข่งน้อยจริง) → `intel_context` retry contested_only=False + ป้าย "⚠️ พื้นที่นี้แข่งขันน้อย"
+6. ขอบเขต: เฉพาะ path คาดราคา D0. analyze_bidders Round 2 ไม่แตะ
+
+### Test
+- `_fetch(contested_only=True)` ตัด discount<15 ออก
+- `predict_winning_price`/`predict_lines` มี median
+- `_build_intel(contested_only=True)` label งานแข่งจริง + prediction จากกลุ่ม contested
+- `intel_context` fallback เมื่อไม่มี contested → ป้ายแข่งน้อย
 
 ## Test (TDD)
 - `work_nature`: "ประกวดราคาซื้อคอนกรีตผสมเสร็จ..."→purchase · "จ้างก่อสร้างถนน..."→construction

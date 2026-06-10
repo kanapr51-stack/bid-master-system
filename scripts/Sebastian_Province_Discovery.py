@@ -261,6 +261,28 @@ def in_target_amphoe(rec: dict) -> bool:
     return any(a in hay for a in amphoes)
 
 
+def _match_detail(rec: dict) -> tuple:
+    """รัน matcher จริง (job_matcher) + resolve ตำบล/อำเภอ ต่องาน new-in-target สำหรับข้อความ Discord.
+    logic เดียวกับ enrichment_worker → prediction = ผลจริง (consistent). graceful (ไม่ทำ discovery ล่ม).
+    คืน (decision, tambon, amphoe). decision ∈ {send, soft_include, cut, unknown}."""
+    try:
+        import job_matcher as jm
+        tb = jm.resolve_tambon(rec.get("project_id", ""), rec.get("dept_name", ""), rec.get("project_name", ""))
+        decision, _ = jm.match_job(rec.get("project_name", ""), rec.get("province", ""),
+                                   tambon_field=tb, dept_name=rec.get("dept_name", ""))
+        amphoe = ""
+        if tb:
+            try:
+                import geo_reverse
+                amps = geo_reverse.amphoes_of_tambon(rec.get("province", ""), tb)
+                amphoe = amps[0] if len(amps) == 1 else ""
+            except Exception:
+                pass
+        return decision, tb, amphoe
+    except Exception:
+        return "unknown", "", ""
+
+
 def _stage_rank(announce_type: str) -> int:
     """ลำดับ lifecycle ตามอักษรแรก: B(รับฟัง)=0 < D(ประมูล)=1 < W(ผู้ชนะ)=2. อื่น=-1."""
     return {"B": 0, "D": 1, "W": 2}.get((announce_type or "")[:1], -1)
@@ -497,14 +519,24 @@ def main():
             # กันสับสน: "ในอำเภอเป้าหมาย" เดิมนับงาน target ทั้งหมดใน scan (รวมที่รู้แล้ว+แจ้งไปแล้ว)
             lines = [f"🆕 Discovery {now_th}",
                      f"📍 งานใหม่ทั้งจังหวัด: {ingested} (นครพนม/บึงกาฬ)",
-                     f"🎯 ใหม่ในอำเภอเป้าหมาย: {len(new_in_target)} (matcher ตรวจตำบลต่อก่อนแจ้ง LINE)",
+                     f"🎯 ใหม่ในอำเภอเป้าหมาย: {len(new_in_target)}",
                      f"scan {len(all_recs)} ({len(active)} active) · announce ล่าสุด: {latest_str}"]
             if new_in_target:
-                lines.append("งานใหม่ในอำเภอเป้าหมาย:")
-                for r in new_in_target[:8]:
-                    lines.append(f"  🎯 {r['province']} | ฿{r['budget']:,} | {r['project_name'][:42]}")
+                # รัน matcher จริงต่องาน (ตำบล+เกณฑ์) → แยกว่าแจ้ง LINE อะไร / ไม่แจ้งอะไร พร้อมตำบล/อำเภอ
+                sent, notsent = [], []
+                for r in new_in_target[:12]:
+                    dec, tb, amp = _match_detail(r)
+                    loc = " ".join(x for x in (f"ต.{tb}" if tb else "", f"อ.{amp}" if amp else "") if x) or "ตำบลไม่ระบุ"
+                    entry = f"  • {r['project_name']}\n     📍 {loc} · ฿{r['budget']:,}"
+                    (sent if dec in ("send", "soft_include") else notsent).append(entry)
+                if sent:
+                    lines.append(f"✅ แจ้ง LINE ({len(sent)}):")
+                    lines += sent
+                if notsent:
+                    lines.append(f"❌ ไม่แจ้ง — ตำบล/เกณฑ์ไม่ผ่าน ({len(notsent)}):")
+                    lines += notsent
             else:
-                lines.append("ℹ️ งานใหม่ทั้งหมดอยู่นอกพื้นที่เป้าหมาย → ไม่แจ้ง LINE (ปกติ)")
+                lines.append("ℹ️ งานใหม่ทั้งหมดอยู่นอกอำเภอเป้าหมาย → ไม่แจ้ง LINE (ปกติ)")
                 for r in new_recs[:5]:
                     lines.append(f"  • (นอกเป้า) {r['province']} | ฿{r['budget']:,} | {r['project_name'][:38]}")
             _discord("\n".join(lines))

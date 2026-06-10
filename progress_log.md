@@ -5218,3 +5218,29 @@ prediction เดิมใช้ percentile แบบ flat (ทุกงาน�
 
 ### Followup
 - Deploy VPS (confirm push) + e2e verify — task #4
+
+### Retroactive resend (N+116, ต่อ)
+- audit งานที่ส่งพร้อมราคา 14 งาน → 11 เปลี่ยน (หลายงานเดิม "ไม่มีราคา" = โดน bug เดียวกัน), 3 None ถูกต้อง (ไม่ใช่งานถนน: เลเซอร์/งานอาหาร/ซื้อคอนกรีต province ว่าง)
+- กรอง active(deadline≥06-11)+มีผู้ติดตาม → 3 งาน (327097 06-18, 374770/379413 06-15). ส่งการ์ด "🔄 อัปเดตราคาคาด" 6 ข้อความ (DRY preview ก่อน) สำเร็จทั้งหมด
+- Q1 coverage: งานถนน ref 1,392 → 56% ชื่อระบุตำบล (กู้ 675 ที่ column ผิด), 43% ไม่ระบุ→ตกระดับอำเภอ/จังหวัด (ไม่หาย). Q2: logic ใหม่ไม่ retroactive อัตโนมัติ → resend มือเฉพาะงาน active
+
+## งานที่ N+117: Work-nature filter (จ้างก่อสร้าง vs ซื้อ) — แก้ช่วงคาดราคากว้าง (2026-06-11)
+
+### สถานะ: ✅ code เสร็จ (TDD + verified) · รอ deploy
+
+### ปัญหา (จาก feedback กัญจน์)
+ช่วง %ส่วนลดกว้างเกินใช้ไม่ได้ (327097 ต.นาทม ลด 5–32% → 770k–1.08M). สาเหตุ: reference pool รวม
+งาน "ซื้อ" (วัสดุ เหล็ก/คอนกรีตผสมเสร็จ ลด ~0–2%) กับ "จ้างก่อสร้างถนน" (ลด ~25–38%) — คนละลักษณะงาน
+
+### Fix
+- `work_nature(project_name)` → purchase (มี "ซื้อ") | construction. คู่กับ road_subtype
+- thread intel_context → _build_intel → _fetch_scope → _fetch + competitor_trend (area_win_series/_area_where)
+- _fetch กรอง: construction → NOT LIKE %ซื้อ% · purchase → LIKE %ซื้อ%
+- TDD +2 tests (work_nature, _fetch filter). ทุก test (8 ไฟล์) PASS
+
+### Verify real data
+- 327097: ตำบลนาทม 2 งาน (ตัดซื้อออก) ลด 29–35% → คาด 744k–815k (ช่วง 71k จากเดิม 307k) ✅
+- 374770/379413: ยังทำงาน. 374770 ยังกว้าง (6–32%) เพราะงานก่อสร้างจริงลด 0% (single-bidder) = Step 2
+
+### Followup
+- Step 2: บีบ band/anchor (max = ส่วนลดลึกสุด, ช่วง ~5%) สำหรับ construction ที่มี outlier 0%

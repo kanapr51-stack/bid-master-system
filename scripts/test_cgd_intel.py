@@ -132,6 +132,41 @@ def test_fetch_matches_location_by_name_despite_wrong_column():
     print("✅ _fetch matches location by name (geocode column เพี้ยน)")
 
 
+def test_work_nature():
+    """แยกลักษณะงาน: 'ซื้อ' (วัสดุ) vs 'จ้างก่อสร้าง'. งานซื้อลด ~0-2%, งานจ้างลด ~25-38% — คนละ pool."""
+    assert ci.work_nature("ประกวดราคาซื้อคอนกรีตผสมเสร็จ และอื่นๆ ฝายห้วยหลวง") == "purchase"
+    assert ci.work_nature("ประกวดราคาซื้อเหล็กเส้นเสริมคอนกรีต งานอาคารบังคับน้ำ") == "purchase"
+    assert ci.work_nature("ประกวดราคาจ้างก่อสร้างถนนคอนกรีตเสริมเหล็ก") == "construction"
+    assert ci.work_nature("ก่อสร้างถนน คสล. หมู่ 5") == "construction"   # ไม่มี ซื้อ
+    print("✅ work_nature (ซื้อ=purchase, จ้าง=construction)")
+
+
+def test_fetch_filters_work_nature():
+    """reference ต้องตรงลักษณะงาน — งานก่อสร้างถนนไม่เอางาน 'ซื้อคอนกรีต' มาปน (กัน range เพี้ยน)."""
+    c = sqlite3.connect(":memory:")
+    c.execute("""CREATE TABLE cgd_winners (project_id TEXT PRIMARY KEY, province TEXT,
+        dept TEXT, project_name TEXT, winner TEXT, winner_tin TEXT, budget INTEGER,
+        win_price INTEGER, discount_pct REAL, announce_date TEXT, fiscal_year TEXT,
+        proc_type TEXT, district TEXT, subdistrict TEXT, synced_at TEXT)""")
+    EB = "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)"
+    rows = [
+        ("J1", "ประกวดราคาจ้างก่อสร้างถนนคอนกรีตเสริมเหล็ก ตำบลนาทม", "หจก.จ้าง", 30.0),
+        ("S1", "ประกวดราคาซื้อคอนกรีตผสมเสร็จ ฝายห้วยหลวง ตำบลนาทม", "หจก.ซื้อ", 2.0),
+    ]
+    for pid, nm, win, disc in rows:
+        c.execute("INSERT INTO cgd_winners (project_id,province,project_name,winner,win_price,"
+                  "discount_pct,fiscal_year,proc_type,district,subdistrict) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                  (pid, "นครพนม", nm, win, 500000, disc, "2568", EB, "นาทม", "นาทม"))
+    c.commit()
+    cons = ci._fetch(c, "นครพนม", ["คอนกรีต"], district="นาทม", nature="construction")
+    assert {r["winner"] for r in cons} == {"หจก.จ้าง"}, cons    # ตัดงานซื้อออก
+    pur = ci._fetch(c, "นครพนม", ["คอนกรีต"], district="นาทม", nature="purchase")
+    assert {r["winner"] for r in pur} == {"หจก.ซื้อ"}, pur
+    both = ci._fetch(c, "นครพนม", ["คอนกรีต"], district="นาทม")    # None = back-compat
+    assert {r["winner"] for r in both} == {"หจก.จ้าง", "หจก.ซื้อ"}, both
+    print("✅ _fetch filters by work_nature (construction ตัดงานซื้อ)")
+
+
 def test_fetch_matches_abbreviated_location():
     """ชื่องานบางงานเขียนย่อ 'ต.นาทม อ.นาทม' (ไม่ใช่ 'ตำบล/อำเภอ' เต็ม) — LIKE ต้องจับทั้งสองแบบ."""
     c = sqlite3.connect(":memory:")
@@ -303,6 +338,8 @@ if __name__ == "__main__":
     test_resolve_location_fallbacks()
     test_select_competitors()
     test_golden_amphoe_better_than_province()
+    test_work_nature()
+    test_fetch_filters_work_nature()
     test_fetch_matches_location_by_name_despite_wrong_column()
     test_fetch_matches_abbreviated_location()
     test_fetch_include_old_years()

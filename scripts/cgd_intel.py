@@ -68,6 +68,13 @@ def road_subtype(project_name: str):
     return None
 
 
+def work_nature(project_name: str) -> str:
+    """ลักษณะงาน: 'purchase' (จัด*ซื้อ*วัสดุ เช่น เหล็ก/คอนกรีตผสมเสร็จ ลด ~0-2%) vs
+    'construction' (*จ้างก่อสร้าง* ลด ~25-38%). คนละ pool — pool รวมกันทำช่วงคาดราคาเพี้ยน
+    (งานซื้อชื่อมี 'คอนกรีต/ถนน' หลุดเข้า reference งานก่อสร้าง). default = construction."""
+    return "purchase" if "ซื้อ" in (project_name or "") else "construction"
+
+
 def resolve_location(project_id: str, project_name: str, dept_name: str, province: str, conn) -> dict:
     """runtime-compute (ไม่ persist) ตำบล+อำเภอ แม่น→หยาบ: [moi=phaseB] → geo(lat/lng) →
     unique-tambon → dept → province. คืน {tambon, amphoe, location_confidence, source,
@@ -139,15 +146,21 @@ def _pct(values: list, p: float):
 
 
 def _fetch(conn, province: str, tokens: list, *, subdistrict=None, district=None,
-           subtype=None, include_old=False) -> list:
+           subtype=None, include_old=False, nature=None) -> list:
     """ดึงงาน competitive ของ work-type (LIKE any token) ใน province + (เลือก subdistrict/district).
     subtype='concrete'/'asphalt' → จำกัด reference เฉพาะประเภทผิวถนนเดียวกัน (ดู road_subtype).
+    nature='construction'/'purchase' → จำกัดลักษณะงาน (จ้างก่อสร้าง vs ซื้อวัสดุ ลด%ต่างกันมาก).
     include_old=True → ไม่จำกัด 3 ปีล่าสุด (ย้อนทุกปีงบ) สำหรับพื้นที่ข้อมูลน้อย.
     คืน list[dict] (รวม district/subdistrict). graceful [] ถ้าไม่มี table/column."""
     pt_ph = ",".join("?" for _ in COMPETITIVE_SET)
     like = " OR ".join("project_name LIKE ?" for _ in tokens)
     where = ["province=?", "win_price>0", f"proc_type IN ({pt_ph})", f"({like})"]
     params = [province, *COMPETITIVE_SET] + [f"%{t}%" for t in tokens]
+    # ลักษณะงาน — งาน 'ซื้อ' (วัสดุ ลด ~0-2%) คนละ pool กับ 'จ้างก่อสร้าง' (ลด ~25-38%)
+    if nature == "construction":
+        where.append("project_name NOT LIKE ?"); params.append("%ซื้อ%")
+    elif nature == "purchase":
+        where.append("project_name LIKE ?"); params.append("%ซื้อ%")
     if not include_old:                       # default = 3 ปีงบล่าสุด (ราคาปัจจุบัน)
         fy_ph = ",".join("?" for _ in RECENT_FY)
         where.append(f"fiscal_year IN ({fy_ph})")
@@ -311,18 +324,20 @@ def confidence_label(area_n: int, p25, p75) -> str:
     return "🟢 เชื่อถือได้ — ข้อมูลมากพอ"
 
 
-def _fetch_scope(conn, province, tokens, *, subdistrict=None, district=None, subtype=None):
+def _fetch_scope(conn, province, tokens, *, subdistrict=None, district=None, subtype=None, nature=None):
     """ดึง reference ของ scope — 3 ปีล่าสุดก่อน; ถ้าคู่แข่งน้อย (< MIN_COMPETITORS) ย้อนทุกปีงบ
     เพื่อให้พื้นที่ข้อมูลน้อย (อำเภอเล็ก/ใหม่) ยังคาดราคาได้. คืน (rows, used_old)."""
-    rows = _fetch(conn, province, tokens, subdistrict=subdistrict, district=district, subtype=subtype)
+    rows = _fetch(conn, province, tokens, subdistrict=subdistrict, district=district,
+                  subtype=subtype, nature=nature)
     if _distinct_winners(rows) >= MIN_COMPETITORS:
         return rows, False
     old = _fetch(conn, province, tokens, subdistrict=subdistrict, district=district,
-                 subtype=subtype, include_old=True)
+                 subtype=subtype, nature=nature, include_old=True)
     return (old, True) if _distinct_winners(old) > _distinct_winners(rows) else (rows, False)
 
 
-def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subtype=None) -> dict | None:
+def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subtype=None,
+                 nature=None) -> dict | None:
     """ประกอบ intel dual-block จาก (ตำบล,อำเภอ) ที่ resolve มาแล้ว (แยกจาก resolve เพื่อ test ง่าย).
     - บล็อกตำบล: เสมอ (ถ้ามีชื่อตำบล) — สถิติเฉพาะงานในตำบล. 0 งาน → 'ยังไม่มีงานประเภทนี้'
     - บล็อกอำเภอ: เพิ่มเมื่อตำบล < TAMBON_MIN — สถิติเฉพาะงานในอำเภอ
@@ -338,7 +353,7 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
         header = (f"💡 ราคาอ้างอิง (งาน{wt}"
                   + (f" ต.{tambon}" if tambon else "") + f" อ.{amphoe})")
         t_rows, t_old = _fetch_scope(conn, province, tokens, subdistrict=tambon,
-                                     district=amphoe, subtype=subtype) if tambon else ([], False)
+                                     district=amphoe, subtype=subtype, nature=nature) if tambon else ([], False)
         tn = len(t_rows)
         if tambon:
             if t_rows:
@@ -349,7 +364,7 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
             else:
                 blocks.append(f"🏘 ในตำบล{tambon} — ยังไม่มีงานประเภทนี้")
         if tn < TAMBON_MIN:                       # ตำบลน้อย → โชว์อำเภอคู่กัน
-            a_rows, a_old = _fetch_scope(conn, province, tokens, district=amphoe, subtype=subtype)
+            a_rows, a_old = _fetch_scope(conn, province, tokens, district=amphoe, subtype=subtype, nature=nature)
             if a_rows:
                 al, a25, a75, _n, atop, atopm = _scope_block(a_rows, f"🏙 ในอำเภอ{amphoe}")
                 blocks += al
@@ -357,7 +372,7 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
                     pp25, pp75, ptop, ptopm, basis = a25, a75, atop, atopm, "อำเภอ"
                     basis_sub, basis_dist, basis_old = None, amphoe, a_old
     else:
-        p_rows, p_old = _fetch_scope(conn, province, tokens, subtype=subtype)
+        p_rows, p_old = _fetch_scope(conn, province, tokens, subtype=subtype, nature=nature)
         if not p_rows:
             return None
         pl, p25, p75, _n, ptopn, ptopmd = _scope_block(p_rows, f"🏙 ใน{province}")
@@ -370,7 +385,7 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
     lines = [header, ""] + blocks
     if pp25 is not None and pp75 is not None:
         import competitor_trend as _ct
-        _series = _ct.area_win_series(conn, province, tokens, basis_sub, basis_dist, subtype)
+        _series = _ct.area_win_series(conn, province, tokens, basis_sub, basis_dist, subtype, nature)
         pp25, pp75 = _ct.recency_adjusted_pct(_series, pp25, pp75)
     pred = predict_winning_price(budget, pp25, pp75, ptop, ptopm)
     if pred:
@@ -397,7 +412,7 @@ def intel_context(province: str, project_name: str, dept_name: str = "",
             _log.info("intel_resolve project=%s source=%s amphoe=%s",
                       project_id, loc["source"], loc["amphoe"])
             return _build_intel(conn, province, tokens, loc["tambon"], loc["amphoe"],
-                                budget, road_subtype(project_name))
+                                budget, road_subtype(project_name), work_nature(project_name))
         finally:
             if own:
                 conn.close()

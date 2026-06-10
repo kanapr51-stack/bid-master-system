@@ -5161,3 +5161,33 @@ prediction เดิมใช้ percentile แบบ flat (ทุกงาน�
 ### Followup → Portal 2b
 - โน้ตต่องาน (write + ตารางใหม่) · unfollow จาก portal · per-job detail page
 - ⏳ validate user-facing: กัญจน์ลองพิมพ์ "งานของฉัน" ใน LINE จริง + เปิดดูในมือถือ
+
+---
+
+## งานที่ N+115: CHECKPOINT — ก่อนเปลี่ยน session (2026-06-10)
+
+### สถานะ: ⏸ pause เปลี่ยน session (กัญจน์ขอทำ 2 เรื่องต่อใน session หน้า)
+
+### ✅ เสร็จแล้ว session นี้ (6 feature LIVE บน VPS)
+- N+110 follow-link signed-token · N+111 ราคาถนน subtype concrete/asphalt · N+112 แจ้ง W0 2 รอบ (prelim+formal) · discovery แยก target/นอกเป้า · N+113 Competitor Trend recency EWMA · **N+114 Portal 2a dashboard** (35390e3)
+- ทุก feature ผ่าน brainstorm→spec→plan→subagent-driven+TDD + deploy + e2e
+
+### 🎯 NEXT ACTION (session หน้า — กัญจน์สั่ง 2 เรื่อง, validation feedback จากการใช้จริง)
+
+**เรื่อง 1 — 🐛 followed-bid-open ไม่โชว์ราคาคาดการณ์ (investigate):**
+- อาการ: LINE เด้งแจ้ง "งานที่ติดตามประกาศวันยื่นซองแล้ว" (followed_bid_open / advance B0→D0) แต่**ไม่มีบรรทัดราคาชนะที่คาดการณ์** (💵 คาด X–Y)
+- งานที่น่าจะ trigger: 69059374770 / 69059379413 (โพธิ์หมากแข้ง, กัญจน์ follow, advance D0)
+- **hypothesis (ต้อง verify ก่อนแก้ — ใช้ systematic-debugging):** `cgd_intel.intel_context` คืน prediction=None เพราะตำบลโพธิ์หมากแข้ง competitive data sparse (3 e-bidding) → `_build_intel` omit prediction. หรือ path followed_bid_open ใน `Sebastian_LINE_Sender` ไม่แนบ prediction. **ตรวจ:** รัน intel_context ของ 2 งานนั้นบน VPS ดูว่าได้ prediction ไหม + ดู format_notification path
+- ไฟล์: `scripts/cgd_intel.py` (_build_intel, predict_winning_price), `scripts/Sebastian_LINE_Sender.py` (format_notification D0 path)
+
+**เรื่อง 2 — ✏️ แก้ Portal (กัญจน์จะระบุเพิ่ม):**
+- ที่ propose ไว้แล้ว: เพิ่มกลุ่ม **"⏳ รอประกาศผลทางการ"** ใน portal สำหรับงาน `followed_jobs.last_stage_notified='PRELIM'` (เห็นราคาเบื้องต้นแล้วแต่ผลทางการยังไม่เข้า) — แยกจาก "กำลังประมูล". แก้ `_portal_jobs` grouping (เพิ่ม key 'prelim' เช็ค last_stage_notified) + `_portal_page_html` + ดึงราคาเบื้องต้นจาก prelim_summary/bid_results
+- เคส: 69059075454 ตอนนี้อยู่ "กำลังประมูล" (ถูกตาม eGP) แต่กัญจน์คาดว่าควรอยู่ "รอประกาศ"
+- **กัญจน์จะบอกรายละเอียดที่อยากแก้เพิ่มเอง** ตอน session หน้า → เริ่มด้วยถาม/brainstorm ก่อน build
+- ไฟล์: `scripts/bms_api.py` (`_portal_jobs` ~line 340+, `_portal_page_html`). spec/plan portal: docs/superpowers/{specs,plans}/2026-06-10-portal-phase2a-dashboard*
+
+### ค้าง/ระวัง (followup เดิม)
+- ⏳ **cadence timer 6h→2h**: กัญจน์รัน sudo เอง (bms ไม่มี NOPASSWD sed) — คำสั่งใน N+112
+- ⏳ **Round 2 e2e**: รอ getProcureResult มีผู้ชนะทางการ → poller formal pass ยิงเอง (follow @ PRELIM พร้อม)
+- ▶ Portal 2b (โน้ต/unfollow/detail) · Sub-2b (ถ่วงผู้น่าจะยื่น, speculative) · Sub-2c (รายงานตลาด)
+- VPS HEAD = 35390e3 (sync กับ main) · bms-api active · timers healthy · token harvest มี gap เป็นช่วงๆ (SPOF รู้อยู่)

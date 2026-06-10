@@ -338,6 +338,75 @@ def _follow_page_html(token: str, state: str, d: dict, deadline: str, exp_epoch:
     return head + "".join(body) + foot
 
 
+def _to_float(v):
+    try:
+        return float(v) if v not in (None, "") else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _portal_jobs(user_id: str):
+    """งานที่ user ติดตาม (active+closed) จัดกลุ่ม stage. คืน {won,bidding,pre} | None (ไม่มี customer).
+    won = มีผู้ชนะ (bid_results) หรือ announce W* · bidding = D0 ยังไม่มีผล · pre = อื่น (B*)."""
+    with get_conn() as conn:
+        cust = conn.execute("SELECT id FROM customers WHERE line_user_id=?", (user_id,)).fetchone()
+        if not cust:
+            return None
+        cid = cust["id"]
+        follows = conn.execute(
+            "SELECT project_id FROM followed_jobs WHERE customer_id=? AND status IN ('active','closed')",
+            (cid,)).fetchall()
+        groups = {"won": [], "bidding": [], "pre": []}
+        for f in follows:
+            pid = f["project_id"]
+            ps = conn.execute(
+                "SELECT project_name, announce_type, province, budget FROM projects_seen WHERE project_id=?",
+                (pid,)).fetchone()
+            if not ps:
+                continue
+            try:
+                loc = conn.execute(
+                    "SELECT moi_name, deadline FROM project_locations WHERE project_id=?", (pid,)).fetchone()
+            except sqlite3.OperationalError:
+                loc = None
+            moi = (loc["moi_name"] if loc and "moi_name" in loc.keys() else "") or ""
+            deadline = (loc["deadline"] if loc and "deadline" in loc.keys() else "") or ""
+            prov = ps["province"] or ""
+            location = ((f"ต.{moi} " if moi else "") + (f"จ.{prov}" if prov else "")).strip()
+            budget = ps["budget"] or 0
+            pr = conn.execute(
+                "SELECT area_price_lo, area_price_hi FROM price_predictions WHERE project_id=?", (pid,)).fetchone()
+            results = conn.execute(
+                "SELECT bidder_name, price_proposal, price_agree, is_winner FROM bid_results WHERE project_id=?",
+                (pid,)).fetchall()
+            ann = ps["announce_type"] or ""
+            job = {"project_id": pid, "name": ps["project_name"] or pid, "location": location,
+                   "deadline": deadline, "pred_lo": pr["area_price_lo"] if pr else None,
+                   "pred_hi": pr["area_price_hi"] if pr else None,
+                   "winner": None, "winner_price": None, "winner_disc": None, "competitors": []}
+            win = next((r for r in results if r["is_winner"]), None)
+            if win or ann.startswith("W"):
+                if win:
+                    wp = _to_float(win["price_agree"]) or _to_float(win["price_proposal"])
+                    job["winner"] = win["bidder_name"]
+                    job["winner_price"] = wp
+                    if wp and budget:
+                        job["winner_disc"] = round((1 - wp / budget) * 100, 1)
+                    seen = set()
+                    for r in results:
+                        if r["is_winner"] or not r["bidder_name"] or r["bidder_name"] in seen:
+                            continue
+                        seen.add(r["bidder_name"])
+                        job["competitors"].append({"name": r["bidder_name"], "price": _to_float(r["price_proposal"])})
+                    job["competitors"] = job["competitors"][:3]
+                groups["won"].append(job)
+            elif ann == "D0":
+                groups["bidding"].append(job)
+            else:
+                groups["pre"].append(job)
+        return groups
+
+
 # -- Feedback flex (postback): ตอบกลับรายละเอียดงาน + ปุ่มแก้ไข -----------------
 FB_FULL_LABEL = {
     "interested":   "\U0001f44d สนใจ/น่าติดตาม",

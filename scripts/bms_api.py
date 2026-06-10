@@ -407,6 +407,72 @@ def _portal_jobs(user_id: str):
         return groups
 
 
+def _portal_page_html(groups: dict, exp_epoch: int = 0) -> str:
+    """HTML มือถือ-first — รายการงานติดตามจัดกลุ่ม stage. read-only."""
+    import html as _h
+    head = (
+        "<!doctype html><html lang=\"th\"><head><meta charset=\"utf-8\">"
+        "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
+        "<title>งานที่ติดตาม</title><style>"
+        "body{font-family:-apple-system,'Segoe UI',sans-serif;margin:0;padding:18px;background:#f5f6f8;color:#222}"
+        ".wrap{max-width:480px;margin:0 auto}"
+        ".h{font-size:19px;font-weight:700;margin:4px 0 14px}"
+        ".grp{font-size:14px;font-weight:700;color:#555;margin:16px 0 8px}"
+        ".job{background:#fff;border-radius:14px;padding:14px 16px;margin:8px 0;box-shadow:0 2px 10px rgba(0,0,0,.06)}"
+        ".jn{font-size:15px;font-weight:600;margin:0 0 4px}"
+        ".meta{font-size:13px;color:#888;margin:3px 0}"
+        ".dl{font-size:13px;color:#d9534f;margin:3px 0}"
+        ".win{font-size:14px;font-weight:600;color:#1a7f37;margin:3px 0}"
+        ".dots{font-size:12px;color:#999;margin:4px 0}"
+        ".badge{font-size:11px;padding:2px 8px;border-radius:10px;color:#fff;margin-left:6px}"
+        ".bd{background:#1d72b4}.bw{background:#1a7f37}.bp{background:#b0883b}"
+        ".msg{font-size:15px;color:#555;margin:12px 0}"
+        ".exp{font-size:11px;color:#bbb;margin-top:18px;text-align:center}"
+        "</style></head><body><div class=\"wrap\">"
+    )
+    foot = "</div></body></html>"
+    n = sum(len(v) for v in groups.values())
+    body = [f"<div class=\"h\">🗂 งานที่คุณติดตาม ({n})</div>"]
+    if n == 0:
+        body.append("<div class=\"msg\">ยังไม่มีงานที่ติดตาม — กดดาว ⭐ ในข้อความแจ้งเตือนเพื่อเริ่มติดตามครับ</div>")
+        return head + "".join(body) + foot
+
+    def _baht(x):
+        return f"{x:,.0f}" if x else "-"
+
+    def _card(j, kind):
+        L = [f"<div class=\"jn\">🏗️ {_h.escape((j['name'] or '')[:80])}</div>"]
+        if j["location"]:
+            L.append(f"<div class=\"meta\">📍 {_h.escape(j['location'])}</div>")
+        if kind == "bidding":
+            L.append("<div class=\"dots\">●━━●━━○<span class=\"badge bd\">กำลังประมูล</span></div>")
+            if j["deadline"]:
+                L.append(f"<div class=\"dl\">⏰ ยื่นซอง {_h.escape(j['deadline'])}</div>")
+            if j["pred_lo"] and j["pred_hi"]:
+                L.append(f"<div class=\"meta\">💵 คาด {_baht(j['pred_lo'])}–{_baht(j['pred_hi'])} บาท</div>")
+        elif kind == "won":
+            L.append("<div class=\"dots\">●━━●━━●<span class=\"badge bw\">ประกาศผล</span></div>")
+            if j["winner"]:
+                disc = f" (ลด {j['winner_disc']:.0f}%)" if j["winner_disc"] is not None else ""
+                L.append(f"<div class=\"win\">🏆 {_h.escape(j['winner'])} · {_baht(j['winner_price'])}{disc}</div>")
+                if j["competitors"]:
+                    comp = " · ".join(f"{_h.escape((c['name'] or '')[:18])} {_baht(c['price'])}" for c in j["competitors"])
+                    L.append(f"<div class=\"meta\">👥 {comp}</div>")
+        else:
+            L.append("<div class=\"dots\">●━━○━━○<span class=\"badge bp\">รับฟังความเห็น</span></div>")
+        return "<div class=\"job\">" + "".join(L) + "</div>"
+
+    for key, label in (("bidding", "🔵 กำลังประมูล"), ("pre", "⭐ รับฟังความเห็น"), ("won", "🏆 ประกาศผลแล้ว")):
+        if groups[key]:
+            body.append(f"<div class=\"grp\">{label} ({len(groups[key])})</div>")
+            for j in groups[key]:
+                body.append(_card(j, key))
+    exp_str = _fmt_exp_th(exp_epoch)
+    if exp_str:
+        body.append(f"<div class=\"exp\">🔗 ลิงก์นี้ใช้ได้ถึง {exp_str}</div>")
+    return head + "".join(body) + foot
+
+
 # -- Feedback flex (postback): ตอบกลับรายละเอียดงาน + ปุ่มแก้ไข -----------------
 FB_FULL_LABEL = {
     "interested":   "\U0001f44d สนใจ/น่าติดตาม",

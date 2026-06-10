@@ -5082,3 +5082,32 @@ quick-reply ⭐ ใต้ข้อความ D0 **หายเมื่อห�
 ### Next (รอ observe + เผื่อทำต่อ)
 - ⏳ validate ผลจริง: รอ D0 ถนนใหม่เด้ง → ดูการ์ดคาดราคาว่าแยกประเภทถูก (พ่อ review) + closed-loop accuracy เมื่อถึง W0
 - เผื่อ improve: classify "unknown" 30% (ลูกรัง/หินคลุก/บูรณะไม่ระบุผิว) · **price_valid filter = แยก ticket** (กระทบทุกหมวด)
+
+---
+
+## งานที่ N+112: แจ้ง W0 2 รอบ + วิเคราะห์ละเอียด — LIVE บน VPS (2026-06-09)
+
+### สถานะ: ✅ Round 1 LIVE + e2e ส่งจริงถึงกัญจน์ (Round 2 รอผลทางการ) · subagent-driven 10 commits + 1 e2e hotfix
+
+### ที่มา (จาก debug 69059075454)
+W0 ไม่เด้งเพราะระบบตรวจ `getProcureResult` (ผลทางการ) อย่างเดียว ซึ่ง lag — "สรุปราคาเบื้องต้น" (ราคาต่ำสุด, เปิดเผย~เที่ยง) อยู่ service `egp-agpc01` ที่ไม่ได้ใช้. RE สำเร็จ (pure-API chain) → feature แจ้ง 2 รอบ (Option C, กัญจน์เลือก).
+
+### Build (spec→plan→subagent-driven+TDD, 10 tasks)
+- **T1** `save_prediction` upsert (ทับค่าล่าสุด ไม่ลบ actual) · **T2** `compare_prediction` เทียบ**กรอบบน** (area_price_hi, held=actual≤hi) + `compare_prediction_provisional` (display-only)
+- **T3/4** `prelim_summary.py`: parse + `fetch_prelim_summary` pure-API (encryptApiKey→genReportPrice→viewPdf→pdfplumber) + greenBook gate
+- **T5** `cgd_intel.analyze_bidders`/`company_area_history` (Round2 breakdown ต่อราย + ประวัติ in/out ตำบล + ป้าย warned/🔸เจ้าประจำหลุดtop3/หน้าใหม่)
+- **T6** `format_prelim_notification` (Round1) · **T7** `format_winner_detailed` (Round2)
+- **T8** Winner_Poller **stage machine D0→PRELIM→W0** (prelim pass + formal pass รวม PRELIM, Round2 ยิงได้แม้ข้าม Round1) + verify_hook held
+- **T9** wire: followed_prelim→Round1, followed_winner→detailed + poller resolve_prelim live
+- test 11/11 (7 ใหม่ + 4 regression) · ทุก task ผ่าน 2-stage review
+
+### Deploy + e2e (✅)
+- push (10 commits) → VPS pull ff → re-save prediction concrete (upsert: กรอบบน 779k→**729,774**)
+- 🐛 **e2e จับ bug**: PDF มี footer boilerplate "...๒ ซอง...จะไม่มีการแสดงข้อมูลราคา" **ทุกใบ** → parse guard เดิมตัดงานมีราคาทิ้งเป็น 2-ซองผิด. fix (commit b237336): has_price จากเลขในบรรทัด "รายการพิจารณาที่" (`findall[-1]` กันเลขมิติ) ไม่ใช่ boilerplate. test เพิ่ม footer+เลขมิติ reproduce
+- **Round 1 ส่งจริงถึงกัญจน์** (cust2): ราคาต่ำสุด **740,000** · ผู้เสนอ 3 ราย · 🎯 เทียบกรอบบน 729,774 → **สูงกว่า 1.4%** (ส่วนลดจริง 27%) — closed-loop เบื้องต้นตรงเป๊ะกับที่กัญจน์เห็น (730 vs 740)
+- หมายเหตุ: ข้อความผิด (2-ซอง) ถูกส่งก่อน fix 1 ครั้ง → re-send ฉบับถูกแล้ว
+
+### เหลือ / Followup
+- ⏳ **cadence timer 6h→2h**: แก้ไม่ได้ (bms มี NOPASSWD เฉพาะ systemctl ไม่รวม sed) → กัญจน์รันเอง: `sudo sed -i 's|^OnCalendar=.*|OnCalendar=*-*-* 00/2:15:00|' /etc/systemd/system/bms-winner-poller.timer && sudo systemctl daemon-reload && sudo systemctl restart bms-winner-poller.timer`
+- ⏳ **Round 2 e2e**: รอ getProcureResult มีผู้ชนะทางการ (poller formal pass จะยิง Round2 detailed อัตโนมัติ — follow @ PRELIM)
+- ▶ **Sub-2** (ถัดไป): Competitor Trend Learning Loop (เก็บ bid_results→เทรนด์ส่วนลดต่อบริษัท→feed กลับ prediction). ดู ideas/future_development.md

@@ -5212,6 +5212,9 @@ prediction เดิมใช้ percentile แบบ flat (ทุกงาน�
 - 327097: ตำบลนาทม 4 งาน + อำเภอนาทม 13 งาน → 💵 คาด 815k–1.12M ✅ (เดิม None)
 - 374770/379413: ยังทำงาน + ข้อมูลมากขึ้น (name-match เจอเพิ่ม), 379413 โชว์ป้ายข้อมูลเก่า ✅ ไม่ regress
 
+### Decision update (หลัง investigate ต่อ)
+- **ข้าม backfill** — redundant: consumer เดียวของ cgd_winners.district/subdistrict คือ intel/trend (ตอนนี้ name-match แล้ว). backfill จากชื่อ = ตั้งคอลัมน์เท่ากับ name-LIKE อยู่ดี + ไม่มี consumer อื่น → risk ล้วน (กัญจน์ confirm ข้าม)
+- **เพิ่ม match ย่อ ต./อ.** แทน: ชื่อ CGD เขียนทั้ง 'ตำบลX' (436) และ 'ต.X' (71) — LIKE จับทั้งสอง (cgd_intel._fetch + competitor_trend._area_where). TDD +1 test. verified 327097 ตัวเลขไม่เพี้ยน
+
 ### Followup
-- Backfill cgd_winners.district/subdistrict จากชื่องาน (617K rows, backup ก่อน) — task #3
 - Deploy VPS (confirm push) + e2e verify — task #4

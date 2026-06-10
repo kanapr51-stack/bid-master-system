@@ -132,6 +132,26 @@ def test_fetch_matches_location_by_name_despite_wrong_column():
     print("✅ _fetch matches location by name (geocode column เพี้ยน)")
 
 
+def test_fetch_matches_abbreviated_location():
+    """ชื่องานบางงานเขียนย่อ 'ต.นาทม อ.นาทม' (ไม่ใช่ 'ตำบล/อำเภอ' เต็ม) — LIKE ต้องจับทั้งสองแบบ."""
+    c = sqlite3.connect(":memory:")
+    c.execute("""CREATE TABLE cgd_winners (project_id TEXT PRIMARY KEY, province TEXT,
+        dept TEXT, project_name TEXT, winner TEXT, winner_tin TEXT, budget INTEGER,
+        win_price INTEGER, discount_pct REAL, announce_date TEXT, fiscal_year TEXT,
+        proc_type TEXT, district TEXT, subdistrict TEXT, synced_at TEXT)""")
+    EB = "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)"
+    c.execute("INSERT INTO cgd_winners (project_id,province,project_name,winner,win_price,"
+              "discount_pct,fiscal_year,proc_type,district,subdistrict) VALUES (?,?,?,?,?,?,?,?,?,?)",
+              ("A1", "นครพนม", "ก่อสร้างถนน คสล. หมู่ 3 ต.นาทม อ.นาทม จ.นครพนม", "หจก.ย่อ",
+               800000, 16.0, "2568", EB, "เมืองนครพนม", "ในเมือง"))  # column เพี้ยน + ชื่อย่อ
+    c.commit()
+    arows = ci._fetch(c, "นครพนม", ["ถนน"], district="นาทม")
+    assert {r["winner"] for r in arows} == {"หจก.ย่อ"}, arows
+    trows = ci._fetch(c, "นครพนม", ["ถนน"], subdistrict="นาทม", district="นาทม")
+    assert {r["winner"] for r in trows} == {"หจก.ย่อ"}, trows
+    print("✅ _fetch matches abbreviated ต./อ.")
+
+
 def _old_years_conn():
     """fixture: ตำบลนาทม มีงาน competitive เฉพาะปีเก่า (2563,2564) ไม่มีใน 3 ปีล่าสุด."""
     c = sqlite3.connect(":memory:")
@@ -284,6 +304,7 @@ if __name__ == "__main__":
     test_select_competitors()
     test_golden_amphoe_better_than_province()
     test_fetch_matches_location_by_name_despite_wrong_column()
+    test_fetch_matches_abbreviated_location()
     test_fetch_include_old_years()
     test_build_intel_old_data_label()
     test_build_intel_dual()

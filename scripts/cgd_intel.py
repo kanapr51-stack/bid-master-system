@@ -155,12 +155,12 @@ def _fetch(conn, province: str, tokens: list, *, subdistrict=None, district=None
     # ตำแหน่งจับคู่จากชื่องาน (ground truth) OR คอลัมน์ — คอลัมน์ district/subdistrict
     # มาจาก geocode พิกัด ซึ่ง snap ไปอำเภอเมืองผิดบ่อย (เช่น งานตำบลนาทม tag เป็นเมืองนครพนม).
     # ชื่องานระบุ "ตำบลX อำเภอY" เชื่อถือได้กว่า. belt-and-suspenders กันงานที่ชื่อไม่ระบุตำบล.
-    if subdistrict is not None:
-        where.append("(subdistrict=? OR project_name LIKE ?)")
-        params += [subdistrict, f"%ตำบล{subdistrict}%"]
+    if subdistrict is not None:                   # เต็ม 'ตำบลX' + ย่อ 'ต.X' (CGD เขียนทั้งสองแบบ)
+        where.append("(subdistrict=? OR project_name LIKE ? OR project_name LIKE ?)")
+        params += [subdistrict, f"%ตำบล{subdistrict}%", f"%ต.{subdistrict}%"]
     if district is not None:
-        where.append("(district=? OR project_name LIKE ?)")
-        params += [district, f"%อำเภอ{district}%"]
+        where.append("(district=? OR project_name LIKE ? OR project_name LIKE ?)")
+        params += [district, f"%อำเภอ{district}%", f"%อ.{district}%"]
     # subtype filter — concrete อ้างอิง concrete, asphalt อ้างอิง asphalt (asphalt ชนะ:
     # concrete ต้องไม่มี keyword asphalt เลย เพื่อกัน 'แอสฟัลท์ติกคอนกรีต' หลุดเข้า concrete)
     if subtype == "asphalt":

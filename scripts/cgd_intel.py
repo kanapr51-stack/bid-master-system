@@ -46,8 +46,11 @@ _WATER_STRUCT_KW = ("ฝาย", "ประปา", "อ่างเก็บน
 # agency market regime — ตัวขับ %ส่วนลดที่แท้จริง (evidence: docs/research_market_regime_discount.md,
 # กัญจน์ 2026-06-11). งานท้องถิ่น (อปท.) แข่งดุ median ~28% vs งานส่วนกลาง/กรมทางหลวง ชิดเพดาน ~0.3%
 # — pool รวมกันทำให้คาดราคางานท้องถิ่นต่ำกว่าจริง. ไม่ใช่ budget/ชั้นผู้รับเหมา (corr budget-ผู้ยื่น=0).
-_LOCAL_AGENCY_KW = ("องค์การบริหารส่วนตำบล", "องค์การบริหารส่วนจังหวัด", "เทศบาล",
-                    "เมืองพัทยา", "กรุงเทพมหานคร", "อบต.", "อบจ.")
+# 3 ระบอบ: local (อบต./เทศบาล แข่งดุ ~31%) / provincial (อบจ. ชิดเพดาน ~2% — คนละระบอบ!) /
+# central (กรม/ทางหลวง ~0.3%). evidence: ถนนคอนกรีต<10ลบ อบต/เทศบาล 31.7% vs อบจ. 1.9% (subtype
+# ไม่อธิบาย — concrete เหมือนกัน). อบจ. ต้องแยก ไม่งั้นงาน อบจ. ถูกคาด ~31% ทั้งที่จริง ~2%.
+_LOCAL_AGENCY_KW = ("องค์การบริหารส่วนตำบล", "เทศบาล", "เมืองพัทยา", "กรุงเทพมหานคร", "อบต.")
+_PROVINCIAL_AGENCY_KW = ("องค์การบริหารส่วนจังหวัด", "อบจ.")
 
 MIN_COMPETITORS = 2     # distinct winners ขั้นต่ำก่อนหยุด fallback
 SHOW_N = 3              # จำนวนบริษัทที่โชว์
@@ -114,12 +117,16 @@ def water_subtype(project_name: str):
 
 
 def agency_market(dept_name: str):
-    """ระบอบตลาดจากชื่อหน่วยงาน: 'local' (อปท. — อบต./เทศบาล/อบจ. แข่งดุ ~28%) |
-    'central' (ส่วนกลาง/กรม/ทางหลวง — ชิดเพดาน ~0.3%) | None (ไม่มีชื่อหน่วยงาน → ไม่ filter).
-    ใช้แยก reference set ตอนคาดราคา — งานท้องถิ่นต้องอ้างอิงงานท้องถิ่นเท่านั้น (ตัวขับส่วนลดจริง)."""
+    """ระบอบตลาดจากชื่อหน่วยงาน (ตัวขับ %ส่วนลดจริง): 'local' (อบต./เทศบาล แข่งดุ ~31%) |
+    'provincial' (อบจ. ชิดเพดาน ~2% — คนละระบอบกับ อบต.!) | 'central' (กรม/ทางหลวง ~0.3%) |
+    None (ไม่มีชื่อหน่วยงาน → ไม่ filter). ใช้แยก reference set — งานต้องอ้างอิงระบอบเดียวกัน."""
     if not dept_name:
         return None
-    return "local" if any(k in dept_name for k in _LOCAL_AGENCY_KW) else "central"
+    if any(k in dept_name for k in _PROVINCIAL_AGENCY_KW):
+        return "provincial"
+    if any(k in dept_name for k in _LOCAL_AGENCY_KW):
+        return "local"
+    return "central"
 
 
 def work_nature(project_name: str) -> str:
@@ -250,13 +257,17 @@ def _fetch(conn, province: str, tokens: list, *, subdistrict=None, district=None
         params += [f"%{k}%" for k in _WATER_STRUCT_KW]
         where.append("NOT (" + " OR ".join("project_name LIKE ?" for _ in _WATER_EXCAV_KW) + ")")
         params += [f"%{k}%" for k in _WATER_EXCAV_KW]
-    # market filter — ท้องถิ่น (อปท.) อ้างอิงท้องถิ่น, ส่วนกลาง = ที่ไม่ใช่ อปท. (กรม/ทางหลวง)
+    # market filter — 3 ระบอบ: local (อบต/เทศบาล) / provincial (อบจ) / central (ที่เหลือ กรม/ทางหลวง)
     if market == "local":
         where.append("(" + " OR ".join("dept LIKE ?" for _ in _LOCAL_AGENCY_KW) + ")")
         params += [f"%{k}%" for k in _LOCAL_AGENCY_KW]
-    elif market == "central":
-        where.append("NOT (" + " OR ".join("dept LIKE ?" for _ in _LOCAL_AGENCY_KW) + ")")
-        params += [f"%{k}%" for k in _LOCAL_AGENCY_KW]
+    elif market == "provincial":
+        where.append("(" + " OR ".join("dept LIKE ?" for _ in _PROVINCIAL_AGENCY_KW) + ")")
+        params += [f"%{k}%" for k in _PROVINCIAL_AGENCY_KW]
+    elif market == "central":      # ที่ไม่ใช่ อปท.ท้องถิ่น และไม่ใช่ อบจ.
+        _nonlocal = _LOCAL_AGENCY_KW + _PROVINCIAL_AGENCY_KW
+        where.append("NOT (" + " OR ".join("dept LIKE ?" for _ in _nonlocal) + ")")
+        params += [f"%{k}%" for k in _nonlocal]
     try:
         cur = conn.execute(
             "SELECT project_name, winner, win_price, discount_pct, district, subdistrict "

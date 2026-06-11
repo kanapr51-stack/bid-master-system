@@ -92,13 +92,17 @@ def _area_where(province, tokens, subdistrict, district, subtype, nature=None, c
         params += [f"%{k}%" for k in ci._CONCRETE_KW]
         where.append("NOT (" + " OR ".join("project_name LIKE ?" for _ in ci._ASPHALT_KW) + ")")
         params += [f"%{k}%" for k in ci._ASPHALT_KW]
-    # market regime — ท้องถิ่น/ส่วนกลาง (สอดคล้อง cgd_intel._fetch market filter)
+    # market regime — local/provincial/central (สอดคล้อง cgd_intel._fetch market filter)
     if market == "local":
         where.append("(" + " OR ".join("dept LIKE ?" for _ in ci._LOCAL_AGENCY_KW) + ")")
         params += [f"%{k}%" for k in ci._LOCAL_AGENCY_KW]
+    elif market == "provincial":
+        where.append("(" + " OR ".join("dept LIKE ?" for _ in ci._PROVINCIAL_AGENCY_KW) + ")")
+        params += [f"%{k}%" for k in ci._PROVINCIAL_AGENCY_KW]
     elif market == "central":
-        where.append("NOT (" + " OR ".join("dept LIKE ?" for _ in ci._LOCAL_AGENCY_KW) + ")")
-        params += [f"%{k}%" for k in ci._LOCAL_AGENCY_KW]
+        _nl = ci._LOCAL_AGENCY_KW + ci._PROVINCIAL_AGENCY_KW
+        where.append("NOT (" + " OR ".join("dept LIKE ?" for _ in _nl) + ")")
+        params += [f"%{k}%" for k in _nl]
     return " AND ".join(where), params
 
 

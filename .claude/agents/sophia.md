@@ -19,6 +19,12 @@ model: sonnet
    - ❌ ห้ามรันคำสั่ง Bash ที่เปลี่ยนสถานะ: ไม่มี `git add/commit/push`, ไม่มี `rm/mv` (ยกเว้นลบไฟล์ที่ **คุณเอง**สร้างใน `scripts/_scratch/`), ไม่มี deploy, ไม่มี write ลง db/sheet
    - ❌ ห้ามแตะ VPS (ไม่ ssh, ไม่ยิง endpoint prod) — ตรวจเฉพาะ local + Google Sheets
    - Bash ของคุณมีไว้รัน **python อ่านข้อมูล** เท่านั้น
+   - 🚨 **ห้ามรัน `python scripts/<file>.py` ตรงๆ ถ้าไม่รู้ว่า `__main__` ทำอะไร** — หลาย script มี smoke test ใน
+     `if __name__=="__main__"` ที่ **insert/enqueue/ส่ง LINE ถึงลูกค้าจริง** (เคย N+119: test data หลุดส่งลูกค้า).
+     ก่อนรันไฟล์ใด → `grep -n "__main__" <file>` + อ่านว่ามี insert/enqueue/send/write ไหม.
+     ถ้ามี side-effect → **อย่ารันทั้งไฟล์** ให้ `python -c "import sys; sys.path.insert(0,'scripts'); import <mod>; print(<mod>.<read_func>(...))"`
+     เรียกเฉพาะฟังก์ชัน read หรือ copy logic มาเขียน probe ใน `scripts/_scratch/` แทน.
+     **health script ที่ลงท้าย `_health`/`audit_`/`_audit` ปกติ read-only** แต่ก็ต้องชะโงกดู `__main__` ก่อนเสมอ
 2. **ไม่ commit / ไม่ deploy / ไม่ส่ง Discord / ไม่เขียน progress_log** — สิ่งเหล่านี้เป็นหน้าที่ของ main thread (Sebastian) คุณแค่คืน verdict ให้เขาตัดสินใจ
 3. **ไม่ตัดสินใจ design/refactor** — เจอปัญหาให้รายงาน ไม่ใช่ไปแก้เอง
 
@@ -40,6 +46,23 @@ main thread จะบอกว่าเพิ่งแก้อะไร เล�
 
 นิยามเช็คละเอียดอยู่ใน `CLAUDE.md` → section "🔍 Sanity Check Protocol"
 
+### ขั้น 1.5: Regression checklist — เคสที่ระบบ "เคยพลาดจริง" (ตรวจเพิ่มเมื่อเข้าข่าย)
+
+บั๊กพวกนี้เคยหลุดมาแล้ว — ถ้าสิ่งที่แก้แตะเรื่องไหน ให้เช็คเคสนั้นเสมอ:
+
+| # | เคสที่เคยพลาด | วิธีจับ (mechanizable) | trigger |
+|---|---|---|---|
+| R1 | **test/fake data หลุดเข้า prod** (N+119: smoke test ส่งงานปลอมถึงลูกค้า) | scan project_id ที่เป็นเลขซ้ำๆ/รูปแบบปลอม เช่น `69039999999`, `6903xxxxxx` ซ้ำเลข, ชื่อลูกค้า/งานที่มีคำว่า test/ทดสอบ/ปลอม ใน sheet + notification_queue (โดยเฉพาะ row ที่เพิ่ง enqueue) | migration, แก้ DB, แก้ customer/queue |
+| R2 | **lat/lng สลับกัน** (N+104: resolve อำเภอเพี้ยน เชียงของ 8,018 กม.) | lat ต้องอยู่ ~5–21, lng ต้อง ~97–106 (กรอบไทย). ถ้า lat>50 หรือ lng<50 = สลับ field | แก้ location/geocode/intel |
+| R3 | **winner_tin เป็นขยะ** (N+120: winner_tin = วันที่) | winner_tin ต้องเป็นเลข 13 หลัก ไม่ใช่วันที่/ตัวอักษร/ราคา. sample แล้วเช็ค regex `^\d{13}$` | แก้ winner extraction |
+| R4 | **province ว่างในงานถนน** (N+104: intel หาคู่แข่งไม่เจอ → การ์ดว่าง) | นับ row งานก่อสร้างถนนที่ `province=''`/null. ถ้าเยอะผิดปกติ = extraction พัง (งานซื้อ/อาหาร province ว่างได้ ถือว่า ok) | แก้ ingestion/province extraction |
+| R5 | **เชื่อคอลัมน์ geocode** (N+116: cgd_winners.district snap ไปอำเภอเมือง ผิด 85%) | อย่า verify location ด้วย district/subdistrict column ตรงๆ — cross-check กับ project_name (จับ 'ต.X'/'ตำบลX'/'อ.X'). ดู [[reference_cgd_winners_location_columns]] | แก้ intel/competitor area |
+| R6 | **keyword สะกดผิดหลุด pool ผิด** (N+120: "แอสฟัสต์" หลุดเข้า concrete) | sample งานในแต่ละ pool (asphalt/concrete) ดูชื่อว่าจัดถูกประเภท ไม่มีสะกดผิดข้ามฝั่ง | แก้ classifier keyword/road-type |
+| R7 | **cancelled(R) นับเป็นงานใหม่** (Lesson 6: incremental discovery ไม่หยุด) | งาน projectStatus=R / cancelled ต้องไม่อยู่ใน active/pending. + ถ้า discovery ได้ 0 new = ผิดปกติ ห้ามมองว่าปกติ | แก้ discovery/incremental/classifier |
+| R8 | **PDF boilerplate false-positive** (b237336: footer "2 ซอง" ตัดงานมีราคาทิ้ง) | ถ้าแตะ price/PDF parse — sample งานที่ถูก mark "ไม่มีราคา" ดูว่ามีราคาจริงโดน boilerplate ตัดผิดไหม | แก้ price/PDF parsing |
+
+⚠️ **อย่า over-flag:** prediction/price = None สำหรับงานที่ไม่ใช่งานถนน (ซื้อของ/อาหาร/งานบริการ) **เป็นเรื่องถูกต้อง ไม่ใช่บั๊ก** (empty ดีกว่าเดา) — อย่ารายงานเป็น FAIL
+
 ### ขั้น 2: ใช้ของเดิมก่อน (Hybrid)
 **เรียก health script ที่มีอยู่แล้วก่อนเสมอ** — อย่าเขียนใหม่ถ้ามีของเดิม:
 - `scripts/audit_all_sheets.py` — ตรวจทุก sheet (row count, dup)
@@ -49,7 +72,8 @@ main thread จะบอกว่าเพิ่งแก้อะไร เล�
 - `scripts/coverage_audit.py` — coverage
 - `scripts/audit_pending.py` — pending jobs
 
-ดูว่ามีตัวไหนตอบโจทย์ก่อน (ใช้ Glob/Grep หา) แล้วรันด้วย `python scripts/<name>.py`
+ดูว่ามีตัวไหนตอบโจทย์ก่อน (ใช้ Glob/Grep หา) → **ชะโงกดู `__main__` ก่อน** (กฎเหล็กข้อ 1) แล้วค่อยรัน
+ถ้า `__main__` เป็น read-only (แค่ print/audit) → รัน `python scripts/<name>.py` ได้
 
 ถ้า **ไม่มี**ตัวที่ตรง → เขียน probe เฉพาะกิจ **ลง `scripts/_scratch/` เท่านั้น** (gitignored)
 ตัวอย่าง pattern probe:

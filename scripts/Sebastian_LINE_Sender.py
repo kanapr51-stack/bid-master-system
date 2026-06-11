@@ -137,8 +137,15 @@ _EGP_ANNOUNCE_URL = ("https://process3.gprocurement.go.th/egp2procmainWeb/jsp/pr
 
 
 def _announcement_url(project_id: str) -> str:
-    """ลิงก์ประกาศสาธารณะ eGP จาก projectId (fallback เมื่อไม่มี pdf_url จาก RSS). '' ถ้าไม่มี id."""
-    return _EGP_ANNOUNCE_URL.format(pid=project_id) if project_id else ""
+    """ลิงก์ดูประกาศ PDF สาธารณะ = view-pdf-file?templateId (จาก infoProcureDocAnnounZip).
+    PDF เปิดได้ตรงๆ ไม่ต้อง token. คืน '' ถ้าหาไม่ได้ (graceful — ห้ามทำการ์ดพัง)."""
+    if not project_id:
+        return ""
+    try:
+        from process5_http_client import get_announce_pdf_url
+        return get_announce_pdf_url(project_id)
+    except Exception:
+        return ""
 
 
 def _lookup_pdf_url_from_rss(project_id: str) -> str:

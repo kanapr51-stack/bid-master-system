@@ -19,7 +19,8 @@ sys.stdout.reconfigure(encoding="utf-8")
 from Sebastian_Customer_DB import get_connection
 from Sebastian_LINE_Sender import (
     format_notification, send_line_push, build_follow_link,
-    _deadline_from_db, _announcement_url, _clean_project_name, _load_line_token)
+    _deadline_from_db, _clean_project_name, _load_line_token)
+from process5_http_client import get_announce_pdf_url
 
 
 def _resolve_deadline(conn, pid):
@@ -127,7 +128,8 @@ def main():
     sent = 0
     for j in jobs:
         title, body = _build_text(j)
-        ann = _announcement_url(j["project_id"])
+        # ลิงก์ประกาศ = view-pdf-file?templateId=buildName2 (PDF จริง, สาธารณะ) จาก infoProcureDocAnnounZip
+        ann = get_announce_pdf_url(j["project_id"])
         if not a.live:
             preview = _compose(title, body, ann, "<ลิงก์ติดตาม — สร้างต่อคนตอนส่งจริง>")
             print(f"─── การ์ด {j['project_id']} ───\n{preview}\n")

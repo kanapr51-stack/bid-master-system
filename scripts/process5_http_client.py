@@ -56,7 +56,24 @@ sys.stdout.reconfigure(encoding="utf-8")
 PROCESS5_BASE = "https://process5.gprocurement.go.th"
 API_BASE      = f"{PROCESS5_BASE}/egp-atpj27-service/pb/a-egp-allt-project/announcement"
 PDF_BASE      = f"{PROCESS5_BASE}/egp-template-service/dwnt/view-pdf-file"
+INFO_DOC_URL  = f"{PROCESS5_BASE}/egp-approval-service/apv-common/infoProcureDocAnnounZip"
 GENERATE_TOKEN_URL = f"{API_BASE}/generateToken"
+
+
+def get_announce_pdf_url(project_id: str) -> str:
+    """ลิงก์ดูประกาศ PDF สาธารณะ = view-pdf-file?templateId=<buildName2> (จาก infoProcureDocAnnounZip).
+    PDF เปิดได้ตรงๆ ไม่ต้อง token. คืน '' ถ้าหา templateId ไม่ได้ (graceful — ห้ามทำการ์ดพัง)."""
+    try:
+        token = _get_token(project_id)
+        if not token:
+            return ""
+        h = HEADERS_NO_AUTH.copy()
+        h["X-Announcement-Token"] = token
+        r = requests.get(INFO_DOC_URL, params={"projectId": project_id}, headers=h, timeout=15)
+        tid = ((r.json().get("data") or {}).get("buildName2")) if r.ok else None
+        return f"{PDF_BASE}?templateId={tid}" if tid else ""
+    except Exception:
+        return ""
 
 _AES_PASSPHRASE = "RDCrypto"
 _TOKEN_TTL_SEC  = 25 * 60  # ใช้ 25 นาที (token valid 30 นาที)

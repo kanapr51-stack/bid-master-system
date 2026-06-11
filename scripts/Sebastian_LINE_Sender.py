@@ -131,6 +131,16 @@ def _load_line_token() -> str:
     return token
 
 
+# public eGP announcement page (ใช้ projectId ตรงๆ — สำหรับงาน province_api ที่ไม่มี pdf_url จาก RSS)
+_EGP_ANNOUNCE_URL = ("https://process3.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch"
+                     "?pid={pid}&servlet=gojsp&proc_id=ShowHTMLFile&processFlows=Procure")
+
+
+def _announcement_url(project_id: str) -> str:
+    """ลิงก์ประกาศสาธารณะ eGP จาก projectId (fallback เมื่อไม่มี pdf_url จาก RSS). '' ถ้าไม่มี id."""
+    return _EGP_ANNOUNCE_URL.format(pid=project_id) if project_id else ""
+
+
 def _lookup_pdf_url_from_rss(project_id: str) -> str:
     """Find PDF link from rss_queue.json by project_id (best-effort, non-fatal)."""
     try:
@@ -844,10 +854,12 @@ def main():
         # งานเปิดยื่นซองทุกงานที่ match → text ธรรมดา + intel + ลิงก์ติดตาม (signed token).
         # ลิงก์อยู่ในเนื้อข้อความ → เลื่อนกดงานเก่าได้ไม่หาย (แทน quick-reply ที่หายเมื่อหลายงาน).
         # N+108 follow-link. กัญจน์เลือก 2026-06-08
+        ann = pdf_url or _announcement_url(item["project_id"])      # ลิงก์ประกาศ (RSS pdf หรือ public eGP)
+        ann_block = ("\n\n📄 ดูประกาศ:\n" + ann) if ann else ""
         link = build_follow_link(item["line_user_id"], item["project_id"])
         link_block = ("\n\n⭐ ติดตามงานนี้:\n" + link) if link else ""
         success, error_type, error_msg = send_line_push(
-            token, item["line_user_id"], full_name + "\n" + text + link_block, quick_reply=None)
+            token, item["line_user_id"], full_name + "\n" + text + ann_block + link_block, quick_reply=None)
     else:
         _auth = _feedback_authority_ids()
         _with_fb = (not _auth) or (item["customer_id"] in _auth)
@@ -855,7 +867,7 @@ def main():
             project_id=item["project_id"],
             title=full_name,
             detail=text,
-            doc_url=pdf_url,
+            doc_url=pdf_url or _announcement_url(item["project_id"]),   # fallback public eGP
             with_feedback=_with_fb,
         )
         alt_text = (full_name + " | " + text)[:400]

@@ -22,7 +22,27 @@ from Sebastian_LINE_Sender import (
     _deadline_from_db, _announcement_url, _clean_project_name, _load_line_token)
 
 
-def _load_jobs(conn, project_ids):
+def _resolve_deadline(conn, pid):
+    """resolve deadline สด (DocZip — ดึงวัน+เวลาจาก PDF) + เก็บลง project_locations. คืน (date, time)."""
+    import datetime as _dt
+    from deadline_provider_doczip import DocZipPdfDeadlineProvider
+    res = DocZipPdfDeadlineProvider().resolve(pid)
+    if not res.success:
+        print(f"  ⚠️ {pid}: resolve deadline ไม่สำเร็จ ({res.outcome.value}) — ใช้ค่าเดิม")
+        return None, None
+    d_date = res.deadline.isoformat()
+    d_time = res.deadline_time or ""
+    conn.execute(
+        "INSERT INTO project_locations (project_id, deadline, deadline_time, created_at) "
+        "VALUES (?,?,?,?) ON CONFLICT(project_id) DO UPDATE SET "
+        "deadline=excluded.deadline, deadline_time=excluded.deadline_time",
+        (pid, d_date, d_time, _dt.datetime.now().isoformat(timespec="seconds")))
+    conn.commit()
+    print(f"  ✅ {pid}: resolve ใหม่ → {d_date} {d_time}")
+    return d_date, d_time
+
+
+def _load_jobs(conn, project_ids, resolve_deadline=False):
     jobs = []
     for pid in project_ids:
         r = conn.execute("SELECT project_id, province, budget, project_name, dept_name, announce_type "
@@ -30,6 +50,10 @@ def _load_jobs(conn, project_ids):
         if not r:
             print(f"  ⚠️ {pid}: ไม่พบใน projects_seen — ข้าม"); continue
         d_date, d_time = _deadline_from_db(pid)
+        if resolve_deadline and (not d_date or not d_time):   # เติมให้ครบ (วัน/เวลา) ถ้าขาด
+            nd, nt = _resolve_deadline(conn, pid)
+            if nd:
+                d_date, d_time = nd, nt
         jobs.append({"project_id": r[0], "province": r[1] or "", "budget": r[2] or 0,
                      "project_name": r[3] or "", "dept_name": r[4] or "",
                      "bid_date": d_date, "bid_time": d_time})
@@ -61,6 +85,8 @@ def main():
     ap.add_argument("--all-except", type=int, dest="all_except", help="ส่งทุกคนยกเว้น id นี้ — เฟส 2")
     ap.add_argument("--all", action="store_true", help="ส่งทุกคน active")
     ap.add_argument("--list", action="store_true", help="ดู customers + งาน")
+    ap.add_argument("--resolve-deadline", action="store_true", dest="resolve_deadline",
+                    help="resolve deadline สด (วัน+เวลา) ถ้าขาด ก่อนสร้างการ์ด")
     ap.add_argument("--live", action="store_true", help="ส่งจริง (default = dry-run)")
     a = ap.parse_args()
 
@@ -73,7 +99,7 @@ def main():
             return
 
         project_ids = [p.strip() for p in a.projects.split(",") if p.strip()]
-        jobs = _load_jobs(conn, project_ids)
+        jobs = _load_jobs(conn, project_ids, resolve_deadline=a.resolve_deadline)
         if not jobs:
             print("ไม่มีงานให้ส่ง"); return
 

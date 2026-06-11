@@ -70,9 +70,11 @@ def test_build_intel_subtype():
 def test_contested_floor_subtype_aware():
     # water_struct แข่งจริงเริ่ม ~5% (ฝาย/ประปา) — floor ต้องต่ำกว่าถนน/ขุด
     assert ci._contested_floor("water_struct") == 5, "struct floor ต้อง 5"
-    assert ci._contested_floor("water_excav") == 15, "excav ใช้ default 15"
+    assert ci._contested_floor("water_excav") == 15, "excav valley กว้าง = 15"
     assert ci._contested_floor("concrete") == 15
-    assert ci._contested_floor(None) == 15
+    assert ci._contested_floor(None) == 5, "default flip → 5 (อาคาร/ทั่วไป)"
+    assert ci._contested_floor(None, ["ถนน"]) == 15, "ถนนทั่วไป/ลูกรัง → 15 จาก tokens"
+    assert ci._contested_floor(None, ["อาคาร"]) == 5, "อาคาร → 5"
     # contested filter ใช้ floor ต่อ subtype: struct เก็บงาน 10-13% ไว้ (ถ้าใช้ 15 จะหาย)
     c = _conn(); tk = ["ฝาย", "ประปา"]
     st = ci._fetch(c, "นครพนม", tk, subdistrict="โพนทอง", district="บ้านแพง",

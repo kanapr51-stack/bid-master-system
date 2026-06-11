@@ -54,16 +54,24 @@ SHOW_N = 3              # จำนวนบริษัทที่โชว์
 MIN_GAMES_FOR_IQR = 3   # ต่ำกว่านี้โชว์แค่ median
 IQR_WIDE = 20           # p75-p25 เกินนี้ = ช่วงกว้าง (ลดความเชื่อมั่น)
 TAMBON_MIN = 5          # ตำบลมีงาน < นี้ → โชว์บล็อกอำเภอคู่กันด้วย
-CONTESTED_MIN_DISCOUNT = 15   # default (ถนน/ขุด) ชนะด้วยส่วนลด < นี้ ≈ ไม่มีคู่แข่งจริง (bimodal gap ~9-17%)
-# floor "งานแข่งจริง" ต่างตามชนิดงาน — โหมดไม่แข่งคือ spike ที่ 0-4% เหมือนกัน แต่โหมดแข่งเริ่มต่างกัน
-# (evidence: histogram subtype_variance — water_struct ฝาย/ประปา แข่งจริงเริ่ม ~5% ไม่ใช่ 15%
-# ถ้าใช้ 15 จะตัดงานแข่งจริง 5-14% ทิ้ง ~99 งาน). ค่าไม่ระบุ = default 15.
-_CONTESTED_MIN_BY_SUBTYPE = {"water_struct": 5}
+CONTESTED_MIN_DISCOUNT = 15   # ถนน/งานขุด — valley กว้าง (bimodal gap ~9-17%) competition เริ่มสูง
+CONTESTED_MIN_DEFAULT = 5     # อาคาร/ราง/ทั่วไป/ฝาย-ประปา — competition เริ่มหลัง spike ~5%
+# floor "งานแข่งจริง" ต่างตามชนิดงาน — โหมดไม่แข่ง = spike 0-4% เหมือนกัน แต่โหมดแข่งเริ่มต่างกัน
+# (evidence: histogram local market — ถนน competition mode 25%+ valley 5-24 → floor 15;
+# อาคาร/water_struct competition เริ่ม ~5% → floor 5. ถ้าใช้ 15 กับอาคารจะตัดงานแข่งจริง 5-14% ทิ้ง).
+_CONTESTED_FLOOR_BY_SUBTYPE = {
+    "asphalt": 15, "concrete": 15, "water_excav": 15, "water_struct": 5,
+}
 
 
-def _contested_floor(subtype=None) -> float:
-    """ส่วนลดขั้นต่ำที่ถือว่า 'มีคู่แข่งจริง' ตามชนิดงาน (water_struct=5, อื่น=15)."""
-    return _CONTESTED_MIN_BY_SUBTYPE.get(subtype, CONTESTED_MIN_DISCOUNT)
+def _contested_floor(subtype=None, tokens=None) -> float:
+    """ส่วนลดขั้นต่ำที่ถือว่า 'มีคู่แข่งจริง' ตามชนิดงาน: ถนน/ขุด=15 (valley กว้าง),
+    อาคาร/ราง/ฝาย-ประปา/ทั่วไป=5 (competition เริ่มหลัง spike). ถนนไม่ระบุผิว (ลูกรัง) → 15 จาก tokens."""
+    if subtype in _CONTESTED_FLOOR_BY_SUBTYPE:
+        return _CONTESTED_FLOOR_BY_SUBTYPE[subtype]
+    if tokens and any("ถนน" in t for t in tokens):   # ถนนทั่วไป/ลูกรัง — valley กว้างเหมือนกัน
+        return CONTESTED_MIN_DISCOUNT
+    return CONTESTED_MIN_DEFAULT
 
 
 def _load_keywords() -> list:
@@ -210,7 +218,7 @@ def _fetch(conn, province: str, tokens: list, *, subdistrict=None, district=None
         where.append("project_name LIKE ?"); params.append("%ซื้อ%")
     # contested = เฉพาะงานที่มีคู่แข่งจริง (ตัดโหมด no-competition ~0% ที่ทำช่วงเพี้ยน)
     if contested_only:
-        where.append("discount_pct >= ?"); params.append(_contested_floor(subtype))
+        where.append("discount_pct >= ?"); params.append(_contested_floor(subtype, tokens))
     if not include_old:                       # default = 3 ปีงบล่าสุด (ราคาปัจจุบัน)
         fy_ph = ",".join("?" for _ in RECENT_FY)
         where.append(f"fiscal_year IN ({fy_ph})")

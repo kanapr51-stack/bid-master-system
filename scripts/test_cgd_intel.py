@@ -127,8 +127,8 @@ def test_fetch_contested_only():
     c = _contested_conn()
     allrows = ci._fetch(c, "นครพนม", ["คอนกรีต"], district="นาทม")
     assert len(allrows) == 6, allrows
-    cont = ci._fetch(c, "นครพนม", ["คอนกรีต"], district="นาทม", contested_only=True)
-    assert all(r["discount_pct"] >= ci.CONTESTED_MIN_DISCOUNT for r in cont), cont
+    cont = ci._fetch(c, "นครพนม", ["คอนกรีต"], district="นาทม", contested_only=True, subtype="concrete")
+    assert all(r["discount_pct"] >= ci.CONTESTED_MIN_DISCOUNT for r in cont), cont   # ถนน floor=15
     assert len(cont) == 4, cont                  # 25,32,35,38 (ตัด 2,8)
     print("✅ _fetch contested_only (ตัดงานไม่มีคู่แข่ง)")
 

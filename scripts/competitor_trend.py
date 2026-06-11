@@ -75,8 +75,8 @@ def _area_where(province, tokens, subdistrict, district, subtype, nature=None, c
         where.append("project_name NOT LIKE ?"); params.append("%ซื้อ%")
     elif nature == "purchase":
         where.append("project_name LIKE ?"); params.append("%ซื้อ%")
-    if contested:                                 # งานแข่งจริง (สอดคล้อง cgd_intel contested_only)
-        where.append("discount_pct >= ?"); params.append(ci.CONTESTED_MIN_DISCOUNT)
+    if contested:                                 # งานแข่งจริง (floor ต่อชนิดงาน — สอดคล้อง cgd_intel)
+        where.append("discount_pct >= ?"); params.append(ci._contested_floor(subtype, tokens))
     # match จากชื่องาน (เต็ม+ย่อ) OR คอลัมน์ — คอลัมน์ geocode เพี้ยน (สอดคล้อง cgd_intel._fetch)
     if subdistrict is not None:
         where.append("(subdistrict=? OR project_name LIKE ? OR project_name LIKE ?)")

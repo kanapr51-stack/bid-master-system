@@ -1124,9 +1124,13 @@ class SubscriptionStore:
 
 
 if __name__ == "__main__":
-    # Smoke test only — no DB reset, no seed.
-    # To reset + seed a dev DB use: scripts/dev_reset_db.py
+    # default = migrate only (init_schema) — ปลอดภัยรันบน prod (เช่น ตอน deploy)
     init_schema()
+    print(f"Schema ready: {DB_PATH}")
+    if "--smoke" not in sys.argv:
+        sys.exit(0)
+    # ===== smoke test (DEV ONLY) — seeds test customer/projects, ห้ามรันบน prod =====
+    # รันด้วย: python Sebastian_Customer_DB.py --smoke  (บน dev DB เท่านั้น)
     store = SubscriptionStore()
 
     # Need a test customer for smoke tests — use INSERT OR IGNORE so safe on existing DB

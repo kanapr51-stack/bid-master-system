@@ -71,18 +71,27 @@ _DEADLINE_KEYWORDS = [
     "ยื่นข้อเสนอ", "กำหนดยื่น", "เสนอราคา", "ยื่นซอง",
     "ปิดรับซอง", "สิ้นสุดรับซอง", "ปิดรับการเสนอราคา", "กำหนดส่ง",
 ]
+# ช่วงเวลายื่นซอง "ระหว่างเวลา ๑๓.๐๐ น. ถึง ๑๖.๐๐ น." (digits แปลง arabic แล้ว) → '13.00-16.00 น.'
+_TIME_RANGE_RE = re.compile(r"ระหว่างเวลา\s+([\d\.]+)\s*น?\.?\s*ถึง\s*([\d\.]+)")
+
+
+def _extract_time(text: str) -> Optional[str]:
+    """ดึงช่วงเวลายื่นซองจากข้อความ PDF. คืน '13.00-16.00 น.' หรือ None."""
+    m = _TIME_RANGE_RE.search(text)
+    return f"{m.group(1)}-{m.group(2)} น." if m else None
 
 
 def _be_to_ce(year: int) -> int:
     return year - 543 if year > 2400 else year
 
 
-def parse_deadline_from_pdf(pdf_bytes: bytes) -> Tuple[Optional[date], str]:
-    """คืน (date|None, stage). stage: 'ok' | 'no_text' | 'no_date' | 'pdf_error'"""
+def parse_deadline_from_pdf(pdf_bytes: bytes) -> Tuple[Optional[date], Optional[str], str]:
+    """คืน (date|None, time_str|None, stage). time_str = ช่วงเวลายื่น '13.00-16.00 น.' (ถ้ามี).
+    stage: 'ok' | 'no_text' | 'no_date' | 'pdf_error'"""
     try:
         import pdfplumber
     except Exception:
-        return None, "pdf_error"
+        return None, None, "pdf_error"
     got_text = False
     try:
         with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
@@ -90,6 +99,7 @@ def parse_deadline_from_pdf(pdf_bytes: bytes) -> Tuple[Optional[date], str]:
                 text = (pg.extract_text() or "").translate(_THAI_DIGITS)
                 if text.strip():
                     got_text = True
+                tm = _extract_time(text)             # ช่วงเวลายื่นในหน้านี้ (ถ้ามี)
                 lines = text.split("\n")
                 for i, line in enumerate(lines):
                     if any(kw in line for kw in _DEADLINE_KEYWORDS):
@@ -98,19 +108,19 @@ def parse_deadline_from_pdf(pdf_bytes: bytes) -> Tuple[Optional[date], str]:
                         if m:
                             d, mo, y = int(m.group(1)), int(m.group(2)), _be_to_ce(int(m.group(3)))
                             try:
-                                return date(y, mo, d), "ok"
+                                return date(y, mo, d), tm, "ok"
                             except ValueError:
                                 continue
                         m2 = _THAI_DATE_RE.search(block)
                         if m2:
                             d = int(m2.group(1)); mo = _THAI_MONTH[m2.group(2)]; y = _be_to_ce(int(m2.group(3)))
                             try:
-                                return date(y, mo, d), "ok"
+                                return date(y, mo, d), tm, "ok"
                             except ValueError:
                                 continue
     except Exception:
-        return None, "pdf_error"
-    return None, ("no_date" if got_text else "no_text")
+        return None, None, "pdf_error"
+    return None, None, ("no_date" if got_text else "no_text")
 
 
 class DocZipPdfDeadlineProvider(IDeadlineProvider):
@@ -123,10 +133,10 @@ class DocZipPdfDeadlineProvider(IDeadlineProvider):
 
     def resolve(self, project_id: str, **ctx) -> DeadlineResult:
         t0 = time.time()
-        def done(outcome, deadline=None, tid=None, err=None):
+        def done(outcome, deadline=None, tid=None, err=None, deadline_time=None):
             return DeadlineResult(project_id, outcome, deadline=deadline, provider=self.name,
                                   latency_ms=int((time.time() - t0) * 1000),
-                                  source_doc=tid, error=err)
+                                  source_doc=tid, error=err, deadline_time=deadline_time)
         try:
             token = p._get_token(project_id)
             if not token:
@@ -150,10 +160,10 @@ class DocZipPdfDeadlineProvider(IDeadlineProvider):
                 pdf_bytes = base64.b64decode(b64)
             except Exception:
                 return done(DeadlineOutcome.DOWNLOAD_FAILED, tid=tid, err="base64 decode fail")
-            # 3) PDF → deadline
-            dl, stage = parse_deadline_from_pdf(pdf_bytes)
+            # 3) PDF → deadline (+ ช่วงเวลายื่น)
+            dl, dl_time, stage = parse_deadline_from_pdf(pdf_bytes)
             if dl is not None:
-                return done(DeadlineOutcome.RESOLVED, deadline=dl, tid=tid)
+                return done(DeadlineOutcome.RESOLVED, deadline=dl, tid=tid, deadline_time=dl_time)
             if stage in ("no_text", "pdf_error"):
                 return done(DeadlineOutcome.PARSE_FAILED, tid=tid, err=stage)
             return done(DeadlineOutcome.DEADLINE_NOT_FOUND, tid=tid, err="no date near keyword")

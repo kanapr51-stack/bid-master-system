@@ -390,11 +390,11 @@ def qualify_province_api(store, log) -> int:
                              (st, new_att, pid))
             continue
 
-        # P1 audit: เก็บ deadline ที่ resolve ได้ลง DB (cross-check ฟรี — ดู Customer_DB _migrate_v113)
+        # P1 audit: เก็บ deadline (+ ช่วงเวลายื่น) ที่ resolve ได้ลง DB (cross-check ฟรี + โชว์ในการ์ด)
         if res.outcome == DeadlineOutcome.RESOLVED and res.deadline:
             with get_connection() as conn:
-                conn.execute("UPDATE project_locations SET deadline=? WHERE project_id=?",
-                             (str(res.deadline), pid))
+                conn.execute("UPDATE project_locations SET deadline=?, deadline_time=? WHERE project_id=?",
+                             (str(res.deadline), res.deadline_time, pid))
 
         # terminal outcomes
         if res.outcome == DeadlineOutcome.RESOLVED and res.is_open():
@@ -506,7 +506,8 @@ def notify_bid_open_followups(store, log, resolve_deadline=None) -> int:
 
             def resolve_deadline(pid):
                 r = _dsvc.resolve(pid)
-                return str(r.deadline) if getattr(r, "deadline", None) else None
+                return (str(r.deadline), getattr(r, "deadline_time", None)) \
+                    if getattr(r, "deadline", None) else None
         except Exception as e:
             log(f"  followup deadline resolver unavailable ({e}) — แจ้งโดยไม่มี deadline")
 
@@ -516,8 +517,10 @@ def notify_bid_open_followups(store, log, resolve_deadline=None) -> int:
         try:
             dl = resolve_deadline(pid)
             if dl:
+                dl_date, dl_time = dl if isinstance(dl, tuple) else (dl, None)   # inject อาจคืน str เดิม
                 with get_connection() as conn:
-                    conn.execute("UPDATE project_locations SET deadline=? WHERE project_id=?", (dl, pid))
+                    conn.execute("UPDATE project_locations SET deadline=?, deadline_time=? WHERE project_id=?",
+                                 (dl_date, dl_time, pid))
         except Exception as e:
             log(f"  followup resolve {pid} fail (non-fatal): {e}")
     for cid, pid in due:

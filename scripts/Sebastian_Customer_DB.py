@@ -295,7 +295,18 @@ def init_schema():
     _migrate_v122()
     _migrate_v123()
     _migrate_v124()
+    _migrate_v125()
     print(f"Schema v1.13 ready: {DB_PATH}")
+
+
+def _migrate_v125():
+    """project_locations +deadline_time — ช่วงเวลายื่นซอง '13.00-16.00 น.' จาก PDF (province_api path)
+    เพื่อโชว์เวลาในการ์ด D0 ไม่ใช่แค่วันที่. additive ALTER (idempotent)."""
+    with get_connection() as conn:
+        try:
+            conn.execute("ALTER TABLE project_locations ADD COLUMN deadline_time TEXT")
+        except sqlite3.OperationalError:
+            pass  # already exists
 
 
 def _migrate_v124():

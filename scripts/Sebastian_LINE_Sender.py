@@ -527,13 +527,18 @@ def _deadline_from_db(project_id: str) -> tuple[str, str]:
     try:
         from Sebastian_Customer_DB import get_connection
         with get_connection() as conn:
-            r = conn.execute("SELECT deadline FROM project_locations WHERE project_id=?",
-                             (project_id,)).fetchone()
+            try:
+                r = conn.execute("SELECT deadline, deadline_time FROM project_locations "
+                                 "WHERE project_id=?", (project_id,)).fetchone()
+            except Exception:   # คอลัมน์ deadline_time ยังไม่ migrate → ดึงแค่ deadline (date)
+                r = conn.execute("SELECT deadline FROM project_locations WHERE project_id=?",
+                                 (project_id,)).fetchone()
         dl = (r[0] if r else "") or ""
         if not dl:
             return "", ""
         date = dl[:10]
-        tm = dl[11:16] if len(dl) >= 16 else ""
+        # ช่วงเวลายื่นเก็บแยกคอลัมน์ (province_api path) — fallback time ใน string เดิม (legacy)
+        tm = (r[1] if r and len(r) > 1 else "") or (dl[11:16] if len(dl) >= 16 else "")
         return date, tm
     except Exception:
         return "", ""

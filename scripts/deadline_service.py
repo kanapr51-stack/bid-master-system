@@ -54,6 +54,7 @@ class DeadlineResult:
     project_id: str
     outcome: DeadlineOutcome
     deadline: Optional[date] = None       # วันยื่นข้อเสนอ (authoritative)
+    deadline_time: Optional[str] = None   # ช่วงเวลายื่น '13.00-16.00 น.' (เสริม — best-effort)
     provider: str = ""
     latency_ms: int = 0
     source_doc: Optional[str] = None      # templateId / pdfUrl ที่ใช้

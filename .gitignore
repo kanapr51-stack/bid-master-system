@@ -65,6 +65,10 @@ data/jobs_*.json
 data/doc_download_*.json
 data/seen_ids.json
 
+# ── Sophia sanity-auditor throwaway probes (ไม่ commit) ──
+scripts/_scratch/*
+!scripts/_scratch/.gitkeep
+
 # ── Backups (ใหญ่, ไม่ควรเข้า git) ──
 backups/
 

@@ -5268,3 +5268,37 @@ prediction เดิมใช้ percentile แบบ flat (ทุกงาน�
 ### Followup
 - bid_results สะสม → อนาคตวัดจำนวนคู่แข่งจริงได้ → segment แม่นขึ้น
 - agency/budget segment (defer — contested-focus ครอบคลุมแล้ว)
+
+## งานที่ N+119: Market-regime pricing + 3 งานการ์ด → DEPLOYED (2026-06-11)
+
+### สถานะ: ✅ DEPLOYED VPS (commit a0cf7ae, migration v124+v125 + repredict applied)
+
+### Research (กัญจน์ challenge หลายรอบ → evidence)
+- ตัวขับ %ส่วนลด = **ระบอบตลาด/หน่วยงาน** ไม่ใช่ budget/คู่แข่ง/ชั้น (getProcureResult n=144, corr budget-ผู้ยื่น=0.00)
+- "ถนน" ปน 2 ตลาด: ท้องถิ่น 26-30% vs กรมทางหลวง 0.3% (Simpson's paradox)
+- อบจ. คนละระบอบ (1.9% ชิดเพดาน ไม่ใช่ 31% แบบ อบต.) → แยก provincial
+- ทฤษฎีชั้น = เส้นแบ่งสิทธิ์ที่ 10ลบ. (กัญจน์อยู่ชั้น6 <10ลบ ล้วน). BUG: winner_tin=ขยะ(วันที่)
+- docs/research_market_regime_discount.md + research_subtype_discount_variance.md
+
+### Price logic ใหม่ (A+B+C + subtype + อบจ)
+- A: agency_market(dept) 3-way local/provincial/central → กรอง reference pool
+- B: contested floor ต่อหมวด (ถนน/ขุด=15, อาคาร/ราง/water_struct=5)
+- C: ฐานความแม่นยำ = ค่ากลาง (median) + framing win/lose (คาด≤ชนะ→ความแม่นยำ / >→ความคลาดเคลื่อน)
+- subtype: ถนน concrete/asphalt + แหล่งน้ำ ขุด/โครงสร้าง (water_subtype)
+
+### 3 งานการ์ดก่อน deploy
+1. ⏰ เวลายื่นซอง — DocZip ดึง time + schema v125 deadline_time (province_api path)
+2. 📄 ลิงก์ประกาศ — public eGP URL ทุกงาน (RSS pdf / fallback projectId)
+3. 🔄 repredict_followed.py — re-predict งานปักหมุด (5 งาน applied, ค่ากลาง 456k-1076k)
+
+### Deploy (push→pull→migrate→repredict)
+- 12 commit pushed → VPS git pull ff → init_schema (v124 median + v125 deadline_time)
+- repredict --apply: 5 งานปักหมุด ได้ prediction ใหม่ (ทั้งหมด "ใหม่" ไม่ทับเดิม)
+- services = oneshot timer → ใช้โค้ดใหม่อัตโนมัติ ไม่ต้อง restart
+
+### Followup
+- ⚠️ Sebastian_Customer_DB.py __main__ มี smoke test ที่ insert test customer/project ลง prod
+  (รันตอน migrate) — ครั้งหน้าใช้ init_schema() ตรงๆ. มี test data Uxxxxxxxxx_TEST ค้าง prod (cleanup ได้)
+- competitor_trend._area_where ยังไม่มี water_subtype filter (recency series งานน้ำปน)
+- ถนนหินคลุก/ลูกรัง (~42%) ยังไม่แยก subtype ที่ 3 (n=39<80)
+- งาน >10ลบ ไม่มี handling (นอกตลาดกัญจน์)

@@ -43,6 +43,12 @@ _WATER_EXCAV_KW = ("ขุดลอก", "ขุดสระ", "ขุดคล�
 _WATER_STRUCT_KW = ("ฝาย", "ประปา", "อ่างเก็บน้ำ", "ดาดคอนกรีต", "คลองส่งน้ำ",
                     "ดาด", "สถานีสูบน้ำ", "ระบบส่งน้ำ")
 
+# agency market regime — ตัวขับ %ส่วนลดที่แท้จริง (evidence: docs/research_market_regime_discount.md,
+# กัญจน์ 2026-06-11). งานท้องถิ่น (อปท.) แข่งดุ median ~28% vs งานส่วนกลาง/กรมทางหลวง ชิดเพดาน ~0.3%
+# — pool รวมกันทำให้คาดราคางานท้องถิ่นต่ำกว่าจริง. ไม่ใช่ budget/ชั้นผู้รับเหมา (corr budget-ผู้ยื่น=0).
+_LOCAL_AGENCY_KW = ("องค์การบริหารส่วนตำบล", "องค์การบริหารส่วนจังหวัด", "เทศบาล",
+                    "เมืองพัทยา", "กรุงเทพมหานคร", "อบต.", "อบจ.")
+
 MIN_COMPETITORS = 2     # distinct winners ขั้นต่ำก่อนหยุด fallback
 SHOW_N = 3              # จำนวนบริษัทที่โชว์
 MIN_GAMES_FOR_IQR = 3   # ต่ำกว่านี้โชว์แค่ median
@@ -97,6 +103,15 @@ def water_subtype(project_name: str):
     if any(k in n for k in _WATER_STRUCT_KW):
         return "water_struct"
     return None
+
+
+def agency_market(dept_name: str):
+    """ระบอบตลาดจากชื่อหน่วยงาน: 'local' (อปท. — อบต./เทศบาล/อบจ. แข่งดุ ~28%) |
+    'central' (ส่วนกลาง/กรม/ทางหลวง — ชิดเพดาน ~0.3%) | None (ไม่มีชื่อหน่วยงาน → ไม่ filter).
+    ใช้แยก reference set ตอนคาดราคา — งานท้องถิ่นต้องอ้างอิงงานท้องถิ่นเท่านั้น (ตัวขับส่วนลดจริง)."""
+    if not dept_name:
+        return None
+    return "local" if any(k in dept_name for k in _LOCAL_AGENCY_KW) else "central"
 
 
 def work_nature(project_name: str) -> str:
@@ -177,10 +192,11 @@ def _pct(values: list, p: float):
 
 
 def _fetch(conn, province: str, tokens: list, *, subdistrict=None, district=None,
-           subtype=None, include_old=False, nature=None, contested_only=False) -> list:
+           subtype=None, include_old=False, nature=None, contested_only=False, market=None) -> list:
     """ดึงงาน competitive ของ work-type (LIKE any token) ใน province + (เลือก subdistrict/district).
     subtype='concrete'/'asphalt' → จำกัด reference เฉพาะประเภทผิวถนนเดียวกัน (ดู road_subtype).
     nature='construction'/'purchase' → จำกัดลักษณะงาน (จ้างก่อสร้าง vs ซื้อวัสดุ ลด%ต่างกันมาก).
+    market='local'/'central' → จำกัดระบอบตลาด (ท้องถิ่นแข่งดุ vs ส่วนกลางชิดเพดาน — ตัวขับส่วนลดจริง).
     include_old=True → ไม่จำกัด 3 ปีล่าสุด (ย้อนทุกปีงบ) สำหรับพื้นที่ข้อมูลน้อย.
     คืน list[dict] (รวม district/subdistrict). graceful [] ถ้าไม่มี table/column."""
     pt_ph = ",".join("?" for _ in COMPETITIVE_SET)
@@ -226,6 +242,13 @@ def _fetch(conn, province: str, tokens: list, *, subdistrict=None, district=None
         params += [f"%{k}%" for k in _WATER_STRUCT_KW]
         where.append("NOT (" + " OR ".join("project_name LIKE ?" for _ in _WATER_EXCAV_KW) + ")")
         params += [f"%{k}%" for k in _WATER_EXCAV_KW]
+    # market filter — ท้องถิ่น (อปท.) อ้างอิงท้องถิ่น, ส่วนกลาง = ที่ไม่ใช่ อปท. (กรม/ทางหลวง)
+    if market == "local":
+        where.append("(" + " OR ".join("dept LIKE ?" for _ in _LOCAL_AGENCY_KW) + ")")
+        params += [f"%{k}%" for k in _LOCAL_AGENCY_KW]
+    elif market == "central":
+        where.append("NOT (" + " OR ".join("dept LIKE ?" for _ in _LOCAL_AGENCY_KW) + ")")
+        params += [f"%{k}%" for k in _LOCAL_AGENCY_KW]
     try:
         cur = conn.execute(
             "SELECT project_name, winner, win_price, discount_pct, district, subdistrict "
@@ -367,20 +390,21 @@ def confidence_label(area_n: int, p25, p75) -> str:
 
 
 def _fetch_scope(conn, province, tokens, *, subdistrict=None, district=None, subtype=None,
-                 nature=None, contested_only=False):
+                 nature=None, contested_only=False, market=None):
     """ดึง reference ของ scope — 3 ปีล่าสุดก่อน; ถ้าคู่แข่งน้อย (< MIN_COMPETITORS) ย้อนทุกปีงบ
     เพื่อให้พื้นที่ข้อมูลน้อย (อำเภอเล็ก/ใหม่) ยังคาดราคาได้. คืน (rows, used_old)."""
     rows = _fetch(conn, province, tokens, subdistrict=subdistrict, district=district,
-                  subtype=subtype, nature=nature, contested_only=contested_only)
+                  subtype=subtype, nature=nature, contested_only=contested_only, market=market)
     if _distinct_winners(rows) >= MIN_COMPETITORS:
         return rows, False
     old = _fetch(conn, province, tokens, subdistrict=subdistrict, district=district,
-                 subtype=subtype, nature=nature, contested_only=contested_only, include_old=True)
+                 subtype=subtype, nature=nature, contested_only=contested_only, market=market,
+                 include_old=True)
     return (old, True) if _distinct_winners(old) > _distinct_winners(rows) else (rows, False)
 
 
 def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subtype=None,
-                 nature=None, contested_only=False) -> dict | None:
+                 nature=None, contested_only=False, market=None) -> dict | None:
     """ประกอบ intel dual-block จาก (ตำบล,อำเภอ) ที่ resolve มาแล้ว (แยกจาก resolve เพื่อ test ง่าย).
     - บล็อกตำบล: เสมอ (ถ้ามีชื่อตำบล) — สถิติเฉพาะงานในตำบล. 0 งาน → 'ยังไม่มีงานประเภทนี้'
     - บล็อกอำเภอ: เพิ่มเมื่อตำบล < TAMBON_MIN — สถิติเฉพาะงานในอำเภอ
@@ -388,7 +412,7 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
     contested_only=True → เฉพาะงานแข่งจริง (ตัด no-competition) + framing 'ถ้ามีคู่แข่ง'.
     คืน {lines, prediction} · None ถ้าไม่มีคู่แข่งจริงเลย."""
     wt = tokens[0] if tokens else "งาน"
-    cf = dict(subtype=subtype, nature=nature, contested_only=contested_only)
+    cf = dict(subtype=subtype, nature=nature, contested_only=contested_only, market=market)
     blocks = []
     pp25 = pp75 = ptop = ptopm = pmed = None
     basis = ""
@@ -431,7 +455,7 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
     lines = [header, ""] + blocks
     if pp25 is not None and pp75 is not None:
         import competitor_trend as _ct
-        _series = _ct.area_win_series(conn, province, tokens, basis_sub, basis_dist, subtype, nature, contested_only)
+        _series = _ct.area_win_series(conn, province, tokens, basis_sub, basis_dist, subtype, nature, contested_only, market)
         new25, new75 = _ct.recency_adjusted_pct(_series, pp25, pp75)
         if pmed is not None and new25 is not None:    # เลื่อน median ตาม delta เดียวกัน
             pmed += new25 - pp25
@@ -463,10 +487,11 @@ def intel_context(province: str, project_name: str, dept_name: str = "",
             # subtype = ผิวถนน (concrete/asphalt) หรือ งานน้ำ (ขุด/โครงสร้าง) — งานหนึ่งเป็นได้แค่อย่างเดียว
             sub = road_subtype(project_name) or water_subtype(project_name)
             nat = work_nature(project_name)
+            mkt = agency_market(dept_name)   # ระบอบตลาด (ท้องถิ่น/ส่วนกลาง) — ตัวขับส่วนลดจริง
 
             def _b(contested):
                 return _build_intel(conn, province, tokens, loc["tambon"], loc["amphoe"],
-                                    budget, sub, nat, contested_only=contested)
+                                    budget, sub, nat, contested_only=contested, market=mkt)
             # โฟกัสงานแข่งจริงก่อน (ตัด no-competition ที่ทำช่วงเพี้ยน)
             ctx = _b(True)
             if ctx and ctx.get("prediction"):

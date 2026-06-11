@@ -22,4 +22,15 @@ for name in ["ก่อสร้างอาคารสำนักงาน �
         print(f"  {name[:34]:34s} → ปกติ ลด {p['area_disc_med']:.0f}% (ชนะ {p.get('area_price_med'):,})")
     else:
         print(f"  {name[:34]:34s} → no prediction")
-print("\n→ ถ้า ปรับปรุง ลด% ต่างจาก สร้างใหม่ = work_kind แยกจริงบน prod ✅")
+print("\n=== พิสูจน์ scope จังหวัด (ข้อมูลหนา → fallback ไม่ทำงาน → เห็นการแยกจริง) ===")
+for label, tokens, subtype in [("อาคาร", ["อาคาร"], None),
+                               ("ถนนคอนกรีต", ["ถนน"], "concrete")]:
+    print(f"  {label}:")
+    for wk in ("new", "reno"):
+        ctx = ci._build_intel(conn, "นครพนม", tokens, "", None, 5000000, subtype=subtype,
+                              nature="construction", contested_only=True, market="local", work_kind=wk)
+        p = ctx.get("prediction") if ctx else None
+        md = p.get("area_disc_med") if p else None
+        print(f"    {wk:5s} → ปกติ ลด {md:.0f}%" if md is not None else f"    {wk:5s} → no prediction")
+
+print("\n→ ถ้า new vs reno ลด% ต่างกัน = work_kind แยกจริงบน prod ✅")

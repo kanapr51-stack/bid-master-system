@@ -1,0 +1,4811 @@
+# Bid Master System — Progress Log ARCHIVE
+
+> เก็บ entry เก่า (ก่อน N+101). entry ล่าสุดอยู่ใน progress_log.md
+
+
+## 📍 CHECKPOINT — 2026-06-01 (matching ENFORCE live ✅)
+
+**สรุป:** go-live + reliability + **Step 2 matching engine ENFORCE แล้ว** (keyword AND tambon + soft-include + API-first tambon resolve). ระบบ live (province-wide) + matching กรองจริง
+
+**สถานะ:** VPS 8 active · dead-man healthy · token สด · customers 5 · delivery 21 · feedback 0 · matching=**enforce** (HEAD 0e4e268) · shadow 30 งานล่าสุด send=5(API-verified target)/cut=25/soft=0
+
+**Pending ด่วน:** รองานใหม่ชิ้นแรก → ดู match[enforce] ใน log · เพิ่ม metrics (matched/wk, new_D0/day, feedback_rate) ใน digest · tag milestone-go-live (ครบ 24h stable)
+
+### งานที่ N+50: Wire enforce + API-first tambon resolve (2026-06-01 ~03:20)
+- **enforce wired** (Enrichment_Worker): BMS_MATCHING_MODE shadow/enforce/off. cut→qualification_status=filtered_no_match+skip, soft→source_stage=province_soft_location, send→enqueue ปกติ. LINE_Sender ป้าย ⚠️ พื้นที่ไม่ชัด
+- **resolve_tambon API-first** (0e4e268): getProcurementDetail moiName (ground truth) ก่อน → dept_name fallback. กัน false-cut จาก อบต.ข้ามตำบล. matching_shadow aligned
+- **deploy VPS**: pull 71109d5→0e4e268. แก้ divergence: untracked stale scripts (backup tar) + 3 tracked scripts (stale subset, backup+checkout) + live data 2 files (api_ingestion_state/egp_deptid_catalog → backup+restore, live state win). HEAD=0e4e268
+- **flip enforce**: .env BMS_MATCHING_MODE=enforce (backup env_before_enforce.bak). flip ตอน 0 pending = ปลอดภัยสุด. worker run clean. matcher setup รันก่อน 0-candidate return → mmode=enforce ยืนยัน
+- **validate**: shadow 30 งานจริง send=5 ทั้งหมด API-verified target tambon (บุ่งคล้า/ดงบัง/โพธิ์หมากแข้ง), cut=25 legit (no_keyword + tambon_not_target), soft=0. ไม่มี false-cut
+
+### งานที่ N+51: Cross-source dedup gap + matcher non-target detection (2026-06-01 ~13:00)
+- **🐛 พบ Source Authority Violation** (ChatGPT framing): RSS (จังหวัดว่าง, ส่งไม่ได้) suppress province_api (จังหวัดชัด, ส่งได้) ใน discovery known set (1368=1077+291 รวมทุก source) → งาน relevant ตกหล่น ไม่เคยส่ง
+- **verify scale** (sample 30 RSS-only keyword-match → getProcurementDetail provinceMoiId): valid 14 = 12 จังหวัดทั่วประเทศ (เชียงใหม่/กระบี่/สงขลา/กทม...) → **RSS = nationwide feed**, target_province_rate ≈ 0% → ChatGPT Case 2 (small edge case, ไม่สร้าง subsystem)
+- **decision** (ChatGPT+Claude agree): ไม่ทำ Option B subsystem (overkill ~2-3 งาน) / ไม่ทำ C (refactor) → targeted fix เฉพาะงาน confirmed
+- **อุดงานจริง**: 2 คอนกรีตผสมเสร็จ คส.ชป.7 (ชื่อบอกตำบลชัด): หนองซน(อ.นาทม,5.71M)→matching send→**ส่ง LINE 4/4 real users** ✅ · นาแก(5.85M)→ถอน (กัญจน์: ทิ้ง, นอก target)
+- **🔧 matcher fix** (7bd981c): `tambon_from_name()` parse "ตำบล X" จากชื่อ → chain field→target-in-name(ชนะก่อน)→explicit "ตำบล X"(non-target→cut)→soft. แก้ over-include งานชื่อระบุตำบลนอก target (เดิมได้ soft). test 6/6, shadow ไม่ regress (5/25/0)
+- **finding แยก**: customer 1 = test account (Uxxx_TEST) → delivery fail เสมอ (ignorable, real users=4)
+- **deploy debt ย้ำ**: data/*.json (egp_deptid_catalog ฯลฯ) track ใน git + mutate หลายที่ → ทุก deploy conflict ต้อง backup+restore มือ → ควร gitignore+rm --cached
+
+### งานที่ N+52: P1 deploy-debt — single runtime authority (2026-06-01 ~14:00-15:00)
+- **consult ChatGPT 3 รอบ** (cross-source→deploy-debt→inventory) ทุกจุด agree, downgrade Option B subsystem→targeted (verify→Case2)
+- **diagnosis เลื่อน 2 ชั้น**: "state ใน git" → "state routing inconsistency" (2 data dir: app/data tracked vs /opt/bms/data runtime, scripts ปน) → **"Windows tasks git push data"** (root จริง)
+- **inventory** (git ls-files data/ 70 ไฟล์): Class A runtime (api_ingestion_state/rss_queue/rss_seen_ids/rss_stage_rotation/cgd_discovery_seen) · B cache (egp_deptid_catalog) · C config/seed (keep). tier: เกือบทั้งหมด regenerable, critical=rss_notifier_epoch.txt เดียว (province epoch อยู่ SQLite)
+- **characterize split-brain**: api_ingestion_state canonical=app/data (writer+reader ตรงกัน, ไม่ dangerous), /opt/bms/data=stale legacy
+- **evidence "legacy ไหม"**: VPS systemd ไม่มี queue-processor/cgd · VPS rss-scraper generate rss_queue เอง · winner_cache/all_jobs VPS active ไม่ consume → **Windows 2 tasks = แยกระบบ VPS ไม่พึ่ง**
+- **step 1** (1c54581): `scripts/bms_paths.py` — runtime_path()/asset_path(), fail-loud ถ้า BMS_DATA_DIR ไม่ตั้ง, split-brain guard. test 4 cases
+- **🔧 INTERIM FIX** (52258f6): เอา git add/commit/push data ออกจาก Windows ps1 (run_queue_processor + _run_cgd_discovery + setup template). **พิสูจน์: VPS pull code-only → ff สำเร็จ แม้ data M 5 ไฟล์** = deploy conflict หายด้วย fix 8 บรรทัด
+- **⏸ full migration defer** (step 2-9: VPS scripts __file__/../data→runtime_path + git rm --cached): cleanup ถาวร ไม่เร่ง (deploy ราบรื่นแล้ว). plan + helper พร้อม ทำต่อเมื่อต้องการ
+
+### งานที่ N+53: P2 RSS anomaly guard + quick wins (2026-06-01 ~15:00)
+- **B** (6dd4fb1): `rss_local_candidate_section()` ใน Daily_Digest — log RSS-only+keyword+ชื่อมีตำบลเป้าหมาย (observable guard, ChatGPT). test live = **ZERO** (clean) · interim fix ยืนยัน FF อีกรอบ
+- **D2**: tag `milestone-go-live` @ 616f0f0 (go-live+reliability+24h stable)
+- **D3**: digest timer 08:00 UTC → **08:00 Asia/Bangkok** (next 06-02 08:00 ไทย)
+- **test account fix** (c9e3ec5): enqueue propagate `c.is_test_data` → queue/delivery (เดิม test customer 1 line ปลอม → 8 failed นับเป็น production false-alarm). backfill 9 delivery+8 queue → is_test_data=1. production failed 8→**0**. ไม่ disable (proper)
+- **metrics digest** (2a28cbf,1d6c296): WeeklyMetrics section — matched_jobs(7d)=5, **new_D0 by day** (honest, เลี่ยง mean ที่ bulk 05-30 บิดเบือน — เห็น 05-30=1077 bulk, ไม่มีวันอื่น=ตลาดเงียบจริง), feedback_rate. ChatGPT volume-illusion guard
+- **interim fix ยืนยัน FF รวม 5 รอบ** = deploy ราบรื่นสม่ำเสมอ
+
+### งานที่ N+54: VPS self-canary — แก้ api_state frozen (2026-06-01 ~15:15)
+- **พบจาก /checkpoint**: api_ingestion_state frozen ตั้งแต่ 05-29 (ทั้ง Windows+VPS). root = `BidMaster_WAF_Pulse` + `Queue_Processor` Windows tasks **DISABLED** (canary ไม่รัน) + interim fix ตัด git sync → VPS ไม่เห็น update
+- **ผล**: Enrichment_Worker gate (line 303 "skip if api_state!=HEALTHY") frozen HEALTHY = ตายเงียบ. **ไม่ active harm** (API healthy จริง + own circuit breaker/RateLimited abort คุ้ม) แต่ latent risk (ไม่ skip ล่วงหน้าถ้า WAF block)
+- **fix** (9dc8aab, 757b264, กัญจน์เลือก VPS self-canary): `scripts/vps_canary.py` — probe count_d0(นครพนม) → HEALTHY/BLOCKED/UNKNOWN → เขียน api_ingestion_state ที่ **app/data** (path ที่ worker gate อ่าน). `bms-canary.timer` ทุก 30 นาที (User=bms, chown state). **ตัด Windows dependency**
+- **verified**: canary HEALTHY→last_canary สด 15:14 · worker gate อ่าน HEALTHY สด · timer NEXT 15:44
+
+### งานที่ N+55: Discovery notify ทุกรอบ + cross-province sanity (กัญจน์ขอ 2026-06-01 ~17:30)
+- **discovery Discord notify** (06bfd26): ทุกรอบ incremental 7/13/19 → เจองานใหม่=รายการ+target / ไม่เจอ=ยืนยันตรวจแล้ว+scan/active/announce ล่าสุด. ไม่รวม full-sweep. test ส่งสำเร็จ
+- **cross-province probe** (e26a429→f5311f7): เทียบ announceDate กทม/เชียงใหม่(control) vs นพ/บก. **กัญจน์ชี้ 🟡 มี 2 กรณี** → แยก: control ERR=🔴 ระบบพังเรียก API ไม่ได้ / control ok+eGP ไม่ขยับ=🟡 eGP เงียบจริง(เราไม่พัง). **quiet_streak 3+ วัน=⚠️ เริ่มมีกลิ่น**. daily 08:30 (bms-crossprobe.timer)
+- finding (control test): ทั้งประเทศ latest=05-29 (กทม 18977 งานก็ยังไม่มี 06-01) → ระบบเราไม่พลาด, จันทร์ lag ทั้งประเทศ
+
+**Defer:** keyword refine · qualification drift alert · permanent token harvest · portal(Step6) · **P1 full migration (DEFERRED — tripwires)** · cross-source unify Option C · Windows tasks disabled (ส่วนใหญ่ migrate VPS แล้ว N+54; dashboard/ETL=legacy ลบได้, all_jobs=ดู on-demand) · DB→Postgres เมื่อ scale (project_db_strategy)
+
+ดู matching design: memory/project_matching_design · งานล่าสุด N+49
+
+---
+
+
+## งานที่ N+49: Matching Engine (keyword + tambon + soft-include) — Step 2 (2026-05-31 ~18:30)
+
+### สถานะ: ✅ matcher logic เสร็จ+เทส (ยังไม่ wire production)
+
+### สิ่งที่ทำ (ดู design: memory/project_matching_design)
+- `config/matching_preferences.json`: 34 keywords (เพิ่ม ซ่อมสร้าง + บำรุงทางหลวง จาก test) + 20 ตำบล + soft_include block (label B: "⚠️ พื้นที่ไม่ชัด · ถนนสาย {code}")
+- `scripts/job_matcher.py`: `match_job()` → 3 decisions (send/cut/soft_include) + extract_road_code + location_source. pure function
+- decision: keyword✓ + (field/name tambon ∈ 20 ตำบล → send) | (รู้ตำบล ∉ → cut) | (ระบุไม่ได้ + งานถนน → soft_include + ป้ายรหัสถนน)
+
+### Test (verified)
+- 4 งานจริงที่ส่งเมื่อคืน → ตัดถูกหมด (2 ผิดประเภท, 2 ถูกประเภทผิดตำบล=อ.เมือง)
+- soft-include road-code → ป้าย "⚠️ พื้นที่ไม่ชัด · ถนนสาย นพ.4036/บก.4017" ✅
+- เจอ + แก้ keyword gap: "ซ่อมสร้าง" หาย (25 งาน, 16 พลาด) → เพิ่มแล้ว → ซ่อมสร้างนาทม ส่งถูก
+
+### Experiment (PDF location — ChatGPT แนะให้วัดก่อน)
+PDF target-match บนงานถนน = **3/12 (25%)** ไม่ใช่ 80-90% → ถนนเป็น corridor ไม่ระบุตำบลเดียว → **soft-include = path หลักของงานถนน** (ไม่ใช่ safety net เล็ก). PDF เก็บเป็น bonus ทีหลัง
+
+### เหลือ (Step 2 ต่อ — production-touching)
+- **Location enrichment**: ดึง tambon ต่องาน (getProcurementDetail moiName / name) — +1 API/งาน
+- **Wire เข้า enqueue** (qualify_province_api): run matcher ก่อน enqueue → cut ไม่ส่ง / soft เพิ่มป้าย. ระวัง mode=live
+- location_source audit + วัด send/cut/soft rate
+
+---
+
+## 📍 CHECKPOINT — 2026-05-31 ~04:10 (go-live + reliability sprint เสร็จ)
+
+**สรุป:** คืนนี้ทำ 15 commits — go-live(16/16 ถึง family) + reliability hardening ครบ. ระบบ **live + automation เต็ม**
+
+**สถานะระบบ:** VPS 8 services active · mode=live(doczip) · customers 5(4จริง) · projects_seen 1,368 · delivery sent 21 · บึงกาฬ qual: enqueued4+backlog319+expired24 · feedback 0 · token valid · heartbeat ok
+
+**Pipeline ครบวงจร + hardened:**
+- Discovery: province_api **incremental** (~95% req ลด, margin 2 หน้า) + daily full-sweep reconcile + dead-man heartbeat
+- Qualification: epoch + deadline gate (doczip 95%) + graceful rate-limit (abort ไม่ balloon→silent)
+- Delivery: live LINE + dead-man switch (token/discovery monitor ทุก 15 นาที)
+- Feedback: LINE keyword (👍/👎/ใหม่/โทรแล้ว) → digest summary (North-Star measurement)
+
+**🔴 Pending ด่วน:** `git push` 30 commits ค้าง (รอ confirm) · digest tz 15:00→08:00 ไทย
+
+**Defer:** P4/P5 token TTL (incremental ทำให้แทบไม่จำเป็น) · retire RSS
+
+รายละเอียดดูงานที่ N+40..N+46 ด้านล่าง
+
+---
+
+## งานที่ N+48: Discovery Catch-Up on Reconnect (เปิดเครื่อง → รัน slot ที่พลาดทันที) (2026-05-31 ~15:15)
+
+### สถานะ: ✅ เสร็จ — deployed + e2e verified
+
+### โจทย์ (คุณกัญจน์)
+ปิดเครื่องช่วง slot (เช่น 12:00-14:00 คร่อม 13:00) → เปิดมา 14:00 → "รู้ว่าพลาด 13:00 แล้วรันให้ทันที"
+
+### สิ่งที่ทำ
+- `scripts/discovery_catchup.py` (VPS): slot-based missed detection — last_ok discovery < slot ล่าสุดที่ผ่าน (07/13/19 ไทย) + token valid → รัน incremental ทันที. no-op ถ้าไม่พลาด/ไม่มี token
+- `harvest_and_push.py`: หลัง push token → `trigger_catchup()` SSH รัน catchup บน VPS (best-effort, utf-8)
+- `deploy/windows/BMS_HarvestOnLogon.vbs` → Startup folder → login → harvest+catchup ทันที (task trigger แก้ไม่ได้ ต้อง admin → ใช้ vbs)
+
+### Test (verified)
+- local logic: not-missed→skip / missed→run / no-token→skip ✅
+- **e2e จริง:** catchup เจอ heartbeat=no_data (จาก full-sweep rate-limit) → ถือว่าพลาด → รัน discovery → heartbeat=ok กู้คืน ✅
+- โบนัส: auto-recovery — discovery รอบไหน fail catchup รอบถัดไป retry
+
+### หมายเหตุ
+- ยัง stopgap (เปิดเครื่องช่วง slot) — permanent = ย้าย harvest ไปอุปกรณ์บ้าน (รอตัดสินใจ)
+
+---
+
+## งานที่ N+47: 🔴 Token Harvest Reliability Fix (dead-man ยิงจริง → แก้ root cause) (2026-05-31 ~13:40)
+
+### สถานะ: ✅ เสร็จ — dead-man healthy
+
+### Trigger: dead-man alert ยิงบ่อย (ตอนคุณกัญจน์ตื่น)
+"VPS token หมดอายุ 17 นาที + ไม่มี refresh 47 นาที" ซ้ำๆ ~ทุก 60 นาที (cooldown) = dead-man ทำงานถูก (จับ silent failure ได้จริง)
+
+### Root cause (วินิจฉัยจาก harvest log + token_service)
+- harvest task รันทุก 25 นาที **แต่ refresh สำเร็จทุก ~50 นาที** (state_before=expired ทุกครั้ง)
+- เหตุ: `get_valid_token` (writer) **refresh เฉพาะตอน EXPIRING/EXPIRED** (token_service:334 VALID→return เลย). refresh_margin เล็ก → รอบกลาง (token เหลือ ~5 นาที) = VALID → **reuse ไม่ push สด**
+- → push token เหลือ ~16 นาที ทุก 25 นาที → **หมดก่อนรอบถัดไป = gap ~20 นาที ทุก ~50 นาที** (ไม่ใช่ Turnstile/เครื่องดับ)
+
+### Fix (P3-original token root cause)
+- `harvest_and_push.py`: `TokenService(..., refresh_margin=22*60)` → writer refresh เชิงรุก (push token เกือบเต็ม 30 นาทีทุกรอบ)
+- Windows task `BMS_TokenHarvest` interval **25→15 นาที** (2 รอบต่อ TTL → รอด 1 harvest fail)
+- → VPS token สดเสมอ (push ทุก 15 นาที, token 30 นาที = overlap เพียงพอ)
+
+### Verified
+- harvest manual: refresh สด (count 32→33, token 1797s) → VPS 1794s ✅
+- dead-man: "✅ healthy (token + discovery OK)" ✅
+- task interval = PT15M ✅
+
+### หมายเหตุ
+- Windows task config (interval) ไม่ได้อยู่ใน git — บันทึกที่นี่
+- นี่คือ blind spot #2-adjacent (token SPOF) ที่ ChatGPT review — ตอนนี้ gap หายแล้ว แต่ SPOF (1 เครื่อง/Chrome) ยังอยู่ (อนาคต: cloud harvester)
+
+### Addendum: Alert = Symptoms (post-incident ChatGPT review converged)
+- dead-man alert เดาสาเหตุผิด ("Windows ดับ?") ทั้งที่เป็น refresh logic → anchor ผิดทาง (confirmation bias)
+- **fix:** `health_deadman.py` alert message = อาการเท่านั้น (TOKEN EXPIRED / NO REFRESH / DISCOVERY STALE...) + footer ชี้ `deploy/RUNBOOK.md`
+- สร้าง `deploy/RUNBOOK.md` — hypotheses + วิธีแก้ ต่อ alert (refresh logic อยู่อันดับ 1 ของ TOKEN EXPIRED)
+- lesson บันทึก [[feedback_learn_from_mistakes]] Lesson 6 (state assumptions ต้อง validate ด้วย telemetry)
+- **Tag milestone รอ 24h stable** (ChatGPT: Go-Live เกิดแล้ว แต่ Go-Live Stable ยังไม่เกิด)
+
+---
+
+## งานที่ N+46: P3 Hardening — ordering ไม่เชื่อ assumption ครั้งเดียว (2026-05-31 ~04:00)
+
+### สถานะ: ✅ เสร็จ — deployed + live verified
+
+### ทำไม (คำถามคุณกัญจน์: "verify ordering ครั้งเดียวเชื่อได้จริงมั้ย")
+ตอบตรง: ไม่ — verify ครั้งเดียว = หลักฐานดี ไม่ใช่พิสูจน์. ความเสี่ยง: eGP เปลี่ยน sort / announceDate ย้อนหลัง / ties คร่อมหน้า → incremental พลาดเงียบ. เปลี่ยนจาก "เชื่อ assumption" → "วัด assumption ต่อเนื่อง"
+
+### 3 hardening (ทำครบ)
+1. **Daily full sweep** (weekly→daily, 00:30 UTC) = ground truth จับ miss ใน ≤24h (timer แก้แล้ว)
+2. **Look-ahead margin** `INCR_KNOWN_STOP=2` — หยุดเมื่อรู้หมด 2 หน้า "ติดกัน" (กัน ties/boundary) ไม่ใช่หน้าเดียว
+3. **Reconciliation** — full sweep เจองานใหม่ announceDate < today-2วัน = incremental น่าจะพลาด → Discord alert (พิสูจน์ ordering ด้วย evidence ทุกวัน). หลัง 2-4 สัปดาห์พลาด 0 → ผ่อนกลับ weekly ได้
+
+### 🐛 Bug เจอจาก live test (สำคัญ)
+incremental รอบแรก fetch 38/42 หน้า (ไม่ใช่ 2)! เพราะ **งานยกเลิก (status=R) ไม่เคย ingest → ไม่อยู่ใน known → ทุกหน้าที่มีงานยกเลิกนับเป็น new → ไม่หยุด**. fix: นับ new เฉพาะงาน active(≠R) ที่ไม่รู้จัก (งานยกเลิก = รู้ว่าข้าม ไม่นับ)
+→ unit test ด้วย mock active-only ไม่เจอ — **live test เท่านั้นที่เจอ** (บทเรียน: ต้อง verify จริง)
+
+### Test (verified)
+- local: margin K=2 (T1 ไม่หยุด/T2 หยุดหน้า2/T3 คั่นไม่หยุด/T4 full) + cancelled-job ignored ✅
+- **live: incremental บึงกาฬ → หยุดหน้า 2 (fetch 20, ข้าม 40 หน้า ~95% ลด)** ✅
+- **live: full sweep → "reconcile: ไม่มีงานเก่าที่พลาด (assumption ยังถือ)"** ✅
+
+### ลำดับถัดไป (locked)
+P4 token TTL tripwire / P5 mid-sweep refresh — **incremental ทำให้แทบไม่จำเป็น** (sweep สั้นมาก) → เหลือ measure ยืนยัน
+
+---
+
+## งานที่ N+45: P3 — Incremental Discovery (ลด req ~98%, reliability+scale) (2026-05-31 ~03:20)
+
+### สถานะ: ✅ เสร็จ — deployed + live verified
+
+### ทำไม
+เดิม discovery full re-paginate ทุกรอบ (~115 หน้า 2 จังหวัด) ทั้งที่ 99% งานเดิม → เปลือง req + เสี่ยง rate-limit/timeout. incremental = lever ที่แก้ทั้ง reliability (ลด rate-limit exposure) + scale (ดู [[project_national_scaling]])
+
+### รากฐาน (ยืนยันก่อนสร้าง)
+pagination เรียง announceDate **ใหม่→เก่า strict** (ยืนยัน 5 หน้า: หน้า1 05-29, หน้า42 ก.ย.2025) → หยุดได้เมื่อเจอหน้าที่ project_id รู้จักทั้งหมด (หน้าถัดไปเก่ากว่า = ingest แล้ว)
+
+### สิ่งที่ทำ
+- `Sebastian_Province_Discovery.py`: `fetch_all_d0(..., known_ids)` — incremental หยุดเมื่อ new_in_page==0; `_all_known_ids()` (global dedup set); main: incremental เป็น default เมื่อ --ingest (ไม่ --dry-run/--full), `--full` flag บังคับ full
+- **safety: weekly full-sweep** `bms-province-discovery-full` (Sun 00:30 UTC, --full, TimeoutStartSec=1800) กัน incremental พลาด → โครงสร้าง: ถี่=incremental(เร็ว), สัปดาห์ละครั้ง=full(ครบ)
+- units ใน git (deploy/systemd/)
+
+### Test (verified)
+- local 4: T1 หยุดหน้า1, T2 หยุดหน้า2(new1), T3 full ครบ, T4 known ว่าง=ไม่หยุด ✅
+- **live บึงกาฬ ingest: 420/42 หน้า → fetch หน้า1 (รู้หมด) หยุด ข้าม 41 หน้า → 10 แทน 420 (~98% ลด)** ✅
+
+### ผล
+scheduled discovery (07/13/19) = incremental อัตโนมัติ → เร็ว (~1-2 หน้า/จังหวัด) = **ไม่ชน 15-min timeout อีก** (แก้ root ของ N+42 finding เชิงโครงสร้าง). req ปกติ ~98% น้อยลง
+
+### ลำดับถัดไป (locked)
+P4 token TTL tripwire → P5 mid-sweep refresh
+
+---
+
+## งานที่ N+44: P2.5 — Feedback Summary ใน Daily Digest (เติมเต็ม measurement loop) (2026-05-31 ~03:10)
+
+### สถานะ: ✅ เสร็จ — deployed VPS
+
+### ทำไม
+P2 capture feedback ลง table แต่ **ไม่มีตัวอ่านไปใช้** = สร้างไม่เสร็จครึ่ง (capture without reporting). P2.5 เติม reporting → feedback ใช้ได้จริงรายสัปดาห์
+
+### สิ่งที่ทำ
+- `Sebastian_Daily_Digest.py`: เพิ่ม `feedback_section()` (7 วันล่าสุด) — counts 👍useful/👎not_relevant/🆕never_seen/📞action_taken + total_all + **⭐ North-Star highlight** (โชว์ชื่องานที่ never_seen/action_taken) + wire เข้า main (หลัง delivery section)
+- table feedback ไม่มี → graceful "(table not yet created)"
+
+### Test (verified)
+- local + VPS syntax OK
+- feedback_section: empty → "(no feedback this week)"; 2 temp rows (never_seen+useful) → counts ถูก + highlight โชว์ชื่องาน → cleanup ✅
+
+### ผล
+digest 08:00 (timer) จะรวม section นี้อัตโนมัติ → คุณกัญจน์เห็น "สัปดาห์นี้มี never_seen/action_taken กี่งาน" = วัด North-Star ได้จริง (ยังไม่ทำ auto-tune relevance — volume น้อยเกิน, premature)
+
+### ลำดับถัดไป (locked)
+P3 incremental discovery → P4 token TTL tripwire → P5 mid-sweep refresh
+
+---
+
+## งานที่ N+43: P2 — Feedback Capture Loop (LINE keyword → งานล่าสุด) (2026-05-31 ~02:40)
+
+### สถานะ: ✅ เสร็จ — deployed VPS
+
+### สิ่งที่ทำ (locked spec: keyword reply, ไม่ใช่ NLP/portal)
+วัด value จาก go-live ชุดแรก (16 ข้อความ, fresh signal window). user ตอบกลับ LINE → ผูกกับงานล่าสุดที่ส่งให้
+- `scripts/migrate_feedback_schema.py`: table `feedback` (customer_id, project_id, action, raw_text, created_at) idempotent
+- `bms_api.py` (เสียบใน webhook `/webhook/line` ที่มีอยู่):
+  - `_match_feedback()` — keyword: 👍/สนใจ→useful, 👎/ไม่เกี่ยว→not_relevant, 🆕/ใหม่/ไม่เคยเห็น→never_seen, 📞/โทรแล้ว/ติดต่อ→action_taken (กัน false match: ข้อความ >25 ตัวไม่นับ)
+  - `_record_feedback()` — หา latest delivery_log(status=sent) ของ user → ผูก project_id → insert + คืนชื่องาน
+  - reply ยืนยันบอกชื่องาน (never_seen = ข้อความพิเศษ = North-Star signal)
+  - `_help_text` เพิ่ม section feedback
+
+### Test (verified)
+- local: _match_feedback 12/12 (emoji/ไทย/never_seen variants/commands ไม่ false match/ข้อความยาวไม่ match) ✅
+- VPS syntax + bms-api restart active (import ผ่าน) ✅
+- **end-to-end signed webhook POST "👍"** → HTTP 200 → feedback row action=useful project_id=69059255961 (ผูกงานล่าสุดถูก) → cleanup ✅
+
+### ข้อจำกัด (acceptable beta)
+- feedback ผูก **งานล่าสุด** ที่ส่งให้ (ถ้า user ได้ 4 งานแล้วตอบ 👍 = นับงานที่ 4) — reply บอกชื่องานให้เห็นว่าผูกงานไหน. precision per-job (quick-reply buttons) = อนาคตถ้าจำเป็น
+- North-Star metric อยู่ใน feedback.action='never_seen'
+
+### ลำดับถัดไป (locked)
+P3 incremental discovery → P4 token TTL tripwire → P5 mid-sweep refresh
+
+---
+
+## งานที่ N+42: P1(rel) — Graceful Rate-Limit Handling (fetch_page abort, no balloon) (2026-05-31 ~02:30)
+
+### สถานะ: ✅ เสร็จ
+
+### Root cause (จาก diagnostic 2026-05-31)
+discovery timeout 15 นาที = **eGP rate-limit ที่ search endpoint** (count_d0/fetch_page ได้ "rate limit"). เดิม `fetch_page` swallow RateLimited → return [] → fetch_all_d0 เห็นว่าง → พัก 30s/หน้า → **balloon ทุกหน้าที่เหลือ** → ชน systemd timeout 15 นาที → SIGTERM → **heartbeat ไม่เขียน (silent failure)**
+(eGP rate-limit แยกต่อ endpoint — resolver ทำงานได้ขณะ search โดน → ดู [[project_national_scaling]])
+
+### Fix (Sebastian_Province_Discovery.py — 4 จุด)
+1. `MAX_CONSEC_EMPTY=3` constant
+2. `fetch_page`: ปล่อย RateLimited propagate (ไม่ swallow)
+3. `fetch_all_d0`: count rate-limit → **raise** (ไม่ return [] ปล่อยจังหวัดถัดไปโดนซ้ำ); page loop → catch RateLimited = **abort ทันที**; empty page → retry ครั้งเดียว + **circuit breaker** (ว่างติดกัน 3 → abort) แทน balloon ไม่จำกัด
+4. `main`: try/except RateLimited → `_write_heartbeat("no_data", reason="rate_limited")` + exit clean → **dead-man DISCOVERY_NODATA จับได้ ไม่เงียบ**
+
+### Test (verified)
+- local 4 paths: T1 count-abort, T2 page-abort, T3 circuit-breaker (abort หลัง 5 fetch, bounded), T4 normal ได้ครบ ไม่ raise ✅
+- VPS syntax OK + live บึงกาฬ dry-run: 420 fetched, heartbeat status=ok (ไม่ regress) ✅
+
+### ผล
+failure mode "rate-limit → balloon → timeout → SIGTERM → silent" → **bounded abort + observable** (heartbeat → dead-man alert ภายใน 15 นาที, cooldown 60 นาที). worst case ตอน rate-limit = abort ใน ~60-90s ไม่ใช่ 15 นาที
+
+### ลำดับถัดไป (locked 2026-05-31 — ดู [[project_beta_golive_strategy]])
+P2 feedback capture → P3 incremental discovery → P4 token TTL tripwire → P5 mid-sweep refresh
+
+---
+
+## งานที่ N+41: P1 — Dead-Man Switch (Protect Live System) (2026-05-31 ~00:10)
+
+### สถานะ: ✅ เสร็จ
+
+### Root cause / สิ่งที่ทำ
+ระบบ live แล้ว → failure mode อันตรายสุด = **silent failure** (เจอจริง: harvest report success แต่ VPS token stale). ChatGPT+Claude converged: dead-man switch (P1) ก่อน root cause (P3) — เปลี่ยน silent→observable ก่อน
+
+### Implementation
+- `scripts/Sebastian_Province_Discovery.py`: เพิ่ม `_write_heartbeat()` — เขียน `last_discovery_run.json` ทุกรอบ (status=ok/no_data + counts)
+- `scripts/health_deadman.py`: ตรวจทุก 15 นาที (VPS timer `bms-deadman`)
+  - TOKEN_EXPIRED / HARVEST_STALE (>40 นาที ไม่ refresh) = CRITICAL [fast, ~35 นาที detect]
+  - DISCOVERY_STALE (>14 ชม. เผื่อ overnight gap 12 ชม.) / DISCOVERY_NODATA = WARN
+  - cooldown 60 นาที/issue กัน spam, **exit 0 เสมอ** (ไม่ทำให้ systemd fail)
+- `deploy/systemd/bms-deadman.{service,timer}` + README — version-controlled (units อื่นยังอยู่บน VPS เท่านั้น)
+
+### ทดสอบ (verified)
+- detection logic ครบ 4 เคส (fixture stale token) ✅
+- Discord alert ยิงจริง + cooldown กัน spam ✅
+- healthy path: "✅ dead-man: healthy" exit 0 ✅
+- heartbeat code: seed สำเร็จ `{status:ok, total:420}` ✅
+
+### 🔴 Finding ใหม่ระหว่างทำ: discovery service timeout
+- `bms-province-discovery.service` รัน **ทั้ง 2 จังหวัด timeout ที่ 15 นาที** (Result=timeout, killed) → heartbeat ไม่ถูกเขียน
+- น่าจะ throttle-induced (ยิง API หนักทั้ง session: harvest/re-resolve/reclassify หลายรอบ) → empty-page retry 30s ballooning
+- **สมมติฐาน: อาจเป็นสาเหตุบึงกาฬเคย=0** (รอบ schedule ทำนครพนมก่อน → timeout ก่อนถึงบึงกาฬ)
+- **ยังไม่แก้ config** (ไม่แน่ใจว่า standing problem หรือ transient) → followup: monitor รอบ schedule 00:00 UTC; ถ้า recur → bump TimeoutStartSec + แก้ page-retry ballooning
+- dead-man จับ timeout ได้ทางอ้อม (discovery_stale 14h) แต่ช้า — ควรพิจารณา check systemd Result โดยตรงภายหลัง
+
+### Followup (priority หลัง P1 — ChatGPT converged)
+- P2: feedback loop (👍/👎/ใหม่/โทรแล้ว) — fresh signal window จาก 16 ข้อความ
+- P3: token harvest root cause (success-but-stale) + discovery timeout
+- P4: เพิ่มอำเภอ+ตำบล (getProcurementDetail moiName+districtMoiId)
+- P5: retire RSS (disable scheduler+alert, เก็บ code)
+
+---
+
+## งานที่ N+40: 🎉 P0 GO-LIVE — Notification จริงครั้งแรกถึงครอบครัว (2026-05-30 ~23:05)
+
+### สถานะ: ✅ เสร็จ — MILESTONE
+
+### Root cause / สิ่งที่ทำ
+หลัง P2 + Q1 เสร็จ → report ChatGPT → converged Q2 (P0 ก่อน P1 ทันที, "analysis paralysis = ความเสี่ยงใหญ่กว่า feedback missing สำหรับ 5 family users"). คุณกัญจน์อนุมัติ ส่ง province-wide พร้อมเงื่อนไข "Controlled ≠ Blind → ผ่าน checklist ก่อน"
+
+### Checklist 5/5 ผ่าน (4 งานบึงกาฬเปิดจริง)
+① จังหวัด ✓ (hard/moiId=380000) · ② location ✓ (แขวงทางหลวง/รพ.บึงกาฬ/พาณิชย์จังหวัด/อบต.นากั้ง) · ③ deadline>now ✓ (4-10 มิ.ย.) · ④ link/PDF ✓ (templateId resolve) · ⑤ format ✓ (mobile-first)
+
+### กลไก + ผล
+1. backup `.env` → flip `BMS_PROVINCE_NOTIFY_MODE=preview→live`
+2. reset 4 preview_held → pending → worker (mode=live) → **enqueue 4** (× 5 subs = 20)
+3. LINE sender (BATCH_SIZE=1, drive ทีละตัว) → **delivered 16/16 ถึง 4 user จริง** (กัญจน์/Hong/ณฐมน/Mr.suvit คนละ 4 งาน), 4 fail = test account (fake LINE ID ตามคาด)
+- subscription = province-level นครพนม+บึงกาฬ ทั้ง 5 คน (ตรง Q3)
+
+### 🎯 North-Star prerequisite
+"Has a real user received a real notification yet?" → **YES (ครั้งแรกของ BMS)**
+
+### Followup / สถานะใหม่
+- **mode=live (preview gate ปิด) = automation เต็ม** — งานใหม่ที่ qualify (นครพนม+บึงกาฬ) จะส่ง LINE อัตโนมัติ ไม่ผ่าน preview แล้ว (ตาม procedure "ผ่าน 3 งาน → เอา gate ออก")
+- **P1 feedback loop** = priority ถัดไป (👍/👎/ใหม่/โทรแล้ว) — วัด value (Useful Rate / Discovery / Action)
+- เฝ้าดู reaction ครอบครัว 30 วัน → North-Star "ไม่เคยเห็น + นำไปทำต่อ"
+- ถ้าต้องการกลับ preview: flip env กลับ + restore `.env.bak.*`
+
+---
+
+## งานที่ N+39: P2 — บึงกาฬ Full Ingest + Recency-Gated Qualification (2026-05-30 ~21:45)
+
+### สถานะ: ✅ เสร็จ
+
+### Root cause / สิ่งที่ทำ
+ก่อนหน้า: projects_seen มีแต่ นครพนม (730 province_api) — **บึงกาฬ = 0 rows** ทั้งที่อยู่ใน PROVINCE_MOI (380000) แล้ว → coverage gap จังหวัดที่ 2 ของ family beta (อ.บึงโขงหลง)
+
+flow: harvest token สด (Chrome9222, 1798s) → push VPS → dry-run นับ → ingest → recency-gated qualification
+
+### Decision: เปลี่ยนจาก "epoch suppress ทั้งหมด" → "recency-gated" (evidence-based)
+- นครพนม 730 ถูก suppress เพราะ ingest **ก่อน** epoch (first_seen 06:46Z < epoch 10:34Z) — wholesale
+- บึงกาฬ 347 ingest **หลัง** epoch → ถ้าปล่อย worker จะ qualify ทั้ง 347 (resolve PDF 347 ครั้ง = เปลือง + WAF risk)
+- **evidence:** projectId prefix (BE YYMM) distribution → แค่ ~25 ตัว (≥6904) อาจยังเปิด, 322 ตัว (≤6903) เกือบแน่ปิดแล้ว
+- **วิธี:** pre-insert project_locations เอง — recent(≥6904)→`pending`, เก่า→`suppressed_backlog` (terminal). seed query skip ทั้งหมด (NOT IN) → งานใหม่อนาคต qualify ปกติ **ไม่แตะ epoch** (นครพนม ไม่กระทบ)
+
+### Fix / ผล
+- ingest: **+347 บึงกาฬ** (420 total − 73 ยกเลิก), 0 dup
+- qualification: 322 suppressed_backlog + 12 suppressed_expired + 4 **preview_held** + 9 pending (drain ต่อ)
+- **resolver ทำงานบนบึงกาฬด้วย (2nd province validated): failed=0** บน 16 ตัวที่ resolve
+- **4 งานบึงกาฬเปิดจริง** surface เข้า Discord preview (mode=preview, **ไม่มี LINE หาครอบครัว**):
+  - 69049214773 แขวงทางหลวงชนบทบึงกาฬ ฿12M (สะพาน+ถนน) deadline 2026-06-10
+  - 69059480101 รพ.บึงกาฬ ฿1.3M (เลเซอร์รักษาตา) deadline 2026-06-08
+  - 69059447656 พาณิชย์จังหวัดบึงกาฬ ฿1.87M (จัดงานแสดงสินค้า) deadline 2026-06-05
+  - 69059255961 อบต.นาก... ฿1.32M (ถนน คสล.) deadline 2026-06-04
+- sanity: projects_seen 1,077 total, dup=0, notification_queue ไม่เปลี่ยน (7, pending 0, province_qualified 0) ✓
+
+### Q1 Refinement: announceDate reclassification (ChatGPT+Claude converged รอบ 2)
+หลัง report ChatGPT 2 รอบ — ตกลง: projectId-prefix = *creation signal* ไม่แม่น, ใช้ **announceDate** (*opportunity signal*) re-classify backlog **ครั้งเดียว → terminal** (ไม่ใช่ non-terminal loop — base rate backlog = almost all expired → false-suppress risk < re-eval cost)
+- `scripts/reclassify_backlog_by_announcedate.py` (reusable, --window-days 45): re-fetch list → announceDate (ISO CE) → suppressed_backlog ที่ announce ≥ cutoff + failed_provider_error → pending
+- **เจอจริง 3 งาน prefix เก่าแต่ announce ล่าสุด** (ที่ prefix-gate จะทิ้งถาวร): `68119177741` prefix 6811→announce 2026-05-11 (ห่าง 6 ด.!), `69029066538`, `69039425551` → ยืนยัน announceDate ถูก ไม่ใช่ทฤษฎี
+- resolve 7 ตัว (3 backlog + 4 provider_error) → **expired ทั้งหมด, failed=0** → resolver=authoritative gate ทำงาน, terminal ปลอดภัย
+- final บึงกาฬ: suppressed_backlog 319 + suppressed_expired 24 + preview_held 4 = 347
+
+### Followup
+- **announce_date column** (long-term): ChatGPT+Claude ตกลงว่า announceDate = first-class domain field (ใช้ backlog/heuristic/analytics/drift) → ควรเพิ่ม column ใน projects_seen เมื่อ consumer ถัดไป (P4 drift) มาถึง — ตอนนี้ re-fetch ครั้งเดียวพอ (YAGNI)
+- **go-live config note:** preview เป็น จ.บึงกาฬทั้งจังหวัด ไม่ใช่เฉพาะ อ.บึงโขงหลง — ChatGPT แนะ beta=ระดับจังหวัด + instrument อำเภอ/ระยะทาง + เก็บ 👍/👎 30 วัน → ค่อย tighten (= P1 feedback loop)
+- 4 preview_held = candidate จริงสำหรับ P0 go-live 5-item checklist
+
+---
+
+## งานที่ N+38: Post-Incident Hardening — Daily Backup + Test Harness Separation (2026-05-29 ~23:00)
+
+### สถานะ: ✅ เสร็จ
+
+### Root cause / สิ่งที่ทำ
+Incident: Claude รัน `python Sebastian_Customer_DB.py` ตรงๆ บน VPS → `__main__` block มี `os.remove(db)` → ลบ production DB → customers 5 → 1
+Recovery: grep LINE IDs จาก sender logs → re-seed 4 customers ภายใน 5 นาที
+**delivery_log history: accept data loss** (3 วัน, 2-3 users, ไม่คุ้มกับ reconstruct)
+
+### Fix / ผล
+- `scripts/backup_db.py` — daily backup 03:00, 14-day retention, `/opt/bms/backups/`
+- `scripts/dev_reset_db.py` — destructive reset แยกออกจาก production module, production guard
+- `Sebastian_Customer_DB.py __main__` — smoke test only, ไม่มี DB wipe
+- `bms-backup.timer` active บน VPS, ทดสอบ manual: `bms_20260529.db` (108 KB) ✅
+- Commits: `935f226` (--reset guard), `71109d5` (backup + separation)
+
+### Followup
+- schema_version tracking → defer (ยังไม่จำเป็นสำหรับ family beta)
+- project_locations จะ repopulate อัตโนมัติจาก RSS Notifier ครั้งถัดไป
+
+---
+
+## งานที่ N+37: Real User Onboarding — ณฐมน ธงยศ + Mr.suvit (2026-05-29 ~22:00)
+
+### สถานะ: ✅ เสร็จ
+
+### Root cause / สิ่งที่ทำ
+- ณฐมน ธงยศ: self-onboard ผ่าน LINE OA → follow → ตั้งค่า → นครพนม+บึงกาฬ ✅
+- Mr.suvit: follow แต่ไม่พิมพ์ตั้งค่า → Claude insert provinces ใน DB + ส่ง proactive onboarding message
+- Test notification inject → delivered 4/5 (1 ล้มเหลวเพราะ fake LINE ID ของ test account)
+
+### Fix / ผล
+- 2 real users active ใน production system
+- Mr.suvit ได้รับ welcome message พร้อมคำสั่งทั้งหมด
+
+---
+
+## งานที่ N+36: Enrichment Worker fixes + Daily Digest enrichment section (2026-05-29 ~17:45)
+
+### สถานะ: ✅ เสร็จ — deployed บน VPS
+
+### Root cause / สิ่งที่ทำ
+- `_save_retry` เพิ่ม MAX_ATTEMPTS=5 → ถ้า attempts >= 5 mark `enrichment_status='failed'` แทน retry ไปเรื่อยๆ
+- Pass 2 repair: หลัง batch loop ทุกรอบ — SELECT success+target+not-in-queue → re-enqueue (prevent success-but-never-notified)
+- Daily Digest เพิ่ม `enrichment_section()`: total/success/pending/failed + oldest_pending_age + failed threshold warning
+- tasks_section เพิ่ม Enrich_Worker log check
+
+### Fix / ผล
+- Commit `170be62` pushed + deployed บน VPS
+- VPS git pulled สำเร็จ (reset untracked Sebastian_Enrichment_Worker.py ก่อน)
+- 232 pending items มี next_retry_at=17:53-17:55 → timer จะ drain อัตโนมัติ
+
+### Followup
+- Monitor enrichment drain: คาดว่า 232 → 0 ภายใน 2026-05-29 ~19:30 (ขึ้นอยู่กับ WAF uptime)
+- ถ้า target province hit → จะมี LINE notification จริงๆ
+- Day 5-7: verify 5 readiness criteria ก่อน onboard พ่อ-แม่
+
+---
+
+## งานที่ N+35: Discovery/Enrichment Plane Separation + eGP Location Enrichment (2026-05-29 ~17:30)
+
+### สถานะ: ✅ เสร็จ
+
+### Root cause / สิ่งที่ทำ
+- เดิม Notifier v2 ทำทั้ง discovery + enrichment → rate limit ทำให้ 232/260 fail
+- แยก Notifier v3 (discovery only, ไม่ call API) + Enrichment Worker (batch 20, sleep 1.5s)
+- eGP `getProcurementDetail` return `provinceMoiId` → MOI_PROVINCE_MAP prefix 2 digits → province_name
+- `project_locations` table: hard/unknown confidence, pending/success/failed status
+
+### Fix / ผล
+- Commits: `e2d020c` (plane separation) + `385038e` (location enrichment)
+- 7 timers active บน VPS รวม bms-enrichment-worker (every 2 min)
+- 28 projects enriched สำเร็จ (ยังไม่ใช่ target province)
+
+---
+
+## งานที่ N+34: X-Announcement-Token Reverse Engineering สำเร็จ (2026-05-28 ~21:00)
+
+### สถานะ: ✅ เสร็จ — พร้อม integrate
+
+### Root cause / Discovery
+eGP process5 เพิ่ม `X-Announcement-Token` requirement ซึ่งทำให้ API เดิมได้ `{"validateAnnouncementToken": false}`
+
+### Reverse Engineering ผล
+
+**AES Key**: `"RDCrypto"` (CryptoJS passphrase, EVP_BytesToKey MD5)
+
+**Token Generation Flow (ไม่ต้อง Auth!):**
+```
+1. key = encryptData(encryptData({projectId}))
+   encryptData(obj) = URL_encode(AES_CBC_encrypt(JSON.stringify(obj), "RDCrypto"))
+2. POST /egp-atpj27-service/pb/a-egp-allt-project/announcement/generateToken
+   Body: {"key": key}
+   Headers: noToken:noToken, noDataProfile:noDataProfile
+3. Response: {"data": "<token>"} → token valid 30 minutes
+```
+
+**Endpoints ที่ทำงานได้ (ใช้ X-Announcement-Token header):**
+- `GET /egp-atpj27-service/pb/a-egp-allt-project/announcement/getProjectDetail?projectId=X`
+  → stepId, flowSeqno, announceType, projectStatus
+- `GET /egp-atpj27-service/pb/a-egp-allt-project/announcement/getProcurementDetail?projectId=X`
+  → priceAgree, reportDate, announceDate
+- `GET /egp-atpj27-service/pb/a-egp-allt-project/announcement/getProcureResult?projectId=X`
+  → procureResultList → winner (receiveNameTh, receiveTin, priceAgree, resultFlag)
+
+**Note:** Cloudflare Turnstile ต้องการเฉพาะ Search list endpoint ไม่ใช่ project-detail endpoints
+
+### Implementation
+- `scripts/probe_generate_token.py` — proof of concept สำเร็จ
+- ต้อง integrate เข้า `scripts/process5_http_client.py`
+
+### Followup
+- Integrate token generation เข้า process5_http_client.py
+- Test กับ project IDs ใน target provinces (อ.บ้านแพง, อ.บึงโขงหลง)
+- Token expiry 30 min → cache token per projectId (หรือ share token 1 อัน/รอบ)
+
+---
+
+## งานที่ N+33: 10-Day Family Beta Sprint Plan (2026-05-28 17:00)
+
+### สถานะ: 📋 แผน — รอ execute
+
+### Goal
+ให้พ่อและแม่ของคุณกัญจน์ใช้ BMS ได้จริงภายใน 10 วัน (deadline ~2026-06-07)
+
+Requirements:
+1. VPS — รัน workers เสถียร 24/7
+2. Customer portal — ตั้งค่าจังหวัดผ่านเว็บได้เอง
+3. LINE personal — แจ้งเตือนไปยัง LINE ส่วนตัวแต่ละคนแยกกัน
+
+### Architecture ที่ตัดสินใจ (ChatGPT confirmed ✅)
+
+```
+Portal UI        → Vercel (คงเดิม)
+Webhook API      → Vercel (คงเดิม)
+    ↓ POST to VPS
+FastAPI service  → VPS (ใหม่)
+    ↓
+SQLite DB        → VPS (ย้ายจาก local)
+RSS Notifier     → VPS (ย้ายจาก local)
+LINE Sender      → VPS (ย้ายจาก local)
+Queue Processor  → VPS (WAF bypass ด้วย IP ใหม่)
+Discord Digest   → VPS (centralized observability)
+```
+
+Key decisions:
+- SQLite ต่อไป (ไม่ migrate Postgres) — single writer, WAL, low QPS
+- Paid VPS (ไม่ใช่ Oracle Free) — reliability > cost ในช่วง deadline
+- Spec: Ubuntu 22.04, 2 vCPU, 2-4 GB RAM (Vultr/DigitalOcean ~$12-18/เดือน)
+
+### Sprint Plan
+
+| Day | งาน |
+|---|---|
+| 1-2 | ซื้อ VPS + install Python/git + ย้าย DB + workers + ทดสอบ WAF bypass |
+| 3-4 | FastAPI webhook service + portal wiring → bms_customers.db |
+| 5-6 | LINE follow → auto-create customer + auto-reply portal link |
+| 7-8 | ทดสอบ end-to-end กับพ่อ-แม่จริง |
+| 9-10 | Fix bugs + confirm digest + monitoring |
+
+### Defer (ไม่ทำใน 10 วัน)
+- WAF perfect recovery (RSS provisional พอแล้วสำหรับ beta)
+- Postgres migration
+- Multi-tier billing
+- 77-province extraction ครบ
+- Advanced analytics
+
+### Followup
+- RSS semantic experiment: probe ทุก 30 นาที จนกว่าจะ UP — บันทึก pubDate distribution
+- WAF test จาก VPS IP ทันทีหลัง setup
+
+## งานที่ N+32: RSS-First Pilot + Schema v1.5 source_stage (2026-05-28 11:30)
+
+### สถานะ: ✅ เสร็จ
+
+### สิ่งที่ทำ
+
+**Schema v1.5 — source_stage (latent metadata)**
+- เพิ่ม `source_stage TEXT` ใน notification_queue
+- values: `rss_provisional` | `api_enriched`
+- ยัง NOT active ใน delivery logic — เก็บไว้เป็น upgrade path สำหรับอนาคต
+
+**Pilot Semantics Decision (intentionally deferred):**
+```
+Current pilot semantics:
+  - One notification per project_id (UNIQUE constraint preserved)
+  - RSS-first notifications are terminal notifications during pilot phase
+  - Enriched re-notification intentionally deferred — not oversight, scoped decision
+```
+เหตุผล: enriched re-notification มี complexity สูง (supersession, "spam vs refinement",
+snapshot invalidation, versioned payloads, customer preference) — พิสูจน์ใน Phase 2+
+
+**RSS Notifier** — pass `source_stage="rss_provisional"` ทุก item ที่ enqueue
+
+**LINE Sender format_notification()** — เพิ่ม provenance footer:
+```
+📡 ข้อมูลเบื้องต้นจาก RSS
+```
+เมื่อ `source_stage == "rss_provisional"` เท่านั้น
+
+**WAF probe result (10:26):** Scenario C — canary INVALID (3863ms), silence ต่อ
+
+**Working hypothesis (H2-style):**
+Multi-day persistent interaction-history-sensitive regime explains observations better than
+short-horizon decay (H1). VALID→INVALID during 21h silence weakens H1 assumption
+"inactivity moves toward healthier regime". Key signal: stable 3800ms latency plateau
+across 9+ runs (mechanistically robust), not VALID→INVALID (could be classifier drift).
+
+**Probe trigger framework (declared):**
+- Class 1: Identity/interaction conditions changed
+- Class 2: Upstream regime evidence changed
+- Class 3: Crossed hypothesized upstream persistence boundary (must declare H first)
+- Class 4: Operational necessity (label as such)
+Time-based Class 3 requires declared hypothesis — not numerology.
+
+### Followup
+- รอ LINE user ID จากคุณกัญจน์ → `python scripts/seed_self_notify.py --line-id U...`
+- RSS-first pilot: `python scripts/Sebastian_RSS_Notifier.py` → `python scripts/Sebastian_LINE_Sender.py --dry-run` → live send
+- R2 probe: เมื่อมี Class 1/2/3(H-declared) trigger เท่านั้น
+
+## งานที่ N+31: WAF Morning Probe — Decision Framework (2026-05-28 03:30)
+
+### สถานะ: ⏳ รอ probe 06:00
+
+### Silence experiment state
+- Queue Processor OFF ตั้งแต่ 2026-05-27T13:20 (~14h ณ เวลาเขียน)
+- eGP API: UNKNOWN (needs_revalidation)
+- Last canary success: 2026-05-27T13:06 → early_stop avg 3,865ms
+
+### Probe plan 06:00
+```
+1. canary probe อย่างเดียวก่อน — ดู latency
+2. ถ้าผ่าน → run 1 unseen D0 ID เท่านั้น → STOP ทันที
+3. ห้าม resume scheduler แม้ healthy
+4. ห้าม run เพิ่มแม้ผลดี
+```
+
+### Decision tree (จาก ChatGPT review — ✅ ทั้งหมด)
+
+**Scenario A: canary pass + 1 ID < 600ms**
+- Interpret: "consistent with inactivity-linked recovery" (ไม่ใช่ "recovery proven")
+- Action: บันทึก latency + geometry + time-of-day → STOP
+- Next: รอ +6h หรือ next morning pulse ก่อน Phase R2
+- ห้าม: run เพิ่ม, resume scheduler, conclude stable
+
+**Scenario B: canary pass + 1 ID ≥ 3,000ms**
+- Interpret: "14h silence insufficient under current identity"
+- Action: extend silence, reduce probing frequency massively
+- Next experiment: longer silence (ยังไม่เปลี่ยน identity variables)
+- ห้าม: accept degraded, adaptive retry hammering, continuous probing
+
+**Scenario C: canary fail**
+- Interpret: "probe lane itself degraded" — ไม่ใช่ "fully banned"
+- Action: หยุด probe ทั้งหมด 24-48h minimum
+- ห้าม: test more (measurement itself = aggressive behavior ตอนนี้)
+
+### Re-engagement phases (เฉพาะหลัง Scenario A)
+```
+R1: 06:00 — 1 ID → STOP                        ← วันนี้
+R2: +6h later — 3 IDs spaced → observe geometry
+R3: +1 day — 5 IDs
+    → 10 IDs → 15 IDs → enable scheduler
+```
+**Core question: "what accumulates distrust?"** ไม่ใช่ "can we get 1 successful response?"
+
+### Key insight
+"recovery probe itself changes future interaction-history"
+→ ดังนั้น STOP after 1 ID เสมอในรอบนี้
+
+### Script
+`scripts/run_morning_probe.ps1` — พร้อมไว้รัน 06:00
+
+---
+
+## งานที่ N+30: Notification Delivery Pipeline — Phase 2 Complete (2026-05-28)
+
+### สถานะ: ✅ เสร็จ — รอ LINE user ID ก่อน first live send
+
+### สิ่งที่สร้าง
+
+**3-plane notification architecture:**
+
+| Plane | Script | Role |
+|---|---|---|
+| Discovery | Sebastian_RSS_Scraper.py | RSS → rss_queue.json (append-only log) |
+| Classify+Enqueue | Sebastian_RSS_Notifier.py ← **NEW** | province extract → confidence gate → notification_queue |
+| Deliver | Sebastian_LINE_Sender.py ← **NEW** | LINE push API, state machine, retry |
+
+**Schema ที่เพิ่ม (v1.1 → v1.4):**
+- `projects_seen`: + project_name, dept_id, dept_name, extraction_confidence, source
+- `notification_queue`: + retry_count, sending_at, worker_id, snapshot fields, is_backfill
+- `delivery_log`: append-only audit log (replaces sent_notifications)
+
+**Architecture decisions (confirmed ทุกจุดกับ ChatGPT):**
+- Option C hybrid: RSS = provisional signal, API enrich = async
+- Confidence gate: `extract_province(title) ∈ TARGET_PROVINCES` → "high" (wrapper heuristic)
+- Snapshot semantics: province/project_name/dept_name copy ลง notification_queue ตอน enqueue
+- rss_queue = immutable discovery log (ไม่เพิ่ม processed flag — projects_seen คือ dedup)
+- is_backfill: items ก่อน notifier epoch → 📦 label (ไม่ใช่ 🔔)
+- BATCH_SIZE=1 จนกว่า trust semantics validated
+
+### Dry-run results
+```
+rss_queue: 1,273 total → 260 eligible D0
+Province extracted (target): 3/260 = 1.2% → นครพนม
+All 3 = BACKFILL (queued 2026-05-26, ก่อน notifier epoch)
+```
+
+### Pilot launch sequence (confirmed โดยคุณกัญจน์)
+```
+Phase 0: seed customer (ต้องการ LINE user ID จาก LINE Developers Console)
+Phase 1:
+  1. seed_self_notify.py --line-id U... --provinces นครพนม บึงกาฬ
+  2. Sebastian_RSS_Notifier.py --dry-run   → verify classification
+  3. Sebastian_LINE_Sender.py --dry-run    → verify formatting
+  4. Sebastian_LINE_Sender.py              → manual live send (1 item)
+  5. inspect LINE message + delivery_log + queue state + dedup
+  6. rerun sender → verify no duplicate
+  7. เปิด Task Scheduler BidMaster_RSS_Notifier + BidMaster_LINE_Sender (LAST STEP)
+```
+
+### Pilot success metrics (4 layers)
+- Transport: LINE API success, queue transitions ถูก, no stuck, retry works, no duplicate
+- Semantic: province ถูก, title ไม่ misleading, backfill label ถูก
+- Usability: readable ใน <3 sec scan
+- Operational: scheduler rerun safe, restart safe, replay safe, DB consistent
+- Observation window: 3-5 วัน ก่อนเพิ่ม customer จริง
+
+### Blocking
+- LINE user ID: ดูจาก LINE Developers Console → Basic Settings → "Your user ID"
+
+### Followup
+- เปิด Task Scheduler หลัง first live send validate แล้วเท่านั้น
+- WAF morning probe (~06:00) ยังค้าง — Queue Processor ยัง OFF
+
+---
+
+## งานที่ N+29: Behavioral Characterization — WAF Trust Envelope Day 1 (2026-05-26 → 27)
+
+### สถานะ: ⏳ กำลังเก็บข้อมูล — รอ 06:00 pipeline เช้านี้
+
+### สรุปสถานะ ณ 00:45 น.
+
+**Queue Processor runs วันนี้:**
+| Run | เวลา | Result | avg_ms | p95_ms | gap_min |
+|-----|------|--------|--------|--------|---------|
+| #1 | 18:21 | clean_pass 15/15 | N/A | N/A | — |
+| #2 | 18:35 | clean_pass 15/15 | 657 | 3,429 | 14.6 |
+| #3 | 19:05 | clean_pass 15/15 | 450 | 519 | 30.0 |
+| #4 | 19:36 | **early_stop 0/15** | 3,875 | 3,937 | 30.1 |
+| #5 | 22:06 | **early_stop 0/15** | 3,878 | 3,905 | 150 |
+| #6 | 00:36 | **early_stop 0/15** | 3,908 | 3,913 | 150 |
+
+**API state ตอนนี้:** BLOCKED until 02:36 น.
+**RSS:** ยังไม่กลับ — last item queued_at = 2026-05-26T06:54:00
+**Queue depth:** ~167 items (D0:148, B0:43, W0:21 ตอนเริ่ม)
+
+### สิ่งที่รู้แล้วจากการ characterize
+- WAF มี memory — behavior ไม่ stateless
+- Pattern: 3 clean_pass → degraded regime เริ่มทันที
+- Degradation = distribution-wide (avg≈p95 ทั้ง 3 degraded runs) ไม่ใช่ spike เดี่ยว
+- 2.5h inactivity ไม่ช่วย recovery เลย (Run #5, #6 ยัง 3,900ms)
+- Canary pass ≠ batch safe (canary = "not fully banned" เท่านั้น)
+- Control plane ทำงานถูกต้อง (blocked_until, scheduler, telemetry ครบ)
+
+### สิ่งที่ยังไม่รู้
+- Variable อะไรที่ trigger recovery จริง (time-of-day? cumulative volume? IP reputation?)
+- Memory half-life ของ WAF
+- 2h cooldown อาจไม่ใช่ค่าที่ถูก — ตั้งขึ้นมาโดยไม่มี evidence
+
+### Next high-value datapoint
+**06:00 pipeline พรุ่งนี้** — ถ้า clean_pass → consistent with time-of-day-linked recovery
+ถ้า early_stop อีก → governing variable ไม่ใช่ time-of-day
+
+### Silence Experiment (เริ่ม 2026-05-27T13:20)
+- BidMaster_Queue_Processor: **DISABLED** ตอน 13:20 น.
+- Frame: "silence experiment" ไม่ใช่ "cooldown" — ยังไม่รู้ว่า upstream มี notion ของ recovery window จริงไหม
+- Upstream จะเห็น "absence" ครั้งแรก — สำคัญถ้า scoring เป็น rolling interaction-based
+
+**Morning probe plan (~06:00–08:00 พรุ่งนี้):**
+1. canary probe อย่างเดียวก่อน — ดู latency
+2. ถ้าผ่าน → run **1 ID เดียวเท่านั้น** โดยเลือกแบบ deterministic:
+   "first unseen D0 after RSS recovery timestamp" (ไม่เลือกด้วย intuition)
+3. Observe latency geometry → **STOP ทันที**
+4. ห้าม resume scheduler แม้ healthy
+5. ถ้า healthy → ยังไม่แปลว่า "silence fixed it" — อาจเป็น low-volume allowance หรือ probe tolerance
+   next question ยังคือ: "does sustained interaction re-trigger degradation?"
+
+**Interpretation rules:**
+- ถ้า healthy → "consistent with inactivity-linked recovery under current identity"  (ไม่ใช่ "24h reset proven")
+- ถ้ายัง degraded → "24h inactivity alone insufficient under persistent identity" (ตัด time-only hypothesis)
+
+### Engineering backlog (รอ characterization เสร็จก่อน)
+- P0: Fix GH Runner (GHA `shell: pwsh`) — ง่าย, 30 นาที
+- P1: Winner sweep script แยกสำหรับ W0 — ปานกลาง
+- P2: CGD integration — ปานกลาง-ยาก
+- P3: Scale 77 จังหวัด — ยากที่สุด
+
+### Params ที่ freeze อยู่ (ห้ามเปลี่ยนจนกว่า characterization จบ)
+- limit=15, jitter=4-9s, workers=3, cooldown=2h (early_stop), cooldown=30min (canary_fail)
+
+---
+
+## งานที่ N+28: Adaptive Ingestion Control Loop — Universe B Day 1 (2026-05-26)
+
+### สถานะ: ✅ เสร็จ (commits af0e915→3be472c) / ⏳ characterization phase คืนนี้
+
+### สิ่งที่ทำ
+- Universe B เกิด 12:43 น. — 3 rows แรก (discovered_at + enrichment_version=v2_process5)
+- --from-queue ย้ายออกจาก GHA ไป local Task Scheduler (eGP behavioral block ต่อ datacenter IP)
+- Local machine = ingestion authority, GHA = maintenance layer
+- BidMaster_Queue_Processor: canary probe + early_stop + blocked_until + jitter 4-9s
+- Queue Health Snapshot: depth, oldest_age, drain_eta_hours, drain_eta_confidence
+- failure_mode taxonomy: canary_fail | early_stop | partial | zero_processed | clean_pass
+- Envelope history rolling last 5 (EWMA-lite, non-stationary env)
+
+### Commits
+- af0e915: Queue Processor + limit 15 + jitter
+- 680ba17: Canary probe + early_stop (3 consecutive invalid)
+- b16810a: blocked_until persistence (circuit breaker)
+- 123e2cb: time-to-block envelope logging
+- 3058e9c: queue_health.py + weighted D0>B0>W0 sort + drain_eta
+- 42e7b0c: envelope history rolling-5 + drain_eta_confidence
+- 3be472c: failure_mode classification ทุก code path
+
+### สถานะ 18:00 Playbook
+1. Manual trigger: `.\scripts\run_queue_processor.ps1`
+2. Watch canary → ถ้า HEALTHY + 3+ IDs valid → Enable-ScheduledTask BidMaster_Queue_Processor
+3. เก็บ failure_mode จากรอบแรก — Scenario B (partial/early_stop) คือ valuable signal
+
+### TODO พรุ่งนี้ (หลังมีข้อมูลคืนนี้)
+- [ ] Add `first_invalid_after_n_requests` (≈ processed_before_stop + 1) ใน envelope — raw data มีแล้ว
+- [ ] Add `time_to_first_invalid_seconds` (run_started_at → first_invalid_at) — raw data มีแล้ว
+- [ ] เปลี่ยน drain_eta_hours ให้ใช้ actual rolling throughput แทน bootstrap 80%
+- [ ] Review tonight's failure_mode pattern → diurnal trust curve เริ่มเห็น?
+- [ ] Add `rss_avg_response_ms` + `rss_latency_p95` ใน RSS workflow log — latency inflation อาจเป็น early warning ก่อน canary fail
+- [ ] Cross-correlate: ถ้า RSS latency สูงขึ้น + API partial degradation พร้อมกัน → strengthen shared reputation hypothesis
+
+### Insight สำคัญที่บันทึกไว้
+- zero_processed ≠ canary_fail: probe path trusted แต่ sustained fetch ถูก downgrade คนละ phenomenon
+- partial + early_stop = signature ของ upstream WAF mood ณ เวลานั้น
+- multi-run stability > single-run clean_pass ก่อน scale ใดๆ
+- goal คืนนี้: observe shape of degradation ไม่ใช่ drain queue
+
+---
+
+## งานที่ N+23: Dept ID Coverage Research + Global RSS Mode (2026-05-21)
+
+### สถานะ: ✅ เสร็จ (commit ec190bf)
+
+### สิ่งที่ค้นพบ
+1. เราสแกน deptId 0001-9999 ครบแล้ว → พบ 57 active D0 (max ID=2603)
+2. ไทยมี 8,500+ หน่วยงาน แต่ส่วนใหญ่ไม่มี D0 ตอนนั้น (เป็น W0/P0 หรือไม่มีโครงการ)
+3. **Breakthrough: Global RSS (ไม่ระบุ deptId) → คืน 20 items จากทุก dept ทั่วประเทศ!**
+4. 5-digit deptId (10000+) ไม่มีงาน → confirmed 4-digit only
+5. P0/B0/W0 ใน range 0001-0300 ไม่ได้ depts เพิ่ม
+
+### Fix ที่ทำ
+- เพิ่ม `--global` mode ใน Sebastian_RSS_Scraper.py
+  - poll D0+P0+W0 โดยไม่ระบุ deptId → ครอบคลุม อบต./เทศบาล/รัฐวิสาหกิจทุกแห่ง
+  - ทดสอบ: 60 items, 59 new queued ในครั้งแรก ✅
+- อัปเดต GHA workflow: global step (2 min) + per-dept full-poll (8 min) ทุกชั่วโมง
+
+### Followup
+- กลับมาทำ Portal ข้อ 2-10
+
+---
+
+## งานที่ N+22: Portal Redesign v3 — ทำใหม่ตาม brief จริง (2026-05-21)
+
+### สถานะ: 🚧 กำลังทำ — ⏸ pause (ไปทำ RSS ก่อน)
+
+### ความคืบหน้า
+- ✅ ข้อ 1: discount ทุก bidder จาก price_proposal, per-job %, reliability score, ไม่จำกัดจำนวน (commit 96fec3e, deployed)
+- 🔲 ข้อ 2: History 2 tab (ค้นหาคู่แข่ง / บริษัทฉัน), layout column ไม่ใช่การ์ด
+- 🔲 ข้อ 3: Classes → บริษัท, เพิ่มบริษัท, ประเภทธุรกิจ checkbox
+- 🔲 ข้อ 4: พื้นที่ครอบคลุม — slider ตรง, Haversine แม่น, Leaflet map จริง
+- 🔲 ข้อ 5: Keywords defaults จาก deep research + fix ปุ่มบันทึก
+- 🔲 ข้อ 6: Budget (บาท) + SME/MIT/เวลาแจ้งเตือน per company หลัง keyword
+- 🔲 ข้อ 7: Profile — ข้อมูลคน (ชื่อ/gmail/โทร/LINE) + บริษัทแต่ละการ์ด
+- 🔲 ข้อ 8: Star per company (popup ถามบริษัท) + งานที่สนใจแยกบริษัท
+- 🔲 ข้อ 9: ประวัติประมูลตัวเองแยกรายบริษัท
+- 🔲 ข้อ 10: Upload ไฟล์แยกรายบริษัท
+
+### Followup
+- กลับมาทำ Portal ข้อ 2-10 หลังจัดการ RSS เสร็จ
+
+---
+
+## งานที่ N+21: Portal Redesign v2 — 10 items (2026-05-21)
+
+### สถานะ: ⚠️ ไม่ตรง brief — ทำใหม่ใน N+22 (commit 047f010)
+
+### สิ่งที่ทำ
+ทำ Portal Redesign ครบ 10 ข้อในรอบเดียว:
+
+1. **DB**: `competitor_profiles` materialized view เพิ่ม `avg_discount_from_budget_pct` + `stddev_discount_pct` — budget column มี comma จึงต้องใช้ `REPLACE(budget, ',', '')` ก่อน cast
+2. **History**: discount% per bidder จาก budget, 3-tab layout (งาน/บริษัท/บริษัทฉัน), `ProfileView` stats 6 ช่อง, own-company bid history tab
+3. **Nav**: เพิ่ม "ประวัติ" tab ใน bottom nav → 5 items, font-size 9px
+4. **Classes**: rename "Business Class" → "บริษัท", keywords เป็น checkboxes per type (12 ประเภท), Leaflet+OSM map preview, per-company filter tab (budget/SME/MIT/notifyTime), file upload tab
+5. **Profile**: เพิ่ม LINE USER ID, account status grid, expiry + days left (แดงถ้า ≤7 วัน)
+6. **World**: star/favorite system, "งานที่สนใจ" section ด้านบน, toggle persist ลง DB
+7. **APIs**: `/api/portal/history/mine` (own bids by company name) + `/api/portal/upload` (Vercel Blob + graceful fallback)
+8. **Deps**: leaflet, @types/leaflet, @vercel/blob
+
+### Fixes ระหว่างทาง
+- Budget มี comma format `'24,600,000.00'` → REPLACE before NUMERIC cast
+- Python Windows CP1252 UnicodeEncodeError → ลบ emoji จาก print statements
+- Leaflet SSR error → `dynamic(() => import(...), { ssr: false })`
+- KeywordEditor `onSave` → `onClose` (กด บันทึก แล้วไม่ย้อน)
+
+### Followup
+- Push to Vercel (ต้อง confirm)
+- ตั้ง `BLOB_READ_WRITE_TOKEN` ใน Vercel env vars สำหรับ file upload
+
+---
+
+## งานที่ N+20: ซ่อม RSS Catalog — กู้ 475→2111 + harden workflow (2026-05-20 13:30)
+
+### สถานะ: ✅ เสร็จแล้ว (commit b7e6044)
+
+### Root Causes ที่เจอ (4 อย่างซ้อนกัน)
+1. **catalog หาย**: `gentle_scan_egp.py` สร้าง 2091 entries (May 18 22:00) แต่ไม่ commit → ทุกครั้งที่ dashboard_extractor ทำ `git pull` (commit e714fdf) → reset เป็น 475 entries
+2. **dashboard โกหก**: `rss_catalog_stats()` ใช้ `max(catalog_file, last_run.catalog_size)` → แสดง 2111 ทั้งที่ไฟล์จริง 475
+3. **GHA timeout**: POLL_WORKERS=4 × 15s timeout × 2111 depts → 10 นาที (success case), 25+ นาที (server ช้า) → cancelled
+4. **Commit late**: catalog commit step อยู่หลัง queue refresh → cancelled = catalog หาย (ไม่ถูก commit)
+
+### Fixes
+- ✅ กู้ catalog 475 → 2111 จาก `git stash` (มี diff +8775 lines เก็บไว้)
+- ✅ `dashboard_extractor.py`: ใช้ catalog file เป็นความจริง ลบ max() fallback
+- ✅ `Sebastian_RSS_Scraper.py`: POLL_WORKERS 4 → 8, timeout 15s → 10s (fail-fast)
+- ✅ `.github/workflows/rss_scraper.yml`:
+  - job timeout 25 → 35 นาที
+  - step-level timeout 15 นาที (แต่ละ step)
+  - **early catalog commit** ก่อน queue refresh + `if: always()`
+
+### ผลลัพธ์
+- catalog file: 2111 entries (41 active, 2070 empty, 21.11% coverage)
+- dashboard แสดงเลขจริง: 2111
+- GHA run ต่อไป จะใช้ code ใหม่ — มี slack timeout มากขึ้น + commit ก่อน
+
+### Followup
+- monitor GHA run ใหม่ (26145215108) ว่า poll เร็วขึ้นจาก 10 → ~5-6 นาที (8 workers) ไหม
+- ถ้า server ยังบล็อก local IP อยู่ → ต้องพึ่ง GHA อย่างเดียว
+
+---
+
+
+## งานที่ 1: แก้ Sheet cost_data_By_Dexter
+
+### สถานะ: ✅ เสร็จแล้ว (2026-04-29)
+
+**สิ่งที่ทำ:**
+- ~~Shift rows 48-113 (เก่า) → rows 37-102 (ใหม่) ลบช่องว่าง 11 แถว~~
+- ~~แก้ bug G column ใน DB/RB rows: เพิ่ม $ lock + B column condition~~
+- ~~เพิ่ม Section 6 (งาน Joint) คืน: Metal Cap, Joint Filler, Sealer EJ/CJ (rows 50-54)~~
+- ~~เพิ่ม Section 7 header "ท่อระบาย" + Shift ท่อระบาย→rows 56-58~~
+- ~~อัปเดต SUM: I65=SUM(I22:I63), I75=SUM(I69:I74), I86=SUM(I79:I85)~~
+- ~~อัปเดต summary refs: G91=I65, G92=I75, G93=I86, G94=G91+G92+G93~~
+- ~~G101=G94*B100 (ราคาประมูล Factor F), G103=% กำไร~~
+- ~~แก้ #ERROR! row (====formula) → blank~~
+- ~~แก้ typo "ท่อระบย" → "ท่อระบาย"~~
+- ~~ล้าง rows 103-120~~
+
+**โครงสร้างปัจจุบัน:**
+| Row | Content |
+|-----|---------|
+| 1-21 | ข้อมูลโครงการ (W, L, T, St, Sh, CJ, EJ, Factor F) |
+| 22-36 | Section 1-4: ดิน, ทราย, คอนกรีต, Wire Mesh |
+| 37-49 | Section 5: Dowel Bar / Tie Bar (DB10-RB25) |
+| 50-54 | Section 6: งาน Joint (Metal Cap, Filler, Sealer EJ/CJ) |
+| 55 | header Section 7: ท่อระบาย |
+| 56-63 | Section 7-8: ท่อระบาย + อื่นๆ |
+| 65 | ■ รวมต้นทุนวัตถุดิบ =SUM(I22:I63) |
+| 69-74 | ค่าแรงงาน |
+| 75 | ■ รวมค่าแรง =SUM(I69:I74) |
+| 79-85 | ค่าเครื่องจักร |
+| 86 | ■ รวมเครื่องจักร =SUM(I79:I85) |
+| 91-103 | สรุปต้นทุน, Factor F, ราคาประมูล, % กำไร |
+
+---
+
+## งานที่ 2: Python Scraper — gprocurement.go.th
+
+### สถานะ: ✅ ทำงานได้จริง (2026-04-29)
+
+**ไฟล์:** `scripts/Sebastian_Scraper.py`
+
+**สิ่งที่ค้นพบและทำสำเร็จ:**
+- ~~ค้นพบว่า process3 (เก่า) ถูกปิด → เว็บย้ายมา process5 (Angular SPA)~~
+- ~~ค้นพบ API จริง: `process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement`~~
+- ~~แก้ปัญหา Cloudflare Turnstile — รอปุ่มค้นหา enabled ก่อน search~~
+- ~~แก้ปัญหา Angular form binding — ใช้ `keyboard.type()` แทน `fill()`~~
+- ~~Pagination ผ่าน `page.evaluate(fetch(url))` ในบริบท browser~~
+- ~~Multi-keyword search 21 keywords บน session เดียว ไม่ต้อง reload~~
+- ~~Filter เฉพาะพื้นที่: อ.บ้านแพง นครพนม + อ.บึงโขงหลง บึงกาฬ~~
+- ~~Deduplication ด้วย projectId (จาก API โดยตรง)~~
+- ~~บันทึก seen_ids.json + local JSON backup~~
+
+**Keywords (21 รายการ):**
+- Tier 1: ถนนคอนกรีต, ก่อสร้างถนนคอนกรีต, ปูคอนกรีต, คอนกรีตเสริมเหล็ก
+- Tier 2: ก่อสร้างถนน, ซ่อมแซมถนน, ปรับปรุงถนน, งานโยธา, ท่อระบายน้ำ คสล., Dowel Bar, คอนกรีตผสมเสร็จ, ฝายคอนกรีต, ลานคอนกรีต ฯลฯ
+
+**วิธีรัน:**
+```
+1. Start-Process "chrome.exe" -ArgumentList "--remote-debugging-port=9222","--no-first-run","--user-data-dir=C:\Temp\ChromeDebug"
+2. python scripts/Sebastian_Scraper.py
+```
+
+**ยังขาด:**
+- [ ] ทดสอบ `append_jobs_to_sheet` full run จริงกับ Sheets
+- [ ] TOR URL — process5 API ไม่ return ลิงก์ PDF (ต้องเปิดหน้ารายละเอียด projectId แยก)
+
+---
+
+## งานที่ 3: Document Downloader
+
+### สถานะ: ✅ เขียนเสร็จ (รอทดสอบ)
+
+**ไฟล์:** `scripts/Sebastian_Doc_Downloader.py`
+
+- อ่านงาน status='new' + D0/M-step จาก Sheet 1
+- ลอง API endpoint 3 รูปแบบสำหรับ file list
+- Fallback: navigate ไป detail page → capture API + HTML links
+- จำแนก pr4, pr5, tor จากชื่อไฟล์
+- Download ไปยัง `downloads/<job_id>/`
+- อัปเดต status: docs_downloaded / docs_failed
+
+---
+
+## งานที่ 4: ปร.4/5 Parser
+
+### สถานะ: ✅ เขียนเสร็จ (รอทดสอบ)
+
+**ไฟล์:** `scripts/Sebastian_PR45_Parser.py`
+
+- รองรับ PDF (pymupdf) และ Excel (openpyxl)
+- Auto-detect ปร.4 vs ปร.5 จากชื่อไฟล์และเนื้อหา
+- ปร.4: แยก line items → {description, quantity, unit, unit_price, total}
+- ปร.5: ดึง direct_cost, overhead_pct, profit_pct, total_price
+
+---
+
+## งานที่ 5: TOR AI Analyzer
+
+### สถานะ: ✅ เขียนเสร็จ (รอทดสอบ)
+
+**ไฟล์:** `scripts/Sebastian_TOR_Analyzer.py`
+
+- อ่าน TOR PDF → clean + prioritize relevant sections
+- เรียก Claude API (claude-sonnet-4-6) ครั้งเดียวต่องาน
+- Output: W, L, T, St, grade, dowel_bar, tie_bar, wire_mesh, CJ, EJ, confidence
+
+---
+
+## งานที่ 6: JSON Merger + Sheet 2 Writer
+
+### สถานะ: ✅ เขียนเสร็จ (รอทดสอบ)
+
+**ไฟล์:** `scripts/Sebastian_JSON_Merger.py` + `scripts/Sebastian_Sheet2_Writer.py`
+
+- Merger: ผนวก JSON (ปร.4/5) + JSON (TOR) + raw_job → Combined JSON
+- Writer: Combined JSON → Sheet 2 (job_specs)
+- Sheet 2 columns: job_id, title, W, L, T, St, grade, dowel, wire_mesh, CJ, EJ, budget, scores
+
+---
+
+## งานที่ 7: Cost Filler
+
+### สถานะ: ✅ เขียนเสร็จ (รอทดสอบ)
+
+**ไฟล์:** `scripts/Sebastian_Cost_Filler.py`
+
+- อ่าน Sheet 2 status='analyzed'
+- เติม C11=W, C12=L, C13=T, C14=St, C16=CJ, C17=EJ ใน cost_data_By_Dexter
+- รอ 3 วินาทีให้ Sheets recalculate
+- อ่าน output: I65, I75, I86, G94, G101, G103
+- บันทึก cost_results JSON สำหรับ Ranker
+
+---
+
+## งานที่ 8: Ranker
+
+### สถานะ: ✅ เขียนเสร็จ (รอทดสอบ)
+
+**ไฟล์:** `scripts/Sebastian_Ranker.py`
+
+- โหลด cost_results JSON
+- Score: margin(40%) + budget(30%) + confidence(20%) + completeness(10%)
+- บันทึกลง Sheet 4 (ranked_jobs) เรียงอันดับสูง → ต่ำ
+
+---
+
+## Master Pipeline
+
+**ไฟล์:** `scripts/Sebastian_Pipeline.py`
+
+```
+python Sebastian_Pipeline.py                    # รันทั้ง 5 steps
+python Sebastian_Pipeline.py --step scrape
+python Sebastian_Pipeline.py --step download
+python Sebastian_Pipeline.py --step analyze
+python Sebastian_Pipeline.py --step cost
+python Sebastian_Pipeline.py --step rank
+```
+
+---
+
+## แผนงานถัดไป (เรียงตามลำดับ)
+
+1. ~~**Full Run Test (Scraper)** — เปิด Chrome → รัน Scraper จริง → ตรวจ Sheet 1~~ ✅ 601 งาน
+2. ~~**Full Run Test (Doc Download)** — รัน Doc Downloader → ยืนยัน API endpoint~~ ✅
+3. ~~**Test ปร.4/5 Parser** — Claude Vision อ่าน PDF สแกนได้~~ ✅
+4. ~~**Test TOR Analyzer** — Vision อ่าน pB2 ได้ W/L/T~~ ✅
+5. ~~**End-to-end Test** — รัน full pipeline 1 งานสำเร็จ~~ ✅ job 69049122041
+6. **กรอกราคา/หน่วย** ใน cost_data_By_Dexter column H → รัน cost step ใหม่
+7. **Task Scheduler** — ตั้ง Windows Task Scheduler รันอัตโนมัติ
+
+---
+
+## Checkpoint — 2026-04-29 22:47
+
+### สถานะล่าสุด
+Pipeline redesign เสร็จสมบูรณ์ (4-Sheet design)
+
+### สิ่งที่เพิ่งทำ
+- อัปเดต `work_overview.md` + `future_development.md` เป็น 4-Sheet design ใหม่
+- เพิ่ม `seq_no`, `announce_type`, `step_id` ลง job dict ใน `Sebastian_Scraper.py`
+- เขียน script ใหม่ครบ 6 ไฟล์:
+  - `Sebastian_Doc_Downloader.py` — Chrome CDP download ปร.4/5/TOR
+  - `Sebastian_PR45_Parser.py` — อ่าน ปร.4 (BOQ) + ปร.5 (price summary)
+  - `Sebastian_TOR_Analyzer.py` — Claude API วิเคราะห์ TOR → JSON
+  - `Sebastian_JSON_Merger.py` — ผนวก JSON สองอัน → combined
+  - `Sebastian_Sheet2_Writer.py` — combined JSON → Sheet 2 (job_specs)
+  - `Sebastian_Cost_Filler.py` — Sheet 2 → เติม C11-C17 → อ่าน output Sheet 3
+  - `Sebastian_Ranker.py` — cost results → score → Sheet 4
+- อัปเดต `Sebastian_Pipeline.py` ให้ครอบคลุม 5 steps ใหม่
+
+### สิ่งที่ยังไม่ได้ทำ
+- ยังไม่ได้รัน Full Run Test (ต้องการ Chrome port 9222)
+- ยังไม่ทราบ exact API endpoint สำหรับ document download (Doc Downloader มี fallback + debug capture)
+- ยังไม่ได้ตั้ง Task Scheduler
+
+### ต้องทำต่อ
+1. เปิด Chrome: `Start-Process "chrome.exe" -ArgumentList "--remote-debugging-port=9222","--no-first-run","--user-data-dir=C:\Temp\ChromeDebug"`
+2. รัน `python scripts/Sebastian_Scraper.py` → ตรวจ Sheet 1
+3. รัน `python scripts/Sebastian_Doc_Downloader.py` → ดู `downloads/debug/` → หา API endpoint
+4. ต่อ pipeline ตามผลที่ได้
+
+---
+
+## Checkpoint — 2026-05-07
+
+### สถานะล่าสุด
+Scraper routing fix + data integrity fixes เสร็จสมบูรณ์
+
+### สิ่งที่เพิ่งทำ
+- ~~แก้ `Sebastian_Scraper.py`: e-bidding jobs → raw_jobs_bidding ด้วย (เดิมเขียนแค่ raw_jobs)~~
+- ~~คัดลอก 2 งาน e-bidding ที่ตกค้างจาก raw_jobs → raw_jobs_bidding: 69019024418, 69039054231~~
+- ~~แก้ job_specs: ชื่อ column ไทยครบ 40 คอลัมน์, มี/ไม่มี แทน Y/N, สูง/กลาง/ต่ำ แทน high/medium/low~~
+- ~~แก้ Scraper filter: กรองเฉพาะงานก่อสร้าง (CONSTRUCTION_KEYWORDS) ไม่ผ่านแค่พื้นที่~~
+- ~~เพิ่ม Tier system: Tier 1 (ถนนคอนกรีต) = คำนวนเต็ม, Tier 2 = ยังไม่ได้คำนวน~~
+- ~~เพิ่ม tor_result.json cache ใน TOR Analyzer~~
+- ~~เพิ่มฟิลด์ใหม่ใน TOR: warranty_period_days, required_tests, required_delivery_documents, special_conditions~~
+- ~~แก้ Doc Downloader: ตรวจ renamed folder ก่อนสร้างใหม่~~
+
+### raw_jobs_bidding ปัจจุบัน (6 งาน)
+| job_id | ชื่องาน (สั้น) | status |
+|--------|----------------|--------|
+| 68129570964 | บำรุงถนน นพ.3023 | no_boq |
+| 69019077732 | เสริมผิวแอสฟัลท์ | docs_downloaded |
+| 69049020320 | เพิ่มค่าสัมประสิทธิ์ผิวทาง | no_boq |
+| 68119260653 | ปรับปรุงถนนแอสฟัลต์ติก | docs_downloaded |
+| 69019024418 | เสริมผิวจราจรด้วยแอสฟัลท์คอนกรีต | **new** |
+| 69039054231 | ปรับปรุงถนนคอนกรีตเสริมเหล็ก | **new** |
+
+### ต้องทำต่อ
+1. รัน Doc Downloader สำหรับ 2 งาน status='new' (ต้องการ Chrome port 9222)
+2. รัน pipeline: analyze → merge → sheet2_writer สำหรับงานใหม่
+3. กรอกราคา/หน่วย ใน cost_data_By_Dexter column H (รอ Phase 0)
+
+---
+
+## Checkpoint — 2026-04-30 03:35
+
+### สถานะล่าสุด
+Scraper Full Run Test สำเร็จสมบูรณ์
+
+### สิ่งที่เพิ่งทำ
+- รัน `Sebastian_Scraper.py` พร้อม Tier 0 keywords (บ้านแพง, บึงโขงหลง)
+- ได้งานใหม่ **601 รายการ** บันทึกลง Sheet 1 (raw_jobs) + `data/jobs_20260430_0335.json`
+  - บ้านแพง: 300/300 ✅
+  - บึงโขงหลง: 299/300 (1 ซ้ำ) ✅
+  - ลานคอนกรีต: 2 bonus
+- Tier 1/2 keywords โดนrate limit หลัง Tier 0 แต่ได้ 0 พื้นที่อยู่แล้ว — ไม่กระทบ
+- Session reinit ทำงานถูกต้อง (20s cooldown + Cloudflare Turnstile ผ่าน)
+
+### สิ่งที่ยังไม่ได้ทำ
+- ยังไม่ได้รัน Doc Downloader
+- ยังไม่ทราบ exact API endpoint สำหรับ document download
+- ยังไม่ได้ตั้ง Task Scheduler
+
+### ต้องทำต่อ
+1. รัน `python scripts/Sebastian_Doc_Downloader.py` → ดู `downloads/debug/` → หา API endpoint
+2. ต่อ pipeline ตามผลที่ได้
+
+---
+
+## Checkpoint — 2026-05-01 14:25
+
+### สถานะล่าสุด
+**End-to-End Pipeline ผ่านครั้งแรก** ✅
+
+### API Endpoints ที่ค้นพบ (สำคัญมาก)
+| Endpoint | Method | Header | หมายเหตุ |
+|----------|--------|--------|----------|
+| `/egp-project-service/listProjectPriceBuildZipByProjectId?projectId={pid}` | GET | `apikey: Liaqv30xLpFGOlJPW1N0hPKJkbO7vWUS` | ดึง zipFileId |
+| `/egp-upload-service/v1/downloadFileTest?fileId={zipFileId}` | GET | ไม่ต้องการ | ดาวน์โหลด zip จริง |
+
+### โครงสร้าง BOQ Zip
+```
+pB0.pdf — ประกาศราคากลาง
+pB1.pdf — รายการตรวจสอบประมาณการ (มี T, St)
+pB2.pdf — แบบมาตรฐานงานถนน (มี W, L, T, CJ)
+pB3.pdf — แบบสรุปราคากลาง (ปร.5) ← อ่านด้วย Claude Vision → budget_price
+pB4.pdf — แผนที่โครงการ
+```
+
+### Script ที่แก้ไขวันนี้
+- `Sebastian_Doc_Downloader.py` — เขียนใหม่ทั้งหมด ใช้ 2-step API flow
+- `Sebastian_PR45_Parser.py` — เพิ่ม Claude Vision fallback สำหรับ PDF สแกน
+- `Sebastian_TOR_Analyzer.py` — เพิ่ม `analyze_job_tor_vision()` อ่าน pB1/pB2/pB3
+- `Sebastian_Sheet2_Writer.py` — เพิ่ม upsert (อัปเดตแถวที่มี W/L ใหม่)
+- `Sebastian_Cost_Filler.py` — แก้ OUTPUT_CELLS (I77, I84, G91, G98, G100) + default CJ=10, EJ=100 (มาตรฐานถนน คสล. ไทย)
+
+### ผลทดสอบ job 69049122041 (บ้านแพง ถนน คสล.)
+- budget จาก Sheet 1: 497,000 บาท
+- budget จาก ปร.5 (Vision): 491,741.89 บาท ✅
+- W=5.0, L=145.0, T=0.15 (Vision จาก pB2) ✅
+- Pipeline: download → analyze → cost → rank ผ่านครบ ✅
+- ต้นทุน = 2,030 บาท (ผิด) เพราะ **ยังไม่ได้กรอกราคา/หน่วย** ใน cost_data_By_Dexter column H
+
+### Sheet ที่สร้างใหม่
+- `job_specs` (Sheet 2) — สร้างวันนี้ มี 5 งาน
+
+### ต้องทำต่อ
+1. **คุณกัญจน์กรอกราคา/หน่วย** ใน cost_data_By_Dexter column H
+2. รัน `python scripts/Sebastian_Pipeline.py --step cost` ใหม่
+3. ตั้ง Windows Task Scheduler
+
+---
+
+## Checkpoint — 2026-05-01 (session 2)
+
+### สถานะล่าสุด
+Task Scheduler พร้อมใช้งาน — pipeline รันอัตโนมัติทุกเช้า 06:00 น.
+
+### สิ่งที่ทำสำเร็จ
+- ~~**Windows Task Scheduler** — ลงทะเบียน `BidMaster-DailyPipeline` รันทุก 06:00 น.~~ ✅
+- ~~**ปิด Sleep อัตโนมัติ** — AC Power Sleep เดิม 45 นาที → ตั้งเป็น Never~~ ✅
+- ~~**แก้ CJ/EJ defaults** — CJ=10m, EJ=100m (มาตรฐานถนน คสล. ไทย)~~ ✅
+
+### Pipeline ที่รันได้จริงตอนนี้ (06:00 น. ทุกวัน)
+```
+scrape → download → analyze → rank
+```
+
+### สิ่งที่ยังค้างอยู่ (ยังไม่รวมใน pipeline อัตโนมัติ)
+| งาน | สาเหตุ | ต้องทำ |
+|-----|--------|--------|
+| Cost step | ราคา/หน่วย ใน cost_data_By_Dexter column H ยังว่าง | คุณกัญจน์กรอกราคา → รัน cost step ใหม่ |
+| Classifier (6 Sheets) | `Sebastian_Classifier.py` ยังไม่ได้เขียน | เขียน script + สร้าง 3 sheet ที่เหลือ |
+
+### 6-Sheet System — สถานะ
+| Sheet | สถานะ |
+|-------|-------|
+| `raw_jobs_all` | ✅ สร้างแล้ว (ยังว่าง — รอ Classifier) |
+| `raw_jobs_related` | ✅ สร้างแล้ว (ยังว่าง — รอ Classifier) |
+| `raw_jobs_bidding` | ✅ สร้างแล้ว (ยังว่าง — รอ Classifier) |
+| `raw_jobs_awarded` | ❌ ยังไม่สร้าง |
+| `raw_jobs_direct` | ❌ ยังไม่สร้าง |
+| `raw_jobs_cancelled` | ❌ ยังไม่สร้าง |
+
+### ต้องทำต่อ
+1. **คุณกัญจน์กรอกราคา/หน่วย** ใน cost_data_By_Dexter column H → รัน `--step cost` ใหม่
+2. ~~เขียน `Sebastian_Classifier.py` + สร้าง 3 sheet ที่เหลือ~~ ✅
+3. เพิ่ม cost step เข้า `run_pipeline.bat` (เมื่อ step 1 เสร็จ)
+
+---
+
+## Checkpoint — 2026-05-01 (session 3)
+
+### สถานะล่าสุด
+6-Sheet Classification system เสร็จสมบูรณ์
+
+### สิ่งที่ทำสำเร็จ
+- ~~**Sebastian_Classifier.py** — เขียนเสร็จ + รันสำเร็จ~~ ✅
+- ~~**สร้าง 3 sheet ที่เหลือ** — raw_jobs_awarded, raw_jobs_direct, raw_jobs_cancelled~~ ✅
+- ~~**เพิ่ม classify step** ใน Sebastian_Pipeline.py และ run_pipeline.bat~~ ✅
+- ~~**แก้ province filter** — เช็ค keyword + province ตรงกัน (ไม่ใช่แค่ keyword ใน text)~~ ✅
+  - ก่อน: กรองแค่ "บ้านแพง" ใน title → งานจากจังหวัดอื่นหลุดเข้ามา
+  - หลัง: ต้องมี "บ้านแพง" ใน text AND province = "นครพนม" ถึงจะผ่าน
+  - แก้ทั้ง `Sebastian_Scraper.py` และ `Sebastian_Classifier.py`
+
+### 6-Sheet System — สถานะปัจจุบัน ✅ ครบทั้ง 6 ชีท
+| Sheet | งาน | ความหมาย |
+|-------|-----|----------|
+| `raw_jobs_all` | 593 | ทุกงานในพื้นที่ (บ้านแพง นครพนม + บึงโขงหลง บึงกาฬ) |
+| `raw_jobs_related` | 35 | งานก่อสร้างที่เกี่ยวกับบริษัท |
+| `raw_jobs_bidding` | 4 | e-bidding + กำลังประมูล ← ชีทหลักสำหรับคำนวณ |
+| `raw_jobs_awarded` | 0 | ประกาศผู้ชนะ (ยังไม่มีในรอบนี้) |
+| `raw_jobs_direct` | 28 | วิธีเฉพาะเจาะจง |
+| `raw_jobs_cancelled` | 0 | ยกเลิก (ยังไม่มีในรอบนี้) |
+
+### Pipeline อัตโนมัติ 06:00 น. (ครบแล้ว ยกเว้น cost)
+```
+scrape → download → classify → analyze → rank
+```
+
+### ยังค้าง (เรียงตามลำดับความสำคัญ)
+1. **LINE Notify** — ส่งสรุป ranked_jobs ไป LINE หลัง pipeline รัน (รอ token จากคุณกัญจน์)
+2. **เพิ่ม Keywords** — คุณกัญจน์จะเพิ่ม keyword ใน Scraper + Classifier ให้ละเอียดขึ้น
+3. **Cost step** — รอคุณกัญจน์กรอกราคา/หน่วยใน cost_data_By_Dexter column H
+
+---
+
+## Checkpoint — 2026-05-06
+
+### สิ่งที่ทำสำเร็จ
+- ~~**Service Account auth**~~ — แก้ `sheets_client.py` เปลี่ยนจาก ADC (หมดอายุ) → Service Account ✅
+- ~~**Share Sheets กับ SA**~~ — Bid Master + BSC Orders share กับ `bid-master-sheets@bid-master-sheets.iam.gserviceaccount.com` ✅
+- ~~**Full pipeline run**~~ — Step 1-4, 6 ผ่าน / Step 5 มี bug ✅
+- ~~**Rate limit fix**~~ — Pagination detect → sleep 60s → retry / Search timeout → reinit + sleep 120s → retry / Loading spinner wait ✅
+- ~~**Bug Step 5 Cost**~~ — แก้ `get_all_records(expected_headers=...)` ✅
+- ~~**Doc Downloader เปลี่ยน source sheet**~~ — อ่านจาก `raw_jobs_bidding` แทน `raw_jobs` (download เฉพาะ 4 งาน e-bidding) ✅
+
+### Pipeline ปัจจุบัน
+```
+scrape → classify → download PDF (raw_jobs_bidding เท่านั้น) → analyze → cost → rank
+```
+
+### ต้องทำต่อ
+1. คุณกัญจน์กรอกราคา/หน่วยใน cost_data_By_Dexter column H → รัน `--step cost` ใหม่
+2. LINE Notify token
+
+---
+
+## Checkpoint — 2026-05-06 (BSC Website session)
+
+### สิ่งที่ทำสำเร็จ — BSC Website (bsc-website-wine.vercel.app)
+
+**Booking System:**
+- ~~**OrderModal disclaimer**~~ — เพิ่มกล่อง ✓ 3 ข้อ (ไม่มีมัดจำ, ยกเลิกได้, ทีมโทรกลับ) ✅
+- ~~**BookingHighlight popup**~~ — floating card มุมล่างขวา โผล่หลัง scroll 400px มี X ปิดได้ ✅
+- ~~**Booking cards หน้า /products**~~ — 3 การ์ดระหว่าง header กับสินค้า 01 ✅
+- ~~**แยก lean กับ 240/2**~~ — แยกเป็น 2 options ใน OrderModal.tsx ✅
+
+**SEO:**
+- ~~**Google index แล้ว**~~ — ยืนยันผ่าน Search Console (site: query ขึ้นผล) ✅
+- ~~**Sitemap.xml**~~ — `app/sitemap.ts` ✅
+- ~~**robots.txt**~~ — `app/robots.ts` ✅
+- ~~**Metadata แต่ละหน้า**~~ — layout.tsx สำหรับ /products, /about, /contact ✅
+
+**Portfolio:**
+- ~~**หน้า /portfolio**~~ — 40 รูป, filter 5 หมวด, lightbox คลิกดูเต็มจอ ✅
+- ~~**caption มืออาชีพ**~~ — เปลี่ยนชื่อรูปทุกใบให้เป็นทางการ ✅
+- ~~**Photo Marquee หน้าแรก**~~ — 2 แถวไหลสวนทาง infinite scroll ✅
+- ~~**ลิงก์ผลงานใน Navbar**~~ — เพิ่ม "ผลงาน" ระหว่างสินค้า-เกี่ยวกับเรา ✅
+
+### ยังค้าง
+1. **คุณกัญจน์กรอกราคา/หน่วย** ใน cost_data_By_Dexter column H → รัน `--step cost`
+2. **LINE Notify token** → implement notification
+3. **Domain** — ซื้อ `bscconcrete.co.th` หรือ `bscconcrete.com` แล้วผูก Vercel
+4. **Open Graph image** — รูป preview ตอนแชร์ใน LINE/Facebook
+
+---
+
+## Checkpoint — 2026-05-08
+
+### สิ่งที่ทำสำเร็จวันนี้
+
+- ~~**แก้ Scraper keywords**~~ — เปลี่ยนจาก 21 keywords → ค้นหาด้วยจังหวัด `นครพนม` + `บึงกาฬ` แล้วใช้ 17 keywords เป็น filter ✅
+- ~~**ลบ district filter**~~ — ไม่จำกัดแค่ บ้านแพง/บึงโขงหลง แล้ว ได้งานทั้ง 2 จังหวัด ✅
+- ~~**แก้ rate limit retry**~~ — เปลี่ยนจาก 300s → 120s ตรงๆ (จาก pattern จริง: 60s ไม่พอ, 120s พอเสมอ) ✅
+- ~~**รัน Scraper สำเร็จ**~~ — นครพนม 2,980 / บึงกาฬ 3,790 = 6,770 รายการ, ใหม่ 142 งาน ✅
+- ~~**เพิ่ม project_status column**~~ — ดึงจาก flowName ใน API (กำลังประมูล / ประมูลแล้ว / ยกเลิก / กำลังเตรียม) ✅
+- ~~**สร้าง sheet active_bidding**~~ — e-bidding กำลังประมูล → ชีทหลักคำนวณ ✅
+- ~~**สร้าง sheet awarded_jobs**~~ — e-bidding ที่ประมูลแล้ว ✅
+- ~~**แก้ Doc Downloader**~~ — อ่านจาก `active_bidding` แทน `raw_jobs_bidding` ✅
+- ~~**สร้าง Sebastian_Winner_Checker.py**~~ — ดึงชื่อบริษัทผู้ชนะจาก greenBook API W0 ✅
+
+### ต้องทำต่อ (เรียงลำดับ)
+1. **รัน Scraper อีกครั้ง** — เพื่อให้ข้อมูลไหลเข้า `active_bidding` และ `awarded_jobs` (2 sheets ยังว่างอยู่)
+2. **รัน Winner Checker** (ต้องการ Chrome port 9222) — ดึงชื่อบริษัทผู้ชนะใน `awarded_jobs`
+3. **กรอกราคา/หน่วย** ใน `cost_data_By_Dexter` column H → รัน cost step
+
+---
+
+## Checkpoint — 2026-05-10
+
+### สิ่งที่ทำสำเร็จวันนี้
+
+- ~~**Sebastian_LINE_Notify.py**~~ — เขียนเสร็จ (แต่ต้องแก้ใหม่ — ดูด้านล่าง) ⚠️
+- ~~**Sebastian_Pipeline.py**~~ — เพิ่ม step notify (step 7/7) ✅
+- ~~**work_overview.md**~~ — อัปเดตให้ตรงกับ pipeline จริงปัจจุบัน ✅
+
+### ⚠️ LINE Notify ปิดให้บริการแล้ว (31 มี.ค. 2568)
+`Sebastian_LINE_Notify.py` ที่เขียนไว้ใช้ LINE Notify API ซึ่งปิดตัวแล้ว — ต้องเปลี่ยนไปใช้ทางเลือกอื่น
+
+ทางเลือกที่กำลังพิจารณา:
+- **LINE Messaging API** — ต้องสร้าง LINE Official Account + รู้ User ID ตัวเอง
+- **Telegram Bot** — ง่ายที่สุด ฟรีไม่จำกัด รอการตัดสินใจจากคุณกัญจน์
+
+### ต้องทำต่อ (เรียงลำดับ)
+1. **กรอกราคา/หน่วย** ใน cost_data_By_Dexter column H → รัน `--step cost`
+2. **เลือกระบบ Notify** — LINE Messaging API หรือ Telegram → แก้ `Sebastian_LINE_Notify.py`
+3. ~~**รัน Scraper ใหม่** → ให้ active_bidding + awarded_jobs มีข้อมูล~~ ✅
+
+---
+
+## Checkpoint — 2026-05-10 (session 2)
+
+### สิ่งที่ทำสำเร็จวันนี้
+
+- ~~**Scraper: เพิ่ม district/subdistrict extraction**~~ — regex ดึง อำเภอ/ตำบล จาก title+department ✅
+- ~~**awarded_jobs: เพิ่ม 3 column ผู้ชนะ**~~ — ผู้ชนะประมูล, ราคาที่ชนะ (บาท), วันประกาศผู้ชนะ ✅
+- ~~**รัน Scraper**~~ — นครพนม 5,990 / บึงกาฬ 4,510 = 10,500 รายการ, ใหม่ 130 งาน ✅
+
+### ผล Sheets หลังรัน
+| Sheet | ผล |
+|-------|-----|
+| `raw_jobs` | +130 งานใหม่ |
+| `awarded_jobs` | +38 งาน (e-bidding ประมูลแล้ว) ← พร้อมรัน Winner Checker |
+| `active_bidding` | ยังว่าง — ไม่มี e-bidding กำลังประมูลใหม่ในพื้นที่ตอนนี้ |
+
+### ต้องทำต่อ (เรียงลำดับ)
+1. **กรอกราคา/หน่วย** ใน cost_data_By_Dexter column H → รัน `--step cost`
+2. **รัน Winner Checker** → ดึงชื่อผู้ชนะสำหรับ 38 งานใน awarded_jobs (ต้องการ Chrome port 9222)
+3. **เลือกระบบ Notify** — LINE Messaging API หรือ Telegram
+
+---
+
+## Checkpoint — 2026-05-10 (session 3)
+
+### สิ่งที่ทำสำเร็จวันนี้
+
+- ~~**แก้ Classifier ทั้งหมด**~~ — เปลี่ยน filter บ้านแพง/บึงโขงหลง → ทั้งจังหวัด นครพนม+บึงกาฬ ✅
+- ~~**เพิ่ม active_bidding + awarded_jobs**~~ ใน Classifier output (clear+rewrite พร้อม preserve winner data) ✅
+- ~~**ลบ raw_jobs_all**~~ ออกจาก Classifier (ไม่จำเป็น) ✅
+- ~~**แก้ raw_jobs header**~~ — col13: quantity_note→project_status, col14: seq_no→quantity_note ✅
+- ~~**แก้ regex district/subdistrict**~~ — เปลี่ยนจาก `[^\s,จ]`/`[^\s,อ]` → `\S+` (ไม่หยุดกลางคำ) ✅
+- ~~**รัน Classifier**~~ — ผลครบทุกชีท ✅
+
+### ผล Sheets หลัง Classifier รัน
+| ชีท | งาน | หมายเหตุ |
+|-----|-----|---------|
+| `raw_jobs_related` | 419 | ครอบทั้งจังหวัด (จากเดิม 36) |
+| `raw_jobs_bidding` | 15 | e-bidding กำลังประมูล |
+| `active_bidding` | 15 | พร้อม Doc Downloader อ่าน |
+| `raw_jobs_awarded` | 98 | e-bidding ประมูลแล้ว |
+| `awarded_jobs` | 98 | พร้อม Winner Checker อ่าน |
+| `raw_jobs_direct` | 292 | เฉพาะเจาะจง |
+| `raw_jobs_cancelled` | 12 | ยกเลิก |
+
+### ต้องทำต่อ (เรียงลำดับ)
+1. **กรอกราคา/หน่วย** ใน cost_data_By_Dexter column H → รัน `--step cost`
+2. **รัน Winner Checker** → ดึงชื่อผู้ชนะ 98 งานใน awarded_jobs (ต้องการ Chrome port 9222)
+3. **เลือกระบบ Notify** — LINE Messaging API หรือ Telegram
+
+---
+
+## Checkpoint — 2026-05-11
+
+### เปลี่ยนแผน: ตัด Cost/Rank อัตโนมัติออก
+
+**เหตุผล:** ตัวแปรเยอะเกินไป, cost_data column H ค้างมาตั้งแต่ 1 พ.ค. ไม่ได้กรอก
+**แผนใหม่:** pipeline อัตโนมัติหา+แจ้งงาน, พ่อคำนวนเองผ่านชีทที่สร้างขึ้นใหม่
+
+### สิ่งที่ทำสำเร็จวันนี้
+
+- ~~**เปลี่ยน Sebastian_LINE_Notify.py**~~ — จาก LINE Notify API (ปิดแล้ว) → LINE Messaging API ✅
+- ~~**ทดสอบ LINE Notify**~~ — ส่ง 15 งานเข้า LINE Group สำเร็จ ✅
+- ~~**ยืนยัน Vercel env vars**~~ — LINE_CHANNEL_ACCESS_TOKEN + LINE_GROUP_ID มีอยู่ใน production แล้ว ✅
+- ~~**BSC website order notify**~~ — โค้ดมีอยู่แล้วใน send-order/route.ts พร้อมใช้งาน ✅
+
+### Pipeline ปัจจุบัน (แผนใหม่)
+
+```
+ส่วนอัตโนมัติ (06:00 น.):
+scrape → classify → [Winner Checker แยก] → LINE notify
+
+ส่วน manual (พ่อทำเอง):
+รับ LINE → ค้น ID ใน eGP → กรอก W/L/T ในชีทคำนวน → ได้ปริมาณวัสดุ
+```
+
+### สถานะ Sheets
+
+| Sheet | งาน | สถานะ |
+|-------|-----|-------|
+| `active_bidding` | 15 | ✅ พร้อมใช้ |
+| `awarded_jobs` | 98 | ✅ รอ Winner Checker |
+| `raw_jobs_related` | 419 | ✅ |
+| `raw_jobs_direct` | 292 | ✅ |
+
+### ต้องทำต่อ
+
+1. **สร้างชีทคำนวน** — พ่อกรอก W/L/T → ได้ปริมาณวัสดุ (งานถัดไป)
+2. **รัน Winner Checker** — ดึงชื่อผู้ชนะ 98 งาน (ต้องการ Chrome port 9222)
+
+---
+
+## Checkpoint — 2026-05-11 (session 2)
+
+### สิ่งที่ทำสำเร็จวันนี้
+
+- ~~**เปลี่ยนแผน**~~ — ตัด Analyze, Rank, Download ออกจาก pipeline ✅
+- ~~**แก้ run_pipeline.bat**~~ — ลำดับถูกต้อง + ตัด step ที่ไม่ใช้ + เพิ่ม LINE Notify ✅
+- ~~**ยืนยัน Task Scheduler**~~ — BidMaster-DailyPipeline สถานะ Ready ✅
+- ~~**Chrome เปิดอัตโนมัติ**~~ — run_pipeline.bat จัดการเองทุกวัน ไม่ต้องทำเอง ✅
+
+### Pipeline ปัจจุบัน (แผนใหม่ สมบูรณ์)
+
+```
+06:00 น. ทุกวัน (Task Scheduler)
+  → เปิด Chrome Debug อัตโนมัติ
+  → Step 1: Scrape (ใช้ Chrome)
+  → Step 2: Classify (ไม่ใช้ Chrome)
+  → ปิด Chrome
+  → Step 3: LINE Notify → ส่งรายการ active_bidding เข้า LINE Group
+```
+
+### พับเอาไว้ก่อน (ยังไม่ทำ)
+- Download step — โหลด PDF (รอแผนในอนาคต)
+- Analyze step — TOR Analyzer (รอแผนในอนาคต)
+- Rank step — จัดอันดับ (รอแผนในอนาคต)
+
+### ต้องทำต่อ
+1. **สร้างชีทคำนวน** — พ่อกรอก W/L/T → ได้ปริมาณวัสดุ
+2. **รัน Winner Checker** — ดึงชื่อผู้ชนะ 98 งานใน awarded_jobs (ต้องการ Chrome port 9222)
+
+---
+
+## Checkpoint — 2026-05-11 (session 3 — ก่อนนอน)
+
+### สถานะระบบ ✅ พร้อมรันตี 6
+
+- เครื่องเปิดอยู่ + เสียบปลั๊ก
+- Task Scheduler: Ready — NextRun 11/05/2026 06:00 น.
+
+### Pipeline ที่จะรันตี 6
+
+```
+เปิด Chrome อัตโนมัติ
+  → Step 1: Scrape
+  → Step 2: Classify
+  → Step 3: Winner Checker (ดึงชื่อผู้ชนะ awarded_jobs)
+  → ปิด Chrome
+  → Step 4: LINE Notify → ส่งเข้า LINE Group
+```
+
+### ต้องทำต่อ (รอเช้า)
+1. เช็ค LINE ว่า Sebastian ส่งผลมาไหม
+2. **สร้างชีทคำนวน** — พ่อกรอก W/L/T → ได้ปริมาณวัสดุ
+
+---
+
+## Checkpoint — 2026-05-12
+
+### สถานะระบบ
+
+- Pipeline ตี 6 รันสำเร็จ ✅ (Sebastian แจ้งใน Discord 06:00–06:36 น.)
+- LINE Notify ไม่ส่ง ⚠️ — สาเหตุ: ข้อความเกิน 5,000 ตัว (LINE API limit) เพราะ TOP_N=50
+
+### สิ่งที่ทำสำเร็จวันนี้
+
+- ~~**Discord Bot ทำงานได้**~~ — Sebastian_Discord_Bot.py online ✅
+- ~~**ask_discord.py two-way test**~~ — GSD ส่งคำถาม → คุณกัญจน์ตอบใน Discord → รับคำตอบได้ ✅
+- ~~**แก้ LINE ข้อความยาวเกิน**~~ — ลด TOP_N จาก 50 → 15 + เพิ่ม auto-split (>4,900 ตัว) ✅
+- ~~**ทดสอบ LINE ส่งสำเร็จ**~~ — ส่ง 15 งานเข้า LINE Group ✅
+
+### Discord Bot files
+| ไฟล์ | หน้าที่ |
+|------|---------|
+| `Sebastian_Discord_Bot.py` | Bot หลัก — listen ตลอด |
+| `ask_discord.py` | GSD ถาม → รอคำตอบจาก Discord |
+| `start_sebastian_bot.bat` | รัน Bot + auto-restart |
+
+### ต้องทำต่อ (ก่อน session ถัดไป)
+
+1. **สร้างชีทคำนวน** — พ่อกรอก W/L/T → ได้ปริมาณวัสดุ
+2. ~~**รัน Winner Checker** — ดึงชื่อผู้ชนะ awarded_jobs~~ ✅ (ดูด้านล่าง)
+3. **ตั้ง Discord Bot startup** — รัน start_sebastian_bot.bat อัตโนมัติเมื่อเปิดเครื่อง
+
+---
+
+## Checkpoint — 2026-05-12 (session 2 — Winner Checker fix)
+
+### Root Cause: Winner Checker ไม่ได้ชื่อผู้ชนะ
+
+`Sebastian_Winner_Checker.py` เดิมใช้ `greenBook` API (`pageAnnounceType=W0`) → ลองอ่านฟิลด์ `winnerName`, `vendorName`, `companyName`, `announceSubDesc` — **ทุกฟิลด์ null** greenBook มีแค่ metadata ไฟล์ ไม่มีชื่อบริษัทเลย ผล "อัปเดต 82 งานสำเร็จ" ในเช้าวันก่อนคือการเขียน empty string ลง Sheet
+
+### API ที่ถูกต้อง (ค้นพบจาก Angular bundle `egp-aann09-web/594.e5359f451f8e5894.js`)
+
+| Endpoint | ฟิลด์ที่ใช้ | ใช้เมื่อ |
+|----------|------------|---------|
+| `getContractAvailable?projectId=` | `contractAvailableResponse[0].corporateName` + `contractPrice` + `contractDate` | เซ็นสัญญาแล้ว |
+| `getProcureResult?projectId=` | `procureResultDataResponse[].receiveNameTh` (flag P/W/A) + `priceAgree`/`priceProposal` | ประกาศผู้ชนะแล้วแต่ยังไม่เซ็นสัญญา |
+
+Base: `process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement`
+
+### สิ่งที่ทำสำเร็จ
+
+- ~~**เขียนใหม่ `fetch_winner_info()`**~~ — 2-tier: getContractAvailable → fallback getProcureResult ✅
+- ~~**ทดสอบ debug_winner_test.py**~~ — 5 งานแรก ✅ ทุกงานได้ชื่อบริษัท ✅
+- ~~**รัน Winner Checker เต็ม**~~ — awarded_jobs 79/115 อัปเดตสำเร็จ ✅
+- ~~**ลบ debug scripts ชั่วคราว**~~ — ล้าง scripts/ เรียบร้อย ✅
+
+### ผล Winner Checker full run
+
+| Sheet | ผล |
+|-------|-----|
+| `awarded_jobs` | **79/115 งานได้ชื่อผู้ชนะ** ✅ |
+| `raw_jobs_direct` | 300 งานประมวลผล — ส่วนใหญ่ไม่มีข้อมูล (วิธีเฉพาะเจาะจงไม่ผ่าน contract API) |
+
+36 งานที่เหลือใน awarded_jobs ไม่มีข้อมูล — เป็นงานใหม่มาก, ยกเลิก, หรือไม่ผ่านระบบสัญญาปกติ
+
+### Pipeline ปัจจุบัน (สมบูรณ์)
+
+```
+06:00 น. ทุกวัน:
+  → Step 1: Scrape
+  → Step 2: Classify
+  → Step 3: Winner Checker (getContractAvailable + getProcureResult)
+  → ปิด Chrome
+  → Step 4: LINE Notify (15 งาน, auto-split)
+```
+
+### ต้องทำต่อ
+
+1. **สร้างชีทคำนวน** — พ่อกรอก W/L/T → ได้ปริมาณวัสดุ (**สำคัญที่สุด**)
+2. **ตั้ง Discord Bot startup** — รัน start_sebastian_bot.bat อัตโนมัติเมื่อเปิดเครื่อง
+
+---
+
+## Checkpoint — 2026-05-13 (session 2)
+
+### สิ่งที่ทำสำเร็จวันนี้
+
+- ~~**Discord Bot startup อัตโนมัติ**~~ — เพิ่ม Windows Registry Run key `HKCU\...\Run\SebastianDiscordBot` → รัน `start_sebastian_bot.bat` ทุกครั้งที่ login (ไม่ต้องการ admin rights) ✅
+- ~~**ชีทคำนวนถนน คสล.**~~ — สร้าง sheet `calc_road` ใน Bid Master Spreadsheet ✅
+  - กรอกแค่ L (ความยาว) ที่ C5 → เห็นปริมาณวัสดุทันที
+  - ตัวแปร: W, L, T, St, Sh, CJ, EJ (มีค่า default แล้ว)
+  - ผลลัพธ์: คอนกรีต, ทรายรองพื้น, Wire Mesh, Dowel Bar, Metal Cap, Joint Filler/Sealer, ไหล่ทาง
+  - script: `scripts/create_calc_sheet.py`
+
+### Phase 0 — เสร็จสมบูรณ์ ✅
+
+| งาน | สถานะ |
+|-----|-------|
+| ชีทคำนวน W/L/T → ปริมาณวัสดุ | ✅ `calc_road` sheet พร้อมใช้ |
+| Discord Bot startup อัตโนมัติ | ✅ Registry Run key ตั้งแล้ว |
+
+### ต้องทำต่อ (Phase 1)
+
+1. **คุณกัญจน์สร้าง LINE Official Account** (ฟรี ที่ developers.line.biz) → ส่ง Channel Access Token + Channel Secret
+2. Sebastian สร้าง Webhook Server (Next.js บน Vercel) รับข้อความจาก LINE + เชื่อม Claude API
+
+---
+
+## Checkpoint — 2026-05-13 (รอบบ่าย — fix pipeline)
+
+### Pipeline 06:00 fail: Chrome ไม่ผูก port 9222 → เสียเวลา 90 นาที
+
+**Root cause:**
+- `wmic.exe` ถูกลบใน Windows 11 25H2 (build 26200) → คำสั่ง kill Chrome เก่าใน `run_pipeline.bat` ทำงานไม่ได้แบบเงียบๆ
+- `run_pipeline.bat` ลบเฉพาะ `lockfile` แต่ Chrome ใช้ `SingletonLock`/`SingletonCookie`/`SingletonSocket` เป็น lock จริง
+- ไม่มี health-check หลัง start Chrome → playwright รอ 3 นาที × 15 รอบ = 45 นาทีต่อ step (Scraper + Winner Checker = 90 นาที)
+
+**สิ่งที่แก้ใน `run_pipeline.bat`:**
+- ~~แทน `wmic process delete` (2 จุด) ด้วย PowerShell `Get-CimInstance Win32_Process | Stop-Process`~~ ✅
+- ~~เพิ่มลบ `SingletonLock` / `SingletonCookie` / `SingletonSocket` (Chrome lock จริง)~~ ✅
+- ~~เพิ่ม health-check `http://127.0.0.1:9222/json/version` (รอสูงสุด 60s, fail fast)~~ ✅
+- ~~ใช้ `SET CHROME_OK=1` gate Step 1 (Scraper) และ Step 3 (Winner Checker) — ถ้า Chrome ไม่ขึ้น ข้ามไป Step 2 + Step 4 ยังรันได้ตามปกติ~~ ✅
+- ~~แก้ nested `%ERRORLEVEL%` → `if errorlevel 1` (batch parse-time gotcha)~~ ✅
+
+**ผลคาด:** Pipeline พรุ่งนี้ 06:00 ถ้า Chrome ขึ้นไม่ได้ จะ fail fast ใน 60s แทน 90 นาที และยังได้ Step 2 (Classify) + Step 4 (LINE Notify) จากข้อมูลเดิมในชีท
+
+---
+
+## Checkpoint — 2026-05-13
+
+### สิ่งที่ทำสำเร็จวันนี้
+
+- ~~**Complete DEPT_SEARCH_TERMS integration**~~ — เพิ่ม 28 หน่วยงานเข้า main() loop หลัง province loop ✅
+  - รอ 60s cooldown ก่อนเริ่ม dept loop
+  - wait 15s ระหว่าง dept แต่ละชื่อ (เดิมออกแบบ 30s แต่ลดลง)
+  - ไม่กรอง FILTER_KEYWORDS — รับทุกงานจากหน่วยงานเหล่านั้น
+  - ยังคง dedup กับ seen_ids
+
+- ~~**Discord step notifications ใน run_pipeline.bat**~~ ✅
+  - ส่ง 🚀 เมื่อ pipeline เริ่ม
+  - ส่ง ✅/❌ หลังแต่ละ step พร้อมชื่อ log file เมื่อ error
+  - เพิ่ม `--notify` flag ให้ `ask_discord.py` CLI
+
+- ~~**Claude Code Stop hook**~~ — เพิ่มใน `~/.claude/settings.json` ✅
+  - ping Discord ทุกครั้งที่ Claude ตอบเสร็จ: "✅ Sebastian เสร็จแล้ว — กลับมาดูผลได้เลยครับ"
+  - 0 token cost (pure Discord API call)
+
+### เวลารัน pipeline โดยประมาณ
+| ส่วน | เวลา |
+|------|------|
+| Province search (นครพนม + 180s + บึงกาฬ) | ~12–15 นาที |
+| Dept search (60s cooldown + 28 หน่วยงาน × 15s) | ~11–13 นาที |
+| Classifier + Winner Checker + LINE Notify | ~5 นาที |
+| **รวม** | **~28–35 นาที** |
+
+### ต้องทำต่อ
+
+1. **สร้างชีทคำนวน** — พ่อกรอก W/L/T → ได้ปริมาณวัสดุ (**สำคัญที่สุด**)
+2. **ตั้ง Discord Bot startup** — รัน start_sebastian_bot.bat อัตโนมัติเมื่อเปิดเครื่อง
+
+---
+
+---
+
+## Pipeline Chrome Connect — Fail-fast (2026-05-13)
+
+### สถานะ: ✅ แก้แล้ว
+
+**ปัญหา:** Pipeline วันที่ 13 พ.ค. เสียเวลา **90 นาที** ไปกับการรอ Chrome
+- Step 1 (Scraper) fail หลัง 45 นาที — `RuntimeError: เชื่อมต่อ Chrome ไม่ได้`
+- Step 3 (Winner Checker) fail หลัง 45 นาที — error เดียวกัน
+
+**Root cause hypothesis:**
+- `run_pipeline.bat` health-check `/json/version` **ผ่าน** (Chrome HTTP ตอบ)
+- แต่ playwright `connect_over_cdp()` (CDP WebSocket) **fail** — Chrome ค้าง/zombie
+- `connect_browser()` ใช้ playwright default timeout 180s × 15 retries = 45 นาที
+
+**สิ่งที่แก้:**
+- ~~`Sebastian_Scraper.py:218-228` connect_browser(): retry 15→3, timeout=5000ms, log exception type~~
+- ~~`Sebastian_Winner_Checker.py:121-130` connect_browser(): pattern เดียวกัน~~
+
+**ผลที่คาดหวัง:** ถ้า Chrome connect fail อีก จะ fail ภายใน **~30 วินาที** (เดิม 45 นาที) — ทั้ง pipeline ประหยัด 89 นาทีต่อรอบที่ Chrome พัง
+
+**ยังไม่ได้แก้ (รอสังเกตว่ายังเกิดอีกไหม):**
+- [ ] เพิ่ม CDP WebSocket health-check ใน `run_pipeline.bat` (เดิมเช็คแค่ HTTP `/json/version`)
+- [ ] เพิ่ม Chrome restart logic เมื่อ connect fail ครั้งแรก
+
+---
+
+## Checkpoint — 2026-05-13 (session — วันยื่นซอง fix)
+
+### สถานะ: ✅ เสร็จสมบูรณ์
+
+**ปัญหา:** `active_bidding` ทั้ง 17 งาน มี `deadline = ""` เพราะ eGP search API ไม่ return วันยื่นซอง
+
+**Root cause ที่ค้นพบ:**
+- Search API คืนแค่ metadata, ไม่มี deadline field
+- ลอง 20+ API endpoints — ทั้งหมด 404 หรือ no data
+- วันยื่นซองอยู่ใน **ไฟล์ PDF ประกาศเชิญชวน** (blob URL) เท่านั้น
+
+**วิธีแก้ที่ทำงานได้จริง (PDF approach):**
+1. ค้นหาด้วยชื่อหน่วยงาน (เช่น "สามผง") → interceptAPI response → หา row index ของ pid
+2. Click `a.btn-icon` ใน row นั้น → Angular router ไปหน้า detail `/procurement/{encrypted_token}`
+3. Click description icon ใน TABLE4 (ประกาศเชิญชวน D0) → TABLE1 โหลด
+4. Click `file_download` icon ใน TABLE1 → new page เปิด blob URL
+5. `FileReader.readAsDataURL(blob)` → base64 → `pdfplumber.open(BytesIO(...))` → extract text
+6. Thai numeral conversion (`๐-๙` → `0-9`) + regex หาวันที่
+
+**ผลการรัน patch_deadlines.py:**
+| job_id | วันยื่นซอง | เหลือ |
+|--------|-----------|-------|
+| 69049366395 | 12/05/2569 | -1 วัน (หมดแล้ว) |
+| 69049365887 | 18/05/2569 | +5 วัน ✅ |
+| 68119422244 | 28/04/2569 | -15 วัน (หมดแล้ว) |
+
+**วิเคราะห์ 14 งานที่ไม่มี deadline:**
+
+| สาเหตุ | จำนวน | แก้ได้? |
+|--------|-------|---------|
+| keyword กว้างเกิน (นครพนม/บึงกาฬ/กรุงเทพฯ) → pid อยู่ page 2+ | 5 งาน | ✅ เพิ่ม pagination |
+| งานประมูลแล้ว (W0) — ไม่แสดงใน active search | 1 งาน | ❌ deadline ไม่มีความหมายแล้ว |
+| ไม่มี D0 ยัง (ยังร่างอยู่/รอประกาศ) | 3 งาน | ❌ ตอนนี้ — pipeline รัน scraper ทุกวันจะจับได้เอง |
+| หน่วยงานนอกพื้นที่ (มุกดาหาร) | 2 งาน | ❌ ไม่จำเป็นต้องแก้ |
+| keyword ค้นไม่เจอ (งานหมดอายุ/department ไม่ตรง) | 3 งาน | ⚠️ ลอง paginate ก่อน |
+
+**ไฟล์ที่แก้ไข:**
+- `scripts/Sebastian_Scraper.py` — rewrite `fetch_deadline_via_pdf()` แทน direct URL approach เดิม
+- `scripts/patch_deadlines.py` — rewrite ทั้งหมดด้วย PDF approach + Thai numeral handling
+
+**Pipeline ที่รันวันนี้:**
+```
+patch_deadlines.py → Classifier → LINE Notify (ส่งสำเร็จ 2 part)
+```
+
+LINE แสดง "📆 ยื่นซอง: 18/05/2569  ⏳ เหลือ 5 วัน" สำหรับงาน 69049365887 ✅
+
+**ต้องทำต่อ (ถ้าต้องการ deadline ครบ):**
+- [ ] เพิ่ม pagination ใน `fetch_deadline_via_pdf()` — ค้นหาทุก page จนกว่าจะเจอ pid (แก้กรณี keyword กว้างเกิน)
+
+---
+
+## Rate Limit Research & Parallel Batching (2026-05-15)
+
+### สถานะ: ✅ เสร็จแล้ว — Pipeline runtime 2hr → ~45-60 min
+
+### ปัญหาเดิม
+Pipeline ใช้เวลา 2 ชั่วโมง (06:00-08:00) ส่วนใหญ่เสียให้ rate limit:
+- ~20 hits × 120s = ~40 นาที นอนรอเฉยๆ
+- Sequential pagination 1.5s/หน้า × ~600 หน้า/จังหวัด
+
+### วิธีทดสอบ
+สร้าง 4 test scripts (ลบทิ้งแล้ว) ทดสอบจริงกับ eGP API:
+1. `explore_egp_api.py` — จับ URL pattern + capture announcementToken
+2. `test_egp_pagesize.py` — ทดสอบ pageSize parameters ทุกชื่อ
+3. `test_egp_burst.py` — หา parallel burst threshold
+4. `test_multi_context.py` — ทดสอบว่า rate limit ผูกกับ token หรือ IP
+5. `test_rate_threshold.py` — หา sustained rate ที่ปลอดภัย
+
+### สิ่งที่ค้นพบ
+
+**1. PageSize ตายตัว = 10 รายการ/หน้า**
+- ทดสอบทุก parameter (pageSize, size, limit, perPage, rows, recordsPerPage, max, count, take, ฯลฯ) → server ignore ทั้งหมด
+- ความหมาย: นครพนม 5990 รายการ = 599 หน้า (ไม่ใช่ 300 หน้าที่ 20/หน้า)
+
+**2. Rate limit ผูกกับ IP ไม่ใช่ session token**
+- ทดสอบ: สร้าง 2 browser contexts (cookies/tokens แยก)
+- หลอม context A ด้วย burst → context B ทดสอบทันที
+- ผล: context B โดน rate limit เลย 20/20 → ผูกกับ IP
+- ความหมาย: เปิดหลาย contexts ไม่ช่วย ต้องใช้ proxy เท่านั้น
+
+**3. Rate limit threshold: ~100 reqs / 120s window**
+- 1 req/s sustained → hit ที่ req 110 (~106s)
+- 1.5 req/s sustained → hit ที่ req 100 (~66s)
+- 3 req/s sustained → hit ที่ req 80-100 (~28s)
+- ความหมาย: ส่งเร็วก็โดนเท่ากับส่งช้า
+
+**4. Parallel burst เร็วมาก (ภายใน threshold)**
+- 20 parallel requests พร้อมกัน → 50ms each
+- 80 parallel (4 batches) → ผ่านสบาย
+- 100+ → เริ่มโดน
+
+### กลยุทธ์ที่ใช้: Burst-then-Wait
+
+แทน sequential 1.5s/หน้า → **burst 80 reqs ใน 5s แล้วรอ 90s** (ให้ requests aged out จาก rate limit window)
+
+```python
+BATCH_SIZE      = 20      # 20 parallel/batch
+BATCHES_PER_GROUP = 4     # 4 × 20 = 80 reqs/group
+GROUP_COOLDOWN  = 90      # รอเต็ม window
+RATE_LIMIT_RECOVERY = 90  # ถ้าโดนก็รอ 90s
+```
+
+**Effective rate: ~0.84 req/s** (vs 0.5-0.65 req/s ของ sequential + rate limit hits เดิม)
+
+### ผลลัพธ์
+- Province 600 หน้า: ~12 นาที (เดิม ~30 นาที)
+- Total pipeline: ~45-60 นาที (เดิม 2 ชั่วโมง) = **2-2.5x faster**
+- ปริมาณงานเท่าเดิม (ไม่ตัด max_pages ไม่มี early-exit) — ปลอดภัย 100%
+
+### ไฟล์ที่แก้
+- `scripts/Sebastian_Scraper.py` — `search_keyword_process5()` rewrite ใช้ parallel batching + ใส่ try/except dept loop
+- `scripts/Sebastian_Classifier.py` — เพิ่ม pending_award + tor_review classification
+- `scripts/Sebastian_LINE_Notify.py` — ส่ง 2 ส่วน (active + tor_review)
+- `scripts/Sebastian_Winner_Checker.py` — เพิ่ม column "% ลดจากราคากลาง"
+- `scripts/create_new_sheets.py` — สร้าง pending_award + tor_review sheets (รันแล้ว)
+- `run_pipeline.bat` — เพิ่ม wait หลัง kill Chrome + หลัง health-check ผ่าน
+
+---
+
+## Checkpoint — 2026-05-15 (SaaS Roadmap Research Session)
+
+### สิ่งที่ทำในวันนี้
+
+**1. Proxy / Rate Limit Legal Analysis**
+- สรุป: proxy bypass = gray area ตาม พ.ร.บ. คอมพิวเตอร์ มาตรา 7
+- eGP ไม่มี ToS เป็นลายลักษณ์อักษร แต่ data.go.th มีแค่ static CSV ล้าหลัง 1.5 ปี
+- สรุป: ไม่แนะนำ proxy, ไม่คุ้ม risk vs reward
+
+**2. eGP API Sort Order — ทดสอบจริง**
+- เขียน `test_sort_order.py` ยิง API กับ Chrome debug port ที่เปิดอยู่
+- ผล: **API sort by `announceDate` DESC (ใหม่→เก่า) ยืนยัน 100%**
+  - Page 1-5: ทั้งหมด 2026-05-15 (วันทดสอบ)
+  - Page 10: 2026-05-14
+  - Page 15: 2026-05-13
+- พบ outlier: page 1 มี 1 งาน announceDate=2026-05-08 โผล่ขึ้นมา (re-announce)
+- ความหมาย: early-exit แบบ date-based ใช้ได้ แต่ต้องมี buffer ≥2 วัน
+- คุณกัญจน์ตัดสินใจ: **ไม่ทำ early-exit** (ความเสี่ยงพลาดงาน detection ยาก)
+- ลบ test script ทิ้งแล้ว
+
+**3. SaaS Vision & Roadmap 2**
+- คุณกัญจน์เปิดเผย business vision: ปล่อยเช่าระบบให้ผู้รับเหมารายอื่น
+  - 1,500 บาท/เดือน/จังหวัด/บริษัท
+  - เป้า 90 บริษัท × 77 จังหวัด = **6,930 บริษัท** → Revenue ceiling ~10.4M/เดือน
+- บันทึก Roadmap 2 เข้า memory (`project_saas_roadmap.md`):
+  - **Phase 1 (ปัจจุบัน):** ใช้เอง 2 อำเภอ — stable ก่อน
+  - **Phase 2 (Pilot):** 5-10 ลูกค้านครพนม 3-4 สัปดาห์ — 6 ขั้นตอน multi-tenant
+  - **Phase 3 (Scale):** Cloud + PostgreSQL + 77 จังหวัด + บริษัท SaaS
+- **คุณกัญจน์สั่ง: ยึด Roadmap นี้ ห้ามออกนอกเส้นทาง**
+- เพิ่ม Mermaid Flowchart ขนาดกะทัดรัดเข้า roadmap.md
+
+### ไฟล์ที่เปลี่ยน
+- `C:\Users\Ace\.claude\projects\C--Bid-Master-System\memory\project_saas_vision.md` — สร้างใหม่
+- `C:\Users\Ace\.claude\projects\C--Bid-Master-System\memory\project_saas_roadmap.md` — สร้างใหม่ (Roadmap 2)
+- `MEMORY.md` — เพิ่ม 2 entries ใหม่
+
+### สถานะ Pipeline ปัจจุบัน
+- Pipeline ทำงาน: 45-60 นาที/รัน, รัน 06:00 น. ทุกวัน
+- Phase 1 stable — ไม่มี optimization ค้างอยู่
+- รอคุณกัญจน์ตัดสินใจเริ่ม Phase 2 เมื่อพร้อม
+
+---
+
+## Checkpoint — 2026-05-15 (Sheet Redesign — IN PROGRESS)
+
+> **สำหรับ Claude ID ใหม่:** อ่าน `docs/sheet_redesign_plan.md` แล้วทำต่อจาก Phase ที่ค้าง
+
+### เหตุผล
+คุณกัญจน์รายงาน: "scrape ดูราบรื่น แต่ใส่ Google Sheet มั่วไปหมด งานหมดวันยื่นซองโผล่ใน active_bidding, ไม่มี reset, ความน่าเชื่อถือตกหนัก"
+
+Inspect 17 sheets เจอ root causes:
+- Sheet duplicate / legacy เยอะ (raw_jobs vs raw_jobs_all, ranked_jobs ตัด Ranker ไปแล้ว, dashboard test, ฯลฯ)
+- Schema ไม่ consistent (publish_date eng vs วันที่ประกาศ ไทย)
+- Classifier ไม่ filter deadline → 7 งาน e-bidding หมดอายุ -1 ถึง -77 วัน ค้างใน active_bidding
+- Append-only ไม่มี reset cycle
+
+### การตัดสินใจ (user)
+| คำถาม | คำตอบ |
+|---|---|
+| Backup | local JSON dump (SA ไม่มี Drive quota) |
+| tor_review | เก็บไว้ (Phase 2 SaaS) |
+| Migration | Big bang — ล้าง+rebuild |
+| Scraper | เขียน all_jobs ตัวเดียว → Classifier rebuild derived |
+
+### Phases
+| # | Phase | Status |
+|---|---|---|
+| 1 | Backup → `backups/sheets_2026-05-15_2046/` | ✅ 17 sheets, 11,294 rows |
+| 2 | Blueprint → `docs/sheet_redesign_plan.md` | ✅ |
+| 3 | สร้าง all_jobs schema (15 cols) | ✅ |
+| 4 | Migrate raw_jobs.json → all_jobs | ✅ 8,690 unique rows |
+| 5 | แก้ Sebastian_Scraper เขียน all_jobs (upsert) | ✅ |
+| 6 | แก้ Sebastian_Classifier state machine | ✅ active=11 / pending=18 / awarded=132 |
+| 7 | แก้ LINE_Notify (schema ใหม่), Winner_Checker (cache file), patch_deadlines (all_jobs) | ✅ |
+| 8 | ลบชีทเก่า 11 ตัว | ✅ เหลือ 7 ชีท |
+| 9 | Test E2E (Classifier + LINE_Notify dry-run) | ✅ |
+
+### ผลลัพธ์สุดท้าย
+
+**Sheet structure (17 → 7):**
+- `all_jobs` 8,690 rows — Source of Truth
+- `active_bidding` 7 งาน — งานก่อสร้างในพื้นที่ deadline ≥ วันนี้
+- `pending_award` 17 งาน — deadline หมด ยังไม่ประกาศผู้ชนะ
+- `awarded_jobs` 132 งาน — มี winner data
+- `tor_review` reserved (Phase 2 SaaS)
+- `calc_road` + `cost_data_By_Dexter` (manual ของพ่อ — ไม่แตะ)
+
+**Scripts ที่แก้:**
+| File | เปลี่ยน |
+|---|---|
+| `Sebastian_Scraper.py` | upsert all_jobs (1 sheet) แทน append 3 sheets |
+| `Sebastian_Classifier.py` | rewrite — state machine + clear/rewrite + province + construction filters |
+| `Sebastian_LINE_Notify.py` | อ่าน schema ใหม่ (publish_date / deadline / days_remaining) |
+| `Sebastian_Winner_Checker.py` | rewrite — เขียน `data/winner_cache_bootstrap.json` แทน sheet ตรง ๆ |
+| `patch_deadlines.py` | source = all_jobs, auto-trigger Classifier rebuild |
+| `migrate_to_all_jobs.py` (ใหม่) | one-time migration script |
+| `build_winner_cache.py` (ใหม่) | bootstrap winner cache จาก backup |
+
+**Pipeline ใหม่:**
+```
+Scraper          → upsert all_jobs (1 sheet, single source of truth)
+Patch deadlines  → fetch missing deadlines → update all_jobs → rebuild
+Classifier       → clear+write 3 derived sheets (state machine)
+Winner Checker   → update winner_cache.json → rebuild
+LINE Notify      → อ่าน active_bidding (clean จาก Classifier)
+```
+
+**ปัญหาเดิม → แก้แล้ว:**
+- ❌ งานหมดวันยื่นซองโผล่ใน active → ✅ Classifier filter ตาม deadline ทุกครั้ง
+- ❌ ไม่มี reset → ✅ clear+rewrite ทุก pipeline run
+- ❌ Schema ไม่ consistent → ✅ schema เดียว all_jobs + extra ใน derived
+- ❌ ความน่าเชื่อถือตก → ✅ source of truth ตัวเดียว
+
+### Backup
+- Local JSON: `backups/sheets_2026-05-15_2046/` (17 sheets, 11,294 rows)
+- Drive copy: ผู้ใช้ทำเอง 1 คลิก (File → Make a copy)
+
+---
+
+## Checkpoint — 2026-05-15 (Bug investigation: filter เข้มเกินไป)
+
+> **สำหรับ ID ใหม่:** อ่าน `docs/sheet_redesign_plan.md` + entry นี้
+
+### Bug ที่ user รายงาน
+- active_bidding / pending_award มีแต่งานที่ keyword "นครพนม"
+- งานที่ scrape ผ่าน dept_search_terms (เช่น "ตำบลโพนทอง", "เทศบาลตำบลศรีสงคราม") หายไป
+- มีงานยื่นซองวันนี้ที่พ่อสนใจ — ไม่ขึ้น
+
+### Root cause hypothesis
+Classifier filter `is_in_target_province()` หา "นครพนม"/"บึงกาฬ" ใน province + fallback ใน search_keyword/title/department
+- งานที่ scrape ด้วย dept_search → search_keyword = "ตำบลโพนทอง" (ไม่มีชื่อจังหวัด)
+- province field อาจว่างหรือเป็นชื่อหน่วยงานต้นสังกัด
+- ถ้า title + department ก็ไม่มี "นครพนม"/"บึงกาฬ" → ตก filter
+
+### กำลังสืบ
+- นับ province distribution ใน all_jobs (e-bidding + กำลังประมูล)
+- หาตัวอย่างงานที่ skipped_off_province
+- แก้ filter ให้ครอบคลุม dept-source jobs
+
+### Diagnosis
+29 e-bidding "กำลังประมูล" ใน all_jobs:
+- 20 มี province="นครพนม"/"บึงกาฬ" (ผ่าน filter เก่า)
+- 5 search_keyword จาก dept_search (เช่น "เทศบาลตำบลศรีสงคราม", "อบต.ดงบัง"):
+  - 2 ตัวเป็น cross-province false match (อบต.ไผ่ล้อม จ.พิษณุโลก, อบต.หนองแวง จ.มหาสารคาม) — ถูกต้องที่ตัด
+  - 3 ตัวเป็นงานในนครพนมจริง — ถูกตัดผิด ❌
+- 4 อื่น ๆ (มุกดาหาร 3, กรุงเทพ HQ ทำงานในนครพนม 1)
+
+### Root cause
+1. `is_in_target_province` ดู province field + fallback "นครพนม"/"บึงกาฬ" string match
+2. งาน dept_search มี search_keyword = "เทศบาลตำบลศรีสงคราม" (ชื่อเต็ม) — ไม่มี "นครพนม" → ตก filter
+3. ไม่ได้ใช้ `DEPT_PROVINCE_MAP` ของ Scraper (28 entries) เป็น fallback
+
+### Fix (2026-05-15 21:46)
+แก้ `Sebastian_Classifier.is_in_target_province()`:
+- Case A: `province` ตรงเป้า → True
+- Case C: `province` มีค่าแต่ไม่ใช่เป้า → True ถ้า title มี "จ.นครพนม"/"จังหวัดนครพนม" (HQ ทำงานต่างจังหวัด); else False (ตัด cross-province false match)
+- Case B: `province` ว่าง → fallback ดู title/dept + DEPT_PROVINCE_MAP key (substring match)
+
+### ผลหลัง fix
+| Sheet | ก่อน | หลัง |
+|---|---|---|
+| active_bidding | 7 | **8** (+1 อบต.ดงบัง) |
+| pending_award | 17 | 17 |
+| awarded_jobs | 132 | 132 |
+| skipped off-province | 93 | 82 |
+
+### หมายเหตุ
+- jid=69049235336 (อบต.ดงบัง) — deadline ว่าง → patch_deadlines จะดึงให้รอบถัดไป
+- งาน user สนใจที่หาย (อาจเป็น) jid=69049235336 → ตอนนี้อยู่ใน active แล้ว ✅
+
+---
+
+## งานที่ N+5: Schema Drift Healing — 1,300 misaligned rows (2026-05-15 → 2026-05-16)
+
+### สถานะ: ✅ เสร็จแล้ว
+
+### Bug ที่ user รายงาน
+- พบงานใน all_jobs A1476 (jid=69059074818, ตำบลโพธิ์หมากแข้ง — งานก่อสร้างถนน คสล. ทางเข้าวัดถ้ำชัยมงคล)
+- ตรงกับเกณฑ์บริษัทชัดเจน แต่ไม่ปรากฏใน active_bidding หรือ pending_award
+
+### Diagnosis (debug_row_1476.py + count_misaligned.py)
+Row 1476 มี:
+- `project_status = 'province:องค์การบริหารส่วนตำบลโพธิ์หมากแข้ง | หนังสือเชิญชวน/ประกาศเชิญชวน'` ← raw quantity_note หลุดมา
+- `search_keyword = ''` (ว่าง)
+- `tor_url = 'new'` ← ผิด
+- `province = ''`
+
+นับ misaligned rows ใน all_jobs:
+- 737 rows มี project_status เป็น `'province:...'` หรือ `'keyword:...'`
+- 1,340 rows มี search_keyword ว่าง
+- 772 rows มี tor_url='new'
+- 601 rows มี project_status เป็นตัวเลข ('0','1','4','5','6','7','8')
+
+### Root cause
+`migrate_to_all_jobs.py` (Phase 4 ของ Sheet Redesign) ใช้ `headers` ของ raw_jobs.json[0] เป็น single index map สำหรับทุก row แต่ raw_jobs.json มี **3 schema variants** ปนกัน (เพราะ Scraper เคยเปลี่ยน schema หลายครั้ง):
+
+| Variant | จำนวน | tor_url | status | project_status | quantity_note |
+|---|---:|---|---|---|---|
+| A (เก่า) | 737 | `'new'` | mapped value | raw `'province:X \| flow'` | ว่าง |
+| B (clean) | 7,353 | URL หรือว่าง | ว่าง | mapped value | raw `'province:X \| flow'` |
+| C (skip) | 601 | `'skip'`/`'docs_failed'` | raw `'keyword:X \| flow'` | stage code (1-8) | step code (IM/W0/W1) |
+
+migrate_to_all_jobs.py ดึง `g(r, 'project_status')` ตรงๆ → Variant A/C ถูก map ผิดทั้งหมด
+
+### Fix — 2 layers
+
+**Layer 1: Healing data (`scripts/smart_migrate.py`)**
+- ตรวจ schema variant per-row จาก signature ของ tor_url + project_status
+- Variant A: ของจริง project_status อยู่ใน `status` field, search_keyword extract จาก raw_qn
+- Variant B: schema สมบูรณ์ ใช้ตามปกติ
+- Variant C: ของจริงอยู่ใน `status` (raw_qn) → split " | " + map flow_name → project_status
+- Backup all_jobs ปัจจุบันลง `backups/all_jobs_pre_smart_migrate/` ก่อน clear+rewrite
+
+**Layer 2: Resilient Classifier (`scripts/Sebastian_Classifier.py`)**
+- `_normalize_project_status()`: รับ raw string → return mapped value
+  - ถ้าเป็น `'กำลังประมูล'/'ประมูลแล้ว'/...` → return ตรงๆ
+  - ถ้าเริ่มต้น `'province:'/'keyword:'` → split " | " + FLOW_STATUS_MAP lookup
+  - ถ้าเป็นตัวเลข → return "" (ไม่มี info พอ map)
+- `is_in_target_province()` Case D: ถ้า search_keyword ว่าง → fallback ตรวจ `department + subdistrict` กับ DEPT_PROVINCE_MAP
+- Import `FLOW_STATUS_MAP` จาก `Sebastian_Scraper` เป็น single source of truth
+
+### ผลหลัง fix
+| Sheet | ก่อน | หลัง | Δ |
+|---|---:|---:|---:|
+| active_bidding | 8 | **13** | +5 |
+| pending_award | 17 | **21** | +4 |
+| awarded_jobs | 132 | 132 | 0 |
+| **รวมงานกู้คืน** | | | **+9** |
+
+Variant breakdown หลัง smart_migrate:
+- A_old: 737 → mapped ถูกแล้ว
+- B_clean: 7,353 → ใช้ตามปกติ
+- C_skip: 563 → mapped ถูกแล้ว
+- fallback: 38 → ยังต้อง investigate (น้อยมาก)
+
+### Verify
+jid=69059074818 (row 1476 ของ user) ตอนนี้อยู่ใน `active_bidding` row 7:
+- project_status: `'กำลังประมูล'` ✓
+- search_keyword: `'องค์การบริหารส่วนตำบลโพธิ์หมากแข้ง'` ✓
+- tor_url: `''` ✓
+- deadline ว่าง → รอ patch_deadlines ดึง PDF เติม
+
+### ไฟล์ที่เพิ่ม/แก้
+- `scripts/smart_migrate.py` (ใหม่) — per-row variant detection + heal
+- `scripts/Sebastian_Classifier.py` (แก้) — `_normalize_project_status()` + Case D
+- `scripts/coverage_audit.py` (ใหม่) — วัด pond size 3 ชั้น (API total / keyword gap / filter drop)
+- `scripts/count_misaligned.py` (ใหม่) — debug helper
+- `scripts/debug_row_1476.py` (ใหม่) — trace filter logic per row
+- `backups/all_jobs_pre_smart_migrate/all_jobs_2026-05-15_2343.json` — pre-heal backup
+
+### Followup
+- รัน `patch_deadlines.py` (ต้อง Chrome) — เติม deadline ของงานใหม่ที่กู้คืนได้
+- พิจารณา sampling audit (จาก idea ของ user): สุ่ม 100 จาก eGP → เทียบกับระบบเรา → คำนวณ recall % + classification accuracy %
+
+---
+
+## งานที่ N+6: Stale Data Refresh — query eGP API สดต่อ active job (2026-05-16)
+
+### สถานะ: ✅ เสร็จแล้ว
+
+### Bug ที่ user รายงาน
+- jid=69039325763 อยู่ใน active_bidding แต่จริงๆ ประกาศผู้ชนะแล้ว
+- jid=69059074818 อยู่ใน active_bidding แต่ "ยังรับฟังคำวิจารณ์อยู่" (ยังไม่เปิดให้ยื่นซองจริง)
+
+### Root cause
+1. **ข้อมูล all_jobs frozen** ตั้งแต่ migration (2026-05-15 23:43) → ไม่มี Scraper run ใหม่หลังจากนั้น
+2. **Winner Checker เช็คเฉพาะ status='ประมูลแล้ว'** — ไม่ catch งานที่มีผู้ชนะแล้วแต่ status เรายังเป็น 'กำลังประมูล'
+3. **flowName "หนังสือเชิญชวน/ประกาศเชิญชวน" → mapped เป็น "กำลังประมูล"** — แต่จริงๆ ระยะนี้ครอบคลุมทั้ง "รับฟังคำวิจารณ์" (ยังไม่เปิดยื่น) และ "เปิดยื่นซอง"
+
+### eGP API ที่ค้นพบใหม่
+- **`getProjectDetail?projectId=X`** → คืน `flowSeqno`, `stepId`, `flowId`, `announceType`
+  - flowSeqno guide: 1-3=กำลังเตรียม, 4=กำลังประมูล, 5+=ประมูลแล้ว
+  - stepId pattern: M03/U03=TOR draft, S01=Submission open, W03=Winner stage
+- **`getProcureResult?projectId=X`** → คืน `procureResultList[].procureResultDataResponse[]`
+  - **Winner = row ที่มี `priceAgree != null`** (ราคาตกลง)
+  - `data.announceDate` = วันประกาศผู้ชนะ
+  - resultFlag P/N = ผ่าน/ไม่ผ่าน, แต่ priceAgree เป็น signal ที่ชัดเจนกว่า
+
+### Fix — `scripts/refresh_active_jobs.py` (ใหม่)
+- Query 2 endpoints per active job:
+  1. `getProcureResult` → ถ้ามี winner (priceAgree != null) → cache + status='ประมูลแล้ว'
+  2. `getProjectDetail` → flowSeqno → derive project_status
+- Update all_jobs (project_status, last_seen_at, deadline ถ้ามี)
+- Trigger Classifier rebuild ภายในหลัง update
+
+### Pipeline integration
+เพิ่ม `refresh` เป็น step 4/8 ใน `Sebastian_Pipeline.py`:
+```
+scrape → classify → refresh → download → analyze → cost → rank → notify
+```
+- รัน 06:00 ทุกวันก่อน LINE notify → ข้อมูลใน LINE จะ fresh เสมอ
+- ต้องการ Chrome (port 9222) — ถ้าไม่ได้เปิด refresh จะ fail แต่ Pipeline จะ continue
+
+### ผล (Full refresh ทั้ง 9 active jobs)
+| Sheet | ก่อน | หลัง | Δ |
+|---|---:|---:|---:|
+| active_bidding | 9 | **2** | -7 |
+| pending_award | 23 | 23 | 0 |
+| awarded_jobs | 132 | **133** | +1 |
+
+**Insight: 7 จาก 9 active jobs จริงๆ ยังเป็น "กำลังเตรียม" (รับฟังคำวิจารณ์)** — ไม่ได้เปิดยื่นซองจริง
+- 69039325763: refresh พบ winner = ห้างหุ้นส่วนจำกัด ลัทธนนต์คอนสตรัคชั่น @ 9,976,000 (-0.22%) → ย้าย awarded ✓
+- 69059074818 + 6 อื่นๆ: flowSeqno=3 → "กำลังเตรียม" → ตัดออกจาก active ✓
+- เหลือ 2 active จริง (jid=69049234631 + 69049094319, flowSeqno=4 stepId=S01)
+
+### ไฟล์ที่เพิ่ม/แก้
+- `scripts/refresh_active_jobs.py` (ใหม่) — refresh active jobs จาก eGP API
+- `scripts/probe_project_api.py` (ใหม่) — probe eGP endpoints
+- `scripts/debug_2_jobs.py` (ใหม่) — diagnostic helper
+- `scripts/Sebastian_Pipeline.py` (แก้) — เพิ่ม refresh step 4/8
+
+### Followup
+- พิจารณาเพิ่ม `tor_review` sheet (Phase 2) สำหรับงาน flowSeqno=3 ที่กำลังรับฟังคำวิจารณ์ — เพื่อ pre-warning user ว่ามีงานกำลังจะเปิดยื่นซอง
+- ตรวจสอบว่า `Winner_Checker` ยัง relevant ไหม หรือ replace ด้วย `refresh_active_jobs` ทั้งหมด
+
+---
+
+## งานที่ N+7: 4-Sheet Lifecycle Redesign (2026-05-16)
+
+### สถานะ: ✅ เสร็จแล้ว
+
+### Bug ที่ user รายงาน
+- jid=69059074818 อยู่ใน active_bidding แต่จริงๆ "ยังรับฟังคำวิจารณ์อยู่"
+- 167 jobs ที่ status='ประมูลแล้ว' ไม่มี winner ใน cache → หายไปไม่ขึ้นที่ไหน
+
+### Root cause
+3-sheet structure (active/pending/awarded) ไม่ครอบคลุม lifecycle จริงของ eGP:
+- "รับฟังคำวิจารณ์" (flowSeqno=3) ไม่ใช่ทั้ง active หรือ pending
+- "ประมูลแล้ว ไม่มี winner" ตกหล่นเพราะไม่ผ่าน status='กำลังประมูล' filter
+
+### Fix — 4-Sheet Lifecycle (สอดคล้อง eGP flow)
+```
+TOR Draft → [รับฟังคำวิจารณ์] → [เปิดยื่นซอง] → [รอรู้ผู้ชนะ] → [ประกาศแล้ว]
+              tor_review        active_bidding   pending_award    awarded_jobs
+```
+
+| Sheet | คือ | Logic | Action ของ user |
+|---|---|---|---|
+| 🟢 tor_review | รับฟังคำวิจารณ์ | flowSeqno≤3 (กำลังเตรียม) | เตรียมตัว, อ่าน TOR ล่วงหน้า |
+| 🔵 active_bidding | ยื่นซองได้ตอนนี้ | กำลังประมูล + deadline≥today | **ตัดสินใจประมูลตอนนี้** |
+| 🟡 pending_award | รอรู้ผู้ชนะ | deadline ผ่าน OR ประมูลแล้ว ไม่มี winner | รอ refresh / benchmark คู่แข่ง |
+| ⚪ awarded_jobs | รู้ผู้ชนะแล้ว | มี winner cache | reference, discount %, คู่แข่ง |
+
+### ไฟล์ที่เพิ่ม/แก้
+- `scripts/Sebastian_Classifier.py` — เพิ่ม TOR_REVIEW_HEADERS, แยก stage_note vs wait_reason, write 4 sheets
+- `scripts/Sebastian_LINE_Notify.py` — เปิด `get_tor_review_jobs()` (เดิม return []), แก้ `_build_tor_block()` ให้ใช้ schema ใหม่ (publish_date, stage_note)
+- `scripts/refresh_active_jobs.py` — เพิ่ม retry + cooldown + valid-data check (ป้องกัน rate limit ทำ status ผิด)
+
+### Insight ระหว่างทำ
+**Rate limit ของ eGP API:** refresh 167 jobs ติดกัน (sleep 0.5s) → 68/167 = 41% ได้ empty data → ทำให้ status mapping ผิด (default เป็น "กำลังเตรียม")
+- Fix: เพิ่ม `valid` flag ใน fetch_project_detail (ตรวจ flowSeqno>0 OR stepId), retry 1 ครั้ง delay 3s, ถ้ายัง empty → keep current status (ไม่ overwrite)
+- Fix #2: sleep 1.5s ระหว่าง requests + cooldown 30s ทุก 50 jobs
+
+### ผลรวม (after 2 รอบ refresh = 167 + 76 = 243 jobs)
+| Sheet | ก่อน | หลัง |
+|---|---:|---:|
+| tor_review | (ไม่มี) | **8** |
+| active_bidding | 2 | **5** |
+| pending_award | 23 | **25** |
+| awarded_jobs | 133 | **295** (+162 winners) |
+
+**ตัวอย่าง winner ที่กู้คืน:**
+- jid=68109450159: ห้างหุ้นส่วนจำกัด **ยศประทานรุ่งเรืองทรัพย์** @ 1,480,000 (-28.16%) ← บริษัทของ user!
+- + 161 winner อื่นๆ ที่เคยอยู่ใน "ประมูลแล้ว ไม่มี cache"
+
+### Followup
+- รัน refresh เป็น cron 06:00 ผ่าน Sebastian_Pipeline.py step 4/8 — winner ใหม่จะ catch อัตโนมัติ
+- พิจารณา Winner_Checker ตอนนี้ redundant กับ refresh_active_jobs
+
+---
+
+## งานที่ N+8: Pre-sleep cleanup (2026-05-16, 02:30) — A.1+A.2 fix, B research
+
+### Task A.1: patch_deadlines สำหรับ active jobs ✅
+- ดึง deadline ได้ 4 จาก ~9 candidates (jids: 69049276732, 69049216940, 69049200617, 68089313232)
+- ทั้ง 4 deadline ผ่านไปนาน (เก่าสุด 20/03/2026 = 2 เดือนแล้ว) → ย้ายจาก active → pending
+- เหลือ active 4 jobs ที่ deadline ยังว่าง (tor_url='' → patch ดึงไม่ได้ — ดู Task B)
+
+### Task A.2: Heal winner_cache_bootstrap.json (50 bad winners) ✅
+**Bug:** 50 จาก 295 entries ใน winner_cache_bootstrap.json มี winner_name='province:X | flow' (raw qn)
+**สาเหตุ:** build_winner_cache.py สร้างจาก awarded_jobs.json backup ที่ schema เลื่อน (เหมือน bug schema drift แต่ครั้งนี้อยู่ใน cache file)
+
+**Fix 2 ขั้น:**
+1. `scripts/heal_winner_cache.py` (ใหม่) — ลบ 50 bad entries (backup ลง `data/winner_cache_pre_heal.json`)
+2. รัน refresh บน 50 jids → ดึง winner จริงจาก eGP getProcureResult → cache มีข้อมูลถูก
+3. แก้ `Classifier.load_winner_cache()` — skip bad winners ตอน load จาก awarded_jobs sheet (ป้องกัน sheet เก่า overwrite cache file ที่สะอาด)
+
+**ผล:** awarded_jobs ตอนนี้ winner_name = 245 proper + 50 ถูก = 295 (0 bad)
+
+### Task B: Investigation — งาน "ยกเลิก" หรือ "deadline ผ่าน" ใน active_bidding (research only, ไม่แก้)
+
+#### B.1: ทำไม active มีงาน "ยกเลิก" (cancelled)?
+
+**Root cause:** eGP API field `projectStatus` (ใน getProjectDetail response):
+- `"A"` = Active (ปกติ)
+- `"R"` = **Cancelled (ยกเลิก/Removed)**
+
+**ตัวอย่างที่ probe ได้:**
+| jid | flowSeqno | stepId | projectStatus | announceType | สถานะใน all_jobs |
+|---|---:|---|---|---|---|
+| 69049431523 | 0 | B03 | **R** | W1 | ยกเลิก |
+| 69019024418 | **4** | S01 | **R** | D1 | ยกเลิก |
+| 69049202990 | 0 | B03 | **R** | W1 | ยกเลิก |
+
+**Bug ที่ refresh_active_jobs.py:** ใช้แค่ flowSeqno → `flowSeqno=4` → ใส่ "กำลังประมูล" → Classifier ใส่เข้า active. **ไม่ได้เช็ค projectStatus="R"**
+
+**Pattern เพิ่มเติม:** `announceType` ที่มี suffix "1" (D1, W1) อาจเป็น cancelled version ของ stage นั้น (D0/W0 = Original, D1/W1 = Cancelled)
+
+**Fix proposal (สำหรับเช้านี้):**
+```python
+# fetch_project_detail() — เพิ่ม check projectStatus ก่อน
+if data.get("projectStatus") == "R":
+    return {"project_status": "ยกเลิก", "valid": True, ...}
+# else use flowSeqno mapping เดิม
+```
+
+#### B.2: ทำไม active มีงาน "deadline ผ่านแล้ว"?
+
+**Root cause:** Classifier logic:
+```python
+dl = parse_thai_date(g(r, "deadline"))
+if dl is None:
+    # deadline ว่าง → active (pessimistic)
+    active.append(base + [""])
+```
+- งานที่ deadline ว่างจริงๆ + project_status='กำลังประมูล' → ใส่ active เป็น default
+- ทำให้ดูเหมือน "active" ทั้งที่ deadline จริงอาจผ่านไปแล้ว (เพราะ publish > 1 เดือน)
+
+**ทำไม deadline ว่าง:**
+1. Scraper API (eGP search) ไม่ส่ง deadline กลับมา — ต้อง parse จาก PDF "ประกาศเชิญชวน"
+2. patch_deadlines.py ใช้ tor_url ใน all_jobs → fetch PDF → parse
+3. **ถ้า tor_url='' → patch ดึงไม่ได้** (ตอนนี้ active 4 ตัวเป็นแบบนี้หมด)
+4. tor_url ว่างเพราะ migration จาก raw_jobs.json ไม่มี field นี้
+
+**Verify จาก getProjectDetail API:** field deadline **ไม่อยู่ใน response เลย** — confirm ว่าต้องใช้ PDF method
+
+**Fix proposal (สำหรับเช้านี้, 2 ทางเลือก):**
+
+**A) Re-scrape ทั้งหมด** เพื่อ refresh tor_url
+- รัน Sebastian_Scraper.py → ทุก row จะได้ tor_url ใหม่
+- จากนั้น patch_deadlines → ดึง deadline ครบ
+- ใช้เวลา 30-60 นาที
+
+**B) Heuristic fallback ใน Classifier**
+- ถ้า publish_date > 30 วันมาแล้ว + deadline ว่าง → ย้ายไป pending (สมมติ deadline ผ่านแล้ว)
+- ใช้เวลา 5 นาที, แต่อาจ false-positive
+
+**แนะนำ:** A — ปลอดภัยกว่า + ได้ tor_url สำหรับทุก row
+
+#### B.3: หลักฐานเชิงปริมาณ
+- ตัวอย่าง projectStatus="R" + flowSeqno=4 = 1 ใน 3 cancelled samples → ~33% ของ cancelled มีโอกาสหลุดเข้า active ผ่าน refresh
+- ใน all_jobs ทั้งหมดมี 'ยกเลิก' กี่งาน: ต้องนับ (ทำเช้า)
+
+### ไฟล์ที่เพิ่ม/แก้ใน Task A
+- `scripts/heal_winner_cache.py` (ใหม่)
+- `scripts/Sebastian_Classifier.py` (แก้ load_winner_cache — skip bad)
+- `data/winner_cache_bootstrap.json` (heal — 295 → 245 → 295 with fresh winners)
+- `data/winner_cache_pre_heal.json` (backup)
+
+### Action items สำหรับเช้านี้ (2026-05-16, ตื่น)
+1. **สำคัญสูง — Fix B.1**: เพิ่ม `projectStatus="R"` check ใน refresh_active_jobs.py + Classifier ตัด "ยกเลิก" ออกจาก active (ปัจจุบัน "ยกเลิก" ตัดอยู่แล้ว)
+2. **สำคัญกลาง — Fix B.2 ทาง A**: รัน Sebastian_Scraper.py → patch_deadlines → ดึง deadline ครบ
+3. **ตรวจ active หลังแก้** ว่าทุก job มี deadline + projectStatus='A' จริงๆ
+4. **ตั้ง cron 06:00** ถ้ายังไม่ได้ตั้ง
+
+---
+
+## งานที่ N+9: Phase A complete + audit + Phase B bid_history + cron (2026-05-16)
+
+### Phase A (Classifier rewrite) ✅
+- 6-sheet stepId-driven: pre_tor / tor_review / active_bidding / pending_award / awarded_jobs / cancelled_jobs
+- Letter-prefix fallback (defensive for unknown stepIds)
+- Added 3 columns to all_jobs: step_id, project_status_raw, announce_type
+- Re-scrape + patch_deadlines + refresh
+- Fixed bug: active_bidding ต้อง deadline ≥ today (ไม่งั้น stale M03/S01 ค้าง)
+- Result: active 6 (M03 ทั้งหมด), tor 5, pending 18, awarded 303, cancelled 43
+
+### Audit ชีตอื่น ✅ (35/35 pass)
+- tor_review (5/5): stepId U* + projectStatus=A
+- cancelled (10/10): projectStatus=R OR announce ends "1"
+- awarded sample (20/20): มี winner หรือ stepId W*/C*/I*
+- pre_tor (0): empty (ไม่มี Q stage ใน data ตอนนี้)
+
+### Phase B: bid_history (Competitive Intelligence) ✅
+- สร้าง `bid_history` sheet (12 cols): job_id, bidder_name, bidder_tin, price_proposal, price_agree, result_flag, is_winner, is_sme, is_joint_venture, jv_partners, consider_desc, fetched_at
+- ขยาย `awarded_jobs` schema: +deliver_day, +num_bidders (รวม 24 cols)
+- `scripts/fetch_bid_history.py` (ใหม่) — migration ดึง procureResult ทั้ง bidder list
+- Migration 2 รอบ: 200/303 awarded → 1,545 bidders ใน bid_history
+- 103 ยัง pending (rate limit Cloudflare) — รอ Pipeline 06:00 refresh ครอบคลุม
+
+### Cron 06:00 + Chrome auto-launch ✅
+- พบ Task Scheduler `BidMaster-DailyPipeline` ตั้งไว้แล้ว (NextRun 5/17 06:00)
+- Update `run_pipeline.bat`:
+  - Kill old Chrome Debug + clear lock files
+  - Launch Chrome with --remote-debugging-port=9222
+  - Wait for port 9222 ready (60s timeout)
+  - Run `python Sebastian_Pipeline.py --step all` (8 steps with internal Discord notify)
+  - Kill Chrome at end
+  - Discord notify on success/failure
+- ใช้ Pipeline.py orchestrator แทนเรียก step ทีละอัน
+
+### ไฟล์ที่เพิ่ม/แก้
+- `CLAUDE.md` (ใหม่) — Discord notify protocol + progress logging rules + resume protocol
+- `scripts/audit_all_sheets.py` (ใหม่) — audit helper
+- `scripts/fetch_bid_history.py` (ใหม่) — Phase B migration
+- `scripts/Sebastian_Classifier.py` — เพิ่ม BID_HISTORY_HEADERS + extend AWARDED_JOBS_HEADERS + deadline guard
+- `run_pipeline.bat` — เปลี่ยนเป็น Pipeline.py --step all
+
+### Followup
+- Retry bid_history เหลือ 103 jobs (background รันอยู่ + Pipeline 06:00 จะ catch ใน refresh)
+- Phase C (future): Competitive intel dashboard — pivot tables + LINE summary "งานนี้คู่แข่งเฉลี่ย N ราย"
+
+---
+
+## งานที่ N+10: Pipeline 17/05 รีวิว + 4 fixes (2026-05-17, commit ca0474a)
+
+### สถานะ: ✅ เสร็จ
+
+### Root cause (จาก pipeline_collect_20260517.txt log)
+1. **Cloudflare บล็อกครึ่งหลัง:** scrape ต่อเนื่อง 87 นาที → modal "ไม่ผ่านการตรวจสอบ" หลัง 50 นาที → 14 search terms สุดท้าย 0 รายการทุกตัว
+2. **SCRAPE 87 นาที (ยาวเกิน):** `นครพนม` 10,000 + `บึงกาฬ` 4,810 = ใช้ 30 นาที, ใหม่ 0 (วันนั้น)
+3. **PATCH_DEADLINES fail 3/3:** งาน id 68xxx (ปี 2568) ค้างใน all_jobs — stepId M*/S*/Z* + deadline ว่าง + หา PDF ประกาศไม่เจอ → patch fail ซ้ำๆ ทุกเช้า
+4. **False alarm "Chrome ไม่ผูก port 9222":** ใน `run_pipeline_collect.bat` ใช้ `%ERRORLEVEL%` ภายในบล็อก if/else → ค่า expand ตอน parse ไม่ใช่ runtime → log ทั้ง "พร้อม" + "ERROR" พร้อมกัน
+
+### Fix
+1. **Scraper:** ตัด `["นครพนม", "บึงกาฬ"]` ออกจาก ALL_TERMS (revert ภายหลัง — ดู N+11)
+2. **Scraper:** เพิ่ม `detect_cloudflare_block()` + `init_process5_page(cloudflare_retries=2)` → long cooldown 300s + reinit
+3. **Scraper:** track `consecutive_timeouts` → ถ้าติด 2 ครั้ง → long cooldown 300s + reinit
+4. **patch_deadlines.py:** เพิ่ม `STALE_YEAR_PREFIXES = ("67", "68")` → skip jid ปีก่อนหน้า (stop bleed งานเก่าค้าง)
+5. **run_pipeline_collect.bat:** `setlocal enabledelayedexpansion` + `%ERRORLEVEL%` → `!ERRORLEVEL!`
+
+### Followup
+- รัน audit_pending.py ตอน Chrome เปิด → ตรวจ 18 pending_award + 3 งาน 68xxx ใน all_jobs
+- ตรวจผล SCRAPE พรุ่งนี้
+
+---
+
+## งานที่ N+11: Cloudflare Stealth — Deep Research + Apply (2026-05-17, commit d77e159)
+
+### สถานะ: ✅ เสร็จ (ลุ้นผลพรุ่งนี้)
+
+### Trigger
+คุณกัญจน์สงสัย: "ตัด keyword จังหวัดจะไม่เป็นอะไรใช่ไหม?" → เช็คแล้วพบ:
+- 16/05 'บึงกาฬ' **ใหม่ 48 งาน** (งานหน่วยงานชาติ/ภาค — กรมทางหลวงชนบทกรุงเทพฯ, ประปาภูมิภาค ฯลฯ ที่ทำในจังหวัด)
+- ถ้าตัด keyword จังหวัด → **พลาดงานหน่วยงานชาติทันที** เพราะ scrape ตำบล/หน่วยงานท้องถิ่นเจอไม่ได้
+
+### Deep research findings (Top 5 Cloudflare bot signals 2025-2026)
+1. **Runtime.enable / CDP isolation leak** ← แก้ด้วย JS ไม่ได้ (ต้อง Patchright)
+2. **JA4 TLS fingerprint** ← เราใช้ Chrome จริง = OK
+3. **navigator.webdriver + --enable-automation flag**
+4. **Behavioral / bot score escalation** (session ยาว → คะแนนสะสม)
+5. **window.chrome ไม่ครบ + WebGL/plugins mismatch**
+
+### Fix (4 layers)
+**Layer 1 — Stealth init script (`new_stealth_page()`):**
+- navigator.webdriver = undefined + delete จาก prototype
+- window.chrome ครบ (runtime/loadTimes/csi/app/webstore)
+- permissions.query Notification fix
+- plugins/languages `['th-TH','th','en-US','en']`
+- WebGL vendor Intel Iris (Windows realistic)
+
+**Layer 2 — Chrome launch flags (`run_pipeline*.bat`):**
+- `--disable-blink-features=AutomationControlled`
+- `--disable-features=...,AutomationControlled`
+- window-size `800x600 → 1280x800` (bot-tell)
+
+**Layer 3 — Pacing:**
+- Fixed 5-15s → **random jitter 2.5-6.5s**
+- Idle gap 45-90s ทุก 15 keywords (bot score sediment)
+- Session warmup: mouse move + scroll หลัง init
+
+**Layer 4 — Revert keyword cut + page limit:**
+- คืน `"นครพนม"` + `"บึงกาฬ"` 
+- max_pages **9999 → 20** สำหรับ keyword จังหวัด (200 รายการล่าสุด เพียงพอ เพราะใหม่สุด/วัน = 48)
+
+### ผลคาด
+- SCRAPE **87 → ~25 นาที**
+- Cloudflare hits **81 → <20**
+- ครอบคลุมเท่าเดิม (ไม่พลาดงานหน่วยงานชาติ)
+
+### ที่ยังไม่ทำ (Phase ถัดไป — Option upgrade)
+**Patchright** drop-in replacement ของ playwright — แก้ root cause `Runtime.enable` leak:
+- `pip install patchright && patchright install chrome`
+- เปลี่ยน import ใน 15+ scripts
+- ความเสี่ยง: ต้อง smoke test ทุก script
+- **เก็บไว้รอผลพรุ่งนี้ — ถ้า 4 layer ปัจจุบันยังไม่พอ ค่อยทำ**
+
+### Followup
+- ดูผล SCRAPE 18/05 06:00 — เทียบ time, Cloudflare hits, งานใหม่
+- ถ้ายังติด → Patchright Phase ถัดไป
+
+---
+
+## งานที่ N+12: CGD Open Data API Discovery (2026-05-17)
+
+### สถานะ: ✅ Discovery เสร็จ + probe ใช้งานได้ (commit pending)
+
+### Trigger
+1. รัน pipeline เทสต์ Cloudflare stealth (commit d77e159) ก่อน 02:00 ตามตาราง
+2. ผล: 4 keywords แรก (นครพนม, บึงกาฬ, ตำบลบ้านแพง, ตำบลไผ่ล้อม) ติด timeout ทุกตัว → **stealth 4 layers ไม่พอ** (confirmed ต้อง Patchright หรือลดบทบาท scraper)
+3. ลุยวิจัย G-LEAD: พบว่า **data.go.th มี Open API ฟรี** สำหรับข้อมูลจัดซื้อจัดจ้าง — G-LEAD ก็ใช้ source เดียวกัน
+
+### Process
+1. คุณกัญจน์ลงทะเบียนที่ https://opend.data.go.th/register_api/signup.php → ได้ User Token ทันที
+2. Probe API หา auth pattern — ลอง parameter name หลายแบบ (query + header) → ทุกตัว 401 "No API key found"
+3. คุณกัญจน์อัปโหลด user manual: `downloads/2025-07-08-051605.3384232025-03-07-DATAGOTH3USERMANUAL.pdf`
+4. อ่าน manual หน้า 36-37 → พบ endpoint + auth pattern ที่ถูกต้อง
+
+### API ที่ใช่ (จาก DATAGOTH3 manual หน้า 36-37)
+```
+URL:    https://opend.data.go.th/get-ckan/datastore_search
+Header: api-key: <user_token>    # มี dash
+Method: GET
+Params: resource_id=<UUID> + q=<keyword> + limit=N + offset=N + filters=<JSON>
+```
+
+### Datasets ที่ใช้ได้ (datastore_active=True)
+| Dataset | Files | Records/file | Last update | ใช้ |
+|---|---|---|---|---|
+| **egp-contact-2568** | 10 | ~500K | 2026-05-11 | awarded_jobs backfill + winner |
+| **egpwinner** | 5 | 500K | 2026-05-05 | company lookup (TIN ↔ ชื่อ) |
+| **thai-government-procurement** | 2 | (ZIP เก่า, API POST) | 2020 | skip |
+
+### ผลทดสอบ
+- ✅ filter `จังหวัด=นครพนม` exact: **5,757 records** ใน file-1 เพียงตัวเดียว
+- ✅ keyword `q=นครพนม` ทุก file รวม: **37,936 งาน** (ปี 2568 ทั่วประเทศ)
+- ✅ pagination `limit=1000` ทำงาน → **1 ล้าน records/วัน ได้** (quota = 1,000 calls/วัน)
+- ⚠️ Schema มี **column drift** (CSV upload field order ไม่ตรง) — ต้อง map ใหม่ก่อนใช้:
+  - `แขวง/ตำบล` มีค่า `POINT(lon lat)` (พิกัด)
+  - `ละติจูดโครงการ` มีค่าชื่อบริษัท
+  - ฯลฯ
+- ⚠️ ค้น "ยศประทาน" ใน egpwinner file-1 ไม่เจอ — อาจอยู่ใน file 2-5 หรือ TIN ไม่ตรง search
+
+### Schema (32 columns ของ egp-contact-2568)
+ลำดับ, รหัสโครงการ, ชื่อโครงการ, ชื่อประเภทโครงการ, ชื่อหน่วยงาน, ชื่อหน่วยงานย่อย, วิธีจัดซื้อฯ, กลุ่มวิธีจัดซื้อฯ, วันที่ประกาศ, งบประมาณ(บาท), ราคากลาง(บาท), ราคาตกลงซื้อ/จ้าง, ปีงบประมาณ, วันที่เกิดรายการ, จังหวัด, จังหวัด(Eng), เขต/อำเภอ, เขต/อำเภอ(Eng), แขวง/ตำบล, แขวง/ตำบล(Eng), สถานะโครงการ, พิกัดของโครงการ, ละติจูดโครงการ, ลองจิจูดโครงการ, เลขนิติบุคคล, ชื่อผู้ชนะ, เลขที่สัญญา, วันที่ลงนามสัญญา, วันที่สิ้นสุดสัญญา, งบสัญญา(บาท), สถานะสัญญา
+
+### ไฟล์ที่เพิ่ม
+- `scripts/probe_cgd_api.py` — script ทดสอบ API (มี EGP_CONTRACT_2568_RIDS + EGPWINNER_RIDS hard-coded)
+- `data/cgd_step1_basic.json` — sample 2 records
+- `data/cgd_egp_contract_2568_sample.json` — search "นครพนม" sample
+- `data/cgd_egpwinner_bf6017ec.json` — egpwinner sample
+
+### Followup (Phase ถัดไป — Hybrid Integration)
+- Map column names เก็บ schema ที่ถูก (CSV upload schema drift)
+- เขียน `scripts/cgd_api_client.py` — fetch/normalize → Sheet awarded_jobs
+- ออกแบบ pipeline ใหม่: API หลัก (awarded_jobs) + Scraper เสริม (pre_tor/tor/active เฉพาะที่ API ไม่มี)
+- Audit หจก.ยศประทาน TIN — ค้นใน egpwinner file 2-5 หา record บริษัท
+
+### Insight สำคัญ
+- **G-LEAD ก็ใช้ API นี้** — ไม่มี data moat → เราแข่งบน real-time scraper + UX ได้
+- **Real-time bidding ยังต้อง scrape** (API ครอบคลุมแค่ awarded contract)
+- **Cloudflare stealth Phase 1 ไม่พอ** → ต้องลดบทบาท scraper (ผ่าน API hybrid) + Patchright Phase ต่อไปถ้ายังจำเป็น
+
+---
+
+## งานที่ N+13: Deep API Research + EGP RSS POC (2026-05-17)
+
+### สถานะ: ✅ POC verified — Phase 1 ready
+
+### Trigger
+หลัง stealth 4 layers ไม่พอ → ค้นทางอื่น
+1. คุณกัญจน์ขอวิจัย API ทุกแบบที่มีประโยชน์สำหรับ Bid Master
+2. Spawn deep research agent → ค้น 15+ queries + WebFetch หลายแหล่ง
+
+### Discovery (14 APIs ทั้งหมด — รายละเอียดใน [[project_api_roadmap]])
+
+**Tier ⭐⭐⭐⭐⭐ (Phase 0-1):**
+1. eGP Internal API (ใช้ปัจจุบัน — Cloudflare ติด)
+2. **EGP RSS Feeds** ⭐ — process.gprocurement.go.th/EPROCRssFeedWeb/egpannouncerss.xml ไม่ติด Cloudflare!
+3. CGD CKAN API (ใช้แล้ว N+12)
+
+**Tier ⭐⭐⭐⭐ (Phase 2-3):**
+4. DBD Juristic API (api.egov.go.th) — competitor profiling
+5. TPSO CMI — ดัชนีราคาวัสดุก่อสร้าง
+6. BOT API — ดอกเบี้ย/exchange rate
+
+**Tier ⭐⭐⭐ (Phase 3+):**
+7. Royal Gazette scraper (community fork) — predict future projects
+8. MOT Roads, 9. PWA eProcurement, 10. NSO GPP, 11. SME-GP
+
+### RSS POC Results (probe_egp_rss.py)
+**✅ ที่ใช้งานได้:**
+- HTTP 200 ทุก request — ไม่ติด Cloudflare
+- TIS-620 encoding decode สำเร็จ (92 Thai chars)
+- projectId extract: regex `\d{11,12}` ใช้งานได้
+- deptId filter ทำงาน (0703=20, 0708=13 items)
+- ต้องมี User-Agent header (ไม่งั้น ConnectionReset 10054)
+
+**⚠️ Limitations:**
+- RSS = **D0 (active_bidding) ONLY** — ไม่รวม pre_tor/tor/awarded/cancelled
+- `annType`/`type`/`announceType` params server ignore — D0 only
+- ลอง URL variations อื่น (egpplanrss, egpwinnerrss) → ทั้งหมด 404
+- ~3-20 items per dept call
+- DeptId catalog ยังไม่ครบสำหรับหน่วยงานเป้าหมาย (scan 700-799/1500-1599/4800-4899 ไม่เจอ match)
+
+### Cross-match กับ CGD API
+- RSS projectIds = 69xxx (ปี 2569)
+- CGD dataset = ปี 2568 → ไม่ match (cross-source consistency ต้องรอ contract 2569 ขึ้น)
+- เป็น expected behavior (RSS = real-time / pending, CGD = post-contract)
+
+### ไฟล์ที่เพิ่ม
+- `scripts/probe_egp_rss.py` — POC script (7 test cases)
+- `data/rss_probe_results.json` — sample data
+- `data/rss_poc_results.md` — full report
+- `data/egp_deptid_scan.json` — initial scan (empty result)
+
+### Memory ที่สร้าง/อัปเดต
+- `reference_egp_rss.md` — RSS API quick reference
+- `project_api_roadmap.md` — รวม catalog 14 API + adoption timeline 4 Phases
+- `MEMORY.md` index updated
+
+### Coverage Matrix หลัง Phase 1 implement
+| Stage | Source |
+|---|---|
+| pre_tor / tor_review | process5 scrape (เหลือเท่าเดิม) |
+| **active_bidding** | **RSS feeds** ⭐ (เปลี่ยนจาก scrape) |
+| pending_award | classifier logic |
+| **awarded_jobs** | **CGD API** ⭐ (Phase 0 → Phase 1) |
+| cancelled_jobs | classifier logic |
+
+### Implication
+- **ลด process5 scraper traffic ~70%** (เหลือเฉพาะ pre_tor/tor)
+- **Multi-tenant SaaS feasibility ขึ้น** — RSS+API ส่วนใหญ่ shared cost
+- **G-LEAD ไม่มี data moat** — ใช้ source เดียวกัน
+
+### Followup
+- **Phase 1 implementation** (2-3 สัปดาห์): RSS-First Pipeline
+  - หา deptId catalog ของหน่วยงานเป้าหมาย (broader scan หรือ reverse-lookup จาก all_jobs)
+  - เขียน `Sebastian_RSS_Scraper.py` + `cgd_api_client.py`
+  - ลดบทบาท process5 scraper
+- **Dashboard (คุณกัญจน์ขอ)**: brainstorm spec ก่อน implement — track scrape/classify performance + history + inflection points
+
+---
+
+## Setup (ครั้งแรก)
+
+```bash
+pip install playwright pymupdf openpyxl anthropic gspread google-auth
+playwright install chromium
+```
+
+สร้างไฟล์ `.env` ที่ root:
+```
+ANTHROPIC_API_KEY=sk-ant-...
+DISCORD_BOT_TOKEN=...
+DISCORD_CHANNEL_ID=...
+OPEND_USER_TOKEN=...    # data.go.th User Token (CKAN Data API)
+```
+
+---
+
+## งานที่ N+14: Dashboard Pages + Vercel Deploy (2026-05-17/18)
+
+### สถานะ: ✅ เสร็จ
+
+### สิ่งที่ทำ
+1. **Fix duplicate React keys** ใน `PipelineDurationChart` — dedupe commits ตามวัน + label `+N` เมื่อมี multiple commits/วัน
+2. **HeaderBar refactor** เป็น `"use client"` + `usePathname` → active state แท้จริง (ก่อนนี้ hardcoded)
+3. **สร้าง 5 หน้า dashboard:**
+   - `/scrape` — Cloudflare/timeout trend, keyword breakdown (`ScrapeMetricsChart` + `KeywordBreakdown`)
+   - `/classifier` — Lifecycle stack + trend, sheet-vs-classifier diff (`ClassifierTrendChart`)
+   - `/funnel` — Funnel diagram (Raw→Filtered→New→Classified→Actionable) (`FunnelDiagram`)
+   - `/timeline` — Inflection list with before/after metrics (`InflectionList`)
+   - `/history` — Pipeline run history grouped by day
+4. **Vercel deploy production** — `https://bid-master-dashboard.vercel.app`
+5. **`/api/revalidate`** — POST + secret header → ใช้ revalidatePath
+6. **Helper scripts:**
+   - `scripts/Sebastian_Revalidate_Dashboard.py` — เรียก revalidate API
+   - `scripts/Sebastian_Deploy_Dashboard.py` — รัน `vercel deploy --prod`
+
+### Real-time strategy (ปัจจุบัน)
+Git ยังไม่มี remote → `vercel deploy` ผ่าน CLI เท่านั้น  
+Flow ที่ใช้ได้จริง: pipeline → snapshot.json updated → `python scripts/Sebastian_Deploy_Dashboard.py` → deploy ~1 นาที
+
+### Followup
+- [ ] Option A: ย้าย snapshot ไป Vercel Blob → instant update (< 5s) ไม่ต้อง redeploy
+- [ ] Option C: setup GitHub remote → auto-deploy บน push
+- [ ] เพิ่มในเป็น step สุดท้ายของ `Sebastian_Pipeline.py` หลัง snapshot generate
+
+### Update (2026-05-18)
+- Pipeline integration: เพิ่ม step 9 (`snapshot`) + step 10 (`deploy`)
+- `--no-deploy` flag สำหรับข้าม deploy ใน dev mode
+- ทดสอบ `--step snapshot` ผ่าน (19s, snapshot.json regenerated)
+
+### Update 2 (2026-05-18) — Option A: Vercel Blob
+- สร้าง public Blob store `bid-master-snapshots` (auto-link กับ project ทั้ง 3 env)
+- API route `/api/snapshot` (POST) — รับ JSON body, ลบ blob เก่า, put ใหม่, revalidate 6 pages
+- `snapshot.ts` ตอนนี้ prefer Blob (ถ้ามี `BLOB_READ_WRITE_TOKEN`) — fallback ไป fs ใน dev
+- `Sebastian_Upload_Snapshot.py` — POST snapshot ไป /api/snapshot endpoint
+- Pipeline step 10 เปลี่ยนเป็น `publish` (upload) แทน full deploy → **2.3 วินาที** เทียบกับ deploy 60s
+- มี fallback อัตโนมัติ: ถ้า upload fail จะลอง full deploy
+
+### Real-time flow (ปัจจุบัน)
+```
+pipeline → snapshot.json updated → POST /api/snapshot → Blob (overwrite)
+                                                          ↓
+                                                  revalidatePath × 6 pages
+                                                          ↓
+                                                  dashboard อัปเดต < 5s
+```
+
+### Update 3 (2026-05-18) — HTTP Basic Auth
+- เพิ่ม `dashboard/web/src/middleware.ts` — Basic Auth บนทุก route ยกเว้น `/api/snapshot`, `/api/revalidate`, static assets
+- timingSafeEqual ป้องกัน timing attack
+- ENV: `DASHBOARD_USER`, `DASHBOARD_PASS` (ตั้งใน Vercel + .env)
+- ทดสอบครบ: no auth → 401, wrong → 401, correct → 200, /api/* → 200 (bypass)
+- Python upload ยังทำงาน (ใช้ x-revalidate-secret แทน)
+
+---
+
+## งานที่ N+15: Phase 1 RSS-First Pipeline (2026-05-18)
+
+### สถานะ: ✅ เสร็จ (MVP)
+
+### สิ่งที่ทำ
+
+**1. DeptId Discovery**
+- `scripts/scan_egp_deptids.py` — batch scan 0001-9999 (2-pass: fast + retry)
+- ติด HTTP 429 (rate limit) ระหว่าง scan รอบสอง → pivot ไป **incremental discovery**
+- Seed catalog 15 depts (จาก scan รอบแรกที่สำเร็จ + POC verified)
+- ภายหลังโตเป็น 75 depts ผ่าน probe ในการรัน RSS scraper 3 รอบ
+
+**2. `scripts/cgd_api_client.py`**
+- ห่อ CKAN `datastore_search` ใช้สำหรับ enrichment
+- `lookup_project(project_id)` — concurrent search 10 contract files
+- `lookup_winner_by_tin(tin)` — search egpwinner ทุก file
+- `normalize_to_all_jobs(record)` — schema mapping (18 cols)
+- Note: 2569 contract data ยังไม่อยู่ใน CGD → enrichment ทำได้เฉพาะ 2568 awarded
+
+**3. `scripts/Sebastian_RSS_Scraper.py`**
+- Discovery-mode: poll known active depts + probe N=20 random unknowns/run
+- ทำงานเร็ว: 75 depts ใน 17s · concurrent threads workers=4
+- ผลลัพธ์: data/rss_run_TIMESTAMP.json + อัปเดต catalog
+- Mode `--queue` → เขียน new projectIds ลง rss_queue.json (สำหรับ refresh_active_jobs pickup)
+
+**4. `scripts/filter_target_deptids.py`**
+- 2 layers: keyword match (title) + reverse projectId lookup (all_jobs sheet)
+- ปัจจุบัน 1 match (0137 — adjacent province สกลนคร) · 1713 target jobs ใน sheet แต่ 0 overlap (RSS = recent, sheet = historical)
+- จะ effective มากขึ้นเมื่อ RSS รันต่อเนื่องหลายวัน
+
+**5. Pipeline Integration**
+- เพิ่ม step `rss` (1.5) ระหว่าง scrape → download
+- ใช้: `python scripts/Sebastian_Pipeline.py --step rss`
+- Discord notify เมื่อ step done
+- Pipeline หลักรัน rss อัตโนมัติทุกรอบ (cron 06:00)
+
+### ผลลัพธ์ทดสอบ
+- 86 items (active D0) ดึงได้จาก 55 depts ใน 16.9 วินาที
+- **86 items ทั้งหมด "missed by process5 scraper"** (อาจเป็นเพราะ seen_ids snapshot ที่เปรียบเทียบ — ตัวเลขนี้จะค่อยลดเมื่อทั้งสอง source align)
+- Catalog เพิ่มจาก 15 → 75 depts ใน 3 รอบ test
+
+### Followup (Phase 1.5+)
+- [ ] Wire RSS queue → refresh_active_jobs.py เพื่อ fetch detail สำหรับ new projectIds
+- [ ] ตั้ง cron แยกให้ RSS scraper รันทุก 30 นาที (ตามที่ roadmap บอก)
+- [ ] เมื่อ catalog โต 200+ depts → re-run filter_target_deptids.py + curate target list
+- [ ] Measure จริง: เทียบ traffic process5 ก่อน/หลัง RSS adoption → KPI 70
+---
+
+## งานที่ N+15: Phase 1 RSS-First Pipeline (2026-05-18)
+
+### สถานะ: ✅ เสร็จ (MVP)
+
+### สิ่งที่ทำ
+
+**1. DeptId Discovery**
+- `scripts/scan_egp_deptids.py` — batch scan 0001-9999 (2-pass: fast + retry)
+- ติด HTTP 429 (rate limit) ระหว่าง scan รอบสอง → pivot ไป **incremental discovery**
+- Seed catalog 15 depts (จาก scan รอบแรกที่สำเร็จ + POC verified)
+- ภายหลังโตเป็น 75 depts ผ่าน probe ในการรัน RSS scraper 3 รอบ
+
+**2. `scripts/cgd_api_client.py`**
+- ห่อ CKAN `datastore_search` ใช้สำหรับ enrichment
+- `lookup_project(project_id)` — concurrent search 10 contract files
+- `lookup_winner_by_tin(tin)` — search egpwinner ทุก file
+- `normalize_to_all_jobs(record)` — schema mapping (18 cols)
+- Note: 2569 contract data ยังไม่อยู่ใน CGD → enrichment ทำได้เฉพาะ 2568 awarded
+
+**3. `scripts/Sebastian_RSS_Scraper.py`**
+- Discovery-mode: poll known active depts + probe N=20 random unknowns/run
+- ทำงานเร็ว: 75 depts ใน 17s · concurrent threads workers=4
+- ผลลัพธ์: `data/rss_run_TIMESTAMP.json` + อัปเดต catalog
+- Mode `--queue` → เขียน new projectIds ลง rss_queue.json
+
+**4. `scripts/filter_target_deptids.py`**
+- 2 layers: keyword match (title) + reverse projectId lookup (all_jobs sheet)
+- ปัจจุบัน 1 match (0137 — adjacent province สกลนคร)
+- จะ effective มากขึ้นเมื่อ RSS รันต่อเนื่องหลายวัน
+
+**5. Pipeline Integration**
+- เพิ่ม step `rss` (1.5) ระหว่าง scrape → download
+- ใช้: `python scripts/Sebastian_Pipeline.py --step rss`
+- Discord notify เมื่อ step done
+
+### ผลลัพธ์ทดสอบ
+- 86 items (active D0) จาก 55 depts ใน 16.9 วินาที
+- 86 items "missed by process5 scraper" (จะลดเมื่อ sources align)
+- Catalog เพิ่มจาก 15 → 75 depts ใน 3 รอบ test
+
+### Followup
+- Wire RSS queue → refresh_active_jobs.py
+- ตั้ง cron แยก RSS ทุก 30 นาที
+- catalog 200+ → re-run filter + curate target list
+- Measure: เทียบ process5 traffic ก่อน/หลัง RSS adoption (KPI 70% reduction)
+- CGD 2569 ออก → wire enrichment
+
+### 📌 Phase 1 Followup Tasks (อ้างถึง 2026-05-18)
+
+**🅰️ HIGH priority — blocking ของ #3:**
+- [ ] **#1 Slow scan ครบ 9999** — workers=1, sleep 2s, background run ~4-5 ชม.
+  - แก้: HTTP 429 issue → จะได้ catalog เต็ม (~1000+ depts vs 75 ปัจจุบัน)
+  - ปลดบล็อก: target filter จะ effective ขึ้น
+  - เลือกเวลา: รันตอนพักนาน หรือ overnight
+
+**🅱️ MEDIUM priority — ทำหลัง #1 + รอ data สะสม:**
+- [ ] **#3 Smart filter improvement** — ทำตอน catalog 500+ depts + RSS history สะสม 1 สัปดาห์
+  - เพิ่ม keywords: "เทศบาล", "อบต.", "อบจ.", "กรมโยธา", "กรมทางหลวง"
+  - Search description + title (full text)
+  - Cross-reference all_jobs department text → infer deptId mapping
+
+**🅲️ LOW priority — passive waiting:**
+- [ ] **#2 CGD 2569 dataset** — เช็คทุก 3 เดือน
+  - ปัจจุบัน: 2568 data only (5M records contracts + 2.5M winners)
+  - เมื่อ 2569 ออก: update `EGP_CONTRACT_2569_RIDS` ใน `cgd_api_client.py`
+  - แหล่ง check: https://opend.data.go.th/dataset/egp-contact
+
+**Priority logic:**
+- #1 blocking #3 (catalog ใหญ่ → filter ฉลาดได้)
+- #2 รอนอกการควบคุม → ไม่ทำให้ workflow ติด
+- ทำ #1 ใน background → ไม่กิน focus
+
+### Update Phase 1.5 (2026-05-18, 01:30)
+
+**1.5a Wire rss_queue → refresh_active_jobs:**
+- `Sebastian_RSS_Scraper.py`: queue ตอนนี้เก็บ full context (projectId, title, deptId, pubDate, link)
+- `refresh_active_jobs.py`: เพิ่ม flags `--from-queue`, `--dry-run`, `--limit`
+- Logic: jid ใน queue ที่ไม่อยู่ใน all_jobs → fetch detail + insert sparse row (จาก title RSS + getProjectDetail)
+- Auto-cleanup queue: remove items ที่ process หรือเข้า all_jobs แล้ว
+- ทดสอบ: `--dry-run --limit 5` ผ่าน, queue มี 86 items พร้อม process
+
+**1.5b 30-min cron:**
+- `scripts/run_rss_scraper.bat`: wrapper พร้อม log rotation
+- `scripts/setup_rss_cron.ps1`: สร้าง Windows Scheduled Task
+- Task `BidMaster_RSS_Scraper`: รันทุก 30 นาที, indefinite
+- Verified: first auto-trigger เวลา 1:26:56 · Last Result: 0 (success)
+- Catalog growing in production: 75 → 95 → 115 → 135 ใน 4 รอบ
+
+**Files added:**
+- scripts/run_rss_scraper.bat
+- scripts/setup_rss_cron.ps1
+
+**Files modified:**
+- scripts/Sebastian_RSS_Scraper.py (queue format)
+- scripts/refresh_active_jobs.py (--from-queue support)
+
+---
+
+## งานที่ N+16: Option A + B + Hybrid Catalog (2026-05-18)
+
+### Option A: Wire RSS queue → 02:00 collect (commit 8d22d13)
+- เพิ่ม Step 3.5 ใน run_pipeline_collect.bat
+- `refresh_active_jobs.py --from-queue --limit 50`
+- ใช้ Chrome session ของ 02:00 collect (reuse)
+- ทดสอบ live: queue 91 → 86, +5 sparse rows ใน all_jobs
+
+### Option B: Shrink scraper keywords 30 → 4 (commit 1a52fe0)
+- Active: นครพนม, บึงกาฬ, บ้านแพง, บึงโขงหลง
+- Legacy 28 ตำบล/หน่วยงาน เก็บไว้ใน `DEPT_PROVINCE_MAP_LEGACY`
+- Fallback: `--full-keywords`
+- Expected: scrape 30-45 → 4-6 นาที, pipeline 100 → 60-70 นาที
+
+### Hybrid Catalog Growth (commit 2d1e1a4)
+- Sebastian_RSS_Scraper.py: PROBE_SAMPLE_SIZE 20 → 50
+- scan_egp_deptids.py: workers=2, sleep=0.5s, save empty entries
+- Slow batch scan รัน background — ครบ 9999 ใน ~74 นาที (ที่ 2.25 req/s)
+- Catalog 235 → expected ~850-1500 active depts หลัง scan เสร็จ
+
+### Closed Loop (ทั้งหมดรวมกัน)
+```
+RSS scraper (every 30 min, probe 50)
+  → queue projectId
+02:00 collect (4 keywords)
+  → Step 3.5: --from-queue --limit 50 (ingest sparse rows)
+  → all_jobs ขยายทั่วประเทศ
+refresh tracks transitions
+  → getProcureResult fires
+  → winner_cache + awarded_jobs grow nationwide
+```
+
+---
+
+## งานที่ N+17: Mega Session — Phase 2 SaaS + Multi-stage RSS + Postgres (2026-05-18 → 19)
+
+### สถานะ: ✅ เสร็จ (23+ commits)
+
+### สิ่งที่ทำ (เรียงตามเวลา)
+
+**ช่วงค่ำ (Phase 1.5 + Option A/B):**
+- Option A: wire RSS queue → 02:00 collect (Step 3.5)
+- Option B: shrink scraper keywords 30 → 4
+- Hybrid catalog growth: probe 50/run + slow scan
+- P0 classifier fix (37 dropped jobs restored)
+- Dashboard refresh cron auto
+
+**กลางคืน (RSS + LINE OA):**
+- LINE OA Sebastian Phase 2 foundation:
+  - Customer Google Sheet schema (12 cols)
+  - /customer/[lineUserId] form page (public)
+  - /api/line/webhook (welcome + commands)
+  - /api/line/customer (REST API)
+  - SEBASTIAN_LINE_TOKEN/SECRET (separate from BSC Concrete)
+  - LINE OA channel "Sebastian Michaelis" @768itodz live
+- ทดสอบ end-to-end: ทักบอท → reply + create customer + status command
+
+**คืน (Research + Migration):**
+- 🔥 **Pre-TOR breakthrough**: ค้นพบ param `anounceType` (typo!) ทำให้ RSS ครอบคลุมทุก stage (P0/B0/D0/W0/D1)
+- Multi-stage RSS scraper deploy + rotate mode
+- **Phase A** (Postgres): Neon Marketplace + schema 7 tables + ETL 11K rows
+- **Phase B** (ETL sync): cron every 30 min — Sheet → DB always-fresh mirror
+
+### Commits สำคัญใน session (23 commits)
+
+```
+625d7b8 Quick wins: RSS rotate mode + classifier audit
+27e4b4d Phase A: Neon Postgres setup + ETL Sheet→DB foundation
+d2b1d77 Fix Sebastian_Dashboard_Refresh subprocess encoding
+89e4e1d Sebastian LINE OA: separate env vars from BSC Concrete
+082682c LINE OA Sebastian Phase 2: web signup + webhook
+d479769 Fix P0 + 3 resilience improvements (morning fixes)
+933b4e8 Dashboard: enrich catalog with dept names
+a575f88 Dashboard: searchable catalog browser on /scrape
+f7fbc3b Dashboard: RSS Catalog Tracker on /scrape page
+0e7ce84 RSS scraper: support multi-stage polling (P0/B0/D0/W0/D1)
+871ed87 Research: RSS supports ALL stages via anounceType param
+2d1e1a4 Hybrid catalog growth: probe 50 + slow safe batch scan
+1a52fe0 Option B: shrink scraper keywords 30 -> 4
+8d22d13 Option A: wire RSS queue ingest into 02:00 collect
+0596494 RSS cron: drop .bat wrapper, use pythonw directly
+5203f0e RSS cron: hide CMD window (pythonw + Hidden task)
+29a6062 Phase 1.5: RSS queue ingestion + 30-min cron
+05c1414 Phase 1 RSS-First Pipeline MVP
+63e26e2 Dashboard: error boundaries + mobile polish
+2f20467 Dashboard: HTTP Basic Auth via middleware
+d08dda0 Dashboard: Vercel Blob real-time snapshot
+8c5926c Dashboard: 5 pages + Vercel deploy + pipeline integration
+```
+
+### Cron tasks ที่รันอยู่
+- BidMaster-Collect-0200 (02:00 ทุกวัน)
+- BidMaster-Notify-0600 (06:00 ทุกวัน)
+- BidMaster_RSS_Scraper (30 นาที, stage rotate)
+- BidMaster_Dashboard_Refresh (30 นาที)
+- BidMaster_ETL_Sync (30 นาที)
+
+### Followup ค้าง
+- Multi-tenant LINE notify (Task #31) — loop customers + filter + push
+- bid_history sheet → populate from process5/CGD
+- History job analytics (Priority #3)
+- Package tiers + pricing UI (Priority #4)
+- Claude API for Sebastian Q&A (Priority #5)
+- Enrich sparse RSS rows with province from dept_catalog (filter gap)
+- Phase C: DB primary, Sheet mirror
+
+### Update (2026-05-19, 01:35) — Discipline + Followups
+
+**คุณกัญจน์ตัดสินใจ:** ทำตามลำดับ priority ไม่กระโดด
+
+**ที่จดไว้เป็น followup สำหรับ Phase ประมวลผลข้อมูล (Priority #3):**
+- Bulk pull CGD 2568 (~5M records) → Postgres
+- Populate bid_history จาก process5 getProcureResult
+- → Foundation สำหรับ Sebastian deep analytics
+
+**Vision document พร้อมแล้ว:**
+- `memory/project_product_vision_2026_05_19.md`
+- 6 core features + tiers + stickiness + roadmap
+
+**RSS-First architecture ค้นพบ:**
+- `docs/rss_full_replacement_research.md` — Chrome-less ทุก step
+- เก็บไว้ implement ตอนทำ HTTP migration
+
+---
+
+## งานที่ 19: Classifier Phase 1+2 — Multi-dim tags (2026-05-19)
+
+### สถานะ: ✅ เสร็จ (~30 นาที)
+
+### Root cause / สิ่งที่ทำ
+- Classifier เดิมมีมิติเดียว (lifecycle stage 6 buckets) — ไม่มี project type / budget tier / urgency
+- เพิ่ม 8 columns ใหม่ใน `all_jobs` (cols S-Z): `project_type`, `construction_subtype`, `budget_tier`, `urgency_tier`, `method_id`, `sme_suitable`, `geographic_precision`, `unspsc_family`
+- สร้าง `scripts/classifier_tags.py` — pure-function rule-based classifier
+- `scripts/backfill_classifier_tags.py` — backfill 8,832 rows ใน 8.3 วินาที
+- Update `Sebastian_Scraper.py` `_build_all_jobs_row` (18 → 26 cols) — row ใหม่ได้ tags ทันทีตอน scrape
+- Update `Sebastian_Classifier.py` `ALL_JOBS_HEADERS` (18 → 26 cols)
+- Postgres: migration 002 + update `etl_sheet_to_db.py` + sync 8,832 rows
+
+### Fix / ผล
+- Distribution 1,000 sample (project_type):
+  - ก่อสร้าง 28.5% · บริการ 24.7% · วัสดุ 24.3% · อุปกรณ์ 12.6% · อื่นๆ 9.6% · IT 0.3%
+- Postgres full table (8,832 rows):
+  - ก่อสร้าง 31.0% · วัสดุ 23.8% · บริการ 22.9% · อื่นๆ 11.8% · อุปกรณ์ 10.2% · IT 0.3%
+- Classifier ปกติ: pre_tor 0 / tor_review 5 / active 4 / pending 16 / awarded 307 / cancelled 44
+
+### Files
+- `scripts/classifier_tags.py` (NEW) — 8 classification functions + `classify_all()`
+- `scripts/backfill_classifier_tags.py` (NEW) — one-time backfill
+- `scripts/db_migration_002_classifier_tags.sql` (NEW) — Postgres ALTER TABLE
+- `scripts/Sebastian_Scraper.py` (MODIFIED) — `_build_all_jobs_row` produces 26 cols
+- `scripts/Sebastian_Classifier.py` (MODIFIED) — `ALL_JOBS_HEADERS` 18 → 26
+- `scripts/etl_sheet_to_db.py` (MODIFIED) — INSERT 26 cols + ON CONFLICT UPDATE
+- `scripts/db_schema.sql` (MODIFIED) — schema canonical + 4 new indexes
+
+### Followup
+- Phase 3: AI Deep Search (Claude API) — รอ HTTP-only migration
+- Phase 4: UNSPSC mapping (unspsc_family ยังว่าง)
+- Phase 5: Per-customer ranking score
+
+---
+
+## งานที่ 20: HTTP-only Migration — เอา Chrome ออกจาก Pipeline (2026-05-19)
+
+### สถานะ: ✅ เสร็จ (~1.5 ชั่วโมง)
+
+### Root cause / สิ่งที่ทำ
+- refresh_active_jobs.py + patch_deadlines.py ใช้ Chrome/Playwright → pipeline crash ถ้า Chrome ไม่เปิด
+- Discovery: getProjectDetail / getProcureResult / PDF download ผ่าน HTTP โดยตรงได้ (Mozilla UA + Referer) ไม่ต้อง Cloudflare session
+- Search endpoint ติด Cloudflare Turnstile — Sebastian_Scraper.py ยังต้อง Chrome (แต่ graceful fail)
+
+### Fix / ผล
+- สร้าง `scripts/process5_http_client.py` — HTTP wrapper สำหรับ 3 endpoints (test ผ่านทันที)
+- Rewrite `scripts/refresh_active_jobs.py` — HTTP-only + parallel workers (default 3) + 26-col sparse insert
+- Rewrite `scripts/patch_deadlines.py` — HTTP PDF download + pdfplumber parse (88/88 jobs มี templateId)
+- `Sebastian_Scraper.py` — graceful fail ถ้า Chrome ไม่อยู่ (exit 0 ไม่ crash pipeline)
+- `Sebastian_Pipeline.py` — อัปเดต comment (refresh ไม่ต้อง Chrome แล้ว)
+
+### ผลทดสอบ
+- process5_http_client: getProjectDetail + getProcureResult ทั้ง 6 bidders ✅
+- refresh_active_jobs --limit 2: 10 cell updates ✅ (ไม่มี Chrome)
+- patch_deadlines --limit 3: PDF 3 ชิ้น download + parse deadline ✅ (ไม่มี Chrome)
+
+### Files
+- `scripts/process5_http_client.py` (NEW)
+- `scripts/refresh_active_jobs.py` (REWRITTEN)
+- `scripts/patch_deadlines.py` (REWRITTEN)
+- `scripts/Sebastian_Scraper.py` (MODIFIED — graceful fail)
+- `scripts/Sebastian_Pipeline.py` (MODIFIED — comments)
+
+### Followup
+- Sebastian_Scraper.py search ยังต้อง Chrome (Cloudflare Turnstile) — แต่ RSS cover ทุก stage แล้ว
+- Cloud Migration: ตอนนี้ทุก critical path ไม่ต้อง Chrome → deploy cloud ได้แล้ว
+
+---
+
+## งานที่ 21: Cloud Migration — GitHub Actions (2026-05-19)
+
+### สถานะ: ✅ เสร็จ (~1 ชั่วโมง)
+
+### Root cause / สิ่งที่ทำ
+- Pipeline รันบน Windows Task Scheduler → ต้องเปิดคอมตลอด
+- เปลี่ยนมา GitHub Actions — ฟรี, รัน cloud, ไม่ต้องเปิดคอม
+
+### Fix / ผล
+- `requirements.txt` — Python deps สำหรับ cloud
+- `sheets_client.py` — รองรับ `GOOGLE_SERVICE_ACCOUNT_JSON` (JSON string env var)
+- `.github/workflows/pipeline_daily.yml` — cron 06:00 Thailand (23:00 UTC)
+  - Steps: refresh → patch → classify → LINE notify → snapshot → commit state
+- `.github/workflows/rss_scraper.yml` — hourly :22/:52
+- Push to GitHub: `github.com/kanapr51-stack/bid-master-system` (private)
+- ตั้ง 34 GitHub Secrets อัตโนมัติจาก .env + .env.db + credentials/
+- Test run สำเร็จ: ✅ 3m18s ทุก step ผ่าน
+
+### Followup
+- RSS workflow รอ eGP RSS กลับมา
+- Multi-tenant LINE notify (ยังส่งแค่ 1 user)
+- Package signup flow + payment
+
+## งานที่ 22: Dashboard RSS Catalog Tracker อัพเดต (2026-05-20)
+
+### สถานะ: ✅ เสร็จ
+
+### Root cause / สิ่งที่ทำ
+- `rss_catalog_stats()` ใน dashboard_extractor.py อ่าน total_depts จาก `egp_deptid_catalog.json` (475 entries)
+- แต่ scraper จริงรันด้วย 2,111 depts (catalog file ถูก reset โดย git pull หลัง gentle_scan)
+- Source of truth ที่ถูกต้อง = `rss_run_*.json` ล่าสุด → `catalog_size` field
+
+### Fix / ผล
+- อัพเดต `rss_catalog_stats()` ให้ใช้ `max(catalog_file_count, last_run.catalog_size)` เป็น total_depts
+- เพิ่ม fields: `last_run_at`, `last_run_items`, `last_run_new`, `last_run_missed_process5`, `scraper_seen_size`
+- Dashboard แสดง: total=2111, active=20, coverage=21.11% (เดิม: 475, 4.75%)
+- Commit: c3fd529
+
+### Followup
+- commit egp_deptid_catalog.json เมื่อ catalog ขยายใหญ่ขึ้น (ตอนนี้ 475 entries ใน git)
+- RssCatalogCard component อาจต้องใช้ last_run_at แสดง "Last Run" timestamp
+
+---
+
+## งาน 2026-05-22 → 2026-05-23: Nationwide scan 4-stage complete + parser fix
+
+### สถานะ: ✅ เสร็จ
+
+### Root cause ที่แก้
+1. **RSS parser bug** — link format เปลี่ยน projectId ย้ายจาก URL → `<description>` 
+   - คืนก่อน scan ได้ 0/2,603 depts ทำให้คิดว่า RSS feed ล่ม
+   - จริงๆ parser อ่าน `projectId=` ใน link แล้วทิ้งทุก item
+   - Fix: regex จาก description แทน
+2. **HTTP 429 rate limit** — parallel scan 4 ตัว = 320 req/120s เกิน eGP limit 100/120s
+   - Fix: SEQUENTIAL only (1 ตัวพร้อมกัน) + 429 retry 120s cooldown
+3. **GHA timeout** — workflow budget 23 min แต่ job timeout 15 → cancelled ทุกครั้ง
+   - Fix: timeout 15 → 30 min
+
+### Fix / ผล
+
+**Commits:**
+- `079e8f8` fix(scan): parse projectId จาก description + 429 retry + per-atype queue
+- `472c8b1` fix(gha): RSS scraper timeout 15→30
+
+**Scan results (4 stages × 2,603 depts):**
+| Stage | Items | Active depts | 429 events |
+|---|---|---|---|
+| D0 (active) | 180 | 56 | 10 |
+| B0 (TOR draft) | 105 | 47 | 11 |
+| W0 (awarded) | 2,125 | 186 | 12 |
+| P0 (planning) | 488 | 88 | 13 |
+| **รวม** | **2,898** | **377** | 46 |
+
+**Sheets final (Δ จากเริ่มต้นวัน):**
+- ✨ **pre_tor: 0 → 488** (ครั้งแรก!)
+- tor_review: 86 → 178 (+92)
+- **active_bidding: 51 → 278** (+227, **5.4x**)
+- pending_award: 8,441 → 10,567 (+2,126)
+- awarded_jobs: 363 → 363 ⚠️
+- cancelled_jobs: 243 → 267 (+24)
+- **Total +2,957 jobs**
+
+### Followup
+- **Winner cache fetch** — awarded_jobs ไม่อัปเดตเพราะ refresh ไม่เรียก getProcureResult; แผนแก้ใน `memory/project_winner_cache_todo.md`
+- **Pending_award cleanup** — 10,567 เยอะเกิน ส่วนใหญ่น่าจะ stale (ติด step C03/I03 ไม่มี winner)
+- **GHA workflow split (Plan B)** — ดู `memory/project_gha_workflow_split_todo.md` ประเมิน 7 วันหลัง 472c8b1
+- **5-digit deptIds expansion** — ยังไม่ scan 5K+ อบต./เทศบาล รอ probe 5-10 ตัวก่อนตัดสินใจ
+- **LINE Notify re-enable** — ปิดไว้ รอ per-customer province filter
+
+## งานที่ 23: Province Extraction System (2026-05-23)
+
+### สถานะ: ✅ เสร็จ
+
+### สิ่งที่ทำ
+ระบบแยกจังหวัดของงาน (text matching cascade 8 ชั้น) แทน substring-only เดิม
+- ชั้น: prefix(จ./อ./ต.) → org-cache(CGD) → bare province/อำเภอ/ตำบล (unique only)
+- ข้อมูล: thai_geo_raw.csv (อำเภอ unique 99.8%, ตำบล 87.1%) + exclusion list + national-org guard
+- org cache 800 หน่วยงาน จาก CGD (นครพนม+บึงกาฬ) — ground-truth, exact-match บน deptSubName
+
+### ผล (validate กับ CGD จริง, ground-truth จากพิกัด GPS)
+- precision: นครพนม 99.4% / บึงกาฬ 97.7% / nationwide 81.6% (จำกัดที่งานทางหลวงข้ามจังหวัด)
+- production deptSubName ตรงกับ CGD 100% (40/40) → org cache hit ชัวร์
+- backfill all_jobs: coverage 41% → 96.2% (11,683/12,146), เหลือว่าง 463 (ปล่อยว่างถูกต้อง)
+- แก้ bug admin-province เก่า: ฝายที่นครพนม เคยติดป้ายมุกดาหาร(จว.สำนักงาน) → แก้เป็นนครพนม(ที่ตั้งงาน)
+
+### ไฟล์
+สร้าง: scripts/{province_extractor,build_geo_lookup,build_org_cache,test_province_extractor,backfill_province}.py
+       data/{amphoe_lookup,tambon_lookup,geo_exclusion_list,cgd_org_province_cache}.json
+แก้: scripts/refresh_active_jobs.py (import extract_province แทน inline)
+backup: backups/all_jobs_province_*.json
+
+### Followup
+- ขยาย org cache เป็น 77 จังหวัด (รัน build_org_cache.py --provinces ...) เมื่อ scale
+- nationwide precision ต่ำเพราะงานทางหลวง/ประปาข้ามจังหวัด — Phase 3 ค่อยพิจารณา coordinate
+
+## งานที่ N+26: Schema Migration + Funnel Metrics Upgrade (2026-05-25)
+
+### สถานะ: ✅ เสร็จ (commit ee5e05d)
+
+### สิ่งที่ทำ
+1. **Schema migration** — เพิ่ม 5 คอลัมน์ใน all_jobs Google Sheet (AA-AE):
+   - discovered_at, ingestion_source, ingestion_version, refresh_count, api_validity_state
+   - ต้องขยาย grid ก่อน (resize cols=32) เพราะ sheet ติด max=26
+   - ค่าทั้งหมดว่าง (ถูกต้อง — ไม่กรอกย้อนหลัง ตาม ChatGPT review)
+
+2. **pipeline_funnel.py upgrade**:
+   - เพิ่ม FUNNEL_TRACKING_STARTED_AT = 2026-05-25 แยก legacy corpus vs operational
+   - Discovery freshness section: jobs <24h, median lag, enrich success rate
+   - Daily new active_bidding KPI (jobs discovered today)
+   - has_discovered_at counter ใน Stage 3 track new-era ingestion
+
+### Sanity Check
+- all_jobs: 43,230 rows, 31 columns ✅
+- New columns blank = ถูกต้อง (จะเต็มหลัง pipeline run ถัดไป)
+- pipeline_funnel.py output ถูกต้อง — active_bidding 46 (⚠️ LOW รอ RSS กลับ)
+
+### Root Cause (column migration error ก่อนหน้า)
+- chr(ord('A') + 26) = '[' (invalid) — ต้องใช้ rowcol_to_a1() + resize() ก่อน
+
+### Followup
+- รอ GHA runner รัน pipeline ครั้งแรก → ข้อมูล discovered_at จะเริ่มเต็ม
+- Monitor active_bidding 24-48h (ตอนนี้ 46, target >100)
+
+## งานที่ N+27: Universe A/B Split + enrichment_version + transitions history (2026-05-25)
+
+### สถานะ: ✅ เสร็จ (commit 5713c84)
+
+### สิ่งที่ทำ
+1. **enrichment_version column (AH)** — derived จาก ingestion_version
+   - legacy_none = historical corpus ไม่เคยผ่าน process5
+   - 2_process5 = operational telemetry era (หลัง 2026-05-25)
+   - ALL_JOBS_HEADERS ตอนนี้ 34 cols
+
+2. **_set_base_provenance() helper** — stamp route_reason + classifier_version + enrichment_version พร้อมกัน
+   - ทุก path เรียก 1 function แทนที่จะ set 3 ค่าแยก
+
+3. **transitions_history.ndjson** — append-only event log
+   - เพิ่ม record ทุกครั้งที่มี job เปลี่ยน sheet
+   - format: {run_at, classifier_version, job_id, from, to, type, route_reason, confidence, ...}
+
+4. **pipeline_funnel.py Universe Split section**
+   - Universe A count + enriched rate (ควร ~0.2%)
+   - Universe B count + target >70% enrich success
+   - สถานะตอนนี้: A=43,230 (100%), B=0 รอ pipeline run
+
+### Architecture Insight (ChatGPT)
+- classifier_version ≠ enrichment_version (semantically different concepts)
+- classifier_version = logic version (always v3_process5, correct)
+- enrichment_version = data quality indicator (legacy_none vs v2_process5)
+
+### Followup
+- Universe B จะโตหลัง 06:00 พรุ่งนี้ (2026-05-26)
+- Target: B enrich success >70%
+- transitions_history.ndjson จะเริ่มมีข้อมูลเมื่อ job เปลี่ยน sheet
+
+## งานที่ N+28: Night Sprint — P1 fix + P2 funnel GHA + health archive (2026-05-25)
+
+### สถานะ: ✅ เสร็จ (commits 2745291 + 92d4b8f)
+
+### สิ่งที่ทำ
+1. **fix(critical): rowcol_to_a1** — chr(ord(A)+idx) invalid สำหรับ col > Z
+   - refresh_count (idx 29 → ^) + api_validity_state (idx 30 → _) ไม่เคยถูก write
+   - fix: gspread.utils.rowcol_to_a1(row, col+1)
+   - impact: Universe B จะโตได้จริงตั้งแต่ 06:00 พรุ่งนี้
+
+2. **P2: pipeline_funnel.py --export → GHA Step 5.5**
+   - data/daily_health_snapshot.json (latest)
+   - data/health_snapshots/YYYY-MM-DD.json (archive = time-series operational memory)
+
+3. **RSS State Machine spec** บันทึกใน memory
+   - DOWN / RECOVERING / STABLE + controlled catch-up by time window
+
+### ChatGPT confirmed: BMS ผ่าน "minimum viable operational platform threshold" แล้ว
+7 capabilities ครบ: ingestion, enrichment, observability, provenance, event history, trend memory, operational semantics
+
+### พรุ่งนี้ 06:00 — monitoring plan
+- ดู delta across runs: 06:00, 06:30, 07:00 (ไม่ดูแค่ snapshot เดียว)
+- Priority: universe_b_count > 0 → refresh_count_gt0 > 0 → discovered_today > 0 → active_bidding > 46
+- Scenario A (healthy) → Portal Recon Sprint
+- Scenario B (partial) → Discovery Reliability Sprint
+- Scenario C (dead) → inspect write path
+
+### Followup
+- Portal Recon Sprint หลัง Universe B confirm
+
+---
+
+## งานที่ N+29: 🎯 Province Search API ค้นพบ + ยืนยัน + Discovery script (2026-05-30)
+
+### สถานะ: ✅ endpoint+auth+discovery พิสูจน์ end-to-end แล้ว — เหลือ token automation + ingest confirm
+
+### ผล end-to-end (scripts/Sebastian_Province_Discovery.py, dry-run)
+- ดึง 959 งาน D0 (นครพนม 849 + บึงกาฬ 110) → filter เหลือ **21 งานในอำเภอเป้าหมาย**
+- เช่น รพ.บ้านแพง ฿1.8M, อบต.นางัว ฿5.67M, เทศบาลบึงโขงหลง ฿1.4M, วท.บ้านแพง ฿4.52M, รพ.บึงโขงหลง
+- token pluggable (--token / env BMS_ANNOUNCEMENT_TOKEN), --dry-run/--ingest/--filter-amphoe
+- ingest → projects_seen (source='province_api', province รู้แน่นอน) → notifier เดิม pick up
+
+### ⚠️ Sanity flags (ต้องสืบก่อน production)
+- **บึงกาฬ pagination:** ✅ resolved — เป็น rate limit (throttle หลัง ~100 req) ไม่ใช่ data bug. fix: cooldown 30s ทุก 50 req. verify บึงกาฬเดี่ยว = 420/306 active ครบ
+- ส่วนใหญ่ของ 21 งานเป็น announce เก่า (6810-6904) → ถ้า ingest ต้องจัดการ backfill ไม่ให้ blast LINE
+
+## งานที่ N+30: Token Service (Discovery Plane Control Plane) (2026-05-30)
+
+### สถานะ: ✅ foundation เสร็จ+test — เหลือ Chrome9222 live test + Playwright canary
+
+### Decision (ChatGPT + Claude converged)
+หลัก: **"obtain ≥1 usable token before discovery deadline"** ไม่ใช่ per-request success rate
+- KPI = Discovery Readiness Probability = P(token acquired within window), วัด acquisition latency P50/P95/P99
+- beta: primary=Chrome9222 (residential IP), fallback=Manual, experimental=Playwright VPS (canary)
+- canary ต้องเลียนแบบ production cadence (4-6 burst/วัน) ไม่ใช่ทุก 15 นาที (กัน measurement perturbation)
+- B's dependency จริง = browser availability ไม่ใช่ user account (endpoint public ไม่ต้อง login)
+
+### Build (scripts/token_service.py — tested)
+- `ITokenProvider` abstraction → สลับ provider ไม่แตะ discovery
+- `ManualProvider` (env/file), `Chrome9222Provider` (CDP harvest — built, ยังไม่ test live), `PlaywrightProvider` (stub)
+- `TokenService`: single-writer atomic cache + state machine VALID/EXPIRING/REFRESHING/FAILED/EXPIRED
+- token parse expiry ในตัว (EGP-ANNOUNCEMENT-KEY:TS_ms:HMAC, TTL 30 นาที)
+- telemetry ndjson: time_to_token_ms, refresh_count/failures, provider, state_before
+- `Sebastian_Province_Discovery.py` wired → `TokenService.get_valid_token()`
+- test: parse/state machine/manual/expired/telemetry ✅, graceful no-token ✅
+
+### Followup
+- [ ] Chrome9222 live test (คุณกัญจน์เปิด Chrome --remote-debugging-port=9222)
+- [ ] Playwright canary บน VPS (4-6 burst/วัน, เก็บ acquisition latency)
+- [ ] digest sender (21 เก่า ย่อ + กรอง deadline / ใหม่ เต็ม) — รอ confirm format
+
+### Root cause ที่นำมาสู่การค้นพบ
+RSS เห็นแต่หน่วยงานกลาง (76 deptId active = central gov ทั้งหมด, reverse-map 1/76 match target)
+→ อบต./เทศบาล/รพ.สต./โรงเรียน **มองไม่เห็นทาง RSS เลย** → target_hit=0 มาตลอด
+
+### สิ่งที่ค้นพบ (Chrome DevTools บน process5)
+Province Search endpoint คืนหน่วยงานท้องถิ่นได้จริง:
+```
+GET /egp-atpj27-service/pb/a-egp-allt-project/announcement
+    ?budgetYear=2569&moiId=480000&announceType=2&page=1   (announceType=2 = D0)
+GET .../announcement/sumProjectMoneyAndCount?budgetYear=2569&moiId=480000&announceType=2
+```
+- **นครพนม (480000) D0 ปี2569 = 849 โครงการ / 85 หน้า** (10/หน้า) — RSS เห็น ~0
+- **บึงกาฬ (380000) D0** = มีข้อมูล (อบต./เทศบาล/รพ.บึงกาฬ)
+- ตัวอย่าง: อบต.หนองซน, เทศบาลตำบลนาหว้า, รพ.สต.เทศบาล
+- announceType numeric (2=D0) ไม่ใช่ text "D0"
+- recordsTotal ใน /announcement = 0 เสมอ (lazy) → ต้องใช้ sumProjectMoneyAndCount นับ
+- announcementTodayFlag=true ใช้ date range (announceSDate/EDate) แต่ขัดกับ moiId → ไม่ใช้
+
+### Token finding (สำคัญ)
+- format: `EGP-ANNOUNCEMENT-KEY:TIMESTAMP:HMAC-SHA256(base64)` → ทั้งหมด base64 อีกชั้น
+- **STANDALONE**: ใช้ได้โดยไม่ต้องมี cookies/XSRF/session (proved: token-only call works จาก VPS)
+- TTL ~30 นาที, token เดียวใช้ได้หลาย moiId (ไม่ผูก query)
+- ❌ ไม่ได้สร้างใน agpc01-web JS (search 25 chunks + scripts.js)
+- ❌ ไม่มี interceptor ใส่ X-Announcement-Token (มีแค่ X-Xsrf)
+- ❌ generateToken endpoint คืนแต่ AES blob ("Salted__") ไม่ใช่ HMAC format
+- ❌ ไม่มี endpoint token/getToken/getAnnouncementToken (404)
+- HMAC key brute-force (RDCrypto/egp/etc x msg variants) → ไม่ match
+
+### Followup (เรียงตาม priority)
+- [ ] **หา token mint** — capture network ตอนโหลดหน้า search (page-load XHR) เพื่อดูว่า server-mint หรือ client-mint
+- [ ] ถ้า client-mint → หา chunk/shell ที่ยังไม่ได้ crawl (micro-frontend shell)
+- [ ] Fallback: browser token-farming (Playwright VPS หรือ Chrome debug port 9222 บนเครื่องคุณกัญจน์)
+- [ ] หลัง token แก้ได้ → build Sebastian_Province_Discovery.py แทน RSS discovery
+- [ ] map 843 target orgs → getProcurementDetail deptId+deptSubId → infoDeptSub province confirm
+
+---
+
+## งานที่ N+31: Chrome9222 Token Provider — live test ผ่าน + แก้ 3 bugs (2026-05-30)
+
+### สถานะ: ✅ เสร็จ — end-to-end harvest→search พิสูจน์แล้ว
+
+### สิ่งที่ทำ
+เปิด Chrome `--remote-debugging-port=9222 --user-data-dir=C:/chrome_debug_profile`
+→ test `Chrome9222Provider` harvest token จริง → ยิง search API พิสูจน์ token ใช้ได้
+
+### Bugs ที่เจอ + แก้ (token_service.py)
+1. **`/json/new` ใช้ GET ไม่ได้** — Chrome 111+ บังคับ PUT (`"unsafe HTTP verb GET"`)
+   → ลบ `if False else GET` เหลือ `requests.put`
+2. **WebSocket handshake 403** — Chrome 111+ บล็อก ws ที่ส่ง Origin นอก allowlist
+   → `websocket.create_connection(..., suppress_origin=True)` (ไม่ต้อง relaunch ใส่ `--remote-allow-origins`)
+3. **`parse_token_expiry` +TTL ซ้ำ** — TS_ms ใน token = เวลา**หมดอายุ** (issue+30นาที) ไม่ใช่เวลาออก
+   → ลบ `+ TOKEN_TTL_SEC` (verified: live token TS อยู่อนาคต 1,774s ≈ TTL พอดี)
+   → กันใช้ token หมดอายุใน 30 นาทีสุดท้าย (ผิดกฎ deadline)
+
+### ผลพิสูจน์ (single clean request)
+```
+sumProjectMoneyAndCount?moiId=480000&announceType=2
+→ {"response":{"responseCode":"0"},"data":{"totalPages":85,"recordsTotal":849}}
+```
+**นครพนม D0 = 849/85หน้า ตรงกับ memory** → Chrome9222 token ใช้ search ได้ 100%
+harvest auto (Turnstile auto-pass residential), time_to_token ~9s, ไม่ต้องคลิกค้นหาเอง
+
+### Bug ที่เจอเพิ่ม (Sebastian_Province_Discovery.py)
+- discovery แปล rate-limit (plain text "Rate limit exceeded") เป็น "token reject" → วินิจฉัยผิด
+  → เพิ่ม `class RateLimited`, _get raise แยก, count_d0 sentinel -2, fetch_all_d0 backoff+retry
+
+### บทเรียน (lesson learned)
+- ❌ รัน 2 discovery เต็ม (2 จังหวัด × ~127หน้า) พร้อมกัน → IP throttle หนัก (>200s ไม่ใช่ 120s)
+- ❌ loop ยิงซ้ำตอนโดน ban = **ยืด ban** → ต้องหยุดยิงสนิท รอเงียบ แล้วยิงครั้งเดียว
+- ✅ test provider = ต้องพิสูจน์ token "ใช้ได้จริงกับ API" ไม่ใช่แค่ "harvest ได้รูปแบบถูก"
+
+### Followup
+- [ ] รัน discovery จริง (จังหวัดเดียวก่อน, ระวัง rate limit) → ingest projects_seen
+- [ ] wire เข้า cron/systemd (token harvest ทุก ~25 นาที)
+- [ ] digest sender (21 เก่า ย่อ+กรอง deadline / ใหม่ เต็ม) — รอ confirm format
+- [ ] Playwright canary บน VPS
+
+---
+
+## งานที่ N+32: Discovery Automation (C) + First Real Ingest (A) (2026-05-30)
+
+### สถานะ: ✅ เสร็จ — pipeline ครบวงจร, ingest จริง 730 rows, sanity ผ่าน
+
+### C: Automation 2 ฝั่ง (commit 2916f77)
+**Windows (single writer):**
+- `harvest_and_push.py` — ensure Chrome debug → harvest token → scp → VPS:/opt/bms/data/token_state.json
+- `harvest_task.bat` + `harvest_hidden.vbs` — Task Scheduler launcher (hidden, ทุก 25 นาที)
+- Task `BMS_TokenHarvest` /sc minute /mo 25 — tested: harvest+push OK (refresh เมื่อ expiring)
+
+**VPS (read-only worker):**
+- `bms-province-discovery.service` + `.timer` — OnCalendar 00,06,12 UTC (07/13/19 น. ไทย)
+- discovery `--worker` (allow_refresh=False) → อ่าน token ที่ push มา ไม่ harvest เอง
+- bms อ่าน token (644) + เขียน DB ได้, .env มี BMS_DATA_DIR=/opt/bms/data
+- VPS IP + bearer token bypass Cloudflare ได้ (datacenter IP ผ่าน)
+
+### A: First Real Ingest — นครพนม
+```
+849 โครงการ/85 หน้า → 737 active, 112 ยกเลิก → ingest +730 ใหม่, 7 ทับ rss
+🎯 อ.บ้านแพง = 17 รายการ (รพ.บ้านแพง, วิทยาลัยเทคนิคบ้านแพง, ประปาบ้านแพง, อบต.นางัว/นาเข)
+```
+**ไม่โดน throttle** (single sequential + cooldown 30s/50req ทำงาน) — ต่างจาก bug 2 runs พร้อมกัน
+
+### Sanity check (ผ่านหมด)
+- province_api 730 rows ทั้งหมด=นครพนม | duplicate project_id=0 | empty pid/prov=0
+- sources อยู่ร่วมกัน: province_api 730 + rss 291 | zero budget=0, max 46.9M
+
+### ⚠️ ความปลอดภัย: province_api rows ยังไม่ wire เข้า notify (ตั้งใจ)
+- RSS Notifier อ่าน rss_queue.json (ไม่เห็น projects_seen ที่ ingest ตรง)
+- Enrichment Worker กวาด project_locations(pending) — province_api มี 0 entries
+- → 730 rows isolated, ไม่ auto-blast → พื้นที่ปลอดภัยสร้าง digest+deadline filter ก่อนส่งจริง
+- (หยุด notifier/line-sender timer ชั่วคราวตอนเช็ค แล้วเปิดคืน — RSS flow ต่อเนื่อง)
+
+### Followup
+- [ ] **wire province_api → notify** (task B): ใส่ project_locations(hard, known province) หรือ
+      path ใหม่ → แต่ต้องกรอง deadline≥today ก่อน + digest งานเก่าแบบย่อ + preview ก่อนส่ง LINE family
+- [ ] รัน บึงกาฬ ingest (timer 19:00 จะรันทั้ง 2 จังหวัด)
+- [ ] map dept_id (province_api ใส่ dept_id='' — ดึงจาก getProcurementDetail ถ้าต้องการ)
+
+---
+
+## งานที่ N+33: Delivery-Wiring Architecture — APPROVED (ChatGPT+Claude converged 2026-05-30)
+
+### สถานะ: ✅ decision locked — pre-implementation checkpoint
+
+### Finding ที่เปลี่ยน architecture
+**Bid deadline ไม่มีใน JSON API เลย** (probe จริง รพ.บ้านแพง 69039168991):
+- province-search item: announceDate, modifiedDate, announceWinnerDate
+- getProjectDetail: ไม่มี date (มีแค่ stepId/flowSeqno/projectStatus)
+- getProcurementDetail: reportDate, announceDate, questionFdate, deliverDay
+→ authoritative deadline = **PDF ประกาศเท่านั้น** (patch_deadlines.py: download PDF→pdfplumber→regex "ยื่นข้อเสนอ/ยื่นซอง"→Thai date)
+→ templateId/PDF resolution ของงาน API-discovered **ยังไม่พิสูจน์** (search item ไม่มี tor_url)
+
+### APPROVED FLOW (เซ็นอนุมัติทั้ง ChatGPT + Claude)
+```
+Province Discovery → projects_seen
+  → project_locations (source=province_api, need_location=0, qualification_status=pending)  [REUSE ไม่สร้าง table]
+  → Qualification Worker
+  → Epoch Gate (post-epoch only)              [PRIMARY safety]
+  → Resolve PDF Deadline                       [SECONDARY barrier]
+  → deadline known? ── no → FAIL-CLOSED (ไม่ส่ง + Discord digest reason=deadline_unresolved)
+                     └ yes
+  → deadline >= today? ── no → suppress
+                         └ yes → notification_queue → LINE
+```
+
+### Decisions (Q1-Q4)
+- Q1: epoch=primary safety, PDF deadline=secondary, **parse fail → fail-closed** (Trust Acquisition Phase)
+- Q2: **ห้ามใช้ stepId+announceDate heuristic** — ยอม 0 notification ชั่วคราว ดีกว่าส่งผิด (Correctness > Coverage @ 5 subs)
+- Q3: **reuse project_locations** + เพิ่ม field (source, need_location, qualification_status), worker branch — ไม่สร้าง qualification_pending table
+- Q4: **dual epoch** ชั่วคราว (RSS=txt เดิม, province=source_epochs table ใหม่), migrate RSS ทีหลัง (reversible)
+
+### Invariant ใหม่ของ BMS
+"**Authoritative Deadline Gate ก่อน Notification Queue**" (ลำดับถัดจาก "Idempotency ก่อน Delivery") — ทุก source ต้องผ่าน, ห้าม trust stepId อย่างเดียว
+
+### Build plan (ลำดับ)
+1. **[gating]** verify PDF resolution สำหรับ province_api project (ดึง templateId/PDF ได้ไหม) — ถ้าไม่ได้ = beta เงียบจนแก้
+2. set province_epoch = now (suppress 730 backlog)
+3. project_locations: เพิ่ม column (source, need_location, qualification_status) + insert province_api target rows
+4. Qualification Worker: branch need_location + epoch gate + PDF deadline gate (ครอบ Pass1+Pass2) + fail-closed
+5. source_epochs table (province) + is_backfill via source epoch
+6. Discord digest: qualification_failed reason=deadline_unresolved
+7. preview ก่อนส่ง LINE family จริง
+
+### Implementation risks ที่ต้องระวัง
+- Pass 2 repair (Enrichment_Worker.py:221-241) enqueue orphan → deadline gate ต้องครอบ ไม่งั้น province_api หลุดผ่าน
+- province_api insert project_locations: location รู้แล้ว (province จาก moiId) → อย่าให้ enrichment_status='success' trigger Pass2 ก่อนผ่าน deadline gate
+
+---
+
+## งานที่ N+34: Deadline Resolution — Phase 0 Characterization (ChatGPT+Claude 100% converged 2026-05-30)
+
+### สถานะ: ✅ decision locked — เริ่ม Experiment 1 (CDP renderability)
+
+### การปรับสำคัญ: BrowserDeadlineProvider = candidate ไม่ใช่ proven
+พิสูจน์แล้วจริง: (1) human browser → process3 → เห็น deadline, (2) RSS templateId → PDF → parse ได้
+**ยังไม่พิสูจน์:** (1) CDP automate process3 extraction, (2) invitation announcements มี deadline เสมอ
+→ BrowserDeadlineProvider ยังเป็น **hypothesis** จนกว่า experiment ผ่าน
+
+### Build order (informational leverage สูงสุด)
+1. `IDeadlineProvider` abstraction + `NullDeadlineProvider` (mirror ITokenProvider)
+2. Qualification pipeline + epoch suppression + fail-closed (deploy ได้เลยด้วย NullProvider)
+3. **Experiment 1: CDP Renderability Probe** ← highest leverage, ทำก่อน
+   - คำถาม: CDP reproduce สิ่งที่ human เห็นได้ไหม (navigate process3 → extract HTML → find deadline)
+   - วัด: renderability (ไม่ใช่ deadline). failure modes: session/cross-window/postback/JS-timing/anti-automation
+4. **Experiment 2: Deadline Presence** — sample 10-20 invitation projects, วัด deadline_presence_rate
+5. ถ้าผ่านทั้งคู่ → BrowserDeadlineProvider
+6. GreenBook RE = parallel research track (ไม่ block production)
+
+### Metrics ที่จะเก็บ (DeadlineProvider)
+deadline_resolution_success_rate, provider_used, resolution_latency, parse_failures
+
+### หลักการ
+"Characterize before optimize" → กรณีนี้ "**Characterize before building the dependency**"
+
+## งานที่ N+35: Resolver Direction LOCKED + Exp1 result (2026-05-30)
+
+### Exp1 (CDP renderability) = NEGATIVE → falsified BrowserDeadlineProvider(navigate)
+process3 ShowHTMLFile = session-dependent UI artifact (cold navigate/fetch = empty body)
+→ ไม่ใช่ resource URL, replicate ต้อง click-through flow (fragile) → ลดเป็น emergency fallback
+
+### Resolver ranking (ChatGPT+Claude 100% converged)
+- **Tier A (do first): greenBook → templateId → PROVEN PDF path** (egp-template-service + pdfplumber เดิม)
+  → unknown เดียว = "greenBook expose document linkage ได้ reliably ไหม"
+- Tier B: CDP click-through automation = emergency fallback (UI fragility)
+- Tier C: new extraction (OCR/new endpoint) = ไม่มี evidence อย่าลงทุน
+
+### Build order LOCKED
+NOW: 1.IDeadlineProvider 2.NullDeadlineProvider 3.Qualification pipeline 4.Epoch suppression 5.Fail-closed (deploy ก่อน resolver = operational skeleton)
+PARALLEL: 6.greenBook RE (highest priority, information-based timebox ~4-8h)
+FALLBACK: 7.CDP click-through
+DO NOT: rewrite parser / invent extraction / couple pipeline to browser UI
+
+### หลัก: "ปัญหาคือ finding the PDF ไม่ใช่ extract deadline" → bounded change, reuse proven parser
+
+## งานที่ N+36: Qualification schema migration (steps 1-3) (2026-05-30)
+
+### สถานะ: ✅ เสร็จ (offline, ระหว่าง WAF back off)
+
+### ทำ (VPS DB, backup ก่อน)
+1. backup: backups/bms_customers_20260530_103357_pre_epoch_schema.db (995KB)
+2. **source_epochs table** + province_api epoch = 2026-05-30T10:34:33Z (UTC, ตรง format first_seen_at)
+   → **suppress backlog**: backlog(<epoch)=730, new(>=epoch)=0 ✓
+   → dual-epoch (Q4): province=table, RSS=txt เดิม
+3. **project_locations generalize** (Q3 reuse): +source(default 'rss') +need_location(default 1) +qualification_status
+   → 287 rows เดิม = rss/need_location=1 (ไม่กระทบ enrichment worker เดิม)
+
+### artifact
+- scripts/deadline_service.py (commit 1854c06): IDeadlineProvider + NullDeadlineProvider (fail-closed)
+- scripts/migrate_qualification_schema.py: idempotent migration (versioned, reproducible)
+
+### ค้าง (step 4 — รอ confirm)
+- Qualification Worker: epoch gate + DeadlineService.resolve() + fail-closed (ครอบ Pass1+Pass2)
+- insert province_api target rows เข้า project_locations (source=province_api, need_location=0, qualification_status=pending)
+
+### WAF incident
+brute-sweep greenBook → eGP WAF block → back off. greenBook capture + discovery รอ WAF เคลียร์
+
+## งานที่ N+37: Qualification Worker Pass 3 (step 4) — DEPLOYED + SAFE (2026-05-30)
+
+### สถานะ: ✅ build order 1-5 ครบ — pipeline ครบวงจร, beta เงียบปลอดภัย (fail-closed)
+
+### ทำ (Sebastian_Enrichment_Worker.py + deadline_service.py deployed)
+เพิ่ม `qualify_province_api()` (Pass 3) ใน enrichment worker — single-plane (ไม่สร้าง parallel path):
+```
+candidate = province_api projects_seen post-epoch + subscribed province + ยังไม่ qualify
+  → DeadlineService.resolve() [NullProvider = fail-closed ตอนนี้]
+  → enqueue เฉพาะ deadline resolved + ยังเปิดยื่นซอง (>= today)
+  → audit row enrichment_status='qualified' (RSS Pass1/Pass2 ไม่แตะ — กัน blast 730)
+```
+วางก่อน RSS batch + independent (ไม่ skip แม้ RSS queue ว่าง)
+
+### Verify (production)
+- direct test: 0 candidates, notification_queue 7→7, project_locations 0→0 = SAFE ✅
+- full service run: exit 0, "Province qual: 0 post-epoch candidates", RSS flow ไม่กระทบ ✅
+- epoch suppression: 730 backlog → 0 candidates ✓
+
+### Decision: deadline gate ครอบ province_api ก่อน, RSS ทีหลัง
+RSS path เดิม enqueue โดยไม่มี deadline gate + ทำงานอยู่ → ตามหลัก "อย่า rewrite stable path"
+→ province_api รับ gate ก่อน (path ใหม่), RSS migrate เข้า gate = future task
+
+### ค้าง (B — รอ WAF เคลียร์)
+- greenBook RE → templateId → PROVEN PDF path → GreenBookDeadlineProvider (แทน NullProvider)
+- เมื่อ provider จริงมา: BMS_DEADLINE_PROVIDER=greenbook → pipeline ส่งจริง (ไม่แตะ worker)
+
+## 📍 CHECKPOINT (2026-05-30 ~17:50 ไทย) — คุณกัญจน์เดินทาง จะมาทำต่อ
+
+### สิ่งที่เสร็จแล้ววันนี้ (commits)
+- Chrome9222 token provider + automation (Windows harvest 25นาที → VPS worker 3×/วัน) + ingest 730 rows
+- Delivery-wiring architecture LOCKED (ChatGPT+Claude 100% — 4 รอบ)
+- **Qualification Pipeline skeleton 1-5 ครบ + deployed + SAFE** (db69f70):
+  deadline_service(Null/fail-closed) + schema(epoch suppress 730) + worker Pass 3 (epoch+deadline gate)
+  → beta เงียบปลอดภัย (ไม่มีทางส่งงานปิดประมูล) จนกว่า resolver จริงมา
+
+### กำลังทำค้าง: B = greenBook RE (resolver จริง)
+- ✅ crack param: `greenBook?mode=LINK&methodId=<proj>&tempProjectId=<pid>&pageAnnounceType=<announceCode>`
+- ✅ DTO มี field document-link: partFile/filePath/attachName/token (W0 winner = null หมด)
+- ⏳ **ยังไม่ทดสอบ invitation (ประกาศเชิญชวน D0)** — ดู RESUME POINT ใน data/research_deadline_resolution_2026_05_30.md
+
+### Resume ทำอะไรต่อ (ลำดับ)
+1. หา invitation announceType code (งาน stepId M*/S* ประกวดราคา) → เรียก greenBook ด้วย pageAnnounceType=code นั้น
+2. ดู partFile/filePath/token populate ไหม = templateId/PDF link
+3. ถ้าได้ → fetch PDF → pdfplumber (patch_deadlines) → deadline → สร้าง GreenBookDeadlineProvider
+4. สลับ provider: env BMS_DEADLINE_PROVIDER=greenbook (ไม่แตะ worker) → pipeline ส่งจริง → preview Discord ก่อนส่ง LINE family
+⚠️ ห้าม brute param (trip WAF แล้ว 1 ครั้ง) — capture browser หรือยิงทีละ call
+
+### Infra state
+- Windows Task BMS_TokenHarvest (25นาที) ทำงาน | VPS timer province-discovery (07/13/19น.) + enrichment(2นาที, มี Pass 3)
+- WAF เคลียร์แล้ว | Chrome debug 9222 เปิดอยู่ (profile C:/chrome_debug_profile)
+
+## งานที่ N+38: 🎯 Deadline Resolver พบ + roadmap LOCKED (2026-05-30)
+
+### BREAKTHROUGH (B-2 success, ดีกว่าคาด)
+capture cross-tab → เจอ process5 doc-download API (ไม่ใช่ process3 session):
+```
+infoProcureDocAnnounZip?projectId=X → data.buildName2 = templateId
+POST egp-template-service/dant/view-pdf?templateId=X {} → JSON.data = base64(PDF)
+base64 → pdfplumber → regex → deadline
+```
+พิสูจน์: invitation 69059341206 → "เสนอราคา...วันที่ ๕ มิถุนายน ๒๕๖๙" = deadline 5 มิ.ย.2569 ✅
+- ใช้ AES generateToken (server-side, ไม่ต้อง browser/process3/Turnstile) → รัน VPS ได้
+- infoProcureDocAnnounZip = projectId→templateId ที่หามาทั้งวัน (greenBook = แค่ metadata)
+- กลับสู่ PROVEN PDF path (pdfplumber+patch_deadlines) → blast radius ต่ำ
+
+### Roadmap LOCKED (ChatGPT+Claude 100%)
+- Phase 1: DocZipPdfDeadlineProvider (track 4 stage แยก: template/download/parse/deadline)
+- Phase 2: Presence characterization 20→50 samples หลายหน่วยงาน
+  metrics: template_resolution_rate, pdf_download_rate, pdf_parse_rate, deadline_extraction_rate (+by announce_type/method_id/step_id = type-drift check)
+- Phase 3: strict fail-closed production enable (Q4 Beta Override = ยกเลิก, ไม่ต้องแล้ว)
+- Phase 4: cache (project_deadlines table) + circuit-breaker (429/403 spike→degrade) + coverage analytics
+
+### Caveats ที่ต้อง design
+cache (resolve once read many) | multi-stage failure reason | circuit-breaker (กัน WAF) | document-type drift (buildName2 อาจชี้คนละ doc ต่อชนิด)
+
+## งานที่ N+39: Phase 3 — Production Enable (preview mode) DEPLOYED + verified (2026-05-30)
+
+### สถานะ: ✅ pipeline ครบวงจร + resolver จริง + preview go-live gate
+
+### ทำ (ChatGPT+Claude Phase 3 plan)
+- **Provider retry (Layer 1)**: deadline_provider_doczip — micro-retry 3x (timeout/conn/5xx), rate-limit แยก
+- **Worker (Layer 2) Sebastian_Enrichment_Worker qualify_province_api rewrite**:
+  - seed projects_seen(post-epoch) → project_locations(qualification_status='pending')
+    (enrichment_status='failed' = constraint อนุญาต + RSS Pass1/Pass2 ไม่แตะ, zero RSS change)
+  - macro-retry: provider_error/download_failed → คง pending จน MAX_QUAL_ATTEMPTS(5)
+  - circuit breaker: 5 provider errors ติดกัน → abort batch + Discord alert (กัน WAF/outage)
+  - **preview mode** (BMS_PROVINCE_NOTIFY_MODE=preview): RESOLVED+open → Discord preview + status=preview_held (ไม่ enqueue LINE) = controlled go-live gate
+- env VPS: BMS_DEADLINE_PROVIDER=doczip, BMS_PROVINCE_NOTIFY_MODE=preview
+
+### Verify (production)
+- 0 candidates (backlog suppressed) → exit 0, RSS ไม่กระทบ
+- provider VPS: resolve 69059341206 → 2026-06-05 (4.3s)
+- **preview gate test**: insert งานเปิด → PREVIEW Discord + preview_held + nq ไม่เปลี่ยน (ไม่ enqueue) ✅
+- เจอ+แก้ latent bug: enrichment_status CHECK constraint (pending/success/failed) — ใช้ 'failed'
+
+### ค้าง (go-live)
+- งานใหม่ post-epoch จริง (discovery รอบหน้า) → preview Discord → คุณกัญจน์ review 1-3 งาน → flip BMS_PROVINCE_NOTIFY_MODE=live → ส่ง LINE จริง
+- Phase 4 (deferred): cache project_deadlines, full circuit-breaker analytics
+
+---
+
+# ═══════════════════════════════════════════════════════════════
+# 📍 CHECKPOINT ละเอียด — 2026-05-30 21:15 ไทย (Day: family beta)
+# ═══════════════════════════════════════════════════════════════
+
+## 🎯 ภาพรวม: วันนี้ทำ Discovery→Delivery ครบวงจร (Province API plane)
+จาก "RSS มองไม่เห็นหน่วยงานท้องถิ่น" → "ระบบ ingest งานท้องถิ่น + resolve deadline + พร้อมส่ง LINE (preview gate)"
+**18 commits วันนี้** (ทั้งหมด local, ยังไม่ push)
+
+## ✅ งานที่ทำแล้ว (timestamp จาก git)
+| เวลา | commit | งาน |
+|---|---|---|
+| 10:45 | b97c68e | Province Search API discovery (เห็นหน่วยงานท้องถิ่น) |
+| 10:55 | 6707159 | Token Service (ITokenProvider + state machine) |
+| 13:33 | 0a445c5 | Chrome9222 token provider — live test + แก้ 3 bugs (PUT/origin/expiry) |
+| 13:43 | 2916f77 | Token harvest automation (Windows writer + VPS worker) |
+| 13:49 | 02d3b91 | First real ingest 730 rows + sanity ผ่าน |
+| 16:55 | f9e339a | Delivery-wiring architecture APPROVED (ChatGPT+Claude) |
+| 17:17-25 | f1c3af2,ace0c0b | Phase 0 characterization + resolver direction (Exp1 falsify browser-navigate) |
+| 17:31-42 | 1854c06,41270ee,db69f70 | skeleton: deadline_service(Null) + schema migration + Pass 3 (fail-closed) |
+| 17:47-51 | f3b0d86,b04812a,1e303d2 | greenBook RE → FALSIFIED (แค่ metadata) |
+| 20:54 | a7b0357 | 🎯 BREAKTHROUGH: infoProcureDocAnnounZip→view-pdf→pdfplumber resolver |
+| 20:57 | 589e146 | DocZipPdfDeadlineProvider (Phase 1) |
+| 21:10 | 9d99f3d | Phase 3: retry+circuit-breaker+preview go-live gate |
+
+## 🟢 สถานะระบบ ณ ตอนนี้
+| Component | สถานะ | หมายเหตุ |
+|---|---|---|
+| VPS services (9 ตัว) | ✅ active ทั้งหมด | api/tunnel/rss-scraper/rss-notifier/enrichment/line-sender/province-discovery/daily-digest/backup |
+| api_state | HEALTHY | |
+| customers active | 5 คน | subscribe นครพนม+บึงกาฬ |
+| projects_seen | province_api 730 + rss 291 | |
+| province_epoch | 2026-05-30T10:34:33Z | suppress backlog 730 |
+| notification_queue | sent 5, failed 2, **pending 0** | (จาก RSS test เก่า) |
+| project_locations province_api | 0 (ว่าง) | 0 post-epoch candidates — backlog suppressed |
+| Windows Task BMS_TokenHarvest | ทุก 25 นาที | harvest token + push VPS (ensure_chrome auto) |
+| next discovery run | Sun 2026-05-31 00:00 UTC (07:00 ไทย) | |
+| Deadline resolver | doczip, 95% coverage | env BMS_DEADLINE_PROVIDER=doczip |
+| Notify mode | **preview** (go-live gate) | env BMS_PROVINCE_NOTIFY_MODE=preview |
+
+## 🏛️ Architecture สุดท้าย (full pipeline)
+```
+[Windows] Chrome9222 harvest token (25นาที) → push VPS
+[VPS] province-discovery timer (07/13/19น.) → search D0 → ingest projects_seen
+[VPS] enrichment-worker (2นาที) Pass 3 qualify_province_api:
+    seed post-epoch → project_locations(pending)
+    → DeadlineService(doczip): infoProcureDocAnnounZip→view-pdf→pdfplumber→deadline
+    → Epoch Gate (suppress backlog) → Deadline Gate (>= today)
+    → mode=preview: Discord preview (held) | mode=live: enqueue → LINE
+    → retry 2 ชั้น (provider 3x + worker pending→MAX5) + circuit-breaker (5 consec→abort+alert)
+```
+
+## ⏳ งานค้าง (Pending)
+**ด่วน (go-live — เมื่อมีงานใหม่):**
+- [ ] discovery รอบหน้า (07:00 ไทย) ป้อนงาน post-epoch → preview เข้า Discord
+- [ ] review 1-3 preview (deadline แม่น? งานตรง target?) → flip BMS_PROVINCE_NOTIFY_MODE=live → ส่ง LINE จริง
+
+**ภายใน sprint:**
+- [ ] รัน บึงกาฬ ingest (discovery timer ทำทั้ง 2 จังหวัดอยู่แล้ว แต่ยังไม่เคยรัน บึงกาฬ เต็ม)
+- [ ] Phase 4 (deferred): cache project_deadlines (resolve once read many) + circuit-breaker analytics
+- [ ] document-type drift: characterize coverage by stepId/announceType (ตอนนี้ทดสอบ D0/ประกวดราคา ล้วน)
+- [ ] RSS path migrate เข้า deadline gate (ตอนนี้ province_api เท่านั้นมี gate)
+
+**Defer:**
+- [ ] tune Windows harvest 25→20 นาที (เคยเจอ token gap)
+- [ ] push to remote (รอ confirm)
+
+## 🔑 บทเรียน/decisions สำคัญวันนี้
+1. **Deadline ไม่มีใน JSON API** — อยู่ใน PDF เท่านั้น → infoProcureDocAnnounZip→view-pdf คือ projectId→templateId
+2. **fail-closed validated by evidence**: 19/20 backlog = ปิดแล้ว → ไม่มี gate = blast งานปิดใส่ครอบครัว
+3. **greenBook = แค่ metadata** (ไม่พก file link) — เกือบหลงทาง
+4. **ผม trip WAF 2 ครั้ง** (throttle + brute-sweep) → บทเรียน: capture browser ครั้งเดียว, ห้าม brute, spacing เสมอ
+5. Resolver = pure process5 API + AES token (ไม่ต้อง browser) → รัน VPS ได้
+
+## 📂 Resume references
+- progress_log.md (งานที่ N+29..N+39 + checkpoint นี้)
+- memory: project_delivery_wiring_decision.md, project_province_search_api.md
+- data/research_deadline_resolution_2026_05_30.md (probe ทั้งหมด)
+
+## งานที่ N+56: RSS global-feed degraded — แก้ false-alarm spam (2026-06-01)
+
+### สถานะ: ✅ เสร็จ
+
+### Root cause
+คุณกัญจน์เห็น Discord alert "RSS feed ว่าง 131 runs". วินิจฉัย:
+- consec_empty=131 (×30min ≈ 65h ตั้งแต่ 05-29 16:44 UTC, last_nonempty)
+- VPS เรียก RSS ได้ (curl 200, breaker CLOSED — ไม่ใช่ block/network)
+- feed **รายกรม** (ระบุ deptId) ทำงาน: 0307=2, 0708=2 items
+- feed **global** (ไม่ระบุ deptId, ที่ scraper `--global` ใช้) → **200 แต่ 0 items**
+- = eGP เปลี่ยนพฤติกรรม global no-deptId feed ฝั่งเซิร์ฟเวอร์ ~05-29
+
+### กระทบ product: ❌ ไม่
+นพ/บก รับงานผ่าน province_api (primary, HEALTHY). RSS = plane รอง legacy.
+คนละเรื่องกับ cross-province "ตลาดเงียบ" (feed รายกรม*มี*งานวันนี้).
+
+### Fix (commit e2e5bc5)
+- `poll_global_rss`: เพิ่ม `reachable` (any HTTP 200) แยก degraded จาก timeout
+- `check_empty_feed_alert(total, reachable)`:
+  - reachable+0 → "ℹ️ global feed degraded" แจ้ง**ครั้งเดียว** (flag degraded_notified) ไม่ spam
+  - unreachable/None+0 → "⚠️ เรียกไม่ได้" alert ซ้ำ cooldown 2h (คงไว้)
+  - items>0 → reset ทั้ง consec_empty + degraded_notified + "✅ กลับมาแล้ว"
+- decision (กัญจน์): "เงียบ alert + defer" — ไม่ resurrect global RSS, รอ scale ทั้ง ปท. ค่อยสลับ per-dept poll
+
+### Verify
+- VPS รัน --global 2 รอบ: รอบ 1 ส่ง ℹ️ ครั้งเดียว (degraded_notified=true), รอบ 2 **เงียบ** (ไม่ส่งซ้ำ) ✓
+- counter reset 131→0 บน VPS
+
+### Deploy note (deploy-debt อาการใหม่)
+VPS git pull ติด `.git/objects` permission + ไฟล์ scripts เป็น root:root (dir เป็น bms)
+→ deploy ด้วย rm ไฟล์เดิม (dir bms-writable) + scp ใหม่ → ไฟล์เป็น bms:bms. git VPS ยัง diverged (defer).
+
+### Followup
+- [ ] (defer) VPS git ownership/permission cleanup — รวมใน P1 full migration
+- [ ] (defer) ถ้า scale ทั้ง ปท. → สลับ scraper global → per-dept targeted poll (path ที่ยังทำงาน)
+
+## งานที่ N+57: Daily User Summary — LINE heartbeat ให้ user (2026-06-01)
+
+### สถานะ: ✅ เสร็จ
+
+### สิ่งที่ทำ
+กัญจน์: "อยากให้ discovery แจ้งผ่าน LINE Sebastian ให้ user เห็นด้วย"
+flag 2 เรื่องก่อนยิงหา user จริง: (1) "งานใหม่" discovery = ระดับจังหวัด ≠ งานที่ match,
+(2) ส่ง "ไม่มีงาน" 3 รอบ/วัน = spam → กัญจน์เลือก "สรุปวันละ 1 ครั้ง รอบเย็น"
+
+- `scripts/Sebastian_Daily_User_Summary.py` — heartbeat รายบุคคล, นับ delivery_log sent วันไทย (ไม่นับ test)
+- M>0 "เจองาน N งาน (ส่งแล้ว)" / M=0 "ยังไม่มีงาน ผมเฝ้าให้ตลอด"
+- ส่งเฉพาะ active real (is_test_data=0); reuse send_line_push + _load_line_token
+- systemd `bms-daily-user-summary.timer` → 20:00 ไทย (13:00 UTC), enabled
+- งานที่ match ยังส่งแยกตาม pipeline เดิม (heartbeat = engagement ไม่ใช่ delivery)
+
+### Sanity check (จับ bug ได้ก่อน deploy)
+manual dry-run เห็น 2 customers stale + matched=0 → split-brain 2-data-dir:
+manual run ไม่มี BMS_DATA_DIR → DB_PATH ชี้ app/data (DB เก่า) แทน /opt/bms/data.
+รัน dry-run **พร้อม .env** → 4 real customers + matched_today=1 ตรง production ✓.
+systemd service มี EnvironmentFile=/opt/bms/app/.env → ตอน timer รันจริง env ถูกตัว.
+
+### Deploy
+root SSH (root@45.76.156.166 key เดียวกับ bms) วาง systemd unit ได้ (bms ไม่มี passwordless sudo).
+commit 75fbde5. รอบแรกยิง 20:00 ไทยวันนี้.
+
+### Followup
+- [ ] ดูผลรอบแรก 20:00 — user 4 คนได้ heartbeat "เจอ 1 งาน (หนองซน)"
+- [ ] (defer) อาจเพิ่มปุ่ม feedback ใน heartbeat ภายหลัง (link North-Star feedback loop)
+
+## งานที่ N+58: keyword-first shadow (API-first scale Phase 2) (2026-06-02 ข้ามคืน)
+
+### สถานะ: ✅ เสร็จ (shadow) — cutover รอ review
+
+### สิ่งที่ทำ (กัญจน์ approve scope A, นอนรอ)
+- Phase 0 probe (ก่อนหน้า): คอขวด = generateToken ~30/รอบ, token ผูก project, ไม่พึ่ง harvest
+- Phase 2: keyword-first pre-filter — กรอง keyword ก่อน resolve deadline+tambon (2 API)
+  - job_matcher.passes_keyword() + worker pre-check (env BMS_KEYWORD_FIRST_MODE: off/shadow/enforce)
+  - deploy shadow VPS (rm root + scp, env=shadow)
+
+### Validation (static, ปลอดภัย — ไม่ touch production)
+งานจริง 1077: keyword PASS 714 (66%) / SKIP 363 (33%) → keyword-first ลด API ~33%
+(honest: ไม่ใช่ ~3× ที่เคยเดา — งานท้องถิ่น 2/3 เป็นถนน/ก่อสร้างผ่าน keyword)
+
+### Defer (มีเหตุผล)
+- cache moiName: value ต่ำ (งานละ 1 resolve, retry rare)
+- shared rate limiter: ไม่ต้องจน enforce
+- window probe: เสี่ยง hammer block discovery
+
+### Followup (ตื่นมา)
+- [ ] review shadow log (discovery 07:00+ seed pending → worker log kw-first SHADOW)
+- [ ] ตัดสิน cutover: flip BMS_KEYWORD_FIRST_MODE=enforce → verify filtered_no_keyword ถูก
+
+## งานที่ N+59: แก้ full sweep safety net (กัญจน์ค้นเจอ) (2026-06-02)
+
+### สถานะ: ✅ เสร็จ + verified 2 จังหวัด
+
+### Bug (กัญจน์ค้นเจอจากคำถาม "RSS เพดาน 20 → พลาดไหม")
+full sweep paginate 2 จังหวัด = 128 หน้า > 99 req limit (bearer token province search)
+→ ชน rate limit บึงกาฬหน้า 14 → sys.exit(2) ก่อน reconcile (บรรทัด 355)
+→ safety net ไม่เคยทำงาน + บึงกาฬหน้า 15-43 ไม่เคย full scan
+
+### Fix A+B (commit 231b143)
+- A: rate-limit abort → ไม่ทิ้ง! partial_abort flag → reconcile/ingest งานที่ paginate ได้
+- B: split per-province — bms-province-discovery-full-{nkp,bkg} (07:30/08:30, แต่ละ <99 req)
+  disable bms-province-discovery-full.timer เดิม
+
+### Verified (test 2 จังหวัด)
+- นครพนม: ครบ 85 หน้า ไม่ชน + reconcile "ไม่พลาด" ✅
+- บึงกาฬ: ครบ 43 หน้า (ครั้งแรก!) + reconcile "ไม่พลาด" ✅ — 18 งานเป้าหมายอยู่ใน known หมด (RSS จับครบ)
+
+### คำตอบคำถามต้นทาง
+บึงกาฬ**ไม่พลาดงาน** — RSS poll ถี่ (5 นาที) + incremental ครอบคลุม. RSS เพดาน 20/snapshot ไม่ทำให้พลาด (งานใหม่/รอบ < 20). safety net ตอนนี้ verify ได้ทุกวัน (เมื่อก่อนตาบอด)
+
+### Followup
+- [ ] ดู nkp/bkg timer พรุ่งนี้ 07:30/08:30 — reconcile รันครบทั้ง 2 จังหวัด
+- [ ] (สังเกต) incremental report "เป้าหมาย 0" ≠ ไม่มีงาน (หยุดเร็ว) — RSS/full คุ้มกัน
+
+## งานที่ N+60: ระบบ feedback ปุ่มกดใน LINE (North-Star P1) (2026-06-02)
+
+### สถานะ: ✅ เสร็จ + integration ผ่าน (brainstorm→spec→plan→execute ครบ flow)
+
+### สิ่งที่ทำ
+3 ปุ่ม postback บน flex message: สนใจ/น่าติดตาม · เกี่ยวข้องแต่ไม่น่าสนใจ · ไม่เกี่ยวข้องเลย
+- LINE_Sender: build_job_flex + send_line_flex (text→flex+ปุ่ม)
+- bms_api: postback handler + _record_feedback_by_project (project ตรง, upsert)
+- Daily_Digest: feedback_section รวม postback (👍 North-Star / 👎 matching ต้องดู)
+- feedback action: interested/relevant_low/irrelevant (postback data fb:<action>:<project_id>)
+
+### หลักการ (insight กัญจน์)
+เฉพาะ 👎 = matching ผิด (กัญจน์ปรับ) · 🤔 = business judgment (งบไม่คุ้ม) ไม่แตะ matching · 👍 = value
+
+### Verified (กัญจน์กดปุ่มจริง)
+- 69059075454 → interested→relevant_low (upsert ทับ) · 69059297571 → irrelevant
+- digest: 👍1 (North-Star) · 👎1 (matching ต้องดู: 69059297571) · total 2 rows (upsert)
+
+### docs (superpowers flow)
+spec: docs/superpowers/specs/2026-06-02-line-feedback-design.md
+plan: docs/superpowers/plans/2026-06-02-line-feedback.md
+commits 430db1a..93feef1
+
+### Defer (YAGNI)
+portal ติดดาว (👍→saved) · auto-tune matching · budget filter (🤔)
+
+## งานที่ N+61: ปรับการ์ด LINE — ชื่อเต็ม + ปุ่มดูรายละเอียด + reply feedback มีรายละเอียด+ปุ่มแก้ไข (2026-06-02)
+
+### สถานะ: ✅ เสร็จ
+
+### สิ่งที่ทำ (ตามคำขอกัญจน์)
+1. **ส่งชื่อเต็มของงาน** แทนชื่อย่อ — แยก `_clean_project_name` (ลบ prefix/suffix ไม่ตัดความยาว) จาก `_shorten_project_name`. header การ์ด flex = ชื่อเต็ม, ลบบรรทัด `🏗` ใน body กันซ้ำ, altText มีชื่อ
+2. **ปุ่มลิงก์งาน** = PDF ประกาศเดิม (public link เดียวที่ eGP เปิด — probe แล้วไม่มี HTML deep-link by projectId), เปลี่ยนป้าย "📎 ดูเอกสาร" → "📋 ดูรายละเอียดงาน"
+3. **ตอบกลับ feedback** = flex confirm: ✅ บันทึก + label เต็ม + ชื่องาน + จังหวัด/งบ/หน่วยงาน (ดึงจาก projects_seen)
+4. **ปุ่มแก้ไข feedback** — LINE แก้การ์ดเดิมไม่ได้ → reply confirm แนบปุ่ม "✏️ แก้ไข feedback" (postback `fbedit:<pid>`) → กดแล้ว reply การ์ด 3 ปุ่มเลือกใหม่ → upsert
+
+### ไฟล์
+- `scripts/Sebastian_LINE_Sender.py` — `_clean_project_name`, build_job_flex (title 300, ป้ายปุ่ม), format_notification (ลบ 🏗), call site (ชื่อเต็ม+altText)
+- `scripts/bms_api.py` — `reply_raw` (flex), `_project_detail`, `_fmt_budget_th`, `_detail_info_line`, `_confirm_flex`, `_choose_flex`, postback handler รองรับ `fbedit:`
+
+### Sanity
+- py_compile ผ่านทั้ง 2 ไฟล์
+- unit test: _clean (ชื่อเต็ม 98 ตัว ไม่ตัด), flex header/ปุ่ม/footer, format_notification ไม่มี 🏗, confirm/choose flex postback data ถูกต้อง
+
+### Followup
+- งานเก่าที่ส่งไปแล้วยังมีฟอร์แมตเดิม (LINE แก้ย้อนหลังไม่ได้) — เฉพาะงานใหม่ได้ฟอร์แมตใหม่. แต่กดปุ่มงานเก่าก็ได้ reply ใหม่ (handler รองรับทุก fb:)
+
+## งานที่ N+62: RSS Shadow Mode — Task 1-4 (code+test) (2026-06-03)
+
+### สถานะ: ✅ เสร็จ Task 1-4 (Task 5 deploy/flip รอพรุ่งนี้)
+
+### สิ่งที่ทำ
+ใช้ superpowers (brainstorm→spec→plan→execute). spec=`docs/superpowers/specs/2026-06-02-rss-shadow-mode-design.md`, plan=`docs/superpowers/plans/2026-06-03-rss-shadow-mode.md`
+
+- **Task 1** (`78421b3`): schema migration `_migrate_v112` → column `discovery_confirmed` ใน project_locations
+- **Task 2** (`fce01e0`): Province_Discovery — `mark_discovery_confirmed()` ประทับตราทุก project ที่ scan เจอ (claim RSS-first) + `count_rss_gap()` + per-sweep Discord report (full sweep, รายงานเสมอ)
+- **Task 3** (`6b8090f`): Enrichment Worker — `_rss_gate_ok()` gate enqueue Pass 1 + Pass 2 ด้วย discovery_confirmed, คุมด้วย env `BMS_RSS_NOTIFY` (on=เดิม/off=shadow)
+- **Task 4** (`f5f8f6f`): `Sebastian_Shadow_Audit.py` audit รายวัน 21:00 + systemd service/timer
+
+### หลักการ (landmine แก้แล้ว)
+`INSERT OR IGNORE` ทำให้ source ติด rss ถาวร → ใช้ `discovery_confirmed` flag แยก (provenance source บริสุทธิ์). Discovery ประทับตรา = claim งานที่ RSS เจอก่อนได้ → ปิด gate แล้ว user ไม่หาย
+
+### Sanity
+- migration idempotent (รัน 2 ครั้ง OK) + column มีจริง
+- mark=1/confirmed=1, gap fn ทำงาน
+- gate: on=pass, off+confirmed0=block, off+confirmed1=pass (ครบ 3 กรณี)
+- audit logic + format ถูก (mock discord ไม่ส่งจริง)
+- py_compile ผ่านทั้ง 4 ไฟล์
+
+### Followup (Task 5 พรุ่งนี้ — กัญจน์เฝ้า)
+- scp 4 scripts + migration VPS + systemd audit timer
+- ⚠️ systemd .service/.timer git เตือน LF→CRLF — ตอน deploy ตรวจ LF (dos2unix ถ้าจำเป็น) ไม่งั้น systemd parse error
+- deploy gate ยัง `on` → flag สะสม 1-2 วัน → flip `off` (drop-in BMS_RSS_NOTIFY=off)
+
+## งานที่ N+63: RSS investigation + ChatGPT review → evidence-based rollout (2026-06-03)
+
+### สถานะ: ✅ spec/plan/lessons updated (implement metrics + deploy ทีหลัง)
+
+### RSS investigation (systematic-debugging)
+- อาการ: rss_queue หยุด append 06-02 23:38, circuit breaker OPEN, availability log หยุด 05-31, เจอ deploy-debt 2 data dir
+- root cause: **ไม่พบ bug ฝั่ง scraper** — telemetry poll_log: feed คืน HTTP 200 + items=0 ต่อเนื่อง 8 ชม (กลางคืน) + timeout กลางวัน (RSS diurnal down 08-17) → breaker OPEN ทำงานถูกต้อง (กัน hammer)
+- ⚠️ **wording correction (ChatGPT):** "feed คืน 0 items" ≠ "พิสูจน์ว่าไม่มีงานจริง" — hypothesis truncation/generation/partial-outage ยังไม่ตัดออก (ดู docs/lessons_learned.md L-001)
+
+### ChatGPT review (Co-Architect, เห็นด้วยทุกจุด — ไม่มี blocker)
+- เพิ่ม **leading indicators** (shadow backlog size + age distribution + confirmed rate) — spec §5.4
+- **48h dry-run + confirmed-rate gate** ก่อน flip (≥99% flip ได้ / ~80% ห้าม flip) — ADR-001, spec §8
+- **retire** availability log (ไม่ fix perm — telemetry db = single authority)
+- **P3 consolidate** 2 data dir = operational correctness debt (split-brain) หลัง shadow deploy ไม่เลื่อนยาว
+
+### Artifacts
+- `docs/lessons_learned.md` ใหม่ (L-001 telemetry≠external-world + ADR-001 evidence-based gate)
+- spec §5.4/§8 updated · plan Task 4/5 updated
+
+### Followup
+- implement leading metrics ใน Sebastian_Shadow_Audit.py (ก่อน deploy)
+- P3 consolidate data dir หลัง shadow deploy (สัปดาห์นี้)
+
+## งานที่ N+64: RSS Shadow Mode — implement metrics + deploy gate ON (2026-06-03)
+
+### สถานะ: ✅ deployed (gate ON, ยังไม่ flip — 48h dry-run เริ่ม)
+
+### สิ่งที่ทำ
+- **implement leading metrics** (ADR-001) ใน Sebastian_Shadow_Audit.py (`9ffe913`): shadow backlog size + age distribution (0-6/6-12/12-24/>24ชม) + confirmed rate. test ครบ (backlog/buckets/rate ตรง)
+- **deploy Task 5 (gate ON):** scp 4 scripts → VPS + compile OK + migration discovery_confirmed (VPS DB /opt/bms/data) + audit timer (21:00 ไทย, LF sanitized)
+- **verify production:** full sweep บึงกาฬ manual → ประทับตรา 348 งาน → confirmed rate 0%→50% → งาน 69059075454 (กัญจน์ feedback) discovery_confirmed=1 ✅
+
+### Gate ปลอดภัย
+`BMS_RSS_NOTIFY` ไม่ set = default `on` → RSS ยังส่ง user ปกติ ไม่กระทบ. flag กำลังสะสม (48h dry-run)
+
+### Next
+- รอ full sweep auto (นครพนม 19:30 + บึงกาฬ 20:30) ประทับตราครบ → confirmed rate ควร ~100%
+- 48h dry-run → ดู confirmed rate → flip เมื่อ ≥99% (ADR-001)
+- P3 consolidate data dir (หลัง shadow stable)
+
+## งานที่ N+65: 🚨 INC-001 Control Plane Assumption Failure — Production down 1.5 วัน (2026-06-03)
+
+### สถานะ: 🔴 INCIDENT (checkpoint ก่อน implement recovery)
+
+### สรุป (เจอโดยบังเอิญ ระหว่าง debug "ทำไมประทับ 8")
+debugging chain: ประทับ 8 → epoch boundary → re-seed 730 → trigger → "no AES token" → WAF block generateToken → **เจอว่า production resolve พัง 1.5 วัน** (delivery ล่าสุด 06-02 00:09, ไม่มี alert)
+
+### Root Cause: Control Plane Assumption Failure (ไม่ใช่ bug)
+BMS assumed `discovery reachable ⇒ resolve reachable` = เท็จ. WAF block resolve endpoints (generateToken + getProcurementDetail) จาก VPS datacenter IP แต่ announcement search (Discovery) ผ่าน
+
+### Evidence matrix (test จริง)
+- residential (Windows): generateToken ✅ getProcurementDetail ✅ announcement ✅
+- VPS (datacenter): generateToken ❌ getProcurementDetail ❌ announcement ✅
+- WAF: "Request Rejected" support ID (BIG-IP/Imperva)
+
+### Plane status: Discovery=Healthy · Enrichment=Failed · Delivery=starved
+
+### ChatGPT consult (เห็นด้วยทุกจุด — ดู docs/lessons_learned.md INC-001 + ADR-002)
+- เลือก B (Residential Resolve Node) — A ตกไป (getProcurementDetail VPS ก็ block), C (proxy) unproven defer
+- P0.0 manual restore แยกจาก P0.1 worker (time-to-recovery > elegance)
+- detection gap = แก่นจริง (observability failure) → L-002/3/4
+
+### Recovery Plan: P0.0 manual resolve → P0.1 residential worker → P1 canary+alerts → P2 measure → P3 RPi
+### Deferred: proxy/VPN · ย้าย Discovery · 77-province redesign
+### เรื่อง 730 pre-epoch: pause (pending ค้าง ปลอดภัย) รอแก้ resolve ก่อน
+
+### Followup: implement P0.0 (manual residential resolve) restore วันนี้
+
+## งานที่ N+66: INC-001 P0.0 finding — residential burst-limit (checkpoint update) (2026-06-03)
+
+### สถานะ: 🔴 INCIDENT recovery (checkpoint updated, รอ Step 1)
+
+### Finding ใหม่ (mental model รอบ 2): residential = finite execution resource
+- P0.0 manual resolve: oldest batch 20 → resolved 14 (ทั้งหมด expired) · newest batch 20 → block ทั้งหมด (no AES token หลัง burst ~40 calls)
+- **residential ก็โดน WAF block หลัง burst ~30 generateToken** → cooldown >2 นาที → ผ่านอีก (VPS=permanent 0 burst)
+- matrix: VPS=permanently blocked · residential=rate-limited regime (ไม่ใช่ trusted unlimited)
+
+### ChatGPT consult (เห็นด้วยทุกจุด — ดู lessons_learned INC-001 Update)
+- B ยัง feasible (beta 0-2 jobs/day << 30/burst) · backfill ช้า=แยกเรื่อง
+- objective lock รอบ 3 = **Validate forward-processing** (KPI=path viability ไม่ใช่ notification count)
+- ADR-002 refine: Worker → **Resolve Queue** (state machine PENDING/READY/COOLDOWN/RETRY/DONE)
+- Severity: Customer Impact=Unknown-to-Low · Systemic Risk=High ("luck ≠ health")
+- RPi unchanged (burst-limit ไม่เปลี่ยน) · Recovery first, characterize ทีหลัง (probe=consume scarce)
+
+### Next: Step 1 forward-processing validation (รอ cooldown → resolve newest batch เล็ก → พิสูจน์ path)
+
+## งานที่ N+67: INC-001 Step 1 ปิด — Customer Impact LOW (saturated) + P0 containment (2026-06-03)
+
+### สถานะ: 🟡 Recovery Partial (Production Restored = No, รอ P0.1)
+
+### P0 Containment (เสร็จ): pause bms-enrichment-worker.timer (VPS auto-resolve หยุด burn attempts)
+- snapshot evidence: VPS เผา 9 งาน→terminal (failed_provider_error) + 11 ใกล้ MAX (attempts 3-4)
+
+### Step 1 Customer Impact = LOW (saturated, 5 sample converge open=0)
+- backlog oldest 14 + newest 10 = expired · incident RSS 60 = resolve แล้ว (1 ส่ง=งานกัญจน์ 69059075454, 59 non-target) · province_api ใหม่ 1 = filtered · failed_provider_error 9 = **Case A pre-epoch backlog (ไม่ใช่ incident)**
+- → ไม่มีงานเปิดพลาดช่วง incident จริง (งานใหม่ resolve+ส่งก่อน WAF block 00:09)
+
+### INC-001 status: Impact Low🟢 · RootCause Confirmed🟢 · Containment Complete🟢 · Recovery Partial🟡 · Production Restored No🔴
+
+### Next (ChatGPT reorder): P0.1 Residential Resolve Path (production restore — สำคัญสุด) → P1 alerts → P2 characterize
+- blind spot: P0.1 = Windows uptime dependency (interim) → RPi always-on = แก้ถาวร (P3)
+- milestone = "first new candidate processed automatically after VPS pause"
+
+---
+
+## งานที่ N+68: 🔄🔄 INC-001 Rev 3 — Rate-Control Failure (ล้ม model เดิม, ADR-003) (2026-06-03)
+
+### สถานะ: ✅ Checkpoint locked (knowledge files) → 🚧 Phase A re-enable worker
+
+### Game-changer finding
+หลัง pause VPS worker → **WAF block หาย** → test ยืนยัน VPS resolve กลับมา (generateToken OK + getProcurementDetail 200 moiName=นางัว, blocked=False)
+→ **WAF = rate/behavior-based ไม่ใช่ permanent IP blacklist** (Rev 1-2 เข้าใจผิดว่า datacenter IP โดน block ถาวร)
+
+### Root cause Rev 3 = 2 layers
+- **L1 assumption failure** (discovery⇒resolve) — อธิบาย*ทำไม resolve พัง*
+- **L2 missing rate-limit adaptation** — worker timer 2 นาที << WAF cooldown 30-40 นาที → ยิงเติม traffic ก่อน cooldown ครบ → **block ต่ออายุเอง (positive feedback loop)**. อธิบาย*ทำไมพัง 1.5 วัน*. 1.5 วัน = worker รักษา block เอง ไม่ใช่ WAF ลงโทษ
+- incident class เปลี่ยน: External Dependency Failure → **Rate-Control Failure**
+
+### Decisions locked (กัญจน์ + ChatGPT converged)
+- **ADR-003 Rate-Limited Resolve** (supersedes ADR-002): Primary=**VPS throttled**, Fallback=Residential
+- **L-005:** external service unknown-limit ต้องมี throughput envelope + cooldown state + recovery state ก่อน production-ready
+- lock "need adaptive rate control" **ไม่ lock ตัวเลข** (batch=5/cooldown=30m = observation ไม่ใช่ characterization)
+- RPi defer หนักกว่าเดิม (VPS อาจใช้ได้ → ยิ่ง YAGNI)
+
+### Phase A (กำลังทำ): re-enable worker ultra-conservative + cooldown awareness
+- Success = worker survives **without re-entering block loop** (ไม่ใช่ worker start ได้)
+- Production Restored เมื่อ: new candidate → resolve → qualify → no WAF → worker healthy ≥1 cycle จริง
+
+### Phase A ✅ COMPLETE — Production Restored (2026-06-03 21:25)
+- deploy: push origin (fb98e04) → VPS pull (deploy-debt: backup data + discard CR-drift scripts; HEAD ค้าง f5311f7 เพราะ deploy/systemd root-owned + NO_SUDO bms — worker file อัปเดตบน disk ครบ)
+- **validated run (manual .env + systemd timer) — 2 clean cycles:**
+  - Province qual 5 pending (mode=live) → resolved 5/5 → expired=5 failed=0 retry=0
+  - **ไม่มี ⚡ circuit breaker, cooldown ไม่ trip, ไม่โดน WAF** (VPS resolve ทำงานเมื่อ throttle = Rev 3 ยืนยัน)
+  - batch=5 envelope ทำงาน · kw-first shadow + match enforce active
+- timer re-enabled (root@): active + enabled, รันทุก 2 นาที ระบาย backlog 5/run
+- **Production Restored = YES** (path viability validated ตาม objective lock — enqueued=0 ถูกต้องเพราะไม่มีงานเปิด, ไม่ใช่ notification count)
+- INC-001 status: Impact Low🟢 · RootCause Rev3 Confirmed🟢 · Containment🟢 · **Recovery Complete🟢 · Production Restored YES🟢**
+
+### Followup
+- [ ] **watch 24h** = production characterization → tune throughput envelope (cooldown trip count, resolve success rate)
+- [ ] deploy-debt: VPS git HEAD ค้าง f5311f7 (worker+deadman ใหม่บน disk ผ่าน scp แต่ git ref ไม่ advance) — fix ตอน single-runtime-authority migration
+- [x] ~~P1 alerts~~ ✅ **DONE** — resolve heartbeat + deadman 3 checks (ดู N+69)
+
+---
+
+## งานที่ N+69: 🛡️ INC-001 P1 — Resolve-plane dead-man alert (กันพังเงียบ) (2026-06-03)
+
+### สถานะ: ✅ DEPLOYED + tested end-to-end
+
+### Gap ที่ปิด (ต้นเหตุ INC-001 ตายเงียบ 1.5 วัน — L-004)
+- `health_deadman.py` เดิมตรวจ token+discovery แต่**ไม่ตรวจ resolve plane** · `vps_canary.py` ตรวจ announcement (ตอน INC-001 ยัง HEALTHY) ไม่ใช่ resolve path
+- = canary วัด upstream ไม่ใช่ business-critical path
+
+### Design (KISS, ไม่ยิง API เพิ่ม = ไม่เสี่ยง burst)
+- **worker เขียน `resolve_heartbeat.json` ทุกรอบ** — last_resolve_success_at = business outcome จริง (resolve RESOLVED/enriched สำเร็จ), ไม่ใช่ synthetic probe (เลี่ยง active AES canary ที่จะ burst + ขัด cooldown)
+- **deadman +3 checks (ทุก 15 นาที):** WORKER_STALE (>12m timer ตาย) · RESOLVE_DEAD (>75m + pending + ไม่ cooldown = INC-001) · RESOLVE_STUCK (cooldown ค้าง >2h)
+
+### Test: 7 scenarios ผ่านหมด (จับ dead/stuck/worker-dead ได้ + ไม่ false-alarm ตอน healthy/cooldown/no-pending)
+### Deploy: commit 25ebe61 + scp (worker bms, deadman root) + compile OK + heartbeat เขียนจริง + deadman check()=healthy + timer active
+### ผล: INC-001 ถูกจับใน ≤75 นาที (เทียบ 1.5 วัน)
+
+### Followup
+- [ ] P1 ส่วนเสริม (defer): qualification-throughput trend + resolve success-rate % (ตอนนี้มี binary alive/dead พอสำหรับกันพังเงียบ)
+
+---
+
+## งานที่ N+70: 🔍 Cross-check bid-window + เก็บ deadline ลง DB (v1.13) (2026-06-03)
+
+### สถานะ: ✅ cross-check สรุป (no miss) + ✅ deadline-storage deployed
+
+### Cross-check INC-001 data integrity (กัญจน์ขอ)
+- **Forward (งานใหม่ช่วง window 06-02→06-03):** 0 งาน target+keyword เพิ่งเห็น = **0 missed** (ฟรี ไม่ resolve)
+- **Backward (63 send+closed jobs):** รอบ 1 INVALID (ผมใช้ system python ไม่มี pdfplumber → parse_failed ปลอม — verify จับได้ก่อน claim) → รอบ 2 venv: **58/58 ปิดก่อน incident · 0 ยังเปิด · 0 ปิดช่วง window** (3 unresolved + 2 ไม่ถึง เพราะ cross-check trip WAF เอง)
+- **cooldown trip (xcheck_waf):** cross-check + worker ยิงรวมเกิน burst → cooldown → **validation ฟรีว่า P1/cooldown ทำงานจริง** (worker auto-skip, ไม่เกิด INC-001 ซ้ำ). drain pause ~45 นาที (ฟื้น 00:03)
+- **สรุป: ไม่มีหลักฐานว่า INC-001 ทำให้พลาดงานเป้าหมาย** เหลือ residual เคส bid-window สั้นพิเศษ (พิสูจน์ไม่ได้เชิงทฤษฎี)
+
+### Lesson (learn-from-mistakes): verify ก่อน claim — system python vs venv (pdfplumber) ทำให้ resolve ผลต่างกันคนละทาง. diagnostic resolve คู่ worker = เกิน envelope → ครั้งหน้า pause worker ก่อน
+
+### Enhancement: เก็บ deadline ลง DB (schema v1.13, commit c68c9dd)
+- `_migrate_v113` + column deadline · worker Pass3 เก็บ str(res.deadline) ตอน RESOLVED
+- → cross-check/audit = SQL query ฟรี (ไม่ re-resolve = ไม่ยิง API ไม่เสี่ยง WAF + แก้ PDF งานปิดหาย)
+- forward-only (317 ที่ resolve แล้ว = NULL) · มีผลตั้งแต่ drain resume 00:03 · DB backup ก่อน migrate
+
+### Followup
+- [x] ~~verify deadline populate~~ ✅ เก็บจริง 318 rows (forward-only ตามคาด)
+
+### ✅ DRAIN COMPLETE (2026-06-04 ~01:15) — INC-001 ปิดสมบูรณ์
+- 730 นครพนม resolve ครบ 100% (pending 0): suppressed_expired 704 + n/a 20 + no-deadline 6 + filtered 1 + **enqueued 0**
+- **0 งานตกหล่น** — ยืนยัน 3 ทาง: forward(0 ใหม่) + cross-check(58/58 ปิดก่อน incident) + drain(0 enqueued)
+- ปิดคำถามดั้งเดิม "ทำไมประทับ 8 งาน" สมบูรณ์ (8 → epoch boundary → re-seed 730 → drain → 0 พลาด)
+- INC-001 ปิดครบ: ✅Recovery ✅Production Restored ✅P1 dead-man ✅re-seed ✅cross-check ✅deadline audit (v1.13)
+- 🔧 cycle พิสูจน์ self-heal: cross-check trip WAF → cooldown → worker auto-skip → ฟื้นเอง → resume → drain ต่อ
+- minor followup (defer): worker auto-clean stale cooldown file · deadline parser quality (failed_deadline_not_found 6)
+
+---
+
+## งานที่ N+71: 📊 Winner Data ย้อนหลัง → Google Sheet (2026-06-04, autonomous)
+
+### สถานะ: 🚧 Phase 1 ✅ (Sheet 156) · Phase 2 🔄 (CGD merge)
+
+### ที่มา: กัญจน์ขอผลประมูลย้อนหลังในพื้นที่ "ทำต่อกันไปเลย" (ไปนอน)
+
+### Phase 1 ✅ — winner_cache → Sheet
+- winner_cache_bootstrap.json = 31,998 (eGP getProcureResult) ไม่มี province → intersect กับ projects_seen (นครพนม/บึงกาฬ target)
+- **156 งานนครพนม มีผู้ชนะ** (บึงกาฬ 0 — เพิ่ง track) · รวม 820M บาท
+- tab "ผลประมูลย้อนหลัง" ใน Sebastian Master Database (SA สร้าง spreadsheet ใหม่ไม่ได้ = Drive quota → ใช้ tab ใน spreadsheet หลัก)
+
+### Phase 2 🔄 — CGD egp-contract-2568 merge
+- **แหล่งที่ใช่ = egp-contract-2568** (ไม่ใช่ egpwinner ที่มีแค่ TIN→ชื่อ): มี จังหวัด+อำเภอ+ตำบล + ชื่อผู้ชนะ + ราคาตกลง + ราคากลาง (นครพนม 5,757/file)
+- fetch awarded+keyword 2 จังหวัด (quota-aware 350 calls cap) → merge by projectId (156 precedence, CGD เติมใหม่+บึงกาฬ) → rewrite tab
+- แยก infra (data.go.th) ไม่กระทบ D0
+
+### Lesson: SA ไม่มี Drive quota → สร้าง spreadsheet ใหม่ไม่ได้ ต้องเขียน tab ใน sheet ที่ user owns + SA shared
+
+### Phase 2 ✅ COMPLETE — 8,799 งาน (2026-06-04)
+- CGD fetch 10,084 (awarded+keyword, 72 calls << quota) → merge → **8,799 total** (นครพนม 6,612 + บึงกาฬ 2,187) รวม 8.5B
+- 🚨 **เจอ CGD column-shift** (sanity check จับ): field ชื่อ "ชื่อผู้ชนะ" จริงๆ เก็บ**วันที่** (100%!) · winner จริงอยู่ field 'ละติจูดโครงการ' (shift จาก block พิกัด)
+- **แก้: adaptive extraction** (หา field ที่มี company marker ยกเว้นชื่องาน/หน่วยงาน) → winner ถูก 100% (8,798/8,799) · price validate (ตกลง≤กลาง×1.5) 100%
+- drop column ที่ shift (อำเภอ/วันที่สัญญา) · prices/ชื่องาน/จังหวัด ใน field ชื่อตรง = เชื่อถือได้
+- **verify-before-claim รอบ 3 ของ session** (system-python pdfplumber → page-size → CGD shift) — sanity check ก่อนประกาศทุกครั้ง
+- minor: ปีงบ inconsistent (CGD=2568 พ.ศ. / eGP-track=2026 ค.ศ.) — followup เล็ก
+
+## งานที่ N+72: winner ย้อนหลัง 3 ปี (2566-2568) ทุกงาน → SQLite + Sheet สรุป (2026-06-04)
+
+### สถานะ: ✅ เสร็จ
+
+### สิ่งที่ทำ
+- คุณกัญจน์สั่งขยาย winner ย้อนหลัง → **2567+2566** เพิ่ม + **ไม่กรอง keyword** (ทุกงานในจังหวัด)
+- **ค้นพบ dataset รายโครงการครบปี 2558-2568** บน data.go.th (ชื่อ prefix ต่างกัน: 2564-67=`cdg-contract` พิมพ์ผิด, 2558-63=`cgd-contract`, 2568=`egp-contact`). summary_cgdcontract = สรุประดับหน่วยงาน (ใช้ไม่ได้)
+- **architecture decision (กัญจน์เลือก):** 160K+ แถวดิบ = anti-pattern ใน Google Sheet → **SQLite ดิบ + Sheet สรุป**
+
+### ผล
+- `data/winner_history.db` (table winner_history, +raw_json): **187,931 งาน** (3 ปี × นครพนม+บึงกาฬ) | 28.89B บาท
+  - 2568: นพ 37,576 + บก 23,941 | 2567: นพ 58,034 + บก 36,344 | 2566: นพ 20,209 + บก 11,827
+- price_valid 99.3% · winner name **99.9%** (หลัง re-extract)
+- Sheet 3 tab: **ภาพรวม** (ผลประมูลย้อนหลัง, ปี×จว.) · **คู่แข่งรายใหญ่** (top 500) · **ตามตำบล** (top 1000)
+- พื้นที่เป้าหมายครบ: อ.บ้านแพง 3,089 · อ.บึงโขงหลง 4,561
+- quota: 225 calls (fetch) — เหลือ buffer พอ
+
+### Bug + fix (L-006 refinement)
+- winner เริ่มต้นเจอแค่ 78.9% — marker-scan เปราะ (marker "นาย " เว้นวรรค พลาด "นายไพบูลย์", ชื่อร้านไม่มี prefix)
+- **fix: detect shift จาก invariant** (ชื่อผู้ชนะ=วันที่ → winner อยู่ ละติจูดโครงการ) → 99.9%. **re-extract จาก raw_json ไม่ต้อง fetch ใหม่**
+
+### Sanity check ✅
+- 187,931 rows, price_valid 99.3%, winner 99.9%, อำเภอ/ตำบล/ราคา ไม่ shift (อยู่ก่อน coordinate block), target areas present
+
+### Scripts
+- `_winner_history_build.py` (fetch→SQLite, checkpointable) · `_winner_history_reextract.py` (re-extract จาก raw) · `_winner_history_summary.py` (→Sheet)
+- ลบ keyword-era: `_fetch_cgd_winners.py`, `_merge_winner_sheet.py`
+
+### Bonus (ระหว่างรอ fetch)
+- เช็คระบบ: 14 timers OK, worker pending=0 ไม่ติด cooldown, deadman healthy, INC-001 ไม่กลับมา
+- discovery เช้านี้: 0 งานใหม่ในอำเภอเป้าหมาย (วันเงียบปกติ)
+- เคลียร์ stale failed unit `bms-province-discovery-full.service` (ค้างจาก 2 มิ.ย., timer disabled แล้ว) → `systemctl --failed`=0
+
+### Followup
+- ปีงบ format ต่างกัน (CGD พ.ศ. / eGP-track ค.ศ.) — เล็ก
+- ขยายปีก่อน 2566 ได้อีก (มี dataset ถึง 2558) ถ้าต้องการ
+
+## งานที่ N+73: INC-002 false-positive notification (substring keyword) (2026-06-04)
+
+### สถานะ: ✅ แก้แล้ว (live VPS) + 1 รายการรอ confirm design
+
+### Trigger
+คุณกัญจน์ได้ LINE แจ้งเตือนงาน "จังหวัดสกลนคร" ที่ไม่เกี่ยวพื้นที่ → ตรวจสอบ
+
+### พบ 2 สาเหตุคนละแบบ (จาก 7 งานใหม่ 13:00, 3 enqueued)
+1. **#3 ท่องเที่ยว (69059277975) = BUG** — keyword "ท่อ" substring-match "ท่อง" ใน "ท่องเที่ยว" (ภาษาไทยไม่มีเว้นวรรค)
+2. **#1 สกลนคร (69069008604) = precision cost** — keyword ระบายน้ำ จริง แต่เป็นชลประทานข้ามจังหวัด (ลำน้ำพุง-น้ำก่ำ) eGP คืนใต้ province=นครพนม + resolve ตำบลไม่ได้ → soft-include (controlled recall). ส่งไป 4 user แล้ว (กู้ไม่ได้)
+3. **#2 อาคารโพนทอง (69059132412) = ถูกต้อง** — โพนทอง ∈ target → ส่งจริง
+
+### Fix
+- **substring bug:** regex guard `ท่อ(?!ง)` ใน job_matcher (_kw_hit) — **ไม่ใช้ blanket negative** เพราะจะตัด "ถนนเข้าแหล่งท่องเที่ยว" (งานถนนจริง) = ขัด recall-bias. verified: ท่องเที่ยวล้วน→cut, ถนน-ท่องเที่ยว→send ✓
+- **queue:** หยุด sender → cancel #3 (5 rows) → ปล่อย #2 โพนทอง → เปิด sender กลับ
+- deploy: scp job_matcher.py + config → VPS (deploy-debt git stuck), verified live
+
+### shadow
+ไม่เกี่ยว — discovery_confirmed=0, shadow ยัง dry-run. notification มาจาก province_api live path
+
+### รอ confirm (design)
+- **anti-province guard** — กัญจน์อยากได้แต่ห่วงตัดงานจังหวัดเราที่บังเอิญมีชื่อจังหวัดอื่น → ออกแบบ conservative (apply เฉพาะ soft-include branch + ต้องไม่มีชื่อจังหวัด/ตำบลเราใน title) ก่อน confirm
+- ❌ ไม่ลด keyword (อนาคต user พิมพ์ keyword เอง)
+
+### telemetry note
+discovery "🎯 อำเภอเป้าหมาย: 0" แต่ enqueue 3 — เพราะ target-count นับตอน discovery (ก่อน resolve ตำบล), qualify เกิดที่ worker. ป้ายอาจทำให้เข้าใจผิด (minor)
+
+## งานที่ N+74: ขยาย winner ย้อนหลังครบ 11 ปี (2558-2568) (2026-06-04)
+
+### สถานะ: ✅ เสร็จ
+- ค้นพบ CGD มี dataset รายโครงการครบ 2558-2568 (RID เก็บ data/_cgd_rids_58_65.json + _67_66)
+- build script ทำ quota-safe (None=abort ไม่ mark done) + รวมทุกปี + resume ได้
+- **617,357 แถว** (เดิม 187,931) | winner 100.0% (reextract) | price_valid 92.1%
+- Sheet สรุปอัปเดต: ภาพรวม 23 rows (11ปี×2จว.) + คู่แข่ง 500 + ตามตำบล 1000
+- หมายเหตุ: 2559-2560 records น้อย (dataset source เบาบาง), quota วันนี้ไหวหมดไม่ต้อง resume
+
+## งานที่ N+75: anti-province guard (INC-002 part 2) (2026-06-04)
+
+### สถานะ: ✅ เสร็จ (live VPS, กัญจน์ confirm design)
+- guard: soft-include branch เท่านั้น → cut ถ้าชื่อมี "จังหวัด<อื่น>" + ไม่มีจังหวัดเรา + (ถึง soft = ไม่มีตำบลเป้าหมายแล้ว)
+- embed 77 จังหวัด (จาก thai_geo_raw.csv) เป็น frozenset + foreign_province_in_title()
+- verified 5 เคส: สกลนคร gate→cut, นครพนม-สกลนคร→soft_include(recall รอด), ตำบลเป้าหมาย+สกลนคร→send, ไม่มีจว.อื่น→soft_include, ท่องเที่ยว→cut
+- conservative ตามที่กัญจน์ห่วง: งานจังหวัดเราที่บังเอิญพาดพิงจว.อื่น ไม่พลาด (ต้องมีชื่อจังหวัดเรา/ตำบลเรา)
+
+## งานที่ N+76: feedback authority = กัญจน์คนเดียว (2026-06-04)
+
+### สถานะ: ✅ เสร็จ (live VPS, กัญจน์สั่ง)
+- เหตุผล: กัญจน์รู้ธุรกิจ + กัน noise (พ่อแม่กดลองเล่น UI = INC-002 lesson)
+- design: ครอบครัวยังได้รับแจ้งงานปกติ แค่ไม่มีปุ่ม feedback (ปุ่มขึ้นเฉพาะ cust2)
+- impl: build_job_flex(with_feedback) + _feedback_authority_ids() อ่าน config/feedback_authority.json {"customer_ids":[2]} (customer_id ไม่ใช่ PII, committable). ว่าง=ทุกคน (backward-compat)
+- verified local+VPS: cust2 มีปุ่ม, cust4 ไม่มี
+- followup: feedback rows เก่าจากพ่อแม่ (exploratory) ยังอยู่ใน table — ถ้าจะวัด North Star ให้กรอง customer_id=2 หรือลบ noise ทีหลัง
+
+## งานที่ N+77: วิเคราะห์ winner + จด backlog 2 งาน (2026-06-04)
+
+### สถานะ: ✅ วิเคราะห์เสร็จ + จด backlog (จะทำ session หน้า)
+- วิเคราะห์ผลงานบริษัทกัญจน์: 316 งาน 173.8M 11 ปี. เก่ง เมืองนครพนม+บ้านแพง. **88% เฉพาะเจาะจง / 10% e-bidding**
+- audit false-positive ทุกงานที่ส่ง: เจอ 3 (เลเซอร์+อีเวนต์ 29-30พค ก่อน enforce, สกลนคร 4มิย) — กฎปัจจุบัน cut หมดแล้ว
+- วิธีจัดซื้อในข้อมูล 20 ประเภท (เฉพาะเจาะจง 91.5% / e-bidding 1.5%), proc_type shift ~61.5K
+
+### Backlog จด (กัญจน์สั่ง — ideas/future_development.md):
+1. **method_group** column + กู้ 61.5K proc_type shift
+2. **เทรน BMS classifier จากชื่องาน 617K** (label=ชื่อประเภทโครงการ). เช็ค live API มี field นี้ก่อน
+
+### Followup (ค้างจาก session นี้):
+- ตัดสินใจ: ส่งข้อความ user เรื่อง false-pos เก่า (เลเซอร์/อีเวนต์) หรือไม่
+- Sheet tab "ผลงานบริษัทเรา" (316 งาน) — offered
+- ~~'ราง' substring risk เหมือน ท่อ~~ → ทำใน N+78
+
+## งานที่ N+78: audit substring false-match keyword ทั้งชุด (2026-06-04)
+
+### สถานะ: ✅ เสร็จ + DEPLOYED live VPS (push 3ae37dd + scp, VPS live test PASS 5/5)
+
+### สิ่งที่ทำ
+- audit keyword สั้นทุกตัวกับชื่องานจริง **617K** (winner_history.db) → `scripts/_audit_substring_kw.py` + `data/_audit_substring_kw.txt`
+- เจอ false-match จริง 2 ตัว:
+  - **'ราง'**: ตารางเมตร (2,428), ถ้วย/ของรางวัล (349), วรางกูร พระนาม (41)
+  - **'ท่อ'**: ท่อน = ท่อนพันธุ์/ซุง (เกษตร)
+- ตัวอื่น (ฝาย/รั้ว/โยธา/สะพาน/กำแพง) ชนชื่อสถานที่ — โดน tambon-AND กรองอยู่แล้ว ไม่เร่งด่วน
+
+### Fix (job_matcher.py `_KEYWORD_GUARDS`)
+- `ราง`: `(?<!ตา)ราง(?!วัล|กูร)`
+- `ท่อ`: `ท่อ(?!ง)(?!น(?!้))` — refined จาก verify ชั้น 2
+
+### 🐛 จับได้ตอน verify (สำคัญ): guard รอบแรก `ท่อ(?![งน])` บล็อก **"ท่อน้ำ" (ท่อน้ำประปา=ท่อจริง 164 งาน)** = false-negative บน keyword หลัก → refined ให้ allow เฉพาะ ท่อน้ำ (น ตามด้วย ้)
+
+### ผล (verify กับ 617K)
+- match 77,170 → 73,974 · ตัด noise **3,196 (4.1%)** ทั้งหมดเป็น ถ้วยรางวัล/ท่องเที่ยว/ตารางสอน/ท่อนพันธุ์
+- **ท่อน้ำ pipe 164/164 เก็บครบ** · unit 11 เคส + module test PASS
+
+### Lesson (L-007)
+substring guard ภาษาไทยต้อง verify 2 ทิศ: ไม่ใช่แค่ "ตัด noise ถูกไหม" แต่ "ตัดของจริงไปด้วยรึเปล่า" — "ท่อน้ำ" เกือบหายเพราะ guard เหวี่ยง
+
+### Followup เหลือ
+- recall note: ตารางเมตร เคยบังเอิญจับ โดม/ศาลา/ฝ้า (ไม่มี keyword หลัก) — ถ้าอยากได้งานพวกนี้ = เพิ่ม keyword (อาคาร?) ไม่ใช่พึ่ง ตารางเมตร
+- ~~deploy VPS + push~~ ✅ DEPLOYED (push 3ae37dd + scp, VPS live test PASS 5/5)
+
+## งานที่ N+79: กู้ proc_type shift 61.5K + method_group column (2026-06-04, backlog)
+
+### สถานะ: ✅ เสร็จ (DB local + Sheet)
+
+### Root cause (เจอตอน investigate)
+CGD **column swap**: header string 'วิธีการจัดหา ประกาศเชิญชวนทั่วไป คัดเลือก เฉพาะเจาะจง' โผล่สลับตำแหน่งระหว่าง field `วิธีจัดซื้อฯ` ↔ `กลุ่มวิธีจัดซื้อฯ`:
+- 555,752 แถว: วิธีจัดซื้อฯ=ค่าจริง, กลุ่มฯ=header
+- 61,510 แถว: สลับกัน → proc_type เก็บ header ขยะ
+→ กฎกู้: ค่าจริง = field ที่ **ไม่ใช่** header. raw_json = source of truth (ไม่แตะ) → idempotent+reversible
+
+### Fix (`_winner_history_proctype_fix.py`)
+- snapshot (rowid, proc_type) → backups/proctype_snapshot_*.json.gz (เบา, ไม่ copy DB 2.6GB)
+- recompute proc_type ทั้ง 617K จาก raw_json (clean rows ค่าไม่เปลี่ยน, 61,510 กู้)
+- ADD COLUMN method_group + map: แข่งขันราคา/คัดเลือก/เฉพาะเจาะจง/อื่นๆ (keyword-based, ครอบคลุม 19 ค่า)
+
+### ผล (sanity)
+- proc_type=header เหลือ **0** (กู้ครบ 61,510) · 22s
+- method_group: เฉพาะเจาะจง 604,152 (97.9%) / แข่งขันราคา 11,795 / คัดเลือก 1,403 / อื่นๆ 7
+- proc_type top: เฉพาะเจาะจง 563,460 · ตกลงราคา 40,246 · e-bidding 9,962
+
+### Bonus — เติม 2 column ลง Sheet "ผลงานบริษัทเรา" + insight
+บริษัทเรา: เฉพาะเจาะจง 85.8% (92.7M งานเล็ก) · **แข่งขันราคา 12.7% = 64.4M งานใหญ่** (เฉลี่ย 1.6M/งาน vs 0.34M) · คัดเลือก 5 งาน 16.6M (ใหญ่สุด 3.3M/งาน)
+
+### Followup
+- backlog 2: เทรน classifier จากชื่องาน 617K — field `ชื่อประเภทโครงการ` (จ้างก่อสร้าง/...) มีใน raw_json แล้ว = label พร้อม. เช็ค live API ก่อน
+
+---
+
+## งานที่ N+80: Work-Type Classifier Phase 0 — gate PASS (2026-06-04)
+
+### สถานะ: ✅ เสร็จ (Phase 0) → กำลังต่อ Phase 1
+
+### สิ่งที่ทำ
+Rule-based classifier จัดหมวดงานก่อสร้าง 7 core (สะพาน/แหล่งน้ำ/ราง/อาคาร/ถนน/ดิน/ไฟฟ้า) + OTHER/UNKNOWN จากชื่องาน. ไฟล์: `scripts/work_type_classifier.py` + `config/work_type_keywords.json` + test + `scripts/validate_work_type.py`.
+
+### Flow ทำงานวันนี้
+1. spec review (ChatGPT 9.3/10) → ปิด open questions: ไฟฟ้า=core ที่ 7, priority ถนน>ราง, acceptance 90/90, analytics นับ primary+secondary
+2. writing-plans → 6 tasks → subagent-driven (subagent ตาย rate-limit หลัง config → ทำ inline ต่อ)
+3. TDD: unit test 11 cases จับ bug nested-keyword inflate (ไฟฟ้าส่องสว่าง⊃ส่องสว่าง) → fix yุบ substring
+4. **calibration loop กับ 52,525 จ้างก่อสร้าง:**
+   - v1.0 coverage 87.7% FAIL → quantify UNKNOWN 5,918 งานจริง (ไม่เดา) → v1.1 เพิ่ม keyword → 94.8%
+   - audit precision: **สะพาน 76.7% FAIL** (landmark "จากสะพาน/บ้านสะพานสูง" ถูกดูด)
+   - **v1.2 แก้ tie-break: score→ตำแหน่ง(head-noun)→priority** → สะพาน 97%, ทุกหมวด ≥90%
+
+### ผล: GATE PASS ✅
+Coverage 94.8% + precision ทุกหมวด ≥90% (audit ~30/หมวด). บันทึก `data/work_type_validation_audit.md`. commits: 730a5be (build) + 77cc516 (calibrate v1.2).
+
+### ⚠️ Spec deviation (flag คุณกัญจน์)
+tie-break เปลี่ยนจาก spec §4 (priority ก่อน position) → position ก่อน priority. validation พิสูจน์ priority-first ผิดสำหรับ domain (landmark problem). reversible. priority ยังเป็น fallback.
+
+### Followup
+- Phase 1: migration work_type column (52.5K) + Sheet 3 มุม (primary+secondary)
+- ยืนยัน OUR_TINS (BSC ทรัพย์คอนกรีต + ยศประทาน) สำหรับมุมบริษัทเรา
+
+---
+
+## งานที่ N+81: Work-Type Analytics Phase 2 — ครบ 3 backlog (2026-06-05)
+
+### สถานะ: ✅ เสร็จ
+
+### สิ่งที่ทำ — ต่อยอด taxonomy work_type เป็น market intelligence (7 tab ใหม่)
+1. **Market size** (`_market_size_sheet.py`): ตลาด 46,063 ลบ. (นครพนม+บึงกาฬ 11 ปี). ถนน 55%, อาคาร 21%, ราง 3.4%. primary-based (total ไม่ double-count) + win_price.
+2. **Competitor share** (`_competitor_share_sheet.py`): top10/หมวด + อันดับเรา. ราง=อันดับ 11/1002 (จุดแข็ง), ถนน 55/1840. ตลาดกระจาย (เจ้าตลาดครอง 3-14%).
+3. **Trend** (`_trend_sheet.py`): early 2561-62 vs recent 2567-68. ถนน +69%, ไฟฟ้า +211%, ดิน +779% (โต) · แหล่งน้ำ -42%, สะพาน -54% (หด) · ราง +14% (ทรง).
+
+### Insight เชิงกลยุทธ์
+- ถนน = สนามใหญ่สุด (55%) + ยังโต → ต้องอยู่
+- **ไฟฟ้า/ส่องสว่าง โตแรง +211%** (solar boom) = โอกาสขยาย (เรายังไม่เล่น)
+- ราง (สินค้าหลัก) ตลาดเล็ก+ทรง แต่อันดับเราดีสุด → ป้องตำแหน่ง + ขายของให้เจ้าถนน
+- UNKNOWN หด -49% = ปีหลัง classifier ครอบคลุมดีขึ้น
+
+### commits: 4e92f50 (market size) + competitor share + trend (3 commits)
+
+### Followup
+- ถ้าจะ refine classifier: UNKNOWN ยัง 6.2% มูลค่า (งานใหญ่ avg 1.25 ลบ)
+- wire 10 tab analytics เข้า web portal (ภายหลัง)
+
+---
+
+## งานที่ N+82: เว็บแดชบอร์ดพ่อแม่ (Parents Dashboard) (2026-06-05)
+
+### สถานะ: ✅ เสร็จ + deploy live
+
+### สิ่งที่ทำ
+หน้าเว็บ static มือถือ สรุปวิเคราะห์ตลาดงานก่อสร้าง (size/share/trend) ส่งให้พ่อแม่ เปิดไม่ต้อง login.
+- `scripts/build_parents_dashboard.py` — compute_data (primary, อ่าน work_type column) + render_html (self-contained, Chart.js donut, details expand, ธีมขาว-แดง) + test
+- `dashboard/parents/index.html` (generated) → deploy Vercel
+- หัวเว็บ: "สรุปผลการวิเคราะห์ตลาดงานก่อสร้าง นครพนม-บึงกาฬ ตั้งแต่ปี พ.ศ. 2558-2568 จัดทำโดยน้องกัญจน์"
+
+### 🔗 URL (public, มือถือเปิดได้): https://parents-sigma.vercel.app
+- ปิด Vercel Deployment Protection ผ่าน API (ssoProtection=null) — เดิม 401, ตอนนี้ 200
+- noindex (ไม่ขึ้น Google)
+
+### Insight ในหน้า
+ตลาด 46,063 ลบ. · ถนน 55% · อันดับเรา ราง #11 (จุดแข็ง) · เทรนด์ ไฟฟ้า +211% · โอกาส=ไฟฟ้า/ส่องสว่าง (ไม่เล่น+โต+ตลาดใหญ่สุด)
+
+### Rebuild เมื่อ data อัปเดต
+`python scripts/build_parents_dashboard.py` แล้ว `vercel deploy dashboard/parents --prod --yes`
+
+### commits: 6 (spec→plan→compute→render→gitignore) + 1 deploy
+
+---
+
+## งานที่ N+83: Parents Dashboard (interactive) + Construction Vocab (2026-06-05)
+
+### สถานะ: ✅ Dashboard เสร็จ · 🚧 Vocab รอบ batch (resume ได้)
+
+### A. Parents Dashboard — https://parents-sigma.vercel.app (public, มือถือ)
+`scripts/build_parents_dashboard.py` → static HTML ขาว-แดง "จัดทำโดยน้องกัญจน์" deploy Vercel (ปิด deployment protection).
+- 6 section: ตลาด 46B / อันดับเรา / เทรนด์ / โอกาส / คู่แข่ง / พื้นที่ / ผลงานเรา 282 งาน
+- กราฟเทรนด์ interactive: โหมด มูลค่า/สัดส่วน%/เติบโต%(YoY) × เส้น/แท่ง + ตัดเส้น + เลือกปี
+- **แก้ honesty:** window% หลอกตา (กัญจน์จับ +211% ไฟฟ้า) → เปลี่ยนเป็น **CAGR** (log-linear) + คอลัมน์ผันผวน CV%
+- โอกาส = 3 ทาง (ราง=สินค้าเรา / ไฟฟ้า / ดิน) พร้อม pros-cons (ไม่ fix คำตอบเดียว)
+- rebuild: `python scripts/build_parents_dashboard.py` แล้ว `vercel deploy dashboard/parents --prod --yes`
+
+### B. Construction Vocab (คลังคำกลาง) — spec/plan ใน docs/superpowers/
+**Pipeline:** normalize → mine(gap) → review(Sheet vocab_review) → apply(approve/reject sync) → validate
+- `text_normalize.py`: นํ้า→น้ำ, คสล → wire เข้า classifier+matcher → **UNKNOWN 4.4%→4.1% ฟรี**
+- `mine_vocab_gaps.py`: ขุด gap (pythainlp offline) → 462 candidate
+- `construction_vocab.json`: คลังกลาง **company-agnostic** (term→category, ไม่มี bsc_relevant; relevance per-company = อนาคต multi-tenant)
+- `apply_vocab_review.py`: `sync_into_configs(approved, rejected, wt, mp)` — approve เติม, reject ลบ (idempotent+test)
+- **approve 2 batch (38 คำ) → UNKNOWN 2.6%** (classifier 89→127, matcher 28→66)
+- validate จับคำโลภ reject: ลาน/ก่อสร้างลาน/สำนักงาน/ที่ดิน (ชนคำตึก/วัสดุ)
+- pythainlp = dev tool offline (ไม่แตะ pipeline VPS)
+
+### Resume point (session ใหม่)
+- Sheet `vocab_review` มี ~440 candidate เหลือ (เดาหมวดให้บางส่วน) — approve batch ต่อ ด้วย `_vocab_approve_batch.py` (แก้ BATCH dict) หรือกัญจน์รีวิวเองใน Sheet → `apply_vocab_review.py`
+- ทุก batch: ต้อง validate (unit test + UNKNOWN + เช็คคำโลภ substring) ก่อน commit
+
+### Followup
+- DB migration work_type ยังไม่ re-run หลัง normalize+vocab (analytics tab ยังเป็นค่าเก่า) — รัน `migrate_work_type_column.py` เมื่อ vocab นิ่ง
+- validation txt artifacts ใน data/ ยังไม่ commit (เยอะ) — ตัดสินใจ gitignore
+
+---
+
+## งานที่ N+84: Construction Vocab batch 3 — UNKNOWN 2.6%→2.1% (2026-06-05)
+
+### สถานะ: ✅ เสร็จ
+
+### วิธี: data-driven จาก UNKNOWN sample จริง (ไม่ใช่ gap list)
+อ่าน `data/work_type_unknown_sample.txt` (200 งานที่ classifier แพ้) → เห็น pattern ซ้ำ → เลือก 23 คำชัวร์ที่ map หมวดได้ + เลี่ยงคำโลภ. `scripts/_vocab_approve_batch3.py` ต่าง batch ก่อน: **เติม term ใหม่เข้าคลังถ้ายังไม่มี** (คลัง=source of truth) แล้ว sync.
+
+### คำที่เพิ่ม (23 → classifier kw 127→150, matcher 66→89)
+- อาคาร: เสาธง, ที่จอดรถ, ตลาดสด, โดม, ลานเอนกประสงค์, ผนังกันดิน, ทางลาดสำหรับ/ผู้พิการ/คนพิการ
+- แหล่งน้ำ: ทางน้ำล้น, คันพนัง, หอถัง, ถังเก็บน้ำ
+- รางระบายน้ำ/ท่อ: ทางระบายน้ำ · สะพาน: บล็อกคอนเวิร์ส · ถนน: ทางจักรยาน
+- ไฟฟ้า: ระบบจำหน่าย, ฟีดเดอร์, โซล่าเซลล์ · OTHER: สนามเด็กเล่น/ฟุตบอล/วอลเลย์บอล/บาสเกตบอล
+
+### Sanity (ทำครบก่อน commit)
+1. **unit test จับ regression:** `อเนกประสงค์`→อาคาร ไปทับ `สนามกีฬาอเนกประสงค์` (ควร OTHER) → ทิ้งคำเปล่า ใช้ `โดม` แทน
+2. **precision audit (targeted, สุ่มงานจริงต่อคำ):** `จักรยาน` เปล่าไปจับ `จักรยานยนต์` (มอ'ไซค์) → เปลี่ยนเป็น `ทางจักรยาน` (ครอบ "เส้นทางจักรยาน" ในตัว). คำอื่น mismatch ส่วนใหญ่ = ถูกหมวดอื่นจริง (เช่น "ถนนข้างตลาดสด"→ถนน ✓)
+3. **validate 52,525 งาน:** coverage 97.0% · UNKNOWN 2.6%→**2.1%** · OTHER 0.9%
+
+### Followup
+- ~~DB migration work_type re-run~~ ✅ N+85
+- ~~validation txt artifacts gitignore~~ ✅ N+84 (commit 2e5108f)
+
+---
+
+## งานที่ N+85: DB migration work_type re-run + analytics refresh (2026-06-05)
+
+### สถานะ: ✅ เสร็จ (Sheet) · ⏸ Parents Dashboard รอ confirm redeploy
+
+### สิ่งที่ทำ
+หลัง vocab batch 1-3 (classifier v1.2 + 23 คำใหม่) → recompute work_type column ทั้ง DB แล้ว refresh analytics tabs ให้ตรงค่าใหม่.
+1. `migrate_work_type_column.py` — snapshot 617,357 rows → recompute 52,525 งานก่อสร้าง (8s, idempotent). distribution ตรง validate เป๊ะ (ถนน 27,280 / อาคาร 8,690 / UNKNOWN 1,077=2.1%)
+2. re-run 4 analytics scripts → Sheet:
+   - `_work_type_sheet` (3 tab: บริษัทเรา/คู่แข่ง/ตำบล) — ใช้ column เป็น filter + recompute runtime
+   - `_market_size_sheet` (3 tab) — ตลาดรวม 46,063 ลบ.
+   - `_competitor_share_sheet` (2 tab) · `_trend_sheet` (2 tab)
+
+### Sanity
+- DB: total 617,357 ✓ · tagged 52,525 ✓ · UNKNOWN 1,077 (ตรง validate)
+- ทุก tab เขียนสำเร็จ (exit 0)
+
+### Followup
+- ~~Parents Dashboard redeploy~~ ✅ rebuild + `vercel deploy --prod` (dpl_28sQ5r3...) → parents-sigma.vercel.app สด (HTTP 200, 128,384 bytes ตรง local). ระบบสดทั้ง DB+Sheet+Dashboard
+
+---
+
+## งานที่ N+86: Digest แยก RSS ทั้งประเทศ ออกจาก discovery เป้าหมาย (2026-06-05)
+
+### สถานะ: ✅ เสร็จ (deploy VPS via scp)
+
+### ปัญหา
+`discovery_section()` เดิมอ่าน `rss_queue.json` แล้วนับ RSS (global feed ทั้งประเทศ) เป็น "new items/D0" + "target hits" (substring) → ปนกัน ทำให้ดูเหมือน discovery เยอะกว่าจริง (66 = 4 จริง + 62 noise ทั้งประเทศ)
+
+### Fix (Sebastian_Daily_Digest.py)
+เขียน `discovery_section()` ใหม่ → อ่าน DB (projects_seen + project_locations) แยก 2 บรรทัดชัด:
+```
+Discovery (24h): PASS
+  🎯 เป้าหมาย (province_api): 4 งาน  [นครพนม=1 บึงกาฬ=3]
+  🌐 RSS ทั้งประเทศ (shadow): 81  ปั๊มตรา=0  (ที่เหลือ noise กักไว้ ไม่ match)
+```
+- 🎯 = discovery จริง (province_api, กรอง moiId แล้ว) — PASS/ZERO key จากตัวนี้
+- 🌐 = RSS global (shadow) + นับ discovery_confirmed (ปั๊มตรา) → เห็นชัดว่า noise ถูกกัก
+- preview กับ VPS DB จริงก่อน deploy
+
+### Deploy
+scp ไฟล์เดียว → `/opt/bms/app/scripts/` (VPS app repo อยู่หลัง+dirty = deploy debt; VPS local diff = feedback_section ซึ่งมีใน local commit แล้ว → superset ปลอดภัย ไม่ทับของหาย). **ไม่ push GitHub** (deploy debt แยกเรื่อง)
+
+---
+
+## งานที่ N+87: Matching health audit → proc-type gate (ตัดงานซื้อ) (2026-06-05)
+
+### สถานะ: ✅ เสร็จ + deploy VPS
+
+### Audit (ตรวจสุขภาพ matching #1)
+- ✅ RSS leak = 0 (ไม่มีงานเป้าหมายหลุดทาง RSS)
+- ✅ recall งานก่อสร้างในตำบลเป้าหมาย = แข็งแรง (28kw หลักครอบครบ)
+- ⚠️ **precision พังในมือ user จริง:** 21 enqueue/sent → มีงาน "ซื้อ" หลุด เช่น `ซื้อเครื่องรักษาโรคตาด้วยแสงเลเซอร์` (ส่งให้ user แล้ว!), `ซื้อคอนกรีตผสมเสร็จ`
+- 💡 จุดพลิก: live matcher = 28kw, repo = 89kw (vocab วันนี้). จำลอง 89kw บนงานเป้าหมายจับเพิ่ม 5 = **ทั้งหมดงานซื้อ** → deploy 89kw ดิบๆ แย่ลง (ดีที่ deploy-debt-B defer ไว้)
+
+### Root cause
+`job_matcher.match_job()` gate = keyword AND tambon เท่านั้น **ไม่มี filter ซื้อ vs จ้างก่อสร้าง** → งานซื้อที่ชื่อมีคำก่อสร้าง+ตำบลตรง หลุด
+
+### Fix (กัญจน์เลือก: ตัดซื้อทั้งหมด เฉพาะจ้างก่อสร้าง)
+`is_procurement(name)` — leading-token (ตัดคำวิธี ประกวดราคา/สอบราคา แล้วดู ซื้อ/จัดซื้อ, กันคำ 'ซื้อ' กลางชื่องานจ้าง) → match_job ตัดเป็น `procurement_not_construction`. TDD: `test_job_matcher.py` 17 เคส PASS.
+
+### Validate (ข้อมูลจริง)
+- 21 enqueue/sent: ตัดถูก 2 งานซื้อ (เครื่องรักษาตา + คอนกรีตผสมเสร็จ) เก็บงานก่อสร้างครบ
+- **ผลรวม: 346/1093 (31%) ของ province_api เป็นงานซื้อ → กรองออกจาก matching** = precision ขึ้นมาก
+- deploy: scp job_matcher.py → VPS (text_normalize มีอยู่แล้ว). config คง 28kw (ไม่ deploy 89kw)
+
+---
+
+## งานที่ N+88: VPS state-migration (Phase 0-4) + proc-aware matcher (2026-06-05→06)
+
+### สถานะ: ✅ migration + matcher เสร็จ deploy
+
+### A. VPS State Migration — deploy-debt + split-brain RESOLVED
+ดูละเอียด `docs/runbooks/vps-state-migration.md`. สรุป: runtime state → /opt/bms/data (bms_paths), VPS HEAD=GitHub, **git pull deploy ทำงาน** (เลิก scp). window 15 นาที. เจอ+แก้ blocker: sudo (ตั้ง sudoers NOPASSWD systemctl+lsof), .git root-owned (chown), Phase 3 leak-watch จับ canary/LINE_Sender missed writers → wire เพิ่ม. Phase 0.5 Operational Readiness Check + Rule #5/#6 เข้า playbook. L: Technical≠Operational Readiness
+
+### B. Proc-aware matcher — 1 feed 2 ธุรกิจ (commit 7e1433e)
+จากประวัติชนะจริง: **ยศประทาน=รับเหมา (จ้าง 99%)** vs **BSC=ขายวัสดุ (ซื้อ 88%)** = 2 ธุรกิจตรงข้าม เจ้าของคนเดียว → กัญจน์เลือกส่ง feed เดียว
+- proc-gate v1 "ตัดซื้อทั้งหมด" ฆ่างาน BSC → เปลี่ยนเป็น **proc-aware**: ซื้อ→ต้องตรง material_keywords (16 คำ) / จ้าง→keywords เดิม
+- validate: BSC recall 30/30=100%, เครื่องแพทย์/รถ/คอม ยังตัด. TDD PASS. deploy+verify VPS
+- L: เช็ค revealed-preference (ประวัติชนะจริง) ก่อนตั้ง filter rule (v1 ผิดเพราะไม่เช็คก่อน)
+
+### Followup
+- Phase 3 leak-watch cron รัน 48h → Phase 4 (gitignore app/data state + ถอด heal) หลัง clean
+- material_keywords อาจ refine เพิ่มถ้า BSC ขายของอื่น (ดู feedback)
+
+---
+
+## งานที่ N+89: รับฟังคำวิจารณ์ (B0) GO-LIVE — North-Star delivered (2026-06-06)
+
+### สถานะ: ✅✅ LIVE ส่งถึงครอบครัวจริงแล้ว
+
+### insight (กัญจน์): D0 พ่อรู้อยู่แล้ว, งานใหม่จริงอยู่ B0 (รับฟังคำวิจารณ์ ก่อนประมูล)
+probe ยืนยัน announceType=1=B0=stepId U03. ปลดล็อก = ดึง B0 + ส่ง = พ่อเห็นงานก่อนใคร
+
+### สิ่งที่ทำ (TDD ทุกชิ้น)
+1. **discovery**: parametrize announce-types (env BMS_ANNOUNCE_TYPES=1,2) — incremental bound
+2. **freshness gate**: `tor_is_fresh(announce_date, days=14)` + migrate v114 (projects_seen.announce_date) → กัน backlog blast (428+228 เก่า) ส่งเฉพาะช่วง comment period
+3. **qualifier B0 branch**: match proc-aware + location-from-name (ไม่ resolve API=INC-001 safe) → enqueue province_tor_review **ข้าม bidding-deadline gate**
+4. **LINE label**: "📋 รับฟังคำวิจารณ์ (ร่าง TOR — ยังไม่เปิดประมูล)"
+5. **subscription**: announce_types D0 → D0,B0 (5 customers)
+
+### go-live (controlled: stop sender→enqueue→ตรวจ→start)
+- 17 B0 ingest (incremental) → gate: filtered_no_match 6, suppressed_tor_stale 1 (กัน B0 36วัน), enqueued 5
+- **sent 5 งาน → ครอบครัวจริง** (กัญจน์/Hong/ณฐมน/Mr.suvit), cust1=test fail (ปกติ)
+- **B0 project_id ไม่ซ้ำ D0 เลย (0)** = งานที่พ่อยังไม่เคยเห็นจริง = North-Star
+- commit ab53a65 (feature) + e511e2d (freshness gate)
+
+### Followup
+- discovery timer (BMS_ANNOUNCE_TYPES live) จะหา B0 ใหม่ทุกวันเอง
+- cust1 (test) B0 fail = noise (is_test_data excluded จาก metrics)
+- ดู feedback พ่อต่อ B0: มีค่ากว่า D0 จริงไหม (validate North-Star)
+
+---
+
+## งานที่ N+90: ⭐ Follow/Star Phase 1 — event-centric lifecycle (2026-06-06)
+
+### สถานะ: ✅ LIVE บน VPS
+
+### สิ่งที่ทำ (TDD ทุก task, brainstorm→spec→plan→execute)
+- **1.1** followed_jobs watchlist + helpers + job_followups
+- **1.2** ปุ่ม ⭐ติดตาม/❌ไม่เกี่ยว (แทน 👍🤔👎)
+- **1.3** postback handler `star:` → _record_follow (targeted)
+- **1.4** B0→D0 followup: advance-stage ingest (projects_seen สะท้อน lifecycle จริง) + stage_updated_at + notify_bid_open_followups (targeted, shadow-safe)
+
+### Architecture decision (สำคัญ): event-centric queue
+- notification_queue dedup: **(customer,project) → (customer,project,source_stage)** (migrate v117, A+ ultra-conservative: backup→count→rebuild→verify, 84 rows ครบ)
+- business dedup = followed_jobs.last_stage_notified · delivery dedup = queue ต่อ event
+- BMS เปลี่ยนจาก "ระบบแจ้งงาน" → "ระบบติดตาม lifecycle" (B0→D0→W0)
+- 2 design wrinkles เจอ+แก้ระหว่างทาง: projects_seen dedup (แก้ด้วย advance-stage UPSERT) + queue cross-stage dedup (แก้ด้วย source_stage ใน unique)
+
+### deploy
+backup bms_customers_premig_*.db → migrate verify (84 ครบ, 3-col unique, NULL=0) → restart bms-api ✓
+
+### Followup
+- **Phase 2 หยุดที่ 2.0 PROBE getProcureResult ก่อนเสมอ** (กัญจน์สั่ง — verify ก่อนสร้าง poller)
+- ปุ่ม ⭐ live แล้ว → ดูว่าครอบครัวเริ่มติดดาวไหม (North-Star signal จริง)
+
+---
+
+## งานที่ N+91: ⭐ Follow Phase 2 — winner + competitive intel (2026-06-06)
+
+### สถานะ: ✅ code+deploy เสร็จ (เหลือติดตั้ง timer = คำสั่ง root)
+
+### 2.0 PROBE ผ่าน
+getProcureResult ผ่าน AES-token บน VPS (ไม่ browser) → winner + bidders + priceProposal + priceAgree ครบ
+
+### Build (TDD, 10 test เขียว)
+- 2.1 bid_results table (v118) + record/get helpers
+- 2.3 format_winner (ผู้ชนะ+ราคา+คู่แข่ง+ส่วนลด%)
+- 2.2 Winner_Poller (poll D0 follows → getProcureResult → record + enqueue followed_winner + mark W0 + close; stale 60วันปิด) + line-sender winner-card branch (source_stage-gated, _winner_card_from_results dedupe คู่แข่ง)
+- 2.4 systemd bms-winner-poller.timer (6 ชม.)
+- fix: poll เฉพาะ D0 (ไม่ poll B0 = กันเปลือง API)
+
+### 🎯 North-Star signal แรก!
+ครอบครัวกด ⭐ แล้ว 4 งาน ภายใน ~30 นาทีหลัง onboarding (Mr.suvit 3, ณฐมน 1) — ทั้งหมด B0 ถนน/ผิวจราจร
+
+### Followup
+- ติดตั้ง timer: `scp deploy/systemd/bms-winner-poller.* root@VPS:/etc/systemd/system/ && systemctl enable --now bms-winner-poller.timer` (root)
+- รอ B0 follows เลื่อนเป็น D0 (full sweep) → ได้ "เปิดประมูล" → แล้ว winner poll
+
+---
+
+## งานที่ N+92: CHECKPOINT — ก่อนเปลี่ยน session (2026-06-06)
+
+### สถานะ: ⏸ pause เปลี่ยน session — resume แบบ Inline ที่ CGD Phase 1
+
+### ✅ เสร็จแล้ววันนี้ (deploy + live)
+- **⭐ Follow Phase 1** LIVE: ปุ่ม ⭐ติดตาม/❌ไม่เกี่ยว (แทน 👍🤔👎) + followed_jobs + B0→D0 แจ้ง "เปิดประมูล"+deadline + event-centric queue (migrate v117) + advance-stage ingest + stage_updated_at
+- **⭐ Follow Phase 2** LIVE: Winner_Poller (timer 6ชม. ติดตั้งแล้ว) + bid_results (v118) + การ์ดผู้ชนะ+คู่แข่ง+ราคา+ส่วนลด% via getProcureResult (AES-token, probe ผ่าน). poll เฉพาะ D0
+- **⭐ confirm reply** = การ์ดรายละเอียดงาน+deadline
+- **star_metrics readout** (pull-based)
+- **North-Star signal แรก!** ครอบครัว ⭐ 4 งาน (Mr.suvit 3, ณฐมน 1) — ทั้งหมด B0 ถนน/ผิวจราจร, รอเลื่อน D0
+- onboarding re-send 4 คน + intro ปุ่ม (24 ข้อความ). โควต้า LINE 90/300
+
+### 🎯 NEXT ACTION (session หน้า): execute CGD Winner Refresh — **Inline, Phase 1**
+- **plan:** `docs/superpowers/plans/2026-06-06-cgd-winner-refresh.md`
+- **spec:** `docs/superpowers/specs/2026-06-06-cgd-winner-refresh-design.md`
+- เริ่ม Task 1.1 → 1.4 (TDD inline + checkpoint ทุก task) ผ่าน skill `superpowers:executing-plans`
+- ⚠️ **รันบนเครื่องบ้าน (residential) ไม่ใช่ VPS** — CGD 403 จาก VPS (datacenter block, พิสูจน์แล้ว local ผ่าน)
+- ⚠️ **GATE ที่ Task 1.4:** ยืนยัน CGD มี dataset FY2569 ไหม + วัด lag จริง → ถ้าไม่มี/lag มาก หยุดคุยกัญจน์ก่อนทำ Phase 2
+- ขอบเขต: CGD breadth (ผู้ชนะ+ราคาชนะ ทุกงาน) เท่านั้น — depth (คู่แข่งแพ้) = Follow Phase 2 เดิม
+- hardware อนาคต: **mini PC x86** (ไม่ใช่ RPi — browser/Turnstile พิสูจน์บน x86)
+
+### ค้าง/ระวัง
+- git push hang เป็นช่วง (network ไป GitHub) → ใช้ background/retry (sandbox-disabled push ติด)
+- CGD 403 จาก VPS = ต้อง residential เสมอ
+
+---
+
+## งานที่ N+93: CGD Winner Refresh — Phase 1 Task 1.1–1.4 + GATE STOP (2026-06-06)
+
+### สถานะ: ⏸ pause ที่ GATE (Phase 1 modules เสร็จ+test เขียว, รอกัญจน์ตัดสิน premise ก่อน Phase 2)
+
+### ✅ Build (TDD inline, executing-plans, รันบนเครื่องบ้าน residential)
+- **Task 1.1** `cgd_resource_catalog.py` — `resource_id_for_year` (test เขียว) · commit `0fea88e`
+- **Task 1.2** `cgd_winner_refresh.py` — `refresh_year` incremental INSERT OR IGNORE + idempotent (test เขียว) · commit `413b7a9`. reuse `whb.COLS`/`row_from_rec` (schema 21-col ตรง `init_db` เป๊ะ), `cgd_winner` adaptive รับ field `ชื่อผู้ชนะ` จริงได้
+- **Task 1.3** `cgd_freshness.py` — `parse_thai_date` + report (test เขียว) · commit `77f0aab`
+- **fix** parser robust เว้นวรรค+ขีด · commit `827396c`
+
+### 🚪 GATE (Task 1.4) — probe จริง CKAN (เครื่องบ้าน, residential ผ่าน) → STOP
+3 mismatch ระหว่าง plan-assumption กับ data จริง:
+1. **FY2569 ไม่มี dataset** — org dga มีแค่ `egp-contact-2568` (count=1). `egp-contact-2569` → HTTP 404
+2. **โครงสร้าง = 1 package/ปี × 10 resources** (`2568-egp-contract-1..10`) ไม่ใช่ 1-package-หลายปี (plan สมมติผิด) → `resource_id_for_year` คืน rid เดียวไม่พอ ต้องคืน list 10 ตัว + map package ต่อปี
+3. **วันที่จริง = `วันที่เกิดรายการ` format `'9 ก.ค. 68'` (เว้นวรรค)** — `วันที่ประกาศ` ส่วนใหญ่ `'-'` (ว่าง). ⚠️ `row_from_rec` เก็บ announce_date จาก `วันที่ประกาศ` → freshness จาก DB ใช้ไม่ได้ ต้องเก็บ `วันที่เกิดรายการ`
+
+### 📏 CGD lag จริง = ~249 วัน
+- data ใหม่สุด `วันที่เกิดรายการ` = **2025-09-30** (= สิ้น FY2568) | today 2026-06-06 → lag 249 วัน
+- CGD publish แบบ **per-completed-fiscal-year** (ไม่ continuous) → ตอนนี้ FY2569 (ต.ค.2025–ก.ย.2026) ยังไม่ publish เลย
+- local winner_history.db = 617,357 งาน (2558–2568), 2568 = 61,517
+
+### ⛔ premise เปลี่ยน — ต้องให้กัญจน์ตัดสินก่อน Phase 2
+plan's goal "refresh ถึง FY2569 ให้สด" **ทำไม่ได้ตอนนี้** (CGD ยังไม่มี 2569 + ตามหลัง ~8 เดือน). CGD breadth ให้ "ผู้ชนะย้อนหลังครบ" (analytics/competitor history) แต่ **ไม่ใช่ winner สด** — winner สดต้องพึ่ง Follow Phase 2 (getProcureResult ตอน W0) เหมือนเดิม
+
+### Followup (รอ decision)
+- ถ้ากัญจน์เอา CGD breadth ต่อ: rework `cgd_resource_catalog` (package-per-year + list 10 rids) + `row_from_rec` เก็บ `วันที่เกิดรายการ` + poll egp-contact-2569 เมื่อ DGA publish (เช็คเป็นระยะ)
+- Phase 2 (sync subset → VPS) ยังไม่เริ่ม (ขึ้นกับ decision)
+
+---
+
+## งานที่ N+94: CGD GATE decision = A → rework + Phase 1 ✅ (2026-06-06)
+
+### สถานะ: ✅ Phase 1 เสร็จ+verify (CGD breadth pipeline พร้อม ingest 2569 ทันทีที่ publish)
+
+### กัญจน์เลือก A (rework + เดินต่อ) → rework ตรงโครงสร้าง CGD จริง (TDD ทุกตัว)
+- `cgd_resource_catalog.resource_ids_for_year()` → คืน **list** (1 package/ปี `egp-contact-{year}` × 10 res). แยก **404 (ไม่ publish→[]) vs 403/quota (raise ไม่กลืน)** — เจอ bug token ว่าง (main ไม่ได้ set env ให้ catalog) แก้แล้ว
+- `cgd_winner_refresh.refresh_year(rids: list)` + `main()` (load token→set env→refresh→report)
+- `cgd_freshness.report(year=)` default ปีล่าสุด + lag
+- `_winner_history_build.row_from_rec` → announce_date จาก `วันที่เกิดรายการ` (fallback)
+- commit: `045f2aa` (winner-history) + `78af46c` (cgd rework). Phase 1 modules: `0fea88e`/`413b7a9`/`77f0aab`/`827396c`
+
+### RUN จริง (เครื่องบ้าน residential) + verify
+- **2569 → 404 ข้าม** (DGA ยังไม่ publish FY2569 จริง — confirm)
+- **2568 → 10 res × 2 จว. → +0 row** (idempotent: winner_history.db มี นครพนม/บึงกาฬ 2568 ครบจาก full build)
+- **พิสูจน์ pull จริง:** 1 res × นครพนม ลง temp DB ว่าง = **5,640 row** (winner/ราคา/province filter ถูก)
+- **CGD lag = 260 วัน** (ใหม่สุด 2025-09-19). winner_history.db = 617,357 งาน (2558–2568)
+
+### ⚠️ premise สำคัญ (ยืนยัน)
+CGD breadth = ผู้ชนะ "ย้อนหลังครบ" (analytics/competitor history) **ไม่ใช่ winner สด**. winner สด = Follow Phase 2 (getProcureResult ตอน W0, live). CGD publish per-completed-FY ตามหลัง ~8-9 เดือน
+
+### Scheduler (กัญจน์เลือก "ตั้ง Windows Task เบา") ✅
+- Task `BidMaster_CGD_Winner_Refresh` daily **21:30** (กัน quota/เวลากับ CGD_Discovery 05:00) + wrapper `_run_cgd_winner_refresh.ps1` (log→logs/cgd, rotate 7, ไม่ push git)
+- verify trigger จริง: LastTaskResult=0, log ถูก → auto-ingest FY2569 เมื่อ DGA publish
+- runbook `deploy/runbooks/cgd-refresh.md` (+ วิธีย้าย mini PC x86 ภายหลัง) · commit `4ac2f0a`
+
+### Followup
+- เฝ้าดู: DGA publish `egp-contact-2569` เมื่อไหร่ (task จะ ingest ให้อัตโนมัติ)
+
+---
+
+## งานที่ N+95: CGD Phase 2 — sync subset → VPS LIVE ✅ (2026-06-06)
+
+### สถานะ: ✅ เสร็จ+verify บน production VPS (กัญจน์สั่ง "ลุย Phase 2 ได้เลย")
+
+### Build (TDD)
+- `_migrate_v119` (Sebastian_Customer_DB): table `cgd_winners` (12 col + idx province/winner)
+- `cgd_sync_to_vps.py`: `extract_subset` (residential) · `merge_winners`/`get_cgd_winners` (VPS) · `main --push/--merge-from`
+- orchestration: extract→**gzip**→scp→ssh `--merge-from` (stream generator + executemany batch 5000, INSERT OR REPLACE idempotent, memory-safe สำหรับ 6 แสนแถว)
+- test `test_cgd_sync.py` เขียว (v119 schema + merge idempotent + extract filter)
+- commit `5cce561` (code) + `1978b22` (gzip/stream perf) + `f021d37` (runbook+gitignore)
+
+### Deploy production VPS (45.76.156.166)
+- backup `bms_customers_pre_v119_20260606_153741.db` → `git pull --ff-only` → migrate v119 (as user bms) ✅
+- **sync จริง:** extract 617,357 row → gzip **36MB** (จาก 361MB jsonl, บีบ 10×) → scp → VPS merge
+
+### Verify ปลายทาง
+- VPS `cgd_winners` = **617,357 rows** (นครพนม 390,108 / บึงกาฬ 227,249, ปี 2558–2568)
+- `get_cgd_winners('นครพนม')` = 390,108 + sample จริง (บ.เมดิเซน อิมเมจ, 4,996,000, ปี 2567)
+
+### Followup
+- **sync incremental** — `--push` ตอนนี้ extract ทั้ง 617K ทุกครั้ง. **ยังไม่ schedule รายวัน** (ถ้าจะ schedule ต้องทำ incremental เฉพาะ project_id ใหม่/ปีล่าสุด กัน re-push ก้อนใหญ่)
+- ป้อน feature competitive intel ใน line-sender (query `cgd_winners` by area + work-type) — ขั้นต่อไป
+- DB น้อยที่ใช้ของ winner สด ยังพึ่ง Follow Phase 2 (getProcureResult W0) เหมือนเดิม
+
+---
+
+## งานที่ N+96: Competitive Intel ใน D0 card — LIVE ✅ (2026-06-06)
+
+### สถานะ: ✅ เสร็จ+deploy+verify real data (brainstorm→spec→plan→TDD inline, reviewer=กัญจน์ 2 รอบ)
+
+### Flow (superpowers เต็มรูป)
+brainstorming → spec `docs/superpowers/specs/2026-06-06-cgd-competitive-intel-design.md` (reviewer approve 2 รอบ: ≥2-token fallback, **median+p25/p75 แทน avg**, descriptive-only, min_count=10) → writing-plans → executing-plans inline 5 task
+
+### Build (`scripts/cgd_intel.py` + wiring) — TDD เขียวทั้ง 6 test
+- `match_keywords` (reuse matching_preferences keywords) · `query_similar` (province+overlap, graceful missing-table) · `compute_stats` (median/p25/p75 + price p10/p90 + top_winners+count) · `intel_lines` (strict ≥2-token → relax ≥1 → silence <10) · `_pct` helper
+- wiring `Sebastian_LINE_Sender.format_notification` source_stage=`followed_bid_open` → แทรก intel ก่อน 🔑 (try/except — value-add ห้ามพัง)
+- commit `0135450`→`88f4e32` (+fix `bb08f9c`)
+
+### Deploy + verify real (VPS cgd_winners 617K)
+- push → VPS pull (ไม่มี migration). intel_lines("นครพนม","ก่อสร้างถนน คสล.") → 1,857 งาน, ผู้ชนะบ่อย หจก.รัตนชาติการโยธา (76)/ตั้งท่งเชียง (72) — **ทำงานจริง**
+
+### 🔍 Data finding สำคัญ (business insight)
+**discount=0 ใน 80% ของ records** (496,908/617,357). มีส่วนลด >0 แค่ 11%, >5% แค่ 4% → **ตลาดท้องถิ่นนครพนม/บึงกาฬ ส่วนใหญ่ชนะที่ราคากลางพอดี** (ไม่ค่อยตัดราคา — น่าจะ วิธีเฉพาะเจาะจง/คัดเลือก/ความสัมพันธ์ มากกว่าแข่งราคา)
+- → fix: โชว์บรรทัดส่วนลดเฉพาะ p75>0 (กัน "0–0%" ลวง ตาม principle reviewer). ถนน=โชว์ "0–1%", อาคาร=omit
+
+### Followup
+- median/p25/p75 ของ discount เกาะ 0 — ถ้าอยากให้ informative กว่า: อาจโชว์ "% งานที่มีส่วนลด" แทน (รอ reviewer ตัดสิน)
+- ช่วงราคา "0.0 ลบ." เมื่อ p10 เล็ก (งานหลักหมื่น) — แสดงบาทถ้า <0.1 ลบ. (future, minor)
+
+---
+
+## งานที่ N+97: CHECKPOINT — ก่อนเปลี่ยน session (2026-06-06)
+
+### สถานะ: ⏸ pause เปลี่ยน session (คุยจบ ChatGPT แล้ว ทุกจุด ✅ — รอ implement proc_type enhancement)
+
+### ✅ เสร็จแล้ว session นี้ (CGD ทั้งสาย LIVE)
+- **Phase 1** refresh winner_history (GATE: FY2569 ยังไม่ publish, lag 260วัน) + Windows Task `BidMaster_CGD_Winner_Refresh` 21:30 (`bc24eda`)
+- **Phase 2** sync → VPS `cgd_winners` = 617,357 rows (`10017ba`)
+- **Competitive Intel ใน D0** LIVE: `cgd_intel.py` (5 task TDD) แนบราคา/ผู้ชนะงานคล้าย (`44b2287`)
+- **ปรึกษา ChatGPT (report-to-chatgpt 2 รอบ) → agree 100%**: ต้อง filter proc_type (CGD 91% เฉพาะเจาะจง disc=0; e-bidding แข่งจริง ลด 17.7%)
+
+### 🎯 NEXT ACTION (session หน้า): implement proc_type enhancement ให้ cgd_intel
+**Decision frozen (Claude+ChatGPT+กัญจน์ เห็นตรงกัน) — verify ด้วยข้อมูลจริงแล้ว:**
+1. **migrate v120** ใน `scripts/Sebastian_Customer_DB.py` — เพิ่ม column `proc_type TEXT` เข้า `cgd_winners` (ALTER ADD COLUMN, additive)
+2. `scripts/cgd_sync_to_vps.py` → `extract_subset` เพิ่ม `proc_type` ใน SELECT (winner_history มี col นี้) → **re-sync 617K ขึ้น VPS** (`python scripts/cgd_sync_to_vps.py --push`, gzip ~36MB, idempotent INSERT OR REPLACE)
+3. `scripts/cgd_intel.py` `query_similar` → เพิ่ม filter `fiscal_year IN ('2566','2567','2568')` + `proc_type IN (competitive-set)`
+   - competitive-set = `("ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)","ประกวดราคาด้วยวิธีการทางอิเล็กทรอนิกส์","สอบราคา","คัดเลือก")`
+   - (verify: e-bidding-only ≈ competitive-set แทบเท่ากัน 673 vs 701 → ใช้ชุดไหนก็ได้, เลือก competitive-set ตาม ChatGPT prod rec)
+4. `intel_lines` fallback hierarchy: L1 จว.+work-type(≥2)+comp → L2 ≥1+comp → L3 จว.+comp → L4 omit
+5. **TODO ใส่ในโค้ด:** ถ้าวันหนึ่ง enrich proc_type ของงาน D0 ได้ → upgrade เป็น e-bidding-only matching (precision สูงสุด). projects_seen ตอนนี้มีแค่ announce_type ไม่มี proc_type
+6. update `test_cgd_intel.py` (fixture เพิ่ม proc_type + fiscal_year) → TDD → deploy VPS (git pull) → verify discount เด้งเป็น ~17%
+- skill: `superpowers:executing-plans` หรือทำ inline TDD ตรงๆ (งานชัดแล้ว). spec: `docs/superpowers/specs/2026-06-06-cgd-competitive-intel-design.md` (อาจ amend section query/Future)
+- ⚠️ **re-sync แตะ production VPS** (idempotent ปลอดภัย แต่ confirm กับกัญจน์ก่อน push ตาม pattern เดิม)
+
+### Defer (feature ถัดไป — ChatGPT เสนอ, กัญจน์ยังไม่สั่ง)
+- **Agency Intelligence** — relationship market (เฉพาะเจาะจง 91%): "อบต.X ใช้เฉพาะเจาะจง Y% ผู้รับเหมาประจำ A,B" (aggregate ระดับ dept, cgd_winners มี field dept). แยกจาก Competitive Intelligence (e-bidding)
+
+### ค้าง/ระวัง
+- `cgd_winners` ตอนนี้ **ยังไม่มี proc_type col** (verify แล้ว) → intel ปัจจุบันรวมทุกวิธี discount เลยเกาะ 0 (โชว์เฉพาะ p75>0 กันลวงไว้แล้ว ชั่วคราว)
+- uncommitted = runtime data + pre-existing untracked (`scripts/_audit_sent_jobs.py`, `dashboard/parents/.gitignore`) — ไม่ใช่งาน intel
+
+
+## งานที่ N+98: CGD Intel proc_type enhancement — โค้ด+test เสร็จ (2026-06-06)
+
+### สถานะ: 🚧 โค้ด/test เสร็จ commit 6b9d80e — รอ confirm deploy VPS (re-sync 617K)
+
+### สิ่งที่ทำ (TDD, executing-plans skill)
+- **migrate v120** (Sebastian_Customer_DB): `cgd_winners ADD COLUMN proc_type` (additive, idempotent)
+- **cgd_sync_to_vps**: extract_subset SELECT +proc_type, _MERGE_SQL +proc_type col, merge buf tuple +proc_type
+- **cgd_intel.query_similar**: filter `proc_type IN COMPETITIVE_SET` + `fiscal_year IN RECENT_FY(2566-68)`; tokens=[] → ตัด work-type (รองรับ L3)
+- **intel_lines**: L3 fallback (จว.+comp ตัด work-type) + honest header "งานแข่งราคา" + TODO comment (Task 5)
+- **tests**: fixture +proc_type/+fiscal_year, filter (R5 เฉพาะเจาะจง/R6 FY เก่า ต้องถูกตัด) + L3 assertion → test_cgd_intel 5/5 + test_cgd_sync PASS
+- spec amended (query_similar + L1→L4 + proc_type enhancement note)
+
+### Verify ข้อมูลจริง (winner_history residential)
+- target FY2566-68 win_price>0: e-bidding 3,462 งาน avg_disc **13.89%** vs เฉพาะเจาะจง 184,220 งาน avg_disc 1.14% → ยืนยัน decision frozen ตรงข้อมูล
+
+### Followup (รอ confirm)
+- DEPLOY VPS: git push → VPS git pull → `python scripts/cgd_sync_to_vps.py --push` (re-sync 617K, แตะ production) → verify discount เด้ง ~14-17%
+- row เก่าบน VPS proc_type=NULL → intel คืน [] จนกว่า re-sync เสร็จ (graceful)
+
+### ✅ DEPLOY สำเร็จ (discipline) — Sanity Check ALL PASS
+- pre-deploy: tests 5/5 + cgd_sync PASS · git push 2cf0c74..6b9d80e
+- VPS ff-only pull → HEAD 6b9d80e · backup `bms_customers_pre_v120_20260606_235800.db` (382M)
+- **เจอ + fix infra 2 จุด**: `.git/objects/01/` เป็น root:root (git op รันด้วย root ก่อนหน้า) + `/opt/bms/data/backups` root:root → chown -R bms:bms ทั้งคู่
+- re-sync: extract 617,357 +proc_type → gzip 37MB → scp → VPS merge (init_schema v120) idempotent
+- **Sanity**: rows 617,357 (เท่าเดิม) · proc_type populated 617,357 (100%, ไม่มี NULL) · intel_lines(นครพนม,ถนน) = **📉 ส่วนลดที่พบบ่อย 11–28%** (ก่อนหน้า suppress p75=0) → goal "discount เด้ง ~17%" สำเร็จ
+
+### สถานะ: ✅ เสร็จ (LIVE บน production)
+### Followup ที่เหลือ
+- Task 5 TODO (ในโค้ด): enrich proc_type ของงาน D0 → upgrade e-bidding-only matching (ตอนนี้ competitive-set กว้างพอ)
+- Agency Intelligence — defer (ChatGPT เสนอ, กัญจน์ยังไม่สั่ง)
+
+
+## งานที่ N+99: ตัด L3 cross-category fallback + product priority decision (2026-06-07)
+
+### สถานะ: ✅ เสร็จ (LIVE 15b8ed0) — ปรึกษา ChatGPT รอบ 3, agree 100%
+
+### Decision (report-to-chatgpt 2 รอบ)
+- **Q1 คัดเลือก:** เก็บไว้ + observe (median ทน 6% minority). ตัดทีหลังถ้า e-bidding sample พอ
+- **Q2 L3 fallback:** **ตัดทิ้ง** — discount/ราคาข้ามหมวด (ถนน 11-28% vs อาคาร 5-25% vs ไฟฟ้า) ตีความผิดได้ แม้ header บอกตรง. descriptive value ต่ำ + misleading risk สูง → omit ดีกว่า. งานพื้นที่จริงถึง min_count ผ่าน L1/L2 (ถนน 49, อาคาร 309)
+- **Q3 Agency Intelligence:** ChatGPT ถอนคำแนะนำ #1 → demote เป็น research item. "coverage 91% ≠ actionability" (เฉพาะเจาะจง = จ้างตรง user ประมูลไม่ได้). Competitive Intel มี evidence of value, Agency Intel มีแค่ hypothesis
+
+### Priority ใหม่ (lock)
+1. refine D0 competitive intel + **observe usage** (พ่ออ่าน intel จริงไหม, 4 ⭐ signal)
+2. observe ⭐ signal
+3. research Agency Intel (ถามพ่อ: "รู้ว่า อบต.X จ้างตรง A บ่อย → จะทำอะไร?") ก่อน build
+
+### หลักการที่ตกผลึก
+- **"คุณค่า = จำนวนการตัดสินใจที่ดีขึ้น ไม่ใช่จำนวนงานที่วิเคราะห์ได้"**
+- **"build จาก evidence ก่อน hypothesis"**
+
+### Code
+- intel_lines: L1→L2→omit (ลบ L3 + work_type_scoped) · query_similar: ลบ empty-tokens support · tests 5/5 PASS
+- verify VPS: ถนน 49→11-28%, อาคาร 309→5-25% (header ถูกต้องแต่ละหมวด)
+
+### Followup
+- ❌ อย่า build Agency Intel จนกว่าจะมี evidence จากพ่อ
+- observe: D0 intel engagement (ยังไม่มี instrumentation ว่าอ่านไหม)
+
+
+## งานที่ N+100: Tambon-Level Competitor Intel — code เสร็จ, deploy ติด push (2026-06-07)
+
+### สถานะ: 🚧 Tasks 1-7 เสร็จ+commit (local), Task 8 deploy BLOCKED (git push hang)
+
+### Build (brainstorm→spec→plan→TDD inline, executing-plans)
+- spec `docs/superpowers/specs/2026-06-07-tambon-competitor-intel-design.md` + plan `docs/superpowers/plans/2026-06-07-tambon-competitor-intel.md`
+- **T1+2** migrate v121 (cgd_winners +district +subdistrict) + cgd_sync ส่งผ่าน (commit 24fadaa)
+- **T3-7** cgd_intel: resolve_tambon (name/dept ฟรี ไม่เรียก API — INC-001), select_competitors ไล่ระดับ ตำบล→อำเภอ→จังหวัด + derive อำเภอจาก data (ambiguity→province), company_stats (ประวัติบริษัท กลบ sparsity), confidence_label (ป้ายสี+IQR), rewrite intel_lines, wire dept_name (commit 873e60f). ลบ query_similar/compute_stats
+- **tests 7/7 PASS** (test_cgd_intel) + test_cgd_sync PASS
+- competitive-set filter ทั้ง selection (_fetch) + per-company stat (_fetch_winner) — กัญจน์เน้น
+
+### 🚨 BLOCKER: git push ค้าง (transfer hang)
+- `git push origin main` timeout (EXITCODE=124) ทั้ง foreground + HTTP/1.1 + fail-fast
+- `git ls-remote` (read) สำเร็จ → auth/network read OK, เฉพาะ push transfer ค้าง
+- น่าจะ GitHub push endpoint สะดุดชั่วคราว (push รอบก่อนๆ วันนี้ขึ้นได้)
+- **4 commits ค้าง local:** spec, plan, v121+sync, intel
+- Task 8 (deploy) blocked ทั้งหมด: VPS pull code จาก GitHub → re-sync 617K ต้องมี v121 code บน VPS ก่อน (init_schema ใน --merge-from). ไม่มี non-GitHub path ที่ clean (scp code = แตก git authority, ดู project_deploy_debt)
+
+### NEXT (เมื่อ push ใช้ได้)
+1. `git push origin main`
+2. VPS pull --ff-only + backup pre-v121
+3. `python scripts/cgd_sync_to_vps.py --push` (re-sync 617K +district+subdistrict)
+4. sanity: rows 617K, district populated, intel ตัวอย่าง (competitor-profile + ป้ายสี)
+
+
+### ✅ DEPLOY สำเร็จ (push transient hang หายเอง — bg push จบ exit 0)
+- remote=local=VPS = 0738d6c · VPS backup pre-v121 (406M) · re-sync 617,357 rows
+- Sanity: rows 617,357 · district 100% · subdistrict 91% · intel competitor-profile ทำงาน (n+median+IQR+ป้ายสี)
+- บทเรียน: git push timeout (124) แต่จริงๆ สำเร็จ server-side (client ค้างก่อนยืนยัน) → เช็คด้วย ls-remote ไม่ใช่ exit code ของ push
+
+### ⚠️ LIMITATION พบหลัง deploy: ตำบลซ้ำอำเภอ → degrade จังหวัด
+- "ต.โพนทอง" ซ้ำ 2 อำเภอ (บ้านแพง+เรณูนคร) → ambiguous → fallback province (ตาม design)
+- **แต่โพนทอง/บ้านแพง = พื้นที่ครอบครัวพอดี** → เคสนี้ไม่ได้ value ระดับท้องถิ่น ทั้งที่ dept 'อบต.บ้านแพง' บอกอำเภอชัด
+- Follow-up เสนอ: disambiguate อำเภอจาก dept_name (อบต.X/เทศบาลตำบล X) → กัน ambiguity เคสสำคัญ. รอกัญจน์ตัดสิน (ไม่ขยาย scope เอง)
+
+### สถานะ: ✅ Tasks 1-8 เสร็จ LIVE (feature ทำงาน, degrade ปลอดภัย)
+
+

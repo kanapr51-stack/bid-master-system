@@ -52,6 +52,7 @@ send(token, ch, "ข้อความที่จะส่ง")
 3. **ทุก decision point** → บันทึกเหตุผลและทางเลือกที่ตัดสิน
 4. **ก่อนรัน background task** → checkpoint state ปัจจุบันลง progress_log
 5. **ทุก ~30 นาที** ของ work session → checkpoint state
+6. **Rotation (กัน token บวม):** ถ้า `progress_log.md` เกิน ~600 บรรทัด / ~25 entries → ย้าย entry เก่าสุดไป `progress_log_archive.md` ให้เหลือ ~20 entry ล่าสุด. ไฟล์หลักควร ≤ ~15K tokens เสมอ (มันถูกอ่านทุก resume)
 
 ### Format ของ progress_log entry:
 ```markdown
@@ -124,7 +125,7 @@ print(f'winner_cache: {len(cache)}')
 
 **Claude ต้อง:**
 
-1. อ่าน `progress_log.md` (section ล่าสุด — ดู timestamp ใหม่สุด)
+1. อ่าน `progress_log.md` — **อ่านแค่ entry ล่าสุด อย่าอ่านทั้งไฟล์** (ใช้ `Read` แบบ tail หรือ `grep -n "^## "` หาหัวข้อล่าสุดก่อน แล้วอ่านเฉพาะ section นั้น). entry เก่ากว่า N+101 อยู่ใน `progress_log_archive.md` — แตะเฉพาะตอนต้องสืบประวัติเก่าจริงๆ เท่านั้น (ไฟล์ใหญ่ ~88K tokens อย่าอ่านพร่ำเพรื่อ)
 2. ตรวจ `git log --oneline | head -10` ดู commits ล่าสุด
 3. ตรวจ `git status` ดู uncommitted changes
 4. ตรวจ TaskList — มี in_progress tasks ค้างไหม

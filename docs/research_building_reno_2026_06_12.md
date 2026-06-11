@@ -32,3 +32,15 @@ keyword ปรับปรุง = ปรับปรุง/ซ่อมแซ�
 - test_building_kind.py 4 เคส
 
 **หมายเหตุ:** gap +5.4 ต่ำกว่าเกณฑ์ split 10 จุด แต่กัญจน์อนุมัติเพราะ cost-driven + เป็นตลาดที่ประมูลจริง. ใช้เฉพาะอาคาร ไม่ลามหมวดอื่น.
+
+---
+
+## อัปเดต (กัญจน์ "ขยาย new/reno ต่อ"): ขยายเป็น work_kind ทั่ว 3 หมวด
+research local-controlled (ตัด DOH confound): gap เหลือ ~3-5 จุดทุกหมวด (เลข −12 เดิม=DOH):
+- อาคาร +5 · ถนนคอนกรีต −5 · แหล่งน้ำ +3 · ไฟฟ้า/ราง (n ปรับปรุง 4/11 น้อยเกิน — ไม่แยก)
+หลักการกัญจน์: "ราคาต่างกัน (± ก็ตาม) ก็ต้องแยก" → refactor building_kind → **work_kind** (มิติตั้งฉาก subtype):
+- work_kind(name, subtype): new/reno เฉพาะ อาคาร/ถนน/แหล่งน้ำ
+- _fetch + competitor_trend: filter work_kind แยกจาก subtype (ถนนคอนกรีต×new ได้)
+- is_building → ระงับ road/water subtype (อาคารคอนกรีต ≠ concrete road)
+- **fallback**: ถ้า work_kind ทำให้ pool < MIN_COMPETITORS → ผ่อนใช้ pool รวม (กันคาดจาก 1 งาน)
+- test_work_kind.py (แทน test_building_kind)

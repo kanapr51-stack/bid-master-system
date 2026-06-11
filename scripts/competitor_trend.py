@@ -62,7 +62,7 @@ import cgd_intel as ci
 
 
 def _area_where(province, tokens, subdistrict, district, subtype, nature=None, contested=False,
-                market=None):
+                market=None, work_kind=None):
     """ประกอบ WHERE + params สำหรับ cgd_winners (สอดคล้อง cgd_intel._fetch + announce_date)."""
     fy_ph = ",".join("?" for _ in ci.RECENT_FY)
     pt_ph = ",".join("?" for _ in ci.COMPETITIVE_SET)
@@ -92,10 +92,11 @@ def _area_where(province, tokens, subdistrict, district, subtype, nature=None, c
         params += [f"%{k}%" for k in ci._CONCRETE_KW]
         where.append("NOT (" + " OR ".join("project_name LIKE ?" for _ in ci._ASPHALT_KW) + ")")
         params += [f"%{k}%" for k in ci._ASPHALT_KW]
-    elif subtype == "bld_reno":         # อาคารปรับปรุง/ซ่อม (สอดคล้อง cgd_intel)
+    # work_kind — สร้างใหม่/ปรับปรุง (สอดคล้อง cgd_intel._fetch)
+    if work_kind == "reno":
         where.append("(" + " OR ".join("project_name LIKE ?" for _ in ci._RENO_KW) + ")")
         params += [f"%{k}%" for k in ci._RENO_KW]
-    elif subtype == "bld_new":          # อาคารสร้างใหม่
+    elif work_kind == "new":
         where.append("NOT (" + " OR ".join("project_name LIKE ?" for _ in ci._RENO_KW) + ")")
         params += [f"%{k}%" for k in ci._RENO_KW]
     # market regime — local/provincial/central (สอดคล้อง cgd_intel._fetch market filter)
@@ -113,9 +114,10 @@ def _area_where(province, tokens, subdistrict, district, subtype, nature=None, c
 
 
 def _cgd_rows(conn, province, tokens, subdistrict, district, subtype, winner=None, nature=None,
-              contested=False, market=None):
+              contested=False, market=None, work_kind=None):
     """(announce_date, discount_pct, winner) จาก cgd_winners. winner!=None → filter บริษัท."""
-    where, params = _area_where(province, tokens, subdistrict, district, subtype, nature, contested, market)
+    where, params = _area_where(province, tokens, subdistrict, district, subtype, nature, contested,
+                                market, work_kind)
     if winner is not None:
         where += " AND winner=?"; params.append(winner)
     try:
@@ -153,11 +155,11 @@ def _bidresult_rows(conn, province, bidder=None, winner_only=False):
 
 
 def area_win_series(conn, province, tokens, subdistrict=None, district=None, subtype=None,
-                    nature=None, contested=False, market=None):
+                    nature=None, contested=False, market=None, work_kind=None):
     """ส่วนลดผู้ชนะในพื้นที่ เรียงเก่า→ใหม่ (cgd_winners + bid_results winner). คืน list[float]."""
     rows = [(d, disc) for d, disc, _w in _cgd_rows(conn, province, tokens, subdistrict, district,
                                                    subtype, nature=nature, contested=contested,
-                                                   market=market)
+                                                   market=market, work_kind=work_kind)
             if disc is not None]
     rows += _bidresult_rows(conn, province, winner_only=True)
     rows.sort(key=lambda x: x[0])

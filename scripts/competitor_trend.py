@@ -92,6 +92,12 @@ def _area_where(province, tokens, subdistrict, district, subtype, nature=None, c
         params += [f"%{k}%" for k in ci._CONCRETE_KW]
         where.append("NOT (" + " OR ".join("project_name LIKE ?" for _ in ci._ASPHALT_KW) + ")")
         params += [f"%{k}%" for k in ci._ASPHALT_KW]
+    elif subtype == "bld_reno":         # อาคารปรับปรุง/ซ่อม (สอดคล้อง cgd_intel)
+        where.append("(" + " OR ".join("project_name LIKE ?" for _ in ci._RENO_KW) + ")")
+        params += [f"%{k}%" for k in ci._RENO_KW]
+    elif subtype == "bld_new":          # อาคารสร้างใหม่
+        where.append("NOT (" + " OR ".join("project_name LIKE ?" for _ in ci._RENO_KW) + ")")
+        params += [f"%{k}%" for k in ci._RENO_KW]
     # market regime — local/provincial/central (สอดคล้อง cgd_intel._fetch market filter)
     if market == "local":
         where.append("(" + " OR ".join("dept LIKE ?" for _ in ci._LOCAL_AGENCY_KW) + ")")

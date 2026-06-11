@@ -44,6 +44,13 @@ _WATER_EXCAV_KW = ("ขุดลอก", "ขุดสระ", "ขุดคล�
 _WATER_STRUCT_KW = ("ฝาย", "ประปา", "อ่างเก็บน้ำ", "ดาดคอนกรีต", "คลองส่งน้ำ",
                     "ดาด", "สถานีสูบน้ำ", "ระบบส่งน้ำ")
 
+# building new vs renovation — เฉพาะอาคาร (evidence: docs/research_building_reno_2026_06_12.md,
+# กัญจน์ 2026-06-12 — อาคารปรับปรุง/ซ่อม median 17.8% vs สร้างใหม่ 12.4% gap +5.4 จุด).
+# ⚠️ scope แค่อาคาร — research พบหมวดอื่นเทรนด์กลับด้าน (ถนน "ฟื้นฟู"=DOH ลด~0%, แหล่งน้ำ -5จุด) จึงไม่ใช้.
+# ปรับปรุง/ซ่อม = แรงงานเยอะ วัสดุน้อย + ราคากลางหลวม ลดลึก; สร้างใหม่ = วัสดุหนัก ลดตื้น.
+_RENO_KW = ("ปรับปรุง", "ซ่อมแซม", "ต่อเติม", "ซ่อมสร้าง", "บูรณะ")
+_BUILDING_KW = ("อาคาร", "สำนักงาน", "ศาลา", "ที่ทำการ", "หอประชุม", "อาคารเรียน")
+
 # agency market regime — ตัวขับ %ส่วนลดที่แท้จริง (evidence: docs/research_market_regime_discount.md,
 # กัญจน์ 2026-06-11). งานท้องถิ่น (อปท.) แข่งดุ median ~28% vs งานส่วนกลาง/กรมทางหลวง ชิดเพดาน ~0.3%
 # — pool รวมกันทำให้คาดราคางานท้องถิ่นต่ำกว่าจริง. ไม่ใช่ budget/ชั้นผู้รับเหมา (corr budget-ผู้ยื่น=0).
@@ -115,6 +122,16 @@ def water_subtype(project_name: str):
     if any(k in n for k in _WATER_STRUCT_KW):
         return "water_struct"
     return None
+
+
+def building_kind(project_name: str):
+    """อาคาร: 'bld_reno' (ปรับปรุง/ซ่อม ลด ~18%) | 'bld_new' (สร้างใหม่ ลด ~12%) | None (ไม่ใช่อาคาร).
+    scope เฉพาะอาคาร — หมวดอื่น (ถนน/น้ำ) เทรนด์ปรับปรุงกลับด้าน จึงไม่ใช้ (research 2026-06-12).
+    เช็คก่อน road/water subtype — กันอาคารคอนกรีตถูกจัดเป็น concrete road."""
+    n = project_name or ""
+    if not any(k in n for k in _BUILDING_KW):
+        return None
+    return "bld_reno" if any(k in n for k in _RENO_KW) else "bld_new"
 
 
 def agency_market(dept_name: str):
@@ -258,6 +275,12 @@ def _fetch(conn, province: str, tokens: list, *, subdistrict=None, district=None
         params += [f"%{k}%" for k in _WATER_STRUCT_KW]
         where.append("NOT (" + " OR ".join("project_name LIKE ?" for _ in _WATER_EXCAV_KW) + ")")
         params += [f"%{k}%" for k in _WATER_EXCAV_KW]
+    elif subtype == "bld_reno":         # อาคารปรับปรุง/ซ่อม (token อาคารกรองชนิดแล้ว)
+        where.append("(" + " OR ".join("project_name LIKE ?" for _ in _RENO_KW) + ")")
+        params += [f"%{k}%" for k in _RENO_KW]
+    elif subtype == "bld_new":          # อาคารสร้างใหม่ = ไม่มี keyword ปรับปรุง/ซ่อม
+        where.append("NOT (" + " OR ".join("project_name LIKE ?" for _ in _RENO_KW) + ")")
+        params += [f"%{k}%" for k in _RENO_KW]
     # market filter — 3 ระบอบ: local (อบต/เทศบาล) / provincial (อบจ) / central (ที่เหลือ กรม/ทางหลวง)
     if market == "local":
         where.append("(" + " OR ".join("dept LIKE ?" for _ in _LOCAL_AGENCY_KW) + ")")
@@ -504,8 +527,9 @@ def intel_context(province: str, project_name: str, dept_name: str = "",
             loc = resolve_location(project_id, project_name, dept_name, province, conn)
             _log.info("intel_resolve project=%s source=%s amphoe=%s",
                       project_id, loc["source"], loc["amphoe"])
-            # subtype = ผิวถนน (concrete/asphalt) หรือ งานน้ำ (ขุด/โครงสร้าง) — งานหนึ่งเป็นได้แค่อย่างเดียว
-            sub = road_subtype(project_name) or water_subtype(project_name)
+            # subtype: อาคาร(สร้างใหม่/ปรับปรุง) ก่อน → ผิวถนน(concrete/asphalt) → งานน้ำ(ขุด/โครงสร้าง)
+            # อาคารเช็คก่อน กันอาคารคอนกรีตถูกจัดเป็น concrete road
+            sub = building_kind(project_name) or road_subtype(project_name) or water_subtype(project_name)
             nat = work_nature(project_name)
             mkt = agency_market(dept_name)   # ระบอบตลาด (ท้องถิ่น/ส่วนกลาง) — ตัวขับส่วนลดจริง
 

@@ -76,6 +76,8 @@ send(token, ch, "ข้อความที่จะส่ง")
 
 **ทุกครั้งที่แก้ไข เพิ่ม หรือดัดแปลงไฟล์ / สคริปต์ / pipeline — ต้องรัน sanity check ก่อนขั้นตอนถัดไปเสมอ**
 
+> 👤 **ถ้า agent `sophia` มีอยู่** (ดู `.claude/agents/sophia.md`) → **dispatch Sophia ให้ตรวจแทนการรัน sanity เอง** (ลด context หลักของ main thread). ส่ง prompt บอกว่า "แก้อะไร" แล้วรอ verdict `SAFE/STOP`. ถ้า Sophia ยังไม่ register (เพิ่งสร้าง/ยังไม่ restart) ค่อย fallback รันเองตามด้านล่าง
+
 ### สิ่งที่ต้องตรวจ (เลือกตามบริบท):
 
 | สิ่งที่ทำ | Sanity Check ที่ต้องทำ |

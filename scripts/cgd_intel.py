@@ -34,12 +34,30 @@ _ASPHALT_KW = ("แอสฟัลท์", "แอสฟัลต์", "แอ�
                "พาราแอสฟัลท์", "เคพซีล")
 _CONCRETE_KW = ("คอนกรีตเสริมเหล็ก", "คสล", "ค.ส.ล", "คอนกรีต")
 
+# water/irrigation subtype — แยก reference set เพราะ %ลดต่างกันชัด (evidence:
+# data/subtype_variance_report.json, กัญจน์ 2026-06-11 — ขุดลอก/ขุดสระ median ~37% vs
+# ฝาย/ประปา ~10-13% gap 26 จุด > ถนน 11 จุด). งานขุด = แทบไม่มีต้นทุนวัสดุ (เครื่องจักร+
+# น้ำมัน) ลดลึก; ฝาย/ประปา/อ่าง = มีโครงสร้าง คสล.+อุปกรณ์ ลดตื้น.
+# excavation ชนะ structure — 'ขุดลอกอ่างเก็บน้ำ' = งานขุด (ต้นทุนหลัก = การขุด).
+_WATER_EXCAV_KW = ("ขุดลอก", "ขุดสระ", "ขุดคลอง", "ขุดร่อง", "ขุดลำห้วย", "ขุดลำ")
+_WATER_STRUCT_KW = ("ฝาย", "ประปา", "อ่างเก็บน้ำ", "ดาดคอนกรีต", "คลองส่งน้ำ",
+                    "ดาด", "สถานีสูบน้ำ", "ระบบส่งน้ำ")
+
 MIN_COMPETITORS = 2     # distinct winners ขั้นต่ำก่อนหยุด fallback
 SHOW_N = 3              # จำนวนบริษัทที่โชว์
 MIN_GAMES_FOR_IQR = 3   # ต่ำกว่านี้โชว์แค่ median
 IQR_WIDE = 20           # p75-p25 เกินนี้ = ช่วงกว้าง (ลดความเชื่อมั่น)
 TAMBON_MIN = 5          # ตำบลมีงาน < นี้ → โชว์บล็อกอำเภอคู่กันด้วย
-CONTESTED_MIN_DISCOUNT = 15   # งานถนนชนะด้วยส่วนลด < นี้ ≈ ไม่มีคู่แข่งจริง (bimodal gap ~9-17%)
+CONTESTED_MIN_DISCOUNT = 15   # default (ถนน/ขุด) ชนะด้วยส่วนลด < นี้ ≈ ไม่มีคู่แข่งจริง (bimodal gap ~9-17%)
+# floor "งานแข่งจริง" ต่างตามชนิดงาน — โหมดไม่แข่งคือ spike ที่ 0-4% เหมือนกัน แต่โหมดแข่งเริ่มต่างกัน
+# (evidence: histogram subtype_variance — water_struct ฝาย/ประปา แข่งจริงเริ่ม ~5% ไม่ใช่ 15%
+# ถ้าใช้ 15 จะตัดงานแข่งจริง 5-14% ทิ้ง ~99 งาน). ค่าไม่ระบุ = default 15.
+_CONTESTED_MIN_BY_SUBTYPE = {"water_struct": 5}
+
+
+def _contested_floor(subtype=None) -> float:
+    """ส่วนลดขั้นต่ำที่ถือว่า 'มีคู่แข่งจริง' ตามชนิดงาน (water_struct=5, อื่น=15)."""
+    return _CONTESTED_MIN_BY_SUBTYPE.get(subtype, CONTESTED_MIN_DISCOUNT)
 
 
 def _load_keywords() -> list:
@@ -66,6 +84,18 @@ def road_subtype(project_name: str):
         return "asphalt"
     if any(k in n for k in _CONCRETE_KW):
         return "concrete"
+    return None
+
+
+def water_subtype(project_name: str):
+    """ประเภทงานแหล่งน้ำจากชื่องาน: 'water_excav' (ขุด ลดลึก ~37%) | 'water_struct'
+    (ฝาย/ประปา/อ่าง ลดตื้น ~10-13%) | None (ไม่ใช่งานน้ำ/ระบุไม่ได้ → pool เดิม).
+    excavation ชนะ structure — 'ขุดลอกอ่างเก็บน้ำ' = งานขุด. ใช้แยก reference set ตอนคาดราคา."""
+    n = project_name or ""
+    if any(k in n for k in _WATER_EXCAV_KW):
+        return "water_excav"
+    if any(k in n for k in _WATER_STRUCT_KW):
+        return "water_struct"
     return None
 
 
@@ -164,7 +194,7 @@ def _fetch(conn, province: str, tokens: list, *, subdistrict=None, district=None
         where.append("project_name LIKE ?"); params.append("%ซื้อ%")
     # contested = เฉพาะงานที่มีคู่แข่งจริง (ตัดโหมด no-competition ~0% ที่ทำช่วงเพี้ยน)
     if contested_only:
-        where.append("discount_pct >= ?"); params.append(CONTESTED_MIN_DISCOUNT)
+        where.append("discount_pct >= ?"); params.append(_contested_floor(subtype))
     if not include_old:                       # default = 3 ปีงบล่าสุด (ราคาปัจจุบัน)
         fy_ph = ",".join("?" for _ in RECENT_FY)
         where.append(f"fiscal_year IN ({fy_ph})")
@@ -188,6 +218,14 @@ def _fetch(conn, province: str, tokens: list, *, subdistrict=None, district=None
         params += [f"%{k}%" for k in _CONCRETE_KW]
         where.append("NOT (" + " OR ".join("project_name LIKE ?" for _ in _ASPHALT_KW) + ")")
         params += [f"%{k}%" for k in _ASPHALT_KW]
+    elif subtype == "water_excav":
+        where.append("(" + " OR ".join("project_name LIKE ?" for _ in _WATER_EXCAV_KW) + ")")
+        params += [f"%{k}%" for k in _WATER_EXCAV_KW]
+    elif subtype == "water_struct":     # structure ต้องไม่มี keyword ขุด (excavation ชนะ)
+        where.append("(" + " OR ".join("project_name LIKE ?" for _ in _WATER_STRUCT_KW) + ")")
+        params += [f"%{k}%" for k in _WATER_STRUCT_KW]
+        where.append("NOT (" + " OR ".join("project_name LIKE ?" for _ in _WATER_EXCAV_KW) + ")")
+        params += [f"%{k}%" for k in _WATER_EXCAV_KW]
     try:
         cur = conn.execute(
             "SELECT project_name, winner, win_price, discount_pct, district, subdistrict "
@@ -422,7 +460,9 @@ def intel_context(province: str, project_name: str, dept_name: str = "",
             loc = resolve_location(project_id, project_name, dept_name, province, conn)
             _log.info("intel_resolve project=%s source=%s amphoe=%s",
                       project_id, loc["source"], loc["amphoe"])
-            sub, nat = road_subtype(project_name), work_nature(project_name)
+            # subtype = ผิวถนน (concrete/asphalt) หรือ งานน้ำ (ขุด/โครงสร้าง) — งานหนึ่งเป็นได้แค่อย่างเดียว
+            sub = road_subtype(project_name) or water_subtype(project_name)
+            nat = work_nature(project_name)
 
             def _b(contested):
                 return _build_intel(conn, province, tokens, loc["tambon"], loc["amphoe"],

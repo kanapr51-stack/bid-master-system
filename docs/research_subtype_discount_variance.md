@@ -86,3 +86,37 @@
 | 3 | ทบทวน asphalt classifier (production 14% vs probe 0.4%) | ตรวจสอบ | ยืนยันว่า production แยก 'ผิวทาง/overlay' ออกจาก asphalt ลาดยางใหม่ |
 
 **หมายเหตุ:** การ probe นี้ใช้ keyword หยาบ — ก่อน implement ต้องใช้ classifier `work_type`/subtype จริงใน production ทวนซ้ำต่อ sub-type ก่อนปรับสูตรคาดราคา.
+
+---
+
+## 5) สแกนเป็นระบบ + Implementation (2026-06-11, อัปเดต)
+
+รัน `scripts/_research_subtype_variance.py` (reproducible) สแกนทุกหมวดด้วยเกณฑ์ตายตัว — **subtype n≥80 + SPLIT เมื่อ gap median ≥ 10 จุด** → `data/subtype_variance_report.json`:
+
+| หมวด | gap | คำตัดสิน |
+|---|---:|---|
+| ถนน | 28.5 | 🔴 SPLIT (มีอยู่แล้ว: concrete/asphalt) |
+| **แหล่งน้ำ/ชลประทาน** | **26.4** | 🔴 **SPLIT — implement ใหม่** |
+| อาคาร | 5.1 | ⚪ POOL (ยืนยันไม่แยกชนิดอาคาร) |
+| ราง / ดิน / สะพาน / ไฟฟ้า | 0–1.8 | ⚪ POOL |
+
+→ มีแค่ **แหล่งน้ำ** ที่ผ่านเกณฑ์ใหม่ (ถนนทำแล้ว). หินคลุก/ลูกรัง n=39 < 80 → ยังไม่แยก (รอข้อมูลเพิ่ม).
+
+### Implemented (commit ถัดจาก ffce52c)
+`scripts/cgd_intel.py` — mirror กลไก `road_subtype`:
+- `water_subtype(name)` → `water_excav` (ขุดลอก/ขุดสระ ~37%) | `water_struct` (ฝาย/ประปา/อ่าง ~10-13%) | None. **excavation ชนะ structure** ('ขุดลอกอ่างเก็บน้ำ' = งานขุด).
+- `_fetch` เพิ่ม branch filter water_excav / water_struct (struct ต้อง NOT มี keyword ขุด).
+- auto-detect: `sub = road_subtype(name) or water_subtype(name)`.
+- เทสต์: `scripts/test_water_subtype.py` (5 เคส).
+
+### Finding เพิ่ม: contested floor ต่างตามชนิดงาน
+histogram %ลด งานแข่งจริงต่อ subtype → bimodal โหมด "ไม่แข่ง" = spike 0-4% เหมือนกัน แต่ **โหมดแข่งเริ่มต่างกัน**:
+- **water_excav**: valley 5-14% → competition 15%+ → floor 15 ใช้ได้
+- **water_struct**: ไม่มี valley ชัด, competition เริ่ม ~5% (มี ~99 งานแข่งจริงในช่วง 5-14%) → ถ้าใช้ floor 15 จะตัดทิ้งผิด
+
+→ ทำ `_contested_floor(subtype)` subtype-aware: `water_struct=5`, อื่น=15 (`_CONTESTED_MIN_BY_SUBTYPE`).
+
+### Followup
+- หินคลุก/ลูกรัง (ถนน) — รอ n ครบ 80 แล้วเพิ่มเป็น subtype ที่ 3
+- ทบทวน asphalt classifier production (probe keyword หยาบให้ asphalt ต่ำผิด — รวม overlay/ผิวทาง)
+- water_struct floor=5 จาก histogram ระดับประเทศ — อาจ tune ต่อพื้นที่ภายหลัง

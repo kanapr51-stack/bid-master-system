@@ -377,9 +377,10 @@ def format_prelim_notification(project_name: str, budget, prelim: dict, cmp: dic
         low = prelim["lowest_price"]
         lines.append(f"📊 ราคาต่ำสุดที่เสนอ: {_fmt_baht(low)} บาท · ผู้เสนอ {n} ราย")
         if cmp and cmp.get("upper"):
-            side = "สูงกว่า" if not cmp["held"] else "ต่ำกว่า/เท่า"
-            lines.append(f"🎯 เทียบกรอบบนที่เราคาด {_fmt_baht(cmp['upper'])}: "
-                         f"จริง {_fmt_baht(low)} → {side} {abs(cmp['error_pct']):.1f}%")
+            acc_pct = max(0.0, 100 - abs(cmp["error_pct"]))   # ความแม่นยำ = ใกล้ค่าจริงแค่ไหน
+            in_range = " ✅อยู่ในกรอบ" if cmp.get("held") else ""
+            lines.append(f"🎯 ความแม่นยำ {acc_pct:.1f}% "
+                         f"(คาดกรอบบน {_fmt_baht(cmp['upper'])} · จริง {_fmt_baht(low)}){in_range}")
             try:
                 d = (1 - float(low) / float(budget)) * 100
                 lines.append(f"   (ส่วนลดจริง {d:.0f}%)")
@@ -436,8 +437,9 @@ def format_winner_detailed(project_name, winner, price_agree, budget, analyzed, 
         pass
     lines.append(f"🏆 ผู้ชนะ: {winner} · {_fmt_baht(price_agree)}{win_disc}")
     if cmp and cmp.get("upper"):
-        side = "สูงกว่า" if not cmp["held"] else "ต่ำกว่า/เท่า"
-        line = f"🎯 ความแม่น (เทียบกรอบบน {_fmt_baht(cmp['upper'])}): จริง {_fmt_baht(price_agree)} → {side} {abs(cmp['error_pct']):.1f}%"
+        acc_pct = max(0.0, 100 - abs(cmp["error_pct"]))   # ความแม่นยำ = ใกล้ค่าจริงแค่ไหน (เทียบกรอบบน)
+        in_range = " ✅อยู่ในกรอบ" if cmp.get("held") else ""
+        line = f"🎯 ความแม่นยำ {acc_pct:.1f}% (คาดกรอบบน {_fmt_baht(cmp['upper'])} · จริง {_fmt_baht(price_agree)}){in_range}"
         if acc and acc.get("verified"):
             line += f" · สะสมอยู่ในกรอบ {acc['in_range']}/{acc['verified']}"
         lines.append(line)

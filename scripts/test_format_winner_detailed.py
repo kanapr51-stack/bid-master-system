@@ -17,7 +17,7 @@ cmp = {"held": False, "error_pct": 1.1, "upper": 730000}
 acc = {"verified": 5, "in_range": 4, "in_range_pct": 80.0}
 txt = snd.format_winner_detailed("ถนนคอนกรีต", "หจก.X", 738000, 1017000, analyzed, cmp, acc, 28.0, "P1")
 assert "ผู้ชนะ: หจก.X" in txt and "738,000" in txt, txt
-assert "เทียบกรอบบน" in txt and "อยู่ในกรอบ 4/5" in txt, txt
+assert "ความแม่นยำ" in txt and "คาดกรอบบน" in txt and "อยู่ในกรอบ 4/5" in txt, txt
 assert "หจก.Y" in txt and "เจ้าประจำ" in txt, txt          # ป้าย regular_missed
 assert "หน้าใหม่" in txt, txt                                # Z
 assert "ตลาดตำบล 28" in txt, txt

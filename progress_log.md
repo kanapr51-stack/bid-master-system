@@ -5302,3 +5302,30 @@ prediction เดิมใช้ percentile แบบ flat (ทุกงาน�
 - competitor_trend._area_where ยังไม่มี water_subtype filter (recency series งานน้ำปน)
 - ถนนหินคลุก/ลูกรัง (~42%) ยังไม่แยก subtype ที่ 3 (n=39<80)
 - งาน >10ลบ ไม่มี handling (นอกตลาดกัญจน์)
+
+## งานที่ N+120: ส่ง D0 ครบวงจร 2 งาน + แก้ bug ราคา (2026-06-12)
+
+### สถานะ: ✅ ส่งแล้ว 4 ลูกค้า × 2 งาน (resend_d0_jobs.py --all --live)
+
+### Context
+งาน 69059227331 (ถนนคอนกรีต หนองเดิ่น) + 69059132412 (อาคารสำนักงานโพนทอง) ประมูล 12 มิ.ย. 9-12 น.
+ตอนเข้า LINE ครั้งแรกปักหมุดไม่ได้ (ระบบยังไม่นิ่ง) → resend ครบวงจร approval-gated (กัญจน์ก่อน→approve→ทุกคน)
+
+### สร้าง resend_d0_jobs.py
+- --list / --customer(เฟส1) / --all-except / --all, dry-run default
+- การ์ด = format_notification D0 (intel/ราคา logic ใหม่) + ⏰เวลา + 📄ลิงก์ + ⭐follow-link (text, ตาม N+108)
+- --resolve-deadline: เติมวัน+เวลาสด (DocZip) ถ้าขาด
+
+### Bug/fix ที่กัญจน์จับได้ระหว่างตรวจราคา (สำคัญ)
+1. 🐛 **ลิงก์ประกาศ** — procsearch.sch สร้างจาก projectId ไม่ได้ (E4514). ของจริง = view-pdf-file?templateId=buildName2
+   (จาก infoProcureDocAnnounZip). `process5_http_client.get_announce_pdf_url()`. verified WebFetch→PDF จริง
+2. 🐛 **asphalt keyword** — "แอสฟัสต์คอนกรีต" (สะกดผิด) หลุดเข้า concrete pool → _ASPHALT_KW root "แอสฟั".
+   หนองเดิ่นมีแอสฟัลต์ปน concrete 7 งาน → แก้แล้ว concrete median 40% (เดิม 38% ปน)
+3. ➕ **building new/reno** — อาคารปรับปรุง 17.8% vs สร้างใหม่ 12.4% (+5.4). building_kind() เฉพาะอาคาร
+   (research: ถนน/น้ำ confound DOH). docs/research_building_reno_2026_06_12.md
+
+### Followup
+- ขยาย new/reno → ถนน(−5)/แหล่งน้ำ(+3) ใน local market (DOH ตัดแล้ว gap เหลือ ~3-5 จุด) + fallback กัน pool บางเกิน
+- ไฟฟ้า/ราง: งานปรับปรุงน้อย (n=4/11) แยกไม่ได้ รอข้อมูล
+- repredict 5 followed jobs เดิม + งานใหม่ ด้วย asphalt fix (อาจมี concrete ปน)
+- เก็บ templateId ตอน enrichment (เลี่ยง API call ลิงก์ตอนส่ง)

@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 sys.stdout.reconfigure(encoding="utf-8")
 from Sebastian_Customer_DB import get_connection
 from Sebastian_LINE_Sender import (
-    format_notification, build_job_flex, send_line_flex,
+    format_notification, send_line_push, build_follow_link,
     _deadline_from_db, _announcement_url, _clean_project_name, _load_line_token)
 
 
@@ -36,17 +36,22 @@ def _load_jobs(conn, project_ids):
     return jobs
 
 
-def _build_card(j):
-    """คืน (alt_text, flex_bubble) การ์ด D0 ครบวงจร."""
-    text = format_notification(
+def _build_text(j):
+    """คืน (title, body) ข้อความการ์ด D0 ครบวงจร (intel/คาดราคา + เวลายื่นซอง)."""
+    body = format_notification(
         project_id=j["project_id"], province=j["province"], announce_type="D0",
         budget=j["budget"], project_name=j["project_name"], dept_name=j["dept_name"],
         bid_submit_date=j["bid_date"], bid_submit_time=j["bid_time"],
         source_stage="api_enriched")   # หัวการ์ด = "🔔 พบงานเปิดยื่นซองใหม่" (ส่งใหม่ ไม่ใช่ followup)
     title = _clean_project_name(j["project_name"]) or j["project_id"]
-    flex = build_job_flex(j["project_id"], title, text,
-                          doc_url=_announcement_url(j["project_id"]), with_feedback=True)
-    return title, text, (title + " | " + text)[:400], flex
+    return title, body
+
+
+def _compose(title, body, ann, follow):
+    """ประกอบข้อความเต็ม = ชื่องาน + การ์ด + 📄ลิงก์ประกาศ + ⭐ลิงก์ติดตาม (ตาม production D0)."""
+    ann_block = ("\n\n📄 ดูประกาศ:\n" + ann) if ann else ""
+    follow_block = ("\n\n⭐ ติดตามงานนี้:\n" + follow) if follow else ""
+    return title + "\n" + body + ann_block + follow_block
 
 
 def main():
@@ -95,12 +100,16 @@ def main():
     token = _load_line_token() if a.live else ""
     sent = 0
     for j in jobs:
-        title, text, alt, flex = _build_card(j)
+        title, body = _build_text(j)
+        ann = _announcement_url(j["project_id"])
         if not a.live:
-            print(f"─── การ์ด {j['project_id']} ───\n🏗️ {title}\n{text}\n[ปุ่ม: ⭐ติดตามงานนี้ · 📄ดูรายละเอียดงาน]\n")
+            preview = _compose(title, body, ann, "<ลิงก์ติดตาม — สร้างต่อคนตอนส่งจริง>")
+            print(f"─── การ์ด {j['project_id']} ───\n{preview}\n")
             continue
         for c in customers:
-            ok, et, em = send_line_flex(token, c["uid"], alt, flex)
+            follow = build_follow_link(c["uid"], j["project_id"])   # signed token ต่อคน-ต่องาน
+            msg = _compose(title, body, ann, follow)
+            ok, et, em = send_line_push(token, c["uid"], msg)
             if ok: sent += 1
             else: print(f"  ✗ {j['project_id']}→{c['name']}: {em}")
             time.sleep(0.4)

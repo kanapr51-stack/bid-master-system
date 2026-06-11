@@ -111,7 +111,7 @@ def save_prediction(p: dict) -> None:
     """เก็บคำทำนายราคาตอน D0 — upsert ทับด้วยค่าล่าสุดที่ส่งจริง (กันค่าเก่าค้าง).
     ON CONFLICT ทับเฉพาะคอลัมน์ prediction — ไม่แตะ actual_price/in_range/error_pct/verified_at."""
     cols = ("project_id", "budget", "area_disc_lo", "area_disc_hi", "area_price_lo",
-            "area_price_hi", "top_name", "top_disc", "top_price")
+            "area_price_hi", "area_disc_med", "area_price_med", "top_name", "top_disc", "top_price")
     upd = [c for c in cols if c != "project_id"] + ["predicted_at"]
     with get_connection() as conn:
         conn.execute(
@@ -294,7 +294,20 @@ def init_schema():
     _migrate_v121()
     _migrate_v122()
     _migrate_v123()
+    _migrate_v124()
     print(f"Schema v1.13 ready: {DB_PATH}")
+
+
+def _migrate_v124():
+    """price_predictions +area_disc_med +area_price_med — เก็บ 'ค่ากลาง (ปกติ)' ที่โชว์ตอน D0
+    เพื่อเทียบ win/lose ตอน W0 (ราคาที่คาด ≤ ราคาชนะ → ชนะ=ความแม่นยำ / > → แพ้=ความคลาดเคลื่อน).
+    additive ALTER (idempotent). prediction เก่าไม่มี median → display fallback เทียบกรอบบน."""
+    with get_connection() as conn:
+        for col, typ in (("area_disc_med", "REAL"), ("area_price_med", "INTEGER")):
+            try:
+                conn.execute(f"ALTER TABLE price_predictions ADD COLUMN {col} {typ}")
+            except sqlite3.OperationalError:
+                pass  # already exists
 
 
 def _migrate_v123():
@@ -321,6 +334,7 @@ def _migrate_v122():
                 budget        INTEGER,
                 area_disc_lo  REAL, area_disc_hi REAL,
                 area_price_lo INTEGER, area_price_hi INTEGER,
+                area_disc_med REAL, area_price_med INTEGER,
                 top_name      TEXT, top_disc REAL, top_price INTEGER,
                 predicted_at  TEXT,
                 actual_price  INTEGER, in_range INTEGER, error_pct REAL, verified_at TEXT

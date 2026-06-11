@@ -366,6 +366,33 @@ def _fmt_baht(v) -> str:
         return str(v or "")
 
 
+def _accuracy_line(cmp: dict, actual_price) -> str:
+    """บรรทัด 🎯 เทียบ 'ราคาที่คาด (ค่ากลาง/ปกติ)' กับราคาที่ชนะจริง — framing win/lose สำหรับคนประมูล:
+    คาด ≤ ราคาชนะ → ยื่นราคานี้ก็ชนะ → 'ความแม่นยำ X%'.
+    คาด > ราคาชนะ → ยื่นแล้วแพ้ (ผู้ชนะลงลึกกว่าคาด) → 'ความคลาดเคลื่อนจากราคาชนะ X%'.
+    fallback: prediction เก่าไม่มี median → เทียบกรอบบน (เดิม). คืน '' ถ้า actual แปลงไม่ได้."""
+    try:
+        actual = float(actual_price)
+    except (TypeError, ValueError):
+        return ""
+    med = cmp.get("pred_med")
+    if med and actual > 0:
+        med = float(med)
+        if med <= actual:                       # ยื่นราคาที่คาด → ชนะ
+            acc = max(0.0, 100 - abs(med - actual) / actual * 100)
+            return (f"🎯 ความแม่นยำ {acc:.1f}% (คาด {_fmt_baht(med)} · ชนะจริง "
+                    f"{_fmt_baht(actual)}) ✅ ราคาที่คาดชนะได้")
+        dev = (med - actual) / actual * 100      # คาดสูงกว่าราคาชนะ → แพ้
+        return (f"📉 ความคลาดเคลื่อนจากราคาชนะ {dev:.1f}% (คาด {_fmt_baht(med)} · ชนะจริง "
+                f"{_fmt_baht(actual)}) ⚠️ ราคาที่คาดจะแพ้")
+    if cmp.get("upper") and cmp.get("error_pct") is not None:   # fallback เทียบกรอบบน
+        acc = max(0.0, 100 - abs(cmp["error_pct"]))
+        inr = " ✅อยู่ในกรอบ" if cmp.get("held") else ""
+        return (f"🎯 ความแม่นยำ {acc:.1f}% (คาดกรอบบน {_fmt_baht(cmp['upper'])} · จริง "
+                f"{_fmt_baht(actual)}){inr}")
+    return ""
+
+
 def format_prelim_notification(project_name: str, budget, prelim: dict, cmp: dict, project_id: str = "") -> str:
     """Round 1 — สรุปราคาเบื้องต้น (ยังไม่ทางการ). cmp = compare_prediction_provisional หรือ None."""
     lines = ["🔔 ผลเสนอราคาเบื้องต้น (ยังไม่ทางการ)"]
@@ -376,11 +403,10 @@ def format_prelim_notification(project_name: str, budget, prelim: dict, cmp: dic
     if prelim.get("has_price") and prelim.get("lowest_price"):
         low = prelim["lowest_price"]
         lines.append(f"📊 ราคาต่ำสุดที่เสนอ: {_fmt_baht(low)} บาท · ผู้เสนอ {n} ราย")
-        if cmp and cmp.get("upper"):
-            acc_pct = max(0.0, 100 - abs(cmp["error_pct"]))   # ความแม่นยำ = ใกล้ค่าจริงแค่ไหน
-            in_range = " ✅อยู่ในกรอบ" if cmp.get("held") else ""
-            lines.append(f"🎯 ความแม่นยำ {acc_pct:.1f}% "
-                         f"(คาดกรอบบน {_fmt_baht(cmp['upper'])} · จริง {_fmt_baht(low)}){in_range}")
+        if cmp:
+            acc_line = _accuracy_line(cmp, low)
+            if acc_line:
+                lines.append(acc_line)
             try:
                 d = (1 - float(low) / float(budget)) * 100
                 lines.append(f"   (ส่วนลดจริง {d:.0f}%)")
@@ -436,13 +462,12 @@ def format_winner_detailed(project_name, winner, price_agree, budget, analyzed, 
     except (ValueError, TypeError, ZeroDivisionError):
         pass
     lines.append(f"🏆 ผู้ชนะ: {winner} · {_fmt_baht(price_agree)}{win_disc}")
-    if cmp and cmp.get("upper"):
-        acc_pct = max(0.0, 100 - abs(cmp["error_pct"]))   # ความแม่นยำ = ใกล้ค่าจริงแค่ไหน (เทียบกรอบบน)
-        in_range = " ✅อยู่ในกรอบ" if cmp.get("held") else ""
-        line = f"🎯 ความแม่นยำ {acc_pct:.1f}% (คาดกรอบบน {_fmt_baht(cmp['upper'])} · จริง {_fmt_baht(price_agree)}){in_range}"
-        if acc and acc.get("verified"):
-            line += f" · สะสมอยู่ในกรอบ {acc['in_range']}/{acc['verified']}"
-        lines.append(line)
+    if cmp:
+        line = _accuracy_line(cmp, price_agree)
+        if line:
+            if acc and acc.get("verified"):
+                line += f" · สะสมอยู่ในกรอบ {acc['in_range']}/{acc['verified']}"
+            lines.append(line)
     if analyzed:
         lines.append(f"📊 ผู้ยื่น {len(analyzed)} ราย (เรียงราคา · เทียบประวัติพื้นที่):")
         for i, b in enumerate(analyzed, 1):

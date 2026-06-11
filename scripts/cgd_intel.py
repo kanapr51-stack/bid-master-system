@@ -580,7 +580,8 @@ def _compare_core(project_id: str, p: dict, actual: float, commit: bool) -> dict
     if commit:
         update_prediction_actual(project_id, round(actual), 1 if held else 0, error_pct)
     return {"held": held, "error_pct": error_pct, "upper": hi,
-            "area_price_lo": p["area_price_lo"], "area_price_hi": hi, "actual": round(actual)}
+            "area_price_lo": p["area_price_lo"], "area_price_hi": hi, "actual": round(actual),
+            "pred_med": p.get("area_price_med")}   # ค่ากลาง (ปกติ) สำหรับเทียบ win/lose
 
 
 def predict_lines(p: dict, basis: str = "ตำบล", contested: bool = False) -> list:

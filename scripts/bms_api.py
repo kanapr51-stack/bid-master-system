@@ -693,6 +693,43 @@ async def health():
     return {"ok": True, "db": DB_PATH.exists(), "ts": _now()}
 
 
+# -- Price prediction audit (internal, shared-secret) -------------------------
+def _check_audit_key(key: str):
+    expected = os.getenv("BMS_AUDIT_KEY", "")
+    if not expected or key != expected:
+        raise HTTPException(status_code=401, detail="unauthorized")
+
+
+def _audit_list_html(rows: list, key: str) -> str:
+    trs = ""
+    for r in rows:
+        lo, hi = r.get("area_price_lo") or 0, r.get("area_price_hi") or 0
+        if r.get("actual_price") is None:
+            stat = "⏳ รอผล"
+        else:
+            stat = ("✅ ในกรอบ" if r.get("in_range") else "❌ หลุด") + f" ({r.get('error_pct')}%)"
+        trs += (f"<tr><td><a href='/audit/{r['project_id']}?key={key}'>{r['project_id']}</a></td>"
+                f"<td>{lo:,}–{hi:,}</td><td>{r.get('predicted_at') or ''}</td><td>{stat}</td></tr>")
+    return ("<html><head><meta charset='utf-8'><title>Audit ราคา</title>"
+            "<style>body{font-family:sans-serif;padding:16px}table{border-collapse:collapse}"
+            "td,th{border:1px solid #ccc;padding:6px}</style></head><body>"
+            "<h2>การทำนายราคา (ล่าสุด 200)</h2><table>"
+            "<tr><th>งาน</th><th>ช่วงราคา</th><th>ทำนายเมื่อ</th><th>ผลจริง</th></tr>"
+            f"{trs}</table></body></html>")
+
+
+@app.get("/audit")
+async def audit_list(key: str = ""):
+    _check_audit_key(key)
+    with get_conn() as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            "SELECT project_id, budget, area_price_lo, area_price_hi, predicted_at, "
+            "actual_price, in_range, error_pct FROM price_predictions "
+            "ORDER BY predicted_at DESC LIMIT 200").fetchall()
+    return HTMLResponse(_audit_list_html([dict(r) for r in rows], key))
+
+
 @app.get("/follow")
 async def follow_get(t: str = ""):
     v = follow_token.verify_token(t)

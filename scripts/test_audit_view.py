@@ -56,7 +56,21 @@ def test_build_explain_shape():
     print("✅ _build_explain shape")
 
 
+def test_audit_list_requires_key():
+    _fresh_db()  # ตั้ง BMS_DB_PATH + สร้าง schema (price_predictions)
+    os.environ["BMS_AUDIT_KEY"] = "secret123"
+    import bms_api
+    importlib.reload(bms_api)
+    from fastapi.testclient import TestClient
+    c = TestClient(bms_api.app)
+    assert c.get("/audit").status_code == 401, "ไม่มี key ต้อง 401"
+    assert c.get("/audit?key=wrong").status_code == 401, "key ผิดต้อง 401"
+    assert c.get("/audit?key=secret123").status_code == 200, "key ถูกต้อง 200"
+    print("✅ /audit auth (401/401/200)")
+
+
 if __name__ == "__main__":
     test_save_prediction_stores_explain_json()
     test_build_explain_shape()
+    test_audit_list_requires_key()
     print("ALL PASS audit_view")

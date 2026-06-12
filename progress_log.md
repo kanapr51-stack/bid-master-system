@@ -523,3 +523,25 @@ prediction เดิมใช้ percentile แบบ flat (ทุกงาน�
 - ไฟฟ้า/ราง: งานปรับปรุงน้อย (n=4/11) แยกไม่ได้ รอข้อมูล
 - repredict 5 followed jobs เดิม + งานใหม่ ด้วย asphalt fix (อาจมี concrete ปน)
 - เก็บ templateId ตอน enrichment (เลี่ยง API call ลิงก์ตอนส่ง)
+
+## งานที่ N+121: Price Prediction Audit View — สร้าง + DEPLOYED (2026-06-12)
+
+### สถานะ: ✅ เสร็จ + LIVE บน VPS (commits bf1972e→07c9b41)
+
+### สิ่งที่ทำ
+หน้า internal `/audit` (auth `BMS_AUDIT_KEY`) ให้กัญจน์ดูทุกการทำนายราคา + กดดูวิธีคิด+ข้อมูลดิบ
+แช่แข็ง ณ ตอนทำนาย (audit-grade) + closed-loop คาด vs จริง. ผ่าน brainstorm→spec→plan→TDD.
+- `explain_json` snapshot (inputs/classify/scope/analysis/raw_records/output) ใน price_predictions (_migrate_v126)
+- capture ที่ `_build_explain` ใน cgd_intel (fail-open: พังไม่กระทบ prediction/ส่งงาน)
+- wire ที่ save_prediction (LINE_Sender + repredict)
+- `/audit` list + `/audit/{id}` detail ใน bms_api (shared-secret)
+
+### ผล
+- TDD 5/5 PASS (รวม invariant: re-predict ไม่ลบ actual_price/closed-loop)
+- Deploy VPS: pull 8d29767→07c9b41, migration บน live DB (explain_json=True), restart bms-api
+  verify no-key=401 / with-key=200 ✅
+- URL: https://api.butler-bms.com/audit?key=*** (internal)
+
+### Followup
+- Sophia gate: รองาน D0 ใหม่ที่มี explain จริง → dispatch ตรวจ output ตรงกับที่ส่งลูกค้า
+- การทำนายเก่า (ก่อน deploy) = "ไม่มีข้อมูล explain" (ปกติ)

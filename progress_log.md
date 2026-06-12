@@ -563,3 +563,25 @@ prediction เดิมใช้ percentile แบบ flat (ทุกงาน�
 ### Followup
 - prelim ราคาเก็บงานใหม่ที่ถึง PRELIM หลัง deploy (ชื่อ+stage+หมวดงาน เห็นทันที 7 งาน backfill)
 - Sophia gate: ตรวจ prelim_*/explain เมื่อมีข้อมูลจริงสะสม
+
+## งานที่ N+123: แก้บั๊กคาดราคางานพื้นที่เป้าหมาย (resolve + province fallback) — LIVE (2026-06-12)
+
+### สถานะ: ✅ เสร็จ + verify production (commits 3c41ad5, 4e7e6b7)
+
+### Root cause (systematic-debugging, 2 ชั้น)
+งานรั้ว 69069138608 (อ.บึงโขงหลง = พื้นที่เป้าหมาย) ไม่มีราคาคาด ทั้งที่บึงกาฬมีรั้ว 8 ราย:
+1. **resolve_location เพี้ยน:** geo (พิกัด, dist 7km) snap ข้ามอำเภอ → คืน (ตำบลบึงโขงหลง, อ.เซกา) = คู่ไม่มีจริง → _fetch 0
+2. **scope-local ไม่ fallback:** อ.บึงโขงหลง 0 precedent งานรั้ว (8 งานอยู่อำเภออื่น) → None
+
+### Fix
+1. `_reconcile_amphoe` — ตำบล unique→1 อำเภอ เชื่อตำบล>geo (N+116 structured>geo)
+2. `province fallback` ใน _build_intel — อำเภอว่าง+จังหวัด distinct≥3 → คาดจากจังหวัด+ป้าย "ข้ามพื้นที่ เชื่อมั่นต่ำ", explain scope="จังหวัด (ข้ามพื้นที่)". <3 = ยัง None
++ deploy.sh/verify_job.sh + .gitattributes (sh=LF)
+
+### ผล
+- verify VPS: resolve=บึงโขงหลง ✅, ผลคาดราคา=มีราคาคาด ✅
+- TDD 6 test (resolve_amphoe 4 + province_fallback 2) + regression 10 ไฟล์ผ่าน
+- **เจอจาก audit view human-check ครั้งแรก** = ฟีเจอร์พิสูจน์คุณค่า
+
+### Followup
+- re-predict งานรั้วให้โผล่ใน /audit (repredict_followed --apply)

@@ -61,6 +61,7 @@ _LOCAL_AGENCY_KW = ("องค์การบริหารส่วนตำ�
 _PROVINCIAL_AGENCY_KW = ("องค์การบริหารส่วนจังหวัด", "อบจ.")
 
 MIN_COMPETITORS = 2     # distinct winners ขั้นต่ำก่อนหยุด fallback
+PROVINCE_FALLBACK_MIN = 3   # อำเภอไม่มี precedent → คาดจากจังหวัดได้ถ้า distinct winners ≥ นี้ (หยาบกว่า local จึงตั้งสูงกว่า)
 SHOW_N = 3              # จำนวนบริษัทที่โชว์
 MIN_GAMES_FOR_IQR = 3   # ต่ำกว่านี้โชว์แค่ median
 IQR_WIDE = 20           # p75-p25 เกินนี้ = ช่วงกว้าง (ลดความเชื่อมั่น)
@@ -543,6 +544,17 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
         basis_sub, basis_dist, basis_old = None, None, p_old
         used_rows = p_rows
         header = f"💡 ราคาอ้างอิง (งาน{wt}ใน{province}){tag}"
+    # Province fallback: amphoe มีค่าแต่ไม่มี precedent ใน local → คาดจากทั้งจังหวัด + ป้ายเตือน
+    # (กันงานหมวดหายากในพื้นที่เป้าหมายคาดราคาไม่ได้เลย ทั้งที่จังหวัดมีข้อมูลพอ)
+    if amphoe and pp25 is None:
+        pf_rows, pf_old = _fetch_scope(conn, province, tokens, **cf)
+        if _distinct_winners(pf_rows) >= PROVINCE_FALLBACK_MIN:
+            fl, f25, f75, _n, ftop, ftopm, fmed = _scope_block(pf_rows, f"🗺 ทั้งจังหวัด{province} (ข้ามพื้นที่)")
+            blocks += fl
+            pp25, pp75, ptop, ptopm, pmed, basis = f25, f75, ftop, ftopm, fmed, "จังหวัด (ข้ามพื้นที่)"
+            basis_sub, basis_dist, basis_old = None, None, pf_old
+            used_rows = pf_rows
+            blocks.append(f"⚠️ อ.{amphoe} ไม่เคยมีงานประเภทนี้ — อิงทั้งจังหวัด เชื่อมั่นต่ำ")
     if not blocks or all("ยังไม่มีงาน" in b for b in blocks):
         return None                               # ไม่มีคู่แข่งจริงเลย → omit
     lines = [header, ""] + blocks

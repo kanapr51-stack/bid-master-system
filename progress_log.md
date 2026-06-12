@@ -545,3 +545,21 @@ prediction เดิมใช้ percentile แบบ flat (ทุกงาน�
 ### Followup
 - Sophia gate: รองาน D0 ใหม่ที่มี explain จริง → dispatch ตรวจ output ตรงกับที่ส่งลูกค้า
 - การทำนายเก่า (ก่อน deploy) = "ไม่มีข้อมูล explain" (ปกติ)
+
+## งานที่ N+122: Audit View v2 (ชื่องาน/stage/PRELIM/หมวดงาน) — DEPLOYED (2026-06-12)
+
+### สถานะ: ✅ เสร็จ + LIVE บน VPS (commits 72c95b5→5a38d7d)
+
+### สิ่งที่ทำ
+ต่อยอด /audit ตามที่กัญจน์ขอ 4 ข้อ (brainstorm→spec→plan→TDD):
+- ชื่องาน (join projects_seen) + stage B0→D0→PRELIM→W0 (จาก followed_jobs, ก้าวหน้าสุด)
+- ราคา PRELIM + คาด vs จริง(เบื้องต้น) — prelim_* cols (v127, แยกจาก official), capture ที่ prelim notification
+- บล็อกหมวดงาน: หมวด/หมวดย่อย/ประเภท(สร้างใหม่-ปรับปรุง)/ระบอบตลาด → label ไทย
+
+### ผล
+- TDD 9/9 PASS (รวม invariant: prelim ไม่แตะ official actual_price)
+- Deploy: ติด .git root-owned (sudo git เก่า) → แก้ chown -R bms:bms .git → pull/migration/restart สำเร็จ (prelim_price=True, active, 200)
+
+### Followup
+- prelim ราคาเก็บงานใหม่ที่ถึง PRELIM หลัง deploy (ชื่อ+stage+หมวดงาน เห็นทันที 7 งาน backfill)
+- Sophia gate: ตรวจ prelim_*/explain เมื่อมีข้อมูลจริงสะสม

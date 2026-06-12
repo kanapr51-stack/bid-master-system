@@ -604,8 +604,18 @@ prediction เดิมใช้ percentile แบบ flat (ทุกงาน�
 - ภาคผนวก A: Decision Flow 5 เฟส (อนาคต render บน /audit)
 - ยุบ L2(vs-self)+L4 = โมเดลพฤติกรรมรายเจ้า · ตัด vs-market (เหลือ fallback newcomer)
 
-### Followup
-- ขั้นต่อไป: เขียนสูตร Z, C จริง (ตกลงกับกัญจน์ว่าทำต่อ)
-- fix เล็กก่อน: "stale ตำบล อย่าทับ อำเภอสด" (TDD)
-- ของใหญ่ (all-bidders + layer เต็ม) รอ evidence > 1 เคส
+### 🌙 ทำคืน 13 มิ.ย. (autonomous ตอนกัญจน์นอน) — commit local เท่านั้น ยังไม่ push/deploy
+1. **วิจัย Z** (0a68031): ทฤษฎี Bühlmann k=EPV/VHM=3.2 + backtest 2,961 งาน (RMSE ดีสุด k=3-5) ตรงกัน
+   → สูตร **Z=n/(n+3)**, n ดิบ (eff ไม่ช่วย), ผูกขาด→C ไม่ใช่ Z. doc `docs/research/2026-06-13-z-formula-credibility.md`
+2. **วิจัย C** (e3e5d2f): frequency แกนหลัก (เจ้าถิ่น≥5→90% · ขาจร→13%). **แต่ C-จาก-win over-predict** (มงคลธรรม
+   C=90% แต่ไม่มาจริง) → C ยังไม่พร้อม drive overlay จนกว่ามี all-bidders. doc `2026-06-13-c-participation.md`
+3. **Implement helper** (18e1c47): `credibility_z()` + `blend_disc()` ใน cgd_intel + TDD (test_z_blend 3 ผ่าน) · full suite 22/22 ผ่าน
+
+### 🌅 เช้านี้ทำต่อ (รอกัญจน์ review — เป็นจุดตัดสินใจ)
+- **wire blend_disc เข้า `_build_intel`** — ยังไม่ทำเพราะต้อง:
+  (a) เปลี่ยน basis จาก "ตำบล" → blend → test เดิม `test_build_intel_dual` ที่ assert "อิงตำบล" จะต้องแก้
+  (b) ตัดสินใจ UX: ป้ายใน LINE/audit จะเขียน "ตำบล+อำเภอ (น้ำหนัก Z)" ยังไง
+  → แผน: ใน _build_intel ตอน tambon เป็น basis ให้ fetch อำเภอด้วยเสมอ แล้ว pp25/pp75/pmed = blend_disc(t,a,tn)
+- หลัง wire: re-validate งาน 69059227331 ต้องขยับ 40%→~35% (ใกล้จริง 33.7%) + 69059132412 ต้องไม่เพี้ยน
+- ของใหญ่ (all-bidders + C เต็ม + layer 2-4) รอ evidence > 1 เคส
 - memory: project_scope_selection_bug

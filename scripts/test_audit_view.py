@@ -36,6 +36,27 @@ def test_save_prediction_stores_explain_json():
     print("✅ save_prediction stores explain_json")
 
 
+def test_build_explain_shape():
+    import cgd_intel as ci
+    ex = ci._build_explain(
+        inputs={"budget": 2500000, "project_name": "ถนน X", "province": "นครพนม",
+                "tambon": "ก", "amphoe": "ข", "location_confidence": "HIGH"},
+        classify={"subtype": "concrete_road", "market": "local", "work_kind": "new"},
+        scope_level="ตำบล", n=12,
+        analysis={"disc_lo": 0.22, "disc_med": 0.27, "disc_hi": 0.31,
+                  "top_name": "หจก. ก", "top_disc": 0.28},
+        raw_records=[{"project_name": "ถนน Y", "winner": "หจก. ก",
+                      "win_price": 1980000, "discount": 0.26}],
+        output={"price_lo": 1725000, "price_med": 1825000, "price_hi": 1950000})
+    assert ex["schema_version"] == 1
+    assert ex["scope"]["level"] == "ตำบล" and ex["scope"]["n"] == 12
+    assert ex["classify"]["subtype"] == "concrete_road"
+    assert ex["raw_records"][0]["winner"] == "หจก. ก"
+    assert ex["output"]["price_med"] == 1825000
+    print("✅ _build_explain shape")
+
+
 if __name__ == "__main__":
     test_save_prediction_stores_explain_json()
+    test_build_explain_shape()
     print("ALL PASS audit_view")

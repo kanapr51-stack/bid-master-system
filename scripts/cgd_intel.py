@@ -463,6 +463,20 @@ def _fetch_scope(conn, province, tokens, *, subdistrict=None, district=None, sub
     return (old, True) if _distinct_winners(old) > _distinct_winners(rows) else (rows, False)
 
 
+def _build_explain(inputs, classify, scope_level, n, analysis, raw_records, output):
+    """ประกอบ snapshot เหตุผล+ข้อมูลดิบ แช่แข็ง ณ ตอนทำนาย (audit). pure — ไม่แตะ DB."""
+    return {
+        "schema_version": 1,
+        "inputs": inputs,
+        "classify": classify,
+        "scope": {"level": scope_level, "n": n},
+        "analysis": analysis,
+        "raw_records": raw_records or [],
+        "formula": "ราคาคาด = budget × (1 − ส่วนลด), clamp floor",
+        "output": output,
+    }
+
+
 def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subtype=None,
                  nature=None, contested_only=False, market=None, work_kind=None) -> dict | None:
     """ประกอบ intel dual-block จาก (ตำบล,อำเภอ) ที่ resolve มาแล้ว (แยกจาก resolve เพื่อ test ง่าย).
@@ -477,6 +491,7 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
     blocks = []
     pp25 = pp75 = ptop = ptopm = pmed = None
     basis = ""
+    used_rows = []                   # reference rows ของ scope ที่ใช้คาดราคา (สำหรับ explain snapshot)
     basis_sub = basis_dist = None    # scope ที่ใช้คาดราคา (สำหรับ recency series)
     basis_old = False                # คาดราคาอิงข้อมูลย้อนเกิน 3 ปี (พื้นที่งานน้อย) → ติดป้าย
     tag = " (งานแข่งจริง)" if contested_only else ""
@@ -492,6 +507,7 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
                 blocks += tl
                 pp25, pp75, ptop, ptopm, pmed, basis = t25, t75, ttop, ttopm, tmed, "ตำบล"
                 basis_sub, basis_dist, basis_old = tambon, amphoe, t_old
+                used_rows = t_rows
             else:
                 blocks.append(f"🏘 ในตำบล{tambon} — ยังไม่มีงานประเภทนี้")
         if tn < TAMBON_MIN:                       # ตำบลน้อย → โชว์อำเภอคู่กัน
@@ -502,6 +518,7 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
                 if pp25 is None:                  # ตำบลไม่มี → คาดอิงอำเภอ
                     pp25, pp75, ptop, ptopm, pmed, basis = a25, a75, atop, atopm, amed, "อำเภอ"
                     basis_sub, basis_dist, basis_old = None, amphoe, a_old
+                    used_rows = a_rows
     else:
         p_rows, p_old = _fetch_scope(conn, province, tokens, **cf)
         if not p_rows:
@@ -510,6 +527,7 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
         blocks += pl
         pp25, pp75, ptop, ptopm, pmed, basis = p25, p75, ptopn, ptopmd, pmedn, "จังหวัด"
         basis_sub, basis_dist, basis_old = None, None, p_old
+        used_rows = p_rows
         header = f"💡 ราคาอ้างอิง (งาน{wt}ใน{province}){tag}"
     if not blocks or all("ยังไม่มีงาน" in b for b in blocks):
         return None                               # ไม่มีคู่แข่งจริงเลย → omit
@@ -526,7 +544,26 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
         lines += [""] + predict_lines(pred, basis, contested=contested_only)
         if basis_old:                             # อิงข้อมูลเก่ากว่า 3 ปี — แจ้งให้ผู้ใช้รู้
             lines.append("📜 รวมข้อมูลเก่ากว่า 3 ปี (พื้นที่นี้งานน้อย) — ใช้เป็นแนวโน้ม")
-    return {"lines": lines, "prediction": pred, "tambon": tambon, "amphoe": amphoe}
+    try:
+        explain = _build_explain(
+            inputs={"budget": budget, "work_type": wt, "province": province,
+                    "tambon": tambon, "amphoe": amphoe},
+            classify={"subtype": cf.get("subtype"), "market": cf.get("market"),
+                      "work_kind": cf.get("work_kind"), "nature": cf.get("nature")},
+            scope_level=basis, n=len(used_rows),
+            analysis={"disc_lo": pp25, "disc_hi": pp75, "disc_med": pmed,
+                      "top_name": ptop, "top_disc": ptopm},
+            raw_records=[{"project_name": r.get("project_name"), "winner": r.get("winner"),
+                          "win_price": r.get("win_price"), "discount": r.get("discount_pct")}
+                         for r in used_rows][:30],
+            output={"price_lo": pred.get("area_price_lo") if pred else None,
+                    "price_med": pred.get("area_price_med") if pred else None,
+                    "price_hi": pred.get("area_price_hi") if pred else None})
+    except Exception as e:
+        _log.warning("build_explain failed: %s", e)
+        explain = None
+    return {"lines": lines, "prediction": pred, "tambon": tambon, "amphoe": amphoe,
+            "explain": explain}
 
 
 def intel_context(province: str, project_name: str, dept_name: str = "",

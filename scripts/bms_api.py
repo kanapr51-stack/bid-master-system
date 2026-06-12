@@ -732,13 +732,16 @@ def _audit_list_html(rows: list, key: str) -> str:
             stat = "⏳ รอผล"
         else:
             stat = ("✅ ในกรอบ" if r.get("in_range") else "❌ หลุด") + f" ({r.get('error_pct')}%)"
-        trs += (f"<tr><td><a href='/audit/{r['project_id']}?key={key}'>{r['project_id']}</a></td>"
-                f"<td>{lo:,}–{hi:,}</td><td>{r.get('predicted_at') or ''}</td><td>{stat}</td></tr>")
+        name = r.get("project_name") or "(ไม่มีชื่อ)"
+        trs += (f"<tr><td><a href='/audit/{r['project_id']}?key={key}'>{name}</a>"
+                f"<br><small>{r['project_id']}</small></td>"
+                f"<td>{_stage_label(r.get('stage'))}</td>"
+                f"<td>{lo:,}–{hi:,}</td><td>{stat}</td></tr>")
     return ("<html><head><meta charset='utf-8'><title>Audit ราคา</title>"
             "<style>body{font-family:sans-serif;padding:16px}table{border-collapse:collapse}"
-            "td,th{border:1px solid #ccc;padding:6px}</style></head><body>"
+            "td,th{border:1px solid #ccc;padding:6px}small{color:#888}</style></head><body>"
             "<h2>การทำนายราคา (ล่าสุด 200)</h2><table>"
-            "<tr><th>งาน</th><th>ช่วงราคา</th><th>ทำนายเมื่อ</th><th>ผลจริง</th></tr>"
+            "<tr><th>งาน</th><th>สถานะ</th><th>ช่วงราคาคาด</th><th>ผลจริง(ทางการ)</th></tr>"
             f"{trs}</table></body></html>")
 
 
@@ -747,11 +750,18 @@ async def audit_list(key: str = ""):
     _check_audit_key(key)
     with get_conn() as conn:
         conn.row_factory = sqlite3.Row
-        rows = conn.execute(
-            "SELECT project_id, budget, area_price_lo, area_price_hi, predicted_at, "
-            "actual_price, in_range, error_pct FROM price_predictions "
-            "ORDER BY predicted_at DESC LIMIT 200").fetchall()
-    return HTMLResponse(_audit_list_html([dict(r) for r in rows], key))
+        preds = conn.execute(
+            "SELECT pp.project_id, pp.area_price_lo, pp.area_price_hi, pp.predicted_at, "
+            "pp.actual_price, pp.in_range, pp.error_pct, ps.project_name "
+            "FROM price_predictions pp LEFT JOIN projects_seen ps ON ps.project_id=pp.project_id "
+            "ORDER BY pp.predicted_at DESC LIMIT 200").fetchall()
+        rows = [dict(r) for r in preds]
+        for r in rows:
+            stages = [x[0] for x in conn.execute(
+                "SELECT last_stage_notified FROM followed_jobs WHERE project_id=?",
+                (r["project_id"],)).fetchall()]
+            r["stage"] = _most_advanced_stage([s for s in stages if s])
+    return HTMLResponse(_audit_list_html(rows, key))
 
 
 def _audit_detail_html(r: dict) -> str:

@@ -141,6 +141,27 @@ def test_label_helpers():
     print("✅ label helpers")
 
 
+def test_audit_list_shows_name_and_stage():
+    db = _fresh_db()
+    os.environ["BMS_AUDIT_KEY"] = "secret123"
+    db.save_prediction({"project_id": "PL", "budget": 2000000,
+                        "area_price_lo": 1600000, "area_price_hi": 1800000})
+    with db.get_connection() as conn:
+        conn.execute("INSERT INTO projects_seen(project_id,project_name,first_seen_at) VALUES(?,?,?)",
+                     ("PL", "ก่อสร้างถนนทดสอบ", "2026-06-12"))
+        conn.execute("INSERT INTO followed_jobs(customer_id,project_id,starred_at,last_stage_notified,status)"
+                     " VALUES(1,'PL','2026-06-12','PRELIM','active')")
+        conn.execute("INSERT INTO followed_jobs(customer_id,project_id,starred_at,last_stage_notified,status)"
+                     " VALUES(2,'PL','2026-06-12','D0','active')")
+    import bms_api, importlib
+    importlib.reload(bms_api)
+    from fastapi.testclient import TestClient
+    html = TestClient(bms_api.app).get("/audit?key=secret123").text
+    assert "ก่อสร้างถนนทดสอบ" in html, "ต้องมีชื่องาน"
+    assert "ราคาเบื้องต้น" in html, "stage ต้องเป็น PRELIM (ก้าวหน้าสุดจาก 2 customer)"
+    print("✅ list แสดงชื่องาน + stage")
+
+
 if __name__ == "__main__":
     test_save_prediction_stores_explain_json()
     test_build_explain_shape()
@@ -149,4 +170,5 @@ if __name__ == "__main__":
     test_resave_with_explain_preserves_closed_loop()
     test_prelim_does_not_touch_official()
     test_label_helpers()
+    test_audit_list_shows_name_and_stage()
     print("ALL PASS audit_view")

@@ -1,7 +1,18 @@
 # Deprecate Sheet Pipeline — Decommission Plan
 
-> **สถานะ:** DRAFT รอ กัญจน์ review (เขียนระหว่างกัญจน์นอน 2026-06-12 กลางคืน)
-> **กฎ:** แผนนี้ยัง **ไม่ลงมือรื้ออะไร** — ทุก phase มี gate ให้ยืนยันก่อน. การตัด pipeline = reversible เท่านั้น (disable ก่อน, ลบทีหลัง)
+> **สถานะ:** Gate 0 ✅ PASS · Phase 1 เตรียมแล้ว (commit ไว้ รอ push) · 2026-06-12
+> **กฎ:** reversible เท่านั้น (disable ก่อน, ลบทีหลัง). Phase 1 มีผลเมื่อ push
+
+## ✅ คำตอบ Open Questions + Gate 0 (ยืนยันด้วยหลักฐาน 2026-06-12)
+
+| Q | คำตอบ | หลักฐาน |
+|---|---|---|
+| Q1 etl บน timer? | **ปิดอยู่** — ปลอดภัย | `BidMaster_ETL_Sync` Windows task = **Disabled**. แม้รันก็ป้อน Postgres→bid_history เท่านั้น (มีแค่ `bid_history_queries.py` อ่าน, ไม่ใช่ทาง delivery) |
+| Q2 ดู 6 sheets เอง? | **ไม่ดู** (bid history ก็ไม่เปิด) | → ไม่ต้องมี replacement เร่งด่วน |
+| Q3 analytics sheets? | **เก็บไว้ก่อน** | analytics writers (`_work_type_sheet` ฯลฯ) คงไว้ ไม่แตะ |
+| Q4 portal → SQLite? | **เอา** | bms_api (portal LIFF) อ่าน SQLite **อยู่แล้ว**. ตัวที่ยังพึ่ง sheet = `dashboard_extractor` (monitoring dashboard) → repoint Phase 2 |
+
+**Gate 0 = PASS:** `pipeline_daily.yml` ทุก step เป็น sheet-world ล้วน (refresh_active_jobs/patch_deadlines/Classifier/dashboard_extractor/pipeline_funnel = **product_db ref 0 ทั้งหมด**) → disable ทั้ง workflow ได้ ไม่กระทบ customer (SQLite ป้อนจาก rss_scraper.yml แยกต่างหาก)
 
 **Goal:** เลิกพึ่ง Google Sheets pipeline (มรดกเดิม) โดย**ไม่กระทบ product จริง** (LINE/portal/pricing บน VPS SQLite)
 

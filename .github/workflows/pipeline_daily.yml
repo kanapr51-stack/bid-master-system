@@ -1,8 +1,11 @@
 name: BMS Daily Pipeline
 
+# ⚠️ DEPRECATED 2026-06-12 (Phase 1): sheet pipeline เลิกใช้ — product รันบน VPS SQLite
+# schedule ปิดไว้ (sheet world ทั้งหมด, ไม่กระทบลูกค้า). คง workflow_dispatch ไว้เผื่อ rollback/manual
+# ดู docs/superpowers/plans/2026-06-12-deprecate-sheet-pipeline.md
 on:
-  schedule:
-    - cron: '0 23 * * *'   # 06:00 Thailand (UTC+7) — หลัง cgd_discovery + winner_sweep 1 ชั่วโมง
+  # schedule:
+  #   - cron: '0 23 * * *'   # 06:00 Thailand — ปิด Phase 1 deprecate
   workflow_dispatch:
 
 permissions:

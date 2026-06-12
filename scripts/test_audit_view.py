@@ -88,7 +88,7 @@ def test_audit_detail_renders_explain():
     c = TestClient(bms_api.app)
     assert c.get("/audit/P9").status_code == 401, "ไม่มี key ต้อง 401"
     html = c.get("/audit/P9?key=secret123").text
-    assert "concrete_road" in html, "ต้องมี subtype"
+    assert "ถนนคอนกรีต" in html, "ต้องมี subtype (แปลไทยแล้ว v2)"
     assert "หจก. ก" in html, "ต้องมีผู้ชนะ raw record"
     assert "1,980,000" in html, "ต้องมีราคาชนะ format comma"
     print("✅ /audit/{id} detail renders explain")
@@ -162,6 +162,27 @@ def test_audit_list_shows_name_and_stage():
     print("✅ list แสดงชื่องาน + stage")
 
 
+def test_audit_detail_category_and_prelim():
+    db = _fresh_db()
+    os.environ["BMS_AUDIT_KEY"] = "secret123"
+    explain = {"schema_version": 1, "inputs": {"work_type": "ถนน"},
+               "classify": {"subtype": "concrete_road", "market": "local", "work_kind": "new"},
+               "scope": {"level": "ตำบล", "n": 4}, "analysis": {"disc_med": 0.27},
+               "raw_records": [], "output": {"price_med": 1700000}}
+    db.save_prediction({"project_id": "PD", "budget": 2000000,
+                        "area_price_lo": 1600000, "area_price_hi": 1800000,
+                        "area_price_med": 1700000,
+                        "explain_json": json.dumps(explain, ensure_ascii=False)})
+    db.update_prediction_prelim("PD", prelim_price=1650000, in_range=1, error_pct=-2.9)
+    import bms_api, importlib
+    importlib.reload(bms_api)
+    from fastapi.testclient import TestClient
+    html = TestClient(bms_api.app).get("/audit/PD?key=secret123").text
+    assert "ถนนคอนกรีต" in html and "สร้างใหม่" in html and "ท้องถิ่น (อปท.)" in html, "บล็อกหมวดงาน"
+    assert "ราคาเบื้องต้น (ยังไม่ทางการ)" in html and "1,650,000" in html, "บล็อก PRELIM"
+    print("✅ detail หมวดงาน + PRELIM")
+
+
 if __name__ == "__main__":
     test_save_prediction_stores_explain_json()
     test_build_explain_shape()
@@ -171,4 +192,5 @@ if __name__ == "__main__":
     test_prelim_does_not_touch_official()
     test_label_helpers()
     test_audit_list_shows_name_and_stage()
+    test_audit_detail_category_and_prelim()
     print("ALL PASS audit_view")

@@ -766,36 +766,51 @@ async def audit_list(key: str = ""):
 
 def _audit_detail_html(r: dict) -> str:
     ex = json.loads(r["explain_json"]) if r.get("explain_json") else None
+    cat = ""
+    if ex:
+        cls, inp = ex.get("classify", {}), ex.get("inputs", {})
+        cat = (f"<h3>หมวดงาน</h3><ul>"
+               f"<li>หมวดงาน: {inp.get('work_type') or '—'}</li>"
+               f"<li>หมวดย่อย: {_subtype_label(cls.get('subtype'))}</li>"
+               f"<li>ประเภท: {_work_kind_label(cls.get('work_kind'))}</li>"
+               f"<li>ระบอบตลาด: {_market_label(cls.get('market'))}</li></ul>")
     if not ex:
         body = "<p>ไม่มีข้อมูล explain (การทำนายเก่าก่อนเปิดฟีเจอร์)</p>"
     else:
-        cls, sc, an = ex.get("classify", {}), ex.get("scope", {}), ex.get("analysis", {})
+        sc, an = ex.get("scope", {}), ex.get("analysis", {})
         recs = "".join(
             f"<tr><td>{x.get('project_name','')}</td><td>{x.get('winner','')}</td>"
             f"<td>{(x.get('win_price') or 0):,}</td><td>{x.get('discount','')}</td></tr>"
             for x in ex.get("raw_records", []))
         body = (f"<h3>วิธีคิด</h3><ul>"
-                f"<li>ประเภท: {cls.get('subtype')} · ระบอบตลาด: {cls.get('market')}</li>"
                 f"<li>scope: {sc.get('level')} (n={sc.get('n')})</li>"
                 f"<li>ส่วนลดกลาง: {an.get('disc_med')} · คู่แข่ง top: {an.get('top_name')}</li>"
                 f"<li>{ex.get('formula','')}</li></ul>"
                 f"<h3>ข้อมูลดิบอ้างอิง ({len(ex.get('raw_records', []))} งาน)</h3>"
                 f"<table><tr><th>งาน</th><th>ผู้ชนะ</th><th>ราคาชนะ</th><th>%ลด</th></tr>"
                 f"{recs}</table>")
+    if r.get("prelim_price") is not None:
+        pl = (f"<h3>🟡 ราคาเบื้องต้น (ยังไม่ทางการ)</h3>"
+              f"<p>เบื้องต้น {r['prelim_price']:,} · คาด {r.get('area_price_med') or '-'} · "
+              f"ต่าง {r.get('prelim_error_pct')}% · "
+              f"{'✅ ในกรอบ' if r.get('prelim_in_range') else '❌ หลุด'} <i>(ยังไม่ทางการ)</i></p>")
+    else:
+        pl = ""
     if r.get("actual_price") is not None:
-        cl = (f"<h3>คาด vs จริง</h3><p>คาด {r.get('area_price_med') or '-'} · "
+        cl = (f"<h3>🟢 คาด vs จริง (ทางการ W0)</h3><p>คาด {r.get('area_price_med') or '-'} · "
               f"จริง {r['actual_price']:,} · error {r.get('error_pct')}% · "
               f"{'✅ ในกรอบ' if r.get('in_range') else '❌ หลุด'}</p>")
     else:
-        cl = "<h3>คาด vs จริง</h3><p>⏳ รอผลประมูล</p>"
+        cl = "<h3>🟢 คาด vs จริง (ทางการ W0)</h3><p>⏳ รอผลประมูล</p>"
     lo, hi = r.get("area_price_lo") or 0, r.get("area_price_hi") or 0
+    name = r.get("project_name") or r["project_id"]
     return ("<html><head><meta charset='utf-8'>"
             f"<title>{r['project_id']}</title>"
             "<style>body{font-family:sans-serif;padding:16px}table{border-collapse:collapse}"
-            "td,th{border:1px solid #ccc;padding:6px}</style></head><body>"
+            "td,th{border:1px solid #ccc;padding:6px}small{color:#888}</style></head><body>"
             f"<p><a href='/audit?key={r.get('_key','')}'>← กลับ</a></p>"
-            f"<h2>งาน {r['project_id']} — ช่วงราคา {lo:,}–{hi:,}</h2>"
-            f"{body}{cl}</body></html>")
+            f"<h2>{name}</h2><p><small>{r['project_id']}</small> — ช่วงราคา {lo:,}–{hi:,}</p>"
+            f"{cat}{body}{pl}{cl}</body></html>")
 
 
 @app.get("/audit/{project_id}")
@@ -803,8 +818,10 @@ async def audit_detail(project_id: str, key: str = ""):
     _check_audit_key(key)
     with get_conn() as conn:
         conn.row_factory = sqlite3.Row
-        row = conn.execute("SELECT * FROM price_predictions WHERE project_id=?",
-                           (project_id,)).fetchone()
+        row = conn.execute(
+            "SELECT pp.*, ps.project_name FROM price_predictions pp "
+            "LEFT JOIN projects_seen ps ON ps.project_id=pp.project_id "
+            "WHERE pp.project_id=?", (project_id,)).fetchone()
     if not row:
         raise HTTPException(status_code=404, detail="not found")
     d = dict(row)

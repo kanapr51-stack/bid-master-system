@@ -69,8 +69,34 @@ def test_audit_list_requires_key():
     print("✅ /audit auth (401/401/200)")
 
 
+def test_audit_detail_renders_explain():
+    db = _fresh_db()
+    os.environ["BMS_AUDIT_KEY"] = "secret123"
+    explain = {"schema_version": 1,
+               "classify": {"subtype": "concrete_road", "market": "local"},
+               "scope": {"level": "ตำบล", "n": 12},
+               "analysis": {"disc_med": 0.27, "top_name": "หจก. ก"},
+               "raw_records": [{"project_name": "ถนน Y", "winner": "หจก. ก",
+                                "win_price": 1980000, "discount": 0.26}],
+               "output": {"price_med": 1825000}}
+    db.save_prediction({"project_id": "P9", "budget": 2500000,
+                        "area_price_lo": 1700000, "area_price_hi": 1950000,
+                        "explain_json": json.dumps(explain, ensure_ascii=False)})
+    import bms_api
+    importlib.reload(bms_api)
+    from fastapi.testclient import TestClient
+    c = TestClient(bms_api.app)
+    assert c.get("/audit/P9").status_code == 401, "ไม่มี key ต้อง 401"
+    html = c.get("/audit/P9?key=secret123").text
+    assert "concrete_road" in html, "ต้องมี subtype"
+    assert "หจก. ก" in html, "ต้องมีผู้ชนะ raw record"
+    assert "1,980,000" in html, "ต้องมีราคาชนะ format comma"
+    print("✅ /audit/{id} detail renders explain")
+
+
 if __name__ == "__main__":
     test_save_prediction_stores_explain_json()
     test_build_explain_shape()
     test_audit_list_requires_key()
+    test_audit_detail_renders_explain()
     print("ALL PASS audit_view")

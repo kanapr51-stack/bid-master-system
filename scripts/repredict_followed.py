@@ -75,7 +75,11 @@ def run(apply: bool = False, limit: int = 0) -> dict:
                 n_changed += 1
         print(f"{pid:14s} {_fmt(old_med):>13s} {_fmt(new_med):>13s} {delta:>9s}  {(pname or '')[:24]}")
         if apply and new:
-            save_prediction({"project_id": pid, **new})
+            _pp = {"project_id": pid, **new}
+            if ctx and ctx.get("explain") is not None:
+                import json as _json
+                _pp["explain_json"] = _json.dumps(ctx["explain"], ensure_ascii=False)
+            save_prediction(_pp)
             n_applied += 1
 
     print(f"\nสรุป: เปลี่ยน {n_changed} · ใหม่ {n_new} · คาดไม่ได้/ไม่มี context {n_nodata}")

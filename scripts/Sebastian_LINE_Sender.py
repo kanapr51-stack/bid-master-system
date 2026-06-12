@@ -296,7 +296,11 @@ def format_notification(project_id: str, province: str = "",
         if intel_ctx.get("prediction") and project_id:   # เก็บคำทำนายไว้เทียบตอนประกาศผล (closed-loop)
             try:
                 from Sebastian_Customer_DB import save_prediction
-                save_prediction({"project_id": project_id, **intel_ctx["prediction"]})
+                _pp = {"project_id": project_id, **intel_ctx["prediction"]}
+                if intel_ctx.get("explain") is not None:
+                    import json as _json
+                    _pp["explain_json"] = _json.dumps(intel_ctx["explain"], ensure_ascii=False)
+                save_prediction(_pp)
             except Exception:
                 pass
 

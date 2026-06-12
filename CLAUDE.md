@@ -219,6 +219,7 @@ scrape → classify → refresh → download → analyze → cost → rank → n
 - **LINE Notify token:** ใน `.env` → `LINE_CHANNEL_ACCESS_TOKEN`
 - **Discord token:** ใน `.env` → `DISCORD_BOT_TOKEN`
 - **Service account:** `credentials/service_account.json` (gitignored)
+- **Audit view secret:** ใน `.env` → `BMS_AUDIT_KEY` (หน้า `/audit` ดูการทำนายราคา — internal เฉพาะกัญจน์)
 
 ---
 

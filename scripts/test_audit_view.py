@@ -94,9 +94,30 @@ def test_audit_detail_renders_explain():
     print("✅ /audit/{id} detail renders explain")
 
 
+def test_resave_with_explain_preserves_closed_loop():
+    """re-save prediction (พร้อม explain ใหม่) ต้องไม่ลบ actual_price/in_range/error_pct เดิม."""
+    db = _fresh_db()
+    db.save_prediction({"project_id": "P5", "budget": 2000000,
+                        "area_price_lo": 1600000, "area_price_hi": 1800000,
+                        "area_price_med": 1700000,
+                        "explain_json": json.dumps({"v": "old"}, ensure_ascii=False)})
+    db.update_prediction_actual("P5", actual_price=1720000, in_range=1, error_pct=1.2)
+    # re-predict: เซฟใหม่พร้อม explain ใหม่
+    db.save_prediction({"project_id": "P5", "budget": 2000000,
+                        "area_price_lo": 1650000, "area_price_hi": 1820000,
+                        "explain_json": json.dumps({"v": "new"}, ensure_ascii=False)})
+    row = db.get_prediction("P5")
+    assert row["actual_price"] == 1720000, "actual_price ถูกลบ!"
+    assert row["in_range"] == 1 and row["error_pct"] == 1.2, "closed-loop เพี้ยน"
+    assert json.loads(row["explain_json"])["v"] == "new", "explain ไม่อัปเดต"
+    assert row["area_price_lo"] == 1650000, "prediction ไม่อัปเดต"
+    print("✅ re-save preserves closed-loop (actual/in_range/error)")
+
+
 if __name__ == "__main__":
     test_save_prediction_stores_explain_json()
     test_build_explain_shape()
     test_audit_list_requires_key()
     test_audit_detail_renders_explain()
+    test_resave_with_explain_preserves_closed_loop()
     print("ALL PASS audit_view")

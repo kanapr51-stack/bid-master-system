@@ -162,6 +162,15 @@ def work_nature(project_name: str) -> str:
     return "purchase" if "ซื้อ" in (project_name or "") else "construction"
 
 
+def _reconcile_amphoe(tambon, geo_amphoe, tambon_amphoes):
+    """geo (พิกัด) snap ข้ามอำเภอได้ → ถ้าตำบลที่ resolve ได้ map ไปอำเภอเดียวแน่ๆ (unique)
+    ให้เชื่อตำบล > geo (structured > coordinate, ตามบทเรียน N+116). คืน (amphoe, corrected).
+    tambon_amphoes = amphoes_of_tambon(province, tambon)."""
+    if tambon and len(tambon_amphoes) == 1 and tambon_amphoes[0] != geo_amphoe:
+        return tambon_amphoes[0], True
+    return geo_amphoe, False
+
+
 def resolve_location(project_id: str, project_name: str, dept_name: str, province: str, conn) -> dict:
     """runtime-compute (ไม่ persist) ตำบล+อำเภอ แม่น→หยาบ: [moi=phaseB] → geo(lat/lng) →
     unique-tambon → dept → province. คืน {tambon, amphoe, location_confidence, source,
@@ -188,9 +197,14 @@ def resolve_location(project_id: str, project_name: str, dept_name: str, provinc
     geo = geo_reverse.reverse_geocode(lat, lng) if (lat and lng) else None
     if geo:
         _prov, amphoe, gtb, dist = geo
+        chosen_tb = tb or gtb
+        # geo snap ข้ามอำเภอได้ → ถ้าตำบล unique → เชื่ออำเภอจากตำบล (กันคู่ตำบล+อำเภอที่ไม่มีจริง)
+        ta = geo_reverse.amphoes_of_tambon(province, chosen_tb) if chosen_tb else []
+        amphoe, corrected = _reconcile_amphoe(chosen_tb, amphoe, ta)
         conf = "HIGH" if dist < 0.5 else "MEDIUM" if dist < 2 else "LOW"
-        trace.append(f"geo: {amphoe} dist={dist*1000:.0f}m → {conf}")
-        return {"tambon": tb or gtb, "amphoe": amphoe, "location_confidence": conf,
+        trace.append(f"geo: {amphoe} dist={dist*1000:.0f}m → {conf}"
+                     + (f" (amphoe แก้จากตำบล{chosen_tb})" if corrected else ""))
+        return {"tambon": chosen_tb, "amphoe": amphoe, "location_confidence": conf,
                 "source": "geo", "resolution_trace": trace}
     trace.append("geo: no latlng")
     # ชั้น 3: unique tambon (ไม่ซ้ำในจังหวัด)

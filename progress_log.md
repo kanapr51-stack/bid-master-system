@@ -585,3 +585,27 @@ prediction เดิมใช้ percentile แบบ flat (ทุกงาน�
 
 ### Followup
 - re-predict งานรั้วให้โผล่ใน /audit (repredict_followed --apply)
+
+---
+
+## งานที่ N+124: Predictor Credibility Layers — design spec (2026-06-13)
+
+### สถานะ: 📝 design เสร็จ (รอ implement) — เอกสารล้วน ยังไม่แตะโค้ด predictor
+
+### ที่มา (closed-loop จริง 2 งาน เปิดราคา 12 มิ.ย.)
+งาน 69059227331 (ถนนหนองเดิ่น): ระบบคาด 1.17–1.23M (ลด 40%) · จริง 1,334,500 (ลด 33.7%) ❌ หลุดกรอบ
+- root cause: filter เข้ม (concrete+new+floor) → 3 ปีล่าสุดในตำบลว่าง → include_old ย้อน 2562 → มงคลธรรมเจ้าเดียวเก่า 7 ปี ทับอำเภอบุ่งคล้าสด (32%≈จริง)
+- เทียบ 69059132412 (อาคารโพนทอง scope อำเภอ): คาดแม่น ✅
+
+### ผล (design กับกัญจน์ทั้งวัน)
+- spec `docs/superpowers/specs/2026-06-12-predictor-credibility-layers-design.md`
+- 2 ตัวแปรหลัก: **Z** (เรตสนาม: #งาน+#บริษัทอิสระในตำบล → blend ตำบล↔อำเภอ) · **C** (เจ้าใหญ่จะมายื่นไหม → overlay) — แยกแกนกัน
+- หลักกัน double-count: แยกเจ้าใหญ่ออกก่อนคำนวณเรตสนาม
+- ภาคผนวก A: Decision Flow 5 เฟส (อนาคต render บน /audit)
+- ยุบ L2(vs-self)+L4 = โมเดลพฤติกรรมรายเจ้า · ตัด vs-market (เหลือ fallback newcomer)
+
+### Followup
+- ขั้นต่อไป: เขียนสูตร Z, C จริง (ตกลงกับกัญจน์ว่าทำต่อ)
+- fix เล็กก่อน: "stale ตำบล อย่าทับ อำเภอสด" (TDD)
+- ของใหญ่ (all-bidders + layer เต็ม) รอ evidence > 1 เคส
+- memory: project_scope_selection_bug

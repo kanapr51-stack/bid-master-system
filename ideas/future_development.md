@@ -300,3 +300,11 @@ memory: project_price_by_road_type · related: project_cgd_market_insight (proc_
 - = learning loop (สะสม→วิเคราะห์เทรนด์→ป้อนกลับ) คนละ concern จาก notification
 - พึ่ง W0 results ที่ Sub-1 (แจ้ง 2 รอบ) ทำให้ไหลเข้ามา
 - memory: reference_egp_prelim_summary_api, project_event_centric_queue
+
+## 🐛 Scope-selection bug ใน price predictor (2026-06-12)
+- closed-loop จริง: งาน 69059227331 (ถนน อ.บุ่งคล้า) ระบบคาด 1.17–1.23M (ตำบล n=2, ลด 40.3%) แต่จริง 1,334,500 (ลด 33.7%) → หลุดกรอบบน +8.6%
+- root cause: select_competitors lock scope ตำบลทันทีเมื่อ distinct winner ≥1; ตำบลนี้มีแค่ 2 งานของ หจก.มงคลธรรม บริษัทเดียว (ลด 43%+37.5% ดุผิดปกติ) → median เบ้
+- ถ้าใช้ อ.บุ่งคล้า (n=31, median 32%) → คาด ~1.37M ใกล้จริงมาก
+- เทียบ: งาน 69059132412 (อาคาร, scope อำเภอ n=3) คาดแม่น ✅ — ปัญหาอยู่ที่ "ตำบลบางเกินไป" โดยเฉพาะ
+- แนวทางที่ค้างเสนอกัญจน์: (a) guard min distinct-winners≥2 + min-n ก่อนใช้ตำบลทับอำเภอ (b) blend ตำบล+อำเภอถ่วงน้ำหนักด้วย n (c) shrinkage ดึง median ตำบลเข้าหาอำเภอเมื่อ n น้อย
+- memory: project_scope_selection_bug

@@ -114,10 +114,24 @@ def test_resave_with_explain_preserves_closed_loop():
     print("✅ re-save preserves closed-loop (actual/in_range/error)")
 
 
+def test_prelim_does_not_touch_official():
+    db = _fresh_db()
+    db.save_prediction({"project_id": "PP", "budget": 2000000,
+                        "area_price_lo": 1600000, "area_price_hi": 1800000})
+    db.update_prediction_actual("PP", actual_price=1720000, in_range=1, error_pct=1.2)
+    db.update_prediction_prelim("PP", prelim_price=1650000, in_range=0, error_pct=-8.3)
+    r = db.get_prediction("PP")
+    assert r["prelim_price"] == 1650000 and r["prelim_in_range"] == 0
+    assert r["prelim_error_pct"] == -8.3 and r["prelim_at"]
+    assert r["actual_price"] == 1720000 and r["in_range"] == 1 and r["error_pct"] == 1.2
+    print("✅ prelim แยกจาก official")
+
+
 if __name__ == "__main__":
     test_save_prediction_stores_explain_json()
     test_build_explain_shape()
     test_audit_list_requires_key()
     test_audit_detail_renders_explain()
     test_resave_with_explain_preserves_closed_loop()
+    test_prelim_does_not_touch_official()
     print("ALL PASS audit_view")

@@ -137,6 +137,15 @@ def update_prediction_actual(project_id: str, actual_price, in_range: int, error
             "WHERE project_id=?", (actual_price, in_range, error_pct, _now(), project_id))
 
 
+def update_prediction_prelim(project_id: str, prelim_price, in_range: int, error_pct) -> None:
+    """เก็บราคา PRELIM (เบื้องต้น ยังไม่ทางการ) — เขียนเฉพาะ prelim_* ไม่แตะ official."""
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE price_predictions SET prelim_price=?, prelim_in_range=?, prelim_error_pct=?, "
+            "prelim_at=? WHERE project_id=?",
+            (prelim_price, in_range, error_pct, _now(), project_id))
+
+
 def prediction_accuracy_summary() -> dict:
     """running credibility: in-range rate + mean error% จาก verified rows."""
     with get_connection() as conn:
@@ -298,7 +307,20 @@ def init_schema():
     _migrate_v124()
     _migrate_v125()
     _migrate_v126()
+    _migrate_v127()
     print(f"Schema v1.13 ready: {DB_PATH}")
+
+
+def _migrate_v127():
+    """price_predictions +prelim_* — ราคาต่ำสุดเบื้องต้น (PRELIM ยังไม่ทางการ) แยกจาก official
+    actual. additive idempotent."""
+    with get_connection() as conn:
+        for col, typ in (("prelim_price", "INTEGER"), ("prelim_in_range", "INTEGER"),
+                         ("prelim_error_pct", "REAL"), ("prelim_at", "TEXT")):
+            try:
+                conn.execute(f"ALTER TABLE price_predictions ADD COLUMN {col} {typ}")
+            except sqlite3.OperationalError:
+                pass
 
 
 def _migrate_v126():

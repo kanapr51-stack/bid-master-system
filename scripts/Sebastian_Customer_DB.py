@@ -111,7 +111,8 @@ def save_prediction(p: dict) -> None:
     """เก็บคำทำนายราคาตอน D0 — upsert ทับด้วยค่าล่าสุดที่ส่งจริง (กันค่าเก่าค้าง).
     ON CONFLICT ทับเฉพาะคอลัมน์ prediction — ไม่แตะ actual_price/in_range/error_pct/verified_at."""
     cols = ("project_id", "budget", "area_disc_lo", "area_disc_hi", "area_price_lo",
-            "area_price_hi", "area_disc_med", "area_price_med", "top_name", "top_disc", "top_price")
+            "area_price_hi", "area_disc_med", "area_price_med", "top_name", "top_disc", "top_price",
+            "explain_json")
     upd = [c for c in cols if c != "project_id"] + ["predicted_at"]
     with get_connection() as conn:
         conn.execute(
@@ -296,7 +297,18 @@ def init_schema():
     _migrate_v123()
     _migrate_v124()
     _migrate_v125()
+    _migrate_v126()
     print(f"Schema v1.13 ready: {DB_PATH}")
+
+
+def _migrate_v126():
+    """price_predictions +explain_json — snapshot เหตุผล+ข้อมูลดิบ แช่แข็ง ณ ตอนทำนาย
+    (audit view / human-check). additive ALTER (idempotent)."""
+    with get_connection() as conn:
+        try:
+            conn.execute("ALTER TABLE price_predictions ADD COLUMN explain_json TEXT")
+        except sqlite3.OperationalError:
+            pass  # already exists
 
 
 def _migrate_v125():

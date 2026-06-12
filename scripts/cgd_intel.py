@@ -641,6 +641,27 @@ def intel_lines(province: str, project_name: str, dept_name: str = "",
     return ctx["lines"] if ctx else []
 
 
+# Bühlmann credibility blend ตำบล↔อำเภอ (วิจัย 2026-06-13 — docs/research/2026-06-13-z-formula-credibility.md)
+# Z=n/(n+k), k=3 (= EPV/VHM จากข้อมูลจริง + backtest 2,961 งาน ตรงกัน). n ดิบ (eff ไม่ช่วย). ผูกขาด→C ไม่ใช่ Z.
+CREDIBILITY_K = 3
+
+
+def credibility_z(n, k: int = CREDIBILITY_K) -> float:
+    """น้ำหนักความเชื่อถือตำบล (Bühlmann). n=#งานในตำบล → 0=ไม่เชื่อตำบล, →1=เชื่อเต็ม."""
+    n = n or 0
+    return n / (n + k) if n > 0 else 0.0
+
+
+def blend_disc(tambon, amphoe, n, k: int = CREDIBILITY_K):
+    """ผสมส่วนลดตำบล↔อำเภอด้วย Z=n/(n+k). ฝั่งใด None → ใช้อีกฝั่ง (graceful)."""
+    if tambon is None:
+        return amphoe
+    if amphoe is None:
+        return tambon
+    z = credibility_z(n, k)
+    return z * tambon + (1 - z) * amphoe
+
+
 def predict_winning_price(budget, area_p25, area_p75, top_name=None, top_median=None,
                           area_median=None) -> dict | None:
     """คาดช่วงราคาชนะ = ราคากลาง × (1 − ส่วนลด). ช่วงตลาด p25/p75 + ค่าปกติ (median) + เจ้าตัวเต็ง.

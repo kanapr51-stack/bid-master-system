@@ -700,6 +700,30 @@ def _check_audit_key(key: str):
         raise HTTPException(status_code=401, detail="unauthorized")
 
 
+_STAGE = {"B0": "🟣 รับฟังคำวิจารณ์", "D0": "🔵 ประกาศ/ยื่นซอง",
+          "PRELIM": "🟡 ราคาเบื้องต้น", "W0": "🟢 ประกาศผู้ชนะ"}
+_STAGE_RANK = {"B0": 1, "D0": 2, "PRELIM": 3, "W0": 4}
+_WORK_KIND = {"new": "สร้างใหม่", "reno": "ปรับปรุง/ซ่อม"}
+_MARKET = {"local": "ท้องถิ่น (อปท.)", "provincial": "อบจ.", "central": "ส่วนกลาง (กรม)"}
+_SUBTYPE = {"concrete_road": "ถนนคอนกรีต", "asphalt_road": "ถนนแอสฟัลต์",
+            "water_dredge": "ขุดลอก", "water_structure": "ฝาย/โครงสร้างน้ำ"}
+
+
+def _stage_label(s): return _STAGE.get(s or "", s or "—")
+def _work_kind_label(s): return _WORK_KIND.get(s or "", "—")
+def _market_label(s): return _MARKET.get(s or "", "—")
+def _subtype_label(s): return _SUBTYPE.get(s or "", "—")
+
+
+def _most_advanced_stage(stages: list) -> str:
+    best, best_rank = "", 0
+    for s in stages:
+        r = _STAGE_RANK.get(s or "", 0)
+        if r > best_rank:
+            best, best_rank = s, r
+    return best
+
+
 def _audit_list_html(rows: list, key: str) -> str:
     trs = ""
     for r in rows:

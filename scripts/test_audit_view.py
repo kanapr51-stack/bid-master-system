@@ -127,6 +127,20 @@ def test_prelim_does_not_touch_official():
     print("✅ prelim แยกจาก official")
 
 
+def test_label_helpers():
+    import bms_api as a
+    assert a._stage_label("PRELIM").startswith("🟡")
+    assert "ผู้ชนะ" in a._stage_label("W0")
+    assert a._stage_label("ZZZ") in ("—", "ZZZ")
+    assert a._most_advanced_stage(["D0", "W0", "PRELIM"]) == "W0"
+    assert a._most_advanced_stage([]) == ""
+    assert a._work_kind_label("new") == "สร้างใหม่"
+    assert a._market_label("local") == "ท้องถิ่น (อปท.)"
+    assert a._subtype_label("concrete_road") == "ถนนคอนกรีต"
+    assert a._subtype_label(None) == "—"
+    print("✅ label helpers")
+
+
 if __name__ == "__main__":
     test_save_prediction_stores_explain_json()
     test_build_explain_shape()
@@ -134,4 +148,5 @@ if __name__ == "__main__":
     test_audit_detail_renders_explain()
     test_resave_with_explain_preserves_closed_loop()
     test_prelim_does_not_touch_official()
+    test_label_helpers()
     print("ALL PASS audit_view")

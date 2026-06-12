@@ -672,6 +672,13 @@ def main():
         budget = item.get("budget") or 0
         pr = _ps.fetch_prelim_summary(pid)
         cmp = _ci.compare_prediction_provisional(pid, pr.get("lowest_price")) if pr.get("has_price") else None
+        if cmp is not None and pr.get("lowest_price"):
+            try:
+                from Sebastian_Customer_DB import update_prediction_prelim
+                update_prediction_prelim(pid, round(float(pr["lowest_price"])),
+                                         1 if cmp.get("held") else 0, cmp.get("error_pct"))
+            except Exception:
+                pass
         pname = _clean_project_name(item.get("project_name") or "") or pid
         text = format_prelim_notification(pname, budget, pr, cmp, pid)
         if dry_run:

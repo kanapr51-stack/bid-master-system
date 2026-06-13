@@ -107,4 +107,27 @@ def test_dry_run_and_limit():
     print("✅ dry_run (no API) + limit cap")
 
 test_dry_run_and_limit()
+
+def test_run_cooldown_paces():
+    """ทุก cooldown_every งาน ต้องพัก cooldown_sec (กัน generateToken rate-limit บน VPS)."""
+    with db.get_connection() as conn:
+        conn.execute("DELETE FROM bid_results")
+    if bb.SEEN_PATH.exists():
+        bb.SEEN_PATH.unlink()
+    _seed_cgd()  # 2 candidate: P1, P2
+    bb.get_procure_result = lambda pid: {"bidders": [{"receiveNameTh": "ก", "receiveTin": "1", "priceProposal": "90"}]}
+    slept = []
+    orig = bb.time.sleep
+    bb.time.sleep = lambda s: slept.append(s)
+    try:
+        # cooldown_every=1 → พักหลังงานที่ 1 (i<len) แต่ไม่พักหลังงานสุดท้าย
+        bb.run(["นครพนม", "บึงกาฬ"], ["2567", "2568", "2569"],
+               sleep=1, cooldown_every=1, cooldown_sec=130)
+    finally:
+        bb.time.sleep = orig
+    assert 130 in slept, f"cooldown ต้องทำงาน: {slept}"
+    assert slept.count(130) == 1, f"พักครั้งเดียว (ไม่พักหลังงานสุดท้าย): {slept}"
+    print("✅ run cooldown paces (กัน rate-limit)")
+
+test_run_cooldown_paces()
 print("ALL PASS backfill_bidders")

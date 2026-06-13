@@ -14,6 +14,8 @@ DATA_DIR = Path(os.environ.get("BMS_DATA_DIR", "data"))
 SEEN_PATH = DATA_DIR / "backfill_seen.json"
 SLEEP = 1.5            # politeness ต่องาน (rate-limit retry อยู่ใน _get แล้ว)
 CHECKPOINT_EVERY = 50
+COOLDOWN_EVERY = 25    # ทุก N งาน พักยาว (กัน generateToken rate-limit — VPS พังหลัง ~26 งานถ้าไม่พัก)
+COOLDOWN_SEC = 130     # >2 นาที (budget generateToken ~30/รอบ ตาม winner_sweep pattern)
 
 
 def log(msg: str):
@@ -68,9 +70,11 @@ def save_seen(seen: set):
     SEEN_PATH.write_text(json.dumps(sorted(seen), ensure_ascii=False), encoding="utf-8")
 
 
-def run(provinces: list, fy: list, limit=None, dry_run=False, sleep=SLEEP) -> dict:
+def run(provinces: list, fy: list, limit=None, dry_run=False, sleep=SLEEP,
+        cooldown_every=COOLDOWN_EVERY, cooldown_sec=COOLDOWN_SEC) -> dict:
     """loop backfill ทุก candidate. resumable (seen) + fail-open. คืน stats dict.
     Resume 2 ชั้น: stored ตัดด้วย bid_results SQL · empty ตัดด้วย seen-set.
+    Rate-limit: พักยาว cooldown_sec ทุก cooldown_every งาน (กัน generateToken throttle — VPS พังหลัง ~26 งานถ้าไม่พัก).
     Trade-off (รับได้): SIGTERM ระหว่าง checkpoint → empty ≤CHECKPOINT_EVERY งานถูกดึงซ้ำ (ปลอดภัย ไม่ double-write
     เพราะ record_bid_results = INSERT OR REPLACE) · งาน empty ที่ภายหลังมี bidder จะไม่ถูกดึงซ้ำ (อยู่ใน seen)."""
     seen = load_seen()
@@ -93,7 +97,12 @@ def run(provinces: list, fy: list, limit=None, dry_run=False, sleep=SLEEP) -> di
             eta = el / i * (len(cands) - i)
             log(f"  [{i}/{len(cands)}] stored={stats['stored']} empty={stats['empty']} "
                 f"error={stats['error']} | {el:.0f}s elapsed, ETA ~{eta:.0f}s")
-        if sleep:
+        # พักยาวทุก cooldown_every งาน (รีเซ็ต token budget) — ไม่พักหลังงานสุดท้าย
+        if sleep and cooldown_every and i % cooldown_every == 0 and i < len(cands):
+            save_seen(seen)
+            log(f"  💤 cooldown {cooldown_sec}s ทุก {cooldown_every} งาน (กัน generateToken rate-limit)")
+            time.sleep(cooldown_sec)
+        elif sleep:
             time.sleep(sleep)
     save_seen(seen)
     log(f"✅ เสร็จ: stored={stats['stored']} empty={stats['empty']} error={stats['error']}")
@@ -106,10 +115,13 @@ def main():
     ap.add_argument("--fy", default="2567,2568,2569", help="ปีงบ คั่นด้วย ,")
     ap.add_argument("--limit", type=int, default=None, help="จำกัดจำนวนงาน (probe run)")
     ap.add_argument("--dry-run", action="store_true", help="นับ candidate อย่างเดียว ไม่ดึง API")
+    ap.add_argument("--cooldown-every", type=int, default=COOLDOWN_EVERY, help="พักยาวทุก N งาน (กัน rate-limit)")
+    ap.add_argument("--cooldown-sec", type=int, default=COOLDOWN_SEC, help="ระยะพักยาว (วินาที)")
     args = ap.parse_args()
     run([p.strip() for p in args.provinces.split(",") if p.strip()],
         [f.strip() for f in args.fy.split(",") if f.strip()],
-        limit=args.limit, dry_run=args.dry_run)
+        limit=args.limit, dry_run=args.dry_run,
+        cooldown_every=args.cooldown_every, cooldown_sec=args.cooldown_sec)
 
 
 if __name__ == "__main__":

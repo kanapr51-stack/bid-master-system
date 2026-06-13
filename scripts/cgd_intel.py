@@ -319,10 +319,10 @@ def _fetch(conn, province: str, tokens: list, *, subdistrict=None, district=None
         params += [f"%{k}%" for k in _nonlocal]
     try:
         cur = conn.execute(
-            "SELECT project_name, winner, win_price, discount_pct, district, subdistrict "
+            "SELECT project_name, winner, win_price, discount_pct, district, subdistrict, fiscal_year "
             "FROM cgd_winners WHERE " + " AND ".join(where), params)
         return [{"project_name": r[0], "winner": r[1], "win_price": r[2],
-                 "discount_pct": r[3], "district": r[4], "subdistrict": r[5]}
+                 "discount_pct": r[3], "district": r[4], "subdistrict": r[5], "fiscal_year": r[6]}
                 for r in cur.fetchall()]
     except sqlite3.OperationalError:
         return []   # ไม่มี table/column cgd_winners → graceful
@@ -421,12 +421,16 @@ def _conf_tag(n: int, p25, p75) -> str:
     return "🟢"
 
 
-def _scope_block(rows: list, label: str) -> tuple:
+def _scope_block(rows: list, label: str, now_year=None) -> tuple:
     """บล็อกคู่แข่ง 1 scope (ตำบล/อำเภอ/จังหวัด). สถิติทุกตัว scope-local จาก rows.
-    คืน (lines, p25, p75, n, top_name, top_median)."""
+    p25/p75/median ถ่วงน้ำหนักความสด (L3 recency, half-life 1 ปี) — งานเก่าจาง.
+    คืน (lines, p25, p75, n, top_name, top_median, median)."""
     counts = Counter(r["winner"] for r in rows if r.get("winner"))
-    discs = [r["discount_pct"] for r in rows if r.get("discount_pct") is not None]
-    p25, p75 = _pct(discs, 25), _pct(discs, 75)
+    dw = [(r["discount_pct"], recency_weight(r.get("fiscal_year"), now_year))
+          for r in rows if r.get("discount_pct") is not None]
+    discs = [d for d, _ in dw]; wts = [w for _, w in dw]
+    p25, p75 = _wpct(discs, wts, 25), _wpct(discs, wts, 75)
+    med = _wpct(discs, wts, 50)
     n = len(rows)
     top3 = counts.most_common(SHOW_N)
     top_name = top3[0][0] if top3 else None
@@ -444,7 +448,7 @@ def _scope_block(rows: list, label: str) -> tuple:
             lines.append(f"  • {nm} · {cs['games']} งาน")
     if p75:
         lines.append(f"  📊 ส่วนลด {p25:.0f}–{p75:.0f}%")
-    return lines, p25, p75, n, top_name, top_median, _pct(discs, 50)
+    return lines, p25, p75, n, top_name, top_median, med
 
 
 def confidence_label(area_n: int, p25, p75) -> str:
@@ -671,6 +675,46 @@ def blend_disc(tambon, amphoe, n, k: int = CREDIBILITY_K):
         return tambon
     z = credibility_z(n, k)
     return z * tambon + (1 - z) * amphoe
+
+
+# L3 recency weighting (วิจัย 2026-06-13 — docs/research/2026-06-13-recency-halflife.md)
+# น้ำหนัก = 0.5^(อายุ/half_life), half_life=1 ปี (backtest: ดีกว่า no-recency + recent-3yr cutoff).
+# ฆ่าข้อมูลเก่า — 2562 ทำนาย 2569 → ~0.008 (แก้ stale-fallback ที่ L1 blend แก้ไม่ได้)
+RECENCY_HALFLIFE = 1
+
+
+def _current_thai_year() -> int:
+    from datetime import date
+    return date.today().year + 543
+
+
+def recency_weight(fiscal_year, now_year=None, half_life: int = RECENCY_HALFLIFE) -> float:
+    """น้ำหนักความสด = 0.5^(อายุ/half_life). ปีหาย/อนาคต → 1.0 (neutral)."""
+    if not fiscal_year:
+        return 1.0
+    try:
+        fy = int(fiscal_year)
+    except (TypeError, ValueError):
+        return 1.0
+    age = (now_year or _current_thai_year()) - fy
+    return 1.0 if age <= 0 else 0.5 ** (age / half_life)
+
+
+def _wpct(values, weights, p):
+    """weighted percentile (nearest-rank). น้ำหนักเท่า = percentile แบบ rank."""
+    pairs = sorted((v, w) for v, w in zip(values, weights) if v is not None)
+    if not pairs:
+        return None
+    total = sum(w for _, w in pairs)
+    if total <= 0:
+        return _pct([v for v, _ in pairs], p)
+    target = p / 100 * total
+    cum = 0.0
+    for v, w in pairs:
+        cum += w
+        if cum >= target:
+            return v
+    return pairs[-1][0]
 
 
 def predict_winning_price(budget, area_p25, area_p75, top_name=None, top_median=None,

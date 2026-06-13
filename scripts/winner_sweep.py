@@ -273,34 +273,39 @@ def sweep_cgd(old_jids_by_province: dict[str, list[str]], token: str, max_calls:
     return updates, matched
 
 
-def sweep_egp(jids: list[str], budget_map: dict[str, str], workers: int) -> dict:
-    """eGP getProcureResult สำหรับ list of jids (parallel)"""
+def sweep_egp(jids: list[str], budget_map: dict[str, str], workers: int) -> tuple[dict, dict]:
+    """eGP getProcureResult (parallel). คืน (winners, bidders_by_jid) — เก็บ bidder ทุกราย (1b)."""
 
     def _fetch(jid: str):
         winfo = get_procure_result(jid)
+        bidders = winfo.get("bidders") or []
+        winner = None
         if winfo.get("winner"):
             price = winfo.get("winning_price", "")
-            return jid, {
+            winner = {
                 "winner_name": winfo["winner"],
                 "winner_price": str(price),
                 "discount_pct": _pct(budget_map.get(jid, ""), price),
                 "award_date": winfo.get("announce_date", ""),
             }
-        return jid, None
+        return jid, winner, bidders
 
     results: dict[str, dict] = {}
+    bidders_by_jid: dict[str, list] = {}
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
         futures = {ex.submit(_fetch, jid): jid for jid in jids}
         done = 0
         for future in concurrent.futures.as_completed(futures):
             done += 1
-            jid, winner = future.result()
+            jid, winner, bidders = future.result()
+            if bidders:
+                bidders_by_jid[jid] = bidders
             if winner:
                 results[jid] = winner
             if done % 50 == 0:
                 log(f"    [{done}/{len(jids)}] {len(results)} winners so far...")
 
-    return results
+    return results, bidders_by_jid
 
 
 def _deadline_priority_select(jids: list[str], max_n: int,
@@ -502,7 +507,10 @@ def main():
         log(f"\n[Pass 2] eGP priority: {len(sel)}/{len(unmatched_jids)} unmatched "
             f"(tier_a={tier_a_cnt} recent ≤60d | tier_b={len(sel)-tier_a_cnt} old | workers={args.workers})")
         t0 = datetime.now()
-        egp_updates = sweep_egp(sel, budget_map, args.workers)
+        egp_updates, bidders_by_jid = sweep_egp(sel, budget_map, args.workers)
+        from Sebastian_Customer_DB import SubscriptionStore
+        n_bid = persist_bid_results(SubscriptionStore(), bidders_by_jid)
+        log(f"  💾 bid_results: เก็บ {n_bid} job (ผู้ยื่นทุกราย)")
         cache.update(egp_updates)
         new_winners += len(egp_updates)
         elapsed = int((datetime.now() - t0).total_seconds())

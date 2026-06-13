@@ -897,13 +897,17 @@ class SubscriptionStore:
         with get_connection() as conn:
             for b in bidders:
                 pa = (b.get("priceAgree") or "").strip()
+                name = (b.get("receiveNameTh") or "").strip()
+                tin = (b.get("receiveTin") or "").strip()
+                key = tin or (f"name:{name}" if name else "")  # name-fallback กัน PK ชนเมื่อ TIN ว่าง
+                if not key:
+                    continue  # ไม่มีทั้ง tin/name → ระบุไม่ได้ ข้าม
                 conn.execute("""
                     INSERT OR REPLACE INTO bid_results
                       (project_id, bidder_name, bidder_tin, price_proposal, price_agree,
                        is_winner, is_sme, result_flag, fetched_at)
                     VALUES (?,?,?,?,?,?,?,?,?)
-                """, (project_id, b.get("receiveNameTh") or "", b.get("receiveTin") or "",
-                      b.get("priceProposal") or "", pa,
+                """, (project_id, name, key, b.get("priceProposal") or "", pa,
                       1 if pa else 0, 1 if b.get("is_sme") else 0,
                       b.get("resultFlag") or "", fetched_at))
                 n += 1

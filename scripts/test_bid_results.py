@@ -30,4 +30,16 @@ s.record_bid_results("P2", [bidders[0]], fetched_at="2026-06-06")
 assert len(s.get_bid_results("P2")) == 1
 assert len(s.get_bid_results("P1")) == 2
 
+# no-TIN: 2 bidder ไม่มี receiveTin คนละชื่อ → ต้องเก็บครบ 2 (เดิม PK ชนเหลือ 1)
+s.record_bid_results("P3", [
+    {"receiveNameTh": "หจก.ไร้ทิน A", "receiveTin": "", "priceProposal": "800000", "priceAgree": ""},
+    {"receiveNameTh": "หจก.ไร้ทิน B", "receiveTin": "", "priceProposal": "900000", "priceAgree": ""},
+], fetched_at="2026-06-13")
+rows = s.get_bid_results("P3")
+assert len(rows) == 2, f"no-TIN ต้องเก็บครบ 2: {len(rows)}"
+# bidder ไม่มีทั้ง tin/name → ข้าม
+s.record_bid_results("P4", [{"receiveNameTh": "", "receiveTin": "", "priceProposal": "1"}], fetched_at="2026-06-13")
+assert len(s.get_bid_results("P4")) == 0, "ไม่มี tin/name → ข้าม"
+print("✅ no-TIN name-fallback")
+
 print("✅ PASS bid_results")

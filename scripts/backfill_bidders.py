@@ -73,7 +73,6 @@ def run(provinces: list, fy: list, limit=None, dry_run=False, sleep=SLEEP) -> di
     Resume 2 ชั้น: stored ตัดด้วย bid_results SQL · empty ตัดด้วย seen-set.
     Trade-off (รับได้): SIGTERM ระหว่าง checkpoint → empty ≤CHECKPOINT_EVERY งานถูกดึงซ้ำ (ปลอดภัย ไม่ double-write
     เพราะ record_bid_results = INSERT OR REPLACE) · งาน empty ที่ภายหลังมี bidder จะไม่ถูกดึงซ้ำ (อยู่ใน seen)."""
-    import time as _t
     seen = load_seen()
     with get_connection() as conn:
         cands = select_candidates(conn, provinces, fy, seen, limit)
@@ -82,7 +81,7 @@ def run(provinces: list, fy: list, limit=None, dry_run=False, sleep=SLEEP) -> di
     if dry_run:
         return stats
     store = SubscriptionStore()
-    t0 = _t.time()
+    t0 = time.time()
     for i, (pid, adate) in enumerate(cands, 1):
         status = backfill_one(store, pid, adate)
         stats[status] += 1
@@ -90,7 +89,7 @@ def run(provinces: list, fy: list, limit=None, dry_run=False, sleep=SLEEP) -> di
             seen.add(pid)
         if i % CHECKPOINT_EVERY == 0:
             save_seen(seen)
-            el = _t.time() - t0
+            el = time.time() - t0
             eta = el / i * (len(cands) - i)
             log(f"  [{i}/{len(cands)}] stored={stats['stored']} empty={stats['empty']} "
                 f"error={stats['error']} | {el:.0f}s elapsed, ETA ~{eta:.0f}s")

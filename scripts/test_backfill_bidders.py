@@ -87,4 +87,24 @@ def test_run_resume_and_failopen():
     print("✅ run resume + fail-open + idempotent")
 
 test_run_resume_and_failopen()
+
+def test_dry_run_and_limit():
+    """dry_run = นับ candidate ไม่เรียก API (operator probe) · limit = cap จำนวนงาน."""
+    with db.get_connection() as conn:
+        conn.execute("DELETE FROM bid_results")
+    if bb.SEEN_PATH.exists():
+        bb.SEEN_PATH.unlink()
+    _seed_cgd()
+    called = []
+    bb.get_procure_result = lambda pid: called.append(pid) or {"bidders": []}
+    stats = bb.run(["นครพนม", "บึงกาฬ"], ["2567", "2568", "2569"], dry_run=True, sleep=0)
+    assert stats == {"stored": 0, "empty": 0, "error": 0}, stats
+    assert called == [], "dry_run ต้องไม่เรียก API"
+    # limit: candidate มี 2 (P1,P2) → limit=1 คืน 1
+    with db.get_connection() as conn:
+        got = bb.select_candidates(conn, ["นครพนม", "บึงกาฬ"], ["2567", "2568", "2569"], seen=set(), limit=1)
+    assert len(got) == 1, got
+    print("✅ dry_run (no API) + limit cap")
+
+test_dry_run_and_limit()
 print("ALL PASS backfill_bidders")

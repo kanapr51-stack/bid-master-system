@@ -90,6 +90,7 @@ bid_results  (+ ทุก ~50 งาน: เขียน backfill_seen.json + lo
 
 ## 9. Out of scope (→ 2B หรือภายหลัง)
 
+- **⚠️ 2B note:** bidder ไม่มี TIN จะเก็บ `bidder_tin = "name:<ชื่อ>"` (name-fallback จาก 1b) → การวิเคราะห์ระดับ TIN ใน 2B ควร `WHERE bidder_tin NOT LIKE 'name:%'` หรือ join ด้วย bidder_name แทน (กัน cross-match ผิดบริษัท)
 - read-side budget COALESCE จาก cgd_winners ใน `_bidresult_rows` (2B ต้องการตอนคำนวณ field discount)
 - dominant-detection / clustering / winner-2nd gap metric
 - scenario-conditional win-price (เจ้าใหญ่มา/ไม่มา)

@@ -624,9 +624,20 @@ prediction เดิมใช้ percentile แบบ flat (ทุกงาน�
 - **gate:** blend เฉพาะตำบล "น่าสงสัย" (t_old หรือ distinct<2) · ตำบลดี→ตำบลล้วน (do-no-harm)
 - **บทเรียน:** L1 credibility blend = improvement เล็ก+ปลอดภัย ไม่ใช่ game-changer (backtest RMSE 8.92→8.75)
 
-### ต่อไป
-- **repredict_followed --apply** (ยังไม่รัน) → refresh /audit งานที่ติดตามให้ใช้ logic ใหม่
-- **L3 recency (ตัวจริงที่จะแก้หนองเดิ่น):** หักน้ำหนักข้อมูลเก่า (2562) ไม่ใช่แค่ตั้งธง
-- rich-tambon (tn≥5) ยังไม่ blend (effect น้อย defer)
-- ของใหญ่ (all-bidders + C เต็ม) รอ evidence เพิ่ม
-- memory: project_scope_selection_bug
+### 📍 END OF DAY 13 มิ.ย. — full arc (N+124..N+135)
+**Deployed บน prod แล้ว 3 รอบ:** L1 Z-blend+gate · L3 recency · *(win-headline+1a รอ deploy)*
+| commit | คือ | prod |
+|---|---|---|
+| L1 Z-blend + suspect-gate | ตำบลสงสัย(เก่า/เจ้าเดียว)→blend, ตำบลดี→ตำบลล้วน | ✅ deployed |
+| L3 recency (half-life 1) | ถ่วง percentile ตามอายุ, ข้อมูลเก่าจาง | ✅ deployed |
+| `c55269d` win-headline a/b/c | แนะนำยื่นราคา→โอกาสชนะ 75/50/25% (win≠แม่น) | ⏳ **รอ deploy** |
+| `64b7cf3` 1a all-bidders | poller เก็บ bidders ตอน prelim | ⏳ **รอ deploy** |
+| `dfff803` spec + `c1ad730` plan | all-bidders 1b (broad capture, ต่อ winner_sweep) | 📋 รอ implement |
+
+**บทเรียนใหญ่:** "แม่น (RMSE) ≠ ชนะ" — โมเดล optimize ผิด objective. asymmetric: แพ้งาน>>กำไรบาง → headline a/b/c. · L1/L3 = improvement เล็ก+ปลอดภัย ไม่ใช่ game-changer (backtest RMSE ขยับนิดเดียว). · n_eff = wash (ไม่ทำ).
+
+### ▶ RESUME รอบหน้า
+1. **deploy 2 commit ค้าง** (win-headline+1a): `bash scripts/deploy.sh` + `repredict_followed --apply`
+2. **implement 1b** จาก `docs/superpowers/plans/2026-06-13-allbidders-capture-1b.md` (4 tasks TDD พร้อม)
+3. แล้ว เฟส 2 (ใช้ all-bidders ใน predictor) · B (self-calibrate win-rate) · C
+- memory: project_scope_selection_bug · spec `2026-06-12-predictor-credibility-layers-design.md`

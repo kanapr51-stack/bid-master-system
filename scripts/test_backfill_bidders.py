@@ -59,4 +59,32 @@ def test_backfill_one_status():
     print("✅ backfill_one stored/empty/error")
 
 test_backfill_one_status()
+
+def test_run_resume_and_failopen():
+    import json as _json
+    # reset bid_results + seen file ให้ test นี้สะอาด
+    with db.get_connection() as conn:
+        conn.execute("DELETE FROM bid_results")
+    if bb.SEEN_PATH.exists():
+        bb.SEEN_PATH.unlink()
+    _seed_cgd()  # candidate = R-set ใหม่: ใช้ P1,P2 (นครพนม/บึงกาฬ ในเกณฑ์)
+    calls = []
+    def fake(pid):
+        calls.append(pid)
+        if pid == "P2":
+            raise RuntimeError("boom")        # 1 งานพัง → fail-open
+        return {"bidders": [{"receiveNameTh": "ก", "receiveTin": "1", "priceProposal": "90"}]}
+    bb.get_procure_result = fake
+    stats = bb.run(["นครพนม", "บึงกาฬ"], ["2567", "2568", "2569"], sleep=0)
+    assert stats["stored"] == 1 and stats["error"] == 1, stats     # P1 stored, P2 error
+    assert db.SubscriptionStore().get_bid_results("P1"), "P1 ต้องถูกเก็บ"
+    seen = set(_json.loads(bb.SEEN_PATH.read_text(encoding="utf-8")))
+    assert "P1" in seen and "P2" not in seen, seen                 # error ไม่ mark seen → retry รอบหน้า
+    # resume: รอบ 2 — P1 อยู่ใน bid_results แล้ว (select ตัด), เหลือ retry P2
+    calls.clear()
+    bb.run(["นครพนม", "บึงกาฬ"], ["2567", "2568", "2569"], sleep=0)
+    assert "P1" not in calls and "P2" in calls, calls              # ไม่ดึง P1 ซ้ำ
+    print("✅ run resume + fail-open + idempotent")
+
+test_run_resume_and_failopen()
 print("ALL PASS backfill_bidders")

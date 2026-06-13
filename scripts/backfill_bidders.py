@@ -52,3 +52,42 @@ def backfill_one(store, pid: str, announce_date) -> str:
         return "empty"
     store.record_bid_results(pid, bidders, fetched_at=announce_date or None)
     return "stored"
+
+
+def load_seen() -> set:
+    if SEEN_PATH.exists():
+        try:
+            return set(json.loads(SEEN_PATH.read_text(encoding="utf-8")))
+        except (ValueError, OSError):
+            return set()
+    return set()
+
+
+def save_seen(seen: set):
+    SEEN_PATH.parent.mkdir(parents=True, exist_ok=True)
+    SEEN_PATH.write_text(json.dumps(sorted(seen), ensure_ascii=False), encoding="utf-8")
+
+
+def run(provinces: list, fy: list, limit=None, dry_run=False, sleep=SLEEP) -> dict:
+    """loop backfill ทุก candidate. resumable (seen) + fail-open. คืน stats dict."""
+    seen = load_seen()
+    with get_connection() as conn:
+        cands = select_candidates(conn, provinces, fy, seen, limit)
+    log(f"candidates: {len(cands)} งาน (seen={len(seen)}, dry_run={dry_run})")
+    stats = {"stored": 0, "empty": 0, "error": 0}
+    if dry_run:
+        return stats
+    store = SubscriptionStore()
+    for i, (pid, adate) in enumerate(cands, 1):
+        status = backfill_one(store, pid, adate)
+        stats[status] += 1
+        if status != "error":          # error ไม่ mark seen → retry รอบหน้า
+            seen.add(pid)
+        if i % CHECKPOINT_EVERY == 0:
+            save_seen(seen)
+            log(f"  [{i}/{len(cands)}] stored={stats['stored']} empty={stats['empty']} error={stats['error']}")
+        if sleep:
+            time.sleep(sleep)
+    save_seen(seen)
+    log(f"✅ เสร็จ: stored={stats['stored']} empty={stats['empty']} error={stats['error']}")
+    return stats

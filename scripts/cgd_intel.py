@@ -779,18 +779,26 @@ def _compare_core(project_id: str, p: dict, actual: float, commit: bool) -> dict
 
 
 def predict_lines(p: dict, basis: str = "ตำบล", contested: bool = False) -> list:
-    """บรรทัด 💵 คาดราคา — โชว์ % (ที่มา) ก่อน → ราคา (ผล) + ค่าปกติ (median) + basis.
-    contested=True → framing 'ถ้ามีคู่แข่ง ผู้ชนะลด' (โฟกัสงานแข่งจริง).
-    framing คาดการณ์ ไม่ใช่คำสั่ง. คู่แข่งโชว์ในบล็อกด้านบนแล้ว → ที่นี่เอาแค่ช่วงรวม."""
+    """บรรทัด 💵 แนะนำราคายื่น a/b/c → โอกาสชนะ 75/50/25% (กัญจน์ 2026-06-13).
+    win-objective: บิดดุกว่าผู้ชนะในอดีต X% = โอกาสชนะ ~X% (ไม่ใช่ "แม่น" แต่ "ชนะ").
+    a=p75(ดุสุด,ต่ำสุด,75%) · b=median(50%) · c=p25(กำไรงาม,25%). dedupe ราคาซ้ำ (ข้อมูลน้อย)."""
     if not p:
         return []
-    lo = round(p["area_price_lo"] / 1000) * 1000   # ปัดหลักพัน — สื่อว่าเป็นค่าประมาณ
-    hi = round(p["area_price_hi"] / 1000) * 1000
-    head = "💵 ถ้ามีคู่แข่ง ผู้ชนะลด" if contested else "💵 คาดราคาที่จะชนะ"
-    med, medp = p.get("area_disc_med"), p.get("area_price_med")
-    med_txt = f" (ปกติ ~{med:.0f}%)" if med is not None else ""
-    medp_txt = (f" (ปกติ {round(medp / 1000) * 1000:,.0f})") if medp is not None else ""
-    return [f"{head} (ราคากลาง {p['budget']:,.0f} บาท):",
-            f"   • อิง{basis} ลด {p['area_disc_lo']:.0f}–{p['area_disc_hi']:.0f}%{med_txt} → "
-            f"ชนะราว {lo:,.0f}–{hi:,.0f} บาท{medp_txt}",
-            "   * ประเมินจากสถิติ โปรดคำนวณต้นทุนจริงประกอบ"]
+    def rnd(x):
+        return round(x / 1000) * 1000 if x is not None else None
+    rungs = [(rnd(p.get("area_price_lo")), 75),    # ดุสุด (ลด p75) → ราคาต่ำสุด → ชนะบ่อยสุด
+             (rnd(p.get("area_price_med")), 50),
+             (rnd(p.get("area_price_hi")), 25)]     # ตื้นสุด (ลด p25) → ราคาสูงสุด → กำไรงาม
+    # dedupe ตามราคา — ค่าหลังทับ = เก็บ win% ต่ำสุด (conservative, ไม่ overclaim โอกาสชนะ)
+    price_win = {}
+    for pr, w in rungs:
+        if pr is not None:
+            price_win[pr] = w
+    ordered = sorted(price_win.items())            # ราคาน้อย→มาก = ชนะมาก→น้อย
+    lines = [f"💵 แนะนำราคายื่น (ยิ่งต่ำยิ่งชนะ · ราคากลาง {p['budget']:,.0f}):"]
+    for pr, w in ordered:
+        lines.append(f"   • {pr:,.0f} บาท → โอกาสชนะ ~{w}%")
+    thin = " 🔴 ข้อมูลน้อย — %เป็นแนวโน้ม" if len(ordered) < 3 else ""
+    lines.append(f"   (อิง{basis} · ลด {p['area_disc_lo']:.0f}–{p['area_disc_hi']:.0f}%){thin}")
+    lines.append("   * สถิติผู้ชนะในอดีต — ถ้าเจ้าใหญ่ลดดุมาแข่ง โอกาสจะต่ำลง")
+    return lines

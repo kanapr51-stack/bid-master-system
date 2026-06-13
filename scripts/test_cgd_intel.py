@@ -139,8 +139,8 @@ def test_predict_includes_median():
     assert p["area_disc_med"] == 35, p
     assert p["area_price_med"] == round(1000000 * (1 - 35 / 100)), p
     lines = ci.predict_lines(p)
-    assert any("ปกติ" in ln for ln in lines), lines
-    print("✅ predict median (ค่าปกติ)")
+    assert any("~50%" in ln for ln in lines), lines   # median = rung โอกาสชนะ 50%
+    print("✅ predict median (rung 50%)")
 
 
 def test_build_intel_contested_focus():
@@ -288,7 +288,7 @@ def test_build_intel_dual():
     assert "หจก.C" not in L.split("ในอำเภอ")[0], "ตำบลไม่ควรมี C (อยู่ไผ่ล้อม)"  # scope-local ตำบล
     assert "หจก.C" in L, "อำเภอควรมี C"                              # อำเภอรวม ไผ่ล้อม
     assert "หจก.X" not in L, "เรณูนคร ไม่ควรโผล่ (คนละอำเภอ)"
-    assert "อิงตำบล" in L and "คาดราคาที่จะชนะ" in L, L              # คาดอิงตำบล
+    assert "อิงตำบล" in L and "แนะนำราคายื่น" in L, L              # คาดอิงตำบล + headline ใหม่
     assert ctx["prediction"] and ctx["prediction"]["area_price_lo"] > 0, ctx["prediction"]
     # ตำบลไม่มีงาน → "ยังไม่มี" + อำเภอยังโชว์
     ctx2 = ci._build_intel(c, "นครพนม", tk, "หนองซน", "บ้านแพง", budget=1000000)
@@ -319,12 +319,13 @@ def test_predict_winning_price():
 def test_predict_lines():
     p = ci.predict_winning_price(2100000, 8.0, 15.0, "หจก.ศิรประภา", 11.0)
     lines = ci.predict_lines(p, "อำเภอ")
-    assert any("คาดราคาที่จะชนะ" in l for l in lines), lines
-    assert any("อิงอำเภอ ลด 8–15%" in l for l in lines), lines   # basis + % ก่อน
+    assert any("แนะนำราคายื่น" in l for l in lines), lines       # headline ใหม่ (win-objective)
+    assert any("โอกาสชนะ ~75%" in l for l in lines), lines       # a/b/c
+    assert any("อิงอำเภอ · ลด 8–15%" in l for l in lines), lines
     assert any("บาท" in l for l in lines), lines                # ราคาเป็นบาทเต็ม
-    assert any("โปรดคำนวณต้นทุน" in l for l in lines), lines    # disclaimer
+    assert any("เจ้าใหญ่" in l for l in lines), lines           # disclaimer คู่แข่ง
     assert ci.predict_lines(None) == []
-    print("✅ predict_lines")
+    print("✅ predict_lines (a/b/c win%)")
 
 
 def test_scope_stats():

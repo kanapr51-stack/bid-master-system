@@ -69,7 +69,11 @@ def save_seen(seen: set):
 
 
 def run(provinces: list, fy: list, limit=None, dry_run=False, sleep=SLEEP) -> dict:
-    """loop backfill ทุก candidate. resumable (seen) + fail-open. คืน stats dict."""
+    """loop backfill ทุก candidate. resumable (seen) + fail-open. คืน stats dict.
+    Resume 2 ชั้น: stored ตัดด้วย bid_results SQL · empty ตัดด้วย seen-set.
+    Trade-off (รับได้): SIGTERM ระหว่าง checkpoint → empty ≤CHECKPOINT_EVERY งานถูกดึงซ้ำ (ปลอดภัย ไม่ double-write
+    เพราะ record_bid_results = INSERT OR REPLACE) · งาน empty ที่ภายหลังมี bidder จะไม่ถูกดึงซ้ำ (อยู่ใน seen)."""
+    import time as _t
     seen = load_seen()
     with get_connection() as conn:
         cands = select_candidates(conn, provinces, fy, seen, limit)
@@ -78,6 +82,7 @@ def run(provinces: list, fy: list, limit=None, dry_run=False, sleep=SLEEP) -> di
     if dry_run:
         return stats
     store = SubscriptionStore()
+    t0 = _t.time()
     for i, (pid, adate) in enumerate(cands, 1):
         status = backfill_one(store, pid, adate)
         stats[status] += 1
@@ -85,7 +90,10 @@ def run(provinces: list, fy: list, limit=None, dry_run=False, sleep=SLEEP) -> di
             seen.add(pid)
         if i % CHECKPOINT_EVERY == 0:
             save_seen(seen)
-            log(f"  [{i}/{len(cands)}] stored={stats['stored']} empty={stats['empty']} error={stats['error']}")
+            el = _t.time() - t0
+            eta = el / i * (len(cands) - i)
+            log(f"  [{i}/{len(cands)}] stored={stats['stored']} empty={stats['empty']} "
+                f"error={stats['error']} | {el:.0f}s elapsed, ETA ~{eta:.0f}s")
         if sleep:
             time.sleep(sleep)
     save_seen(seen)

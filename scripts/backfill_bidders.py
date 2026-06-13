@@ -35,15 +35,17 @@ def select_candidates(conn, provinces: list, fy: list, seen: set, limit=None) ->
     return rows[:limit] if limit is not None else rows
 
 
-def backfill_one(store, pid: str, announce_date: str) -> str:
+def backfill_one(store, pid: str, announce_date) -> str:
     """ดึง 1 งาน → เก็บ bidders. คืน 'stored'|'empty'|'error'.
-    fetched_at = announce_date (งานเก่า ไม่ใช่ now → recency ถูก). fail-open: exception → 'error'."""
+    announce_date: str | None ('' จาก COALESCE → fallback now). fetched_at=announce_date
+    (งานเก่า ไม่ใช่ now → recency ถูก). fail-open: exception/{}→'error' (ไม่ mark seen → retry รอบหน้า)."""
     try:
         res = get_procure_result(pid)
     except Exception as e:
         log(f"  {pid} fetch พลาด: {type(e).__name__}: {e}")
         return "error"
     if "bidders" not in res:          # {} = API error/rate หลัง retry ใน _get → ไม่ mark seen
+        log(f"  {pid} API คืน {{}} (ไม่มี key bidders) — error")
         return "error"
     bidders = res["bidders"]
     if not bidders:

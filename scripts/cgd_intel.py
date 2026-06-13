@@ -530,10 +530,17 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
             if a_rows:
                 al, a25, a75, _n, atop, atopm, amed = _scope_block(a_rows, f"🏙 ในอำเภอ{amphoe}")
                 blocks += al
-                if pp25 is None:                  # ตำบลไม่มี → คาดอิงอำเภอ
+                if pp25 is None:                  # ตำบลไม่มี → คาดอิงอำเภอล้วน
                     pp25, pp75, ptop, ptopm, pmed, basis = a25, a75, atop, atopm, amed, "อำเภอ"
                     basis_sub, basis_dist, basis_old = None, amphoe, a_old
                     used_rows = a_rows
+                else:                             # ตำบลบาง → credibility blend ตำบล↔อำเภอ (Z=tn/(tn+3))
+                    z = credibility_z(tn)         # วิจัย 2026-06-13: k=3 ทฤษฎี+backtest
+                    pp25 = blend_disc(pp25, a25, tn)
+                    pp75 = blend_disc(pp75, a75, tn)
+                    pmed = blend_disc(pmed, amed, tn)
+                    basis = f"ตำบล+อำเภอ · น้ำหนักตำบล {round(z * 100)}%"
+                    used_rows = t_rows + a_rows   # explain: อ้างอิงทั้งสอง scope
     else:
         p_rows, p_old = _fetch_scope(conn, province, tokens, **cf)
         if not p_rows:

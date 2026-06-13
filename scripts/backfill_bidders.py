@@ -99,3 +99,19 @@ def run(provinces: list, fy: list, limit=None, dry_run=False, sleep=SLEEP) -> di
     save_seen(seen)
     log(f"✅ เสร็จ: stored={stats['stored']} empty={stats['empty']} error={stats['error']}")
     return stats
+
+
+def main():
+    ap = argparse.ArgumentParser(description="Backfill full-bidder list (2A) จาก cgd_winners → bid_results")
+    ap.add_argument("--provinces", default="นครพนม,บึงกาฬ", help="คั่นด้วย ,")
+    ap.add_argument("--fy", default="2567,2568,2569", help="ปีงบ คั่นด้วย ,")
+    ap.add_argument("--limit", type=int, default=None, help="จำกัดจำนวนงาน (probe run)")
+    ap.add_argument("--dry-run", action="store_true", help="นับ candidate อย่างเดียว ไม่ดึง API")
+    args = ap.parse_args()
+    run([p.strip() for p in args.provinces.split(",") if p.strip()],
+        [f.strip() for f in args.fy.split(",") if f.strip()],
+        limit=args.limit, dry_run=args.dry_run)
+
+
+if __name__ == "__main__":
+    main()

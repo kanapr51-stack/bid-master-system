@@ -660,3 +660,22 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 ### ค้าง/ระวัง
 - prod=VPS, deploy `bash scripts/deploy.sh` (กัญจน์รันเอง — SSH จาก dev ไม่ได้)
 - หลัง 1b: เฟส 2 (all-bidders ใน predictor) · B (self-calibrate win-rate) · C · backfill
+
+---
+
+## งานที่ N+126: Implement 1b all-bidders capture — DONE (รอ deploy) (2026-06-13)
+
+### สถานะ: ✅ code เสร็จ (3 commits) · ⏸ รอ push+deploy VPS (Task 4 manual)
+
+### สิ่งที่ทำ (TDD ตาม plan 4 tasks)
+- **T1** `efee2dc` record_bid_results name-fallback — dedup key = tin or `name:<name>` → เก็บ bidder ไม่มี TIN ครบ (เดิม PK ชนเหลือ 1) · regression competitor_trend ผ่าน (อ่าน bidder_name)
+- **T2** `c719bc8` `persist_bid_results()` helper — sequential (1 connection) + fail-open (พังต่อ job ไม่ทำ sweep ล้ม)
+- **T3** `a01619f` `sweep_egp` คืน `(winners, bidders_by_jid)` + main เรียก persist → เก็บ all-bidders (winner+loser+prelim) ลง bid_results · ไม่เพิ่ม API call
+
+### Verify
+- เช็ค caller `sweep_egp` = 1 ตัวเดียว (main:490) ก่อนเปลี่ยน return เป็น tuple ✅ (resolve checkpoint concern)
+- 4 test ผ่านหมด: bid_results / winner_sweep / winner_poller / competitor_trend_series
+
+### Followup
+- **Task 4 (manual):** `git push origin main` → VPS `bash scripts/deploy.sh` (กัญจน์รัน) → verify bid_results โต รอบ sweep ถัดไป
+- หลัง deploy: เฟส 2 (ใช้ all-bidders ใน predictor) · B (self-calibrate win-rate)

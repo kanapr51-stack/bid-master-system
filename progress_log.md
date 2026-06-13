@@ -611,11 +611,14 @@ prediction เดิมใช้ percentile แบบ flat (ทุกงาน�
    C=90% แต่ไม่มาจริง) → C ยังไม่พร้อม drive overlay จนกว่ามี all-bidders. doc `2026-06-13-c-participation.md`
 3. **Implement helper** (18e1c47): `credibility_z()` + `blend_disc()` ใน cgd_intel + TDD (test_z_blend 3 ผ่าน) · full suite 22/22 ผ่าน
 
-### 🌅 เช้านี้ทำต่อ (รอกัญจน์ review — เป็นจุดตัดสินใจ)
-- **wire blend_disc เข้า `_build_intel`** — ยังไม่ทำเพราะต้อง:
-  (a) เปลี่ยน basis จาก "ตำบล" → blend → test เดิม `test_build_intel_dual` ที่ assert "อิงตำบล" จะต้องแก้
-  (b) ตัดสินใจ UX: ป้ายใน LINE/audit จะเขียน "ตำบล+อำเภอ (น้ำหนัก Z)" ยังไง
-  → แผน: ใน _build_intel ตอน tambon เป็น basis ให้ fetch อำเภอด้วยเสมอ แล้ว pp25/pp75/pmed = blend_disc(t,a,tn)
-- หลัง wire: re-validate งาน 69059227331 ต้องขยับ 40%→~35% (ใกล้จริง 33.7%) + 69059132412 ต้องไม่เพี้ยน
+### 🌅 เช้า 13 มิ.ย. — wire เสร็จ (e3fd31e)
+- ✅ **wire blend_disc เข้า `_build_intel`** (surgical: เฉพาะ path ตำบลบาง tn<5 ที่ดึงอำเภออยู่แล้ว)
+  - กัญจน์เลือกป้าย UX: **"อิงตำบล+อำเภอ · น้ำหนักตำบล X%"** (โปร่งใส โชว์น้ำหนัก)
+  - TDD +1 (`test_build_intel_blends_thin_tambon`) · suite 22/22 + price/trend/repredict/audit ผ่านหมด
+  - หมายเหตุ: `test_build_intel_dual` ยังผ่าน (substring "อิงตำบล" ใน label blend) — tighten ได้ทีหลัง
+
+### ต่อไป
+- **deploy + re-validate:** รัน deploy.sh บน VPS → repredict_followed → เช็ค /audit ว่า 69059227331 ขยับ 40%→~35% (รอกัญจน์สั่ง deploy)
+- **rich-tambon (tn≥5) ยังไม่ blend** — Z≥0.63 อยู่แล้ว effect น้อย, defer ได้
 - ของใหญ่ (all-bidders + C เต็ม + layer 2-4) รอ evidence > 1 เคส
 - memory: project_scope_selection_bug

@@ -32,4 +32,4 @@ def select_candidates(conn, provinces: list, fy: list, seen: set, limit=None) ->
            f"ORDER BY announce_date DESC")
     params = [*provinces, *COMPETITIVE_SET, *fy]
     rows = [(pid, d) for pid, d in conn.execute(sql, params) if pid not in seen]
-    return rows[:limit] if limit else rows
+    return rows[:limit] if limit is not None else rows

@@ -617,8 +617,16 @@ prediction เดิมใช้ percentile แบบ flat (ทุกงาน�
   - TDD +1 (`test_build_intel_blends_thin_tambon`) · suite 22/22 + price/trend/repredict/audit ผ่านหมด
   - หมายเหตุ: `test_build_intel_dual` ยังผ่าน (substring "อิงตำบล" ใน label blend) — tighten ได้ทีหลัง
 
+### 🚀 DEPLOYED (13 มิ.ย. 13:54) — push 50a74f1 + deploy.sh บน VPS (service active, health 200)
+- **blind test 2 เคส (ก่อน deploy):**
+  - โพธิ์หมากแข้ง 69059075454 (ตำบลดี สด+2เจ้า): เดิม blend ทื่อ→709K ดุเกิน vs จริง 740K → **เพิ่ม gate** (50a74f1) → ตำบลล้วน 730K ห่างจริง 10K ✅
+  - หนองเดิ่น 69059227331 (ตำบลสงสัย): blend → ~38% (1.26M) ยังดุเกินจริง 33.7% (1.33M) — **L1 แก้ไม่หาย ต้อง L3**
+- **gate:** blend เฉพาะตำบล "น่าสงสัย" (t_old หรือ distinct<2) · ตำบลดี→ตำบลล้วน (do-no-harm)
+- **บทเรียน:** L1 credibility blend = improvement เล็ก+ปลอดภัย ไม่ใช่ game-changer (backtest RMSE 8.92→8.75)
+
 ### ต่อไป
-- **deploy + re-validate:** รัน deploy.sh บน VPS → repredict_followed → เช็ค /audit ว่า 69059227331 ขยับ 40%→~35% (รอกัญจน์สั่ง deploy)
-- **rich-tambon (tn≥5) ยังไม่ blend** — Z≥0.63 อยู่แล้ว effect น้อย, defer ได้
-- ของใหญ่ (all-bidders + C เต็ม + layer 2-4) รอ evidence > 1 เคส
+- **repredict_followed --apply** (ยังไม่รัน) → refresh /audit งานที่ติดตามให้ใช้ logic ใหม่
+- **L3 recency (ตัวจริงที่จะแก้หนองเดิ่น):** หักน้ำหนักข้อมูลเก่า (2562) ไม่ใช่แค่ตั้งธง
+- rich-tambon (tn≥5) ยังไม่ blend (effect น้อย defer)
+- ของใหญ่ (all-bidders + C เต็ม) รอ evidence เพิ่ม
 - memory: project_scope_selection_bug

@@ -641,3 +641,22 @@ prediction เดิมใช้ percentile แบบ flat (ทุกงาน�
 2. **implement 1b** จาก `docs/superpowers/plans/2026-06-13-allbidders-capture-1b.md` (4 tasks TDD พร้อม)
 3. แล้ว เฟส 2 (ใช้ all-bidders ใน predictor) · B (self-calibrate win-rate) · C
 - memory: project_scope_selection_bug · spec `2026-06-12-predictor-credibility-layers-design.md`
+
+---
+
+## งานที่ N+125: CHECKPOINT — ก่อนเปลี่ยน session (2026-06-13)
+
+### สถานะ: ⏸ pause เปลี่ยน session (predictor วันมหากาพย์เสร็จ, รอ implement 1b)
+
+### ✅ เสร็จแล้ว session นี้ (deployed prod, commit 54bd7c8)
+L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a all-bidders capture · 1b spec+plan
+
+### 🎯 NEXT ACTION (session หน้า)
+- **Implement 1b** จาก `docs/superpowers/plans/2026-06-13-allbidders-capture-1b.md` (4 tasks TDD)
+- skill: **`superpowers:executing-plans`** · ✅ **consent ทำบน main แล้ว** (ไม่แยก branch)
+- ⚠️ verify Task 3: `sweep_egp` มี caller อื่นนอก main ไหม ก่อนเปลี่ยน return เป็น tuple
+- test: `BMS_ENV=dev PYTHONIOENCODING=utf-8 python scripts/<test>.py`
+
+### ค้าง/ระวัง
+- prod=VPS, deploy `bash scripts/deploy.sh` (กัญจน์รันเอง — SSH จาก dev ไม่ได้)
+- หลัง 1b: เฟส 2 (all-bidders ใน predictor) · B (self-calibrate win-rate) · C · backfill

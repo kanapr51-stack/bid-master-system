@@ -720,3 +720,11 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 - root cause: **generateToken rate-limit เมื่อยิงเร็ว** (~26-30/รอบ ตรง memory) ไม่ใช่ WAF/IP block (ถ้าบล็อกต้อง 0 สำเร็จ)
 - **fix `7091b75`:** batch-cooldown ทุก 25 งาน พัก 130s (>2 นาที, winner_sweep pattern) + CLI `--cooldown-every/--cooldown-sec` · TDD ผ่าน
 - ⏳ next: re-probe ยืนยัน error ต่ำ → full run (~5-6 ชม. cooldown รวม, overnight) → verify · ลบ `_diag_egp.py` ทีหลัง
+
+### ✅ Resolution (2026-06-14) — cooldown ใช้ได้ + full run started
+- ⚠️ บทเรียน: probe2 (limit 60) error สูง **เพราะรัน 2 process ชนกัน** (เขียน log เดียวกัน, ยิง generateToken 2 เท่า) ไม่ใช่ cooldown พัง
+- clean probe (limit 30, **process เดียว**): **stored=30 empty=0 error=0** ✅ → cooldown 25/130s แก้ rate-limit ได้จริง
+- **full run started** PID 1133624 (nohup, ~2,900 งานเหลือ, seen=112 เสร็จแล้ว) → `/tmp/backfill_full.log` · ~5-6 ชม. overnight
+- monitor: `tail -n6 /tmp/backfill_full.log` · done: `grep เสร็จ ...`
+- พรุ่งนี้: verify losers>0 → ลบ `_diag_egp.py` → brainstorm **2B dominant-detection** ด้วย evidence จริง
+- ⚠️ กฎ: backfill ห้ามรันซ้อน (1 process เท่านั้น) ไม่งั้น token throttle

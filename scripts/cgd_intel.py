@@ -534,13 +534,17 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
                     pp25, pp75, ptop, ptopm, pmed, basis = a25, a75, atop, atopm, amed, "อำเภอ"
                     basis_sub, basis_dist, basis_old = None, amphoe, a_old
                     used_rows = a_rows
-                else:                             # ตำบลบาง → credibility blend ตำบล↔อำเภอ (Z=tn/(tn+3))
-                    z = credibility_z(tn)         # วิจัย 2026-06-13: k=3 ทฤษฎี+backtest
+                # gate (กัญจน์ 2026-06-13, blind test โพธิ์หมากแข้ง): blend เฉพาะตำบล "น่าสงสัย"
+                # = ข้อมูลเก่า (include_old) หรือ บริษัทเดียวครอง (distinct<2). ตำบลสด+หลายเจ้า = ดีอยู่แล้ว → ตำบลล้วน
+                # เหตุ: blend ทื่อ เจือจางตำบลดีๆ ทำให้แย่ลง (โพธิ์หมากแข้ง) — ปัญหาจริงคือ "คุณภาพตำบล" ไม่ใช่ "จำนวน"
+                elif t_old or _distinct_winners(t_rows) < 2:   # ตำบลบาง + น่าสงสัย → credibility blend
+                    z = credibility_z(tn)         # Z=tn/(tn+3), k=3 (วิจัย 2026-06-13 ทฤษฎี+backtest)
                     pp25 = blend_disc(pp25, a25, tn)
                     pp75 = blend_disc(pp75, a75, tn)
                     pmed = blend_disc(pmed, amed, tn)
                     basis = f"ตำบล+อำเภอ · น้ำหนักตำบล {round(z * 100)}%"
                     used_rows = t_rows + a_rows   # explain: อ้างอิงทั้งสอง scope
+                # else: ตำบลบางแต่ดี (สด+หลายเจ้า) → ใช้ตำบลล้วน (basis="ตำบล" คงเดิม)
     else:
         p_rows, p_old = _fetch_scope(conn, province, tokens, **cf)
         if not p_rows:

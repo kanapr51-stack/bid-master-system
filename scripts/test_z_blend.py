@@ -35,8 +35,8 @@ def test_blend_หนองเดิ่น_case():
     print("✅ blend หนองเดิ่น (40→35.2 ใกล้จริง 33.7 กว่าเดิม)")
 
 
-def _blend_conn():
-    """fixture: ตำบลX บาง (2 งาน ลด ~40) + อำเภอมีตำบลอื่นลดต่ำกว่า (~30) → คาดควร blend (~34)."""
+def _blend_conn(tambon_jobs, fy="2568"):
+    """fixture: tambon_jobs=[(winner,disc)] ในตำบลX (ปีงบ fy) + อำเภอมีตำบลอื่นลด ~30 (สด)."""
     import sqlite3
     c = sqlite3.connect(":memory:")
     c.execute("""CREATE TABLE cgd_winners (project_id TEXT PRIMARY KEY, province TEXT,
@@ -44,34 +44,44 @@ def _blend_conn():
         win_price INTEGER, discount_pct REAL, announce_date TEXT, fiscal_year TEXT,
         proc_type TEXT, district TEXT, subdistrict TEXT, synced_at TEXT)""")
     EB = "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)"
-    rows = [  # (pid, sub, winner, disc)
-        ("T1", "ตX", "หจก.ก", 38.0), ("T2", "ตX", "หจก.ข", 42.0),               # ตำบลX: 2 งาน med 40
-        ("A1", "ตY", "หจก.ค", 28.0), ("A2", "ตY", "หจก.ง", 30.0),
-        ("A3", "ตZ", "หจก.จ", 30.0), ("A4", "ตZ", "หจก.ฉ", 32.0),               # อำเภออื่น med ~30
-    ]
-    for pid, sub, win, disc in rows:
+    rows = [(f"T{i}", "ตX", w, d, fy) for i, (w, d) in enumerate(tambon_jobs)]
+    rows += [("A1", "ตY", "หจก.ค", 28.0, "2568"), ("A2", "ตY", "หจก.ง", 30.0, "2568"),
+             ("A3", "ตZ", "หจก.จ", 32.0, "2568")]   # อำเภออื่น (สด) med ~30
+    for pid, sub, win, disc, yr in rows:
         c.execute("INSERT INTO cgd_winners (project_id,province,project_name,winner,win_price,"
                   "discount_pct,fiscal_year,proc_type,district,subdistrict) VALUES (?,?,?,?,?,?,?,?,?,?)",
-                  (pid, "นครพนม", f"ก่อสร้างถนน คสล. ต.{sub}", win, 500000, disc, "2568", EB, "อ.ทดสอบ", sub))
+                  (pid, "นครพนม", f"ก่อสร้างถนน คสล. ต.{sub}", win, 500000, disc, yr, EB, "อ.ทดสอบ", sub))
     c.commit(); return c
 
 
-def test_build_intel_blends_thin_tambon():
-    """ตำบลบาง (2 งาน med 40) + อำเภอ (med ~30) → คาดราคาต้อง blend (ไม่ใช่ตำบลล้วน 40)
-    + ป้ายโชว์น้ำหนักตำบล. Z=2/(2+3)=0.4 → blended med ~34."""
-    c = _blend_conn()
+def test_no_blend_good_thin_tambon():
+    """gate: ตำบลบางแต่ "ดี" (สด + 2 บริษัทต่างกัน) → ใช้ตำบลล้วน ไม่ blend (เคสโพธิ์หมากแข้ง).
+    2 งาน med 40 → คาดต้อง ~40 (ไม่โดนดึงไปอำเภอ ~30)."""
+    c = _blend_conn([("หจก.ก", 38.0), ("หจก.ข", 42.0)])   # 2 เจ้าต่างกัน, สด
     ctx = ci._build_intel(c, "นครพนม", ["ถนน"], "ตX", "อ.ทดสอบ", budget=1000000)
     assert ctx and ctx["prediction"], ctx
     med = ctx["prediction"].get("area_disc_med")
-    assert med is not None and 31 <= med <= 39, f"ควร blend (ไม่ใช่ 40 ตำบลล้วน/30 อำเภอล้วน) ได้ {med}"
+    assert med is not None and med >= 38, f"ตำบลดี → ตำบลล้วน ~40 ไม่ใช่ blend; ได้ {med}"
     L = "\n".join(ctx["lines"])
-    assert "น้ำหนักตำบล" in L, f"ป้ายต้องโชว์น้ำหนัก: {L}"
-    print(f"✅ _build_intel blend ตำบลบาง (med={med:.1f} อยู่ระหว่าง 30↔40) + ป้ายน้ำหนัก")
+    assert "น้ำหนักตำบล" not in L, f"ตำบลดีไม่ควรมีป้าย blend: {L}"
+    print(f"✅ ตำบลดี (สด+2เจ้า) → ตำบลล้วน med={med:.1f} ไม่ blend")
+
+
+def test_blend_suspect_single_company():
+    """gate: ตำบลน่าสงสัย (บริษัทเดียวครอง) → blend (เคสหนองเดิ่น). 2 งานเจ้าเดียว → blend ~34."""
+    c = _blend_conn([("หจก.เดียว", 38.0), ("หจก.เดียว", 42.0)])   # บริษัทเดียว
+    ctx = ci._build_intel(c, "นครพนม", ["ถนน"], "ตX", "อ.ทดสอบ", budget=1000000)
+    assert ctx and ctx["prediction"], ctx
+    med = ctx["prediction"].get("area_disc_med")
+    assert med is not None and 31 <= med <= 39, f"เจ้าเดียว → blend ~34; ได้ {med}"
+    assert "น้ำหนักตำบล" in "\n".join(ctx["lines"])
+    print(f"✅ ตำบลน่าสงสัย (เจ้าเดียว) → blend med={med:.1f}")
 
 
 if __name__ == "__main__":
     test_credibility_z()
     test_blend_disc()
     test_blend_หนองเดิ่น_case()
-    test_build_intel_blends_thin_tambon()
-    print("ALL PASS (z-blend)")
+    test_no_blend_good_thin_tambon()
+    test_blend_suspect_single_company()
+    print("ALL PASS (z-blend gated)")

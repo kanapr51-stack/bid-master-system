@@ -100,8 +100,11 @@ def poll_winners(store, resolve_result, now: str = None, log=print,
         except Exception as e:
             log(f"  poll {pid} error: {type(e).__name__}: {e}")
             res = {}
-        if res.get("bidders") and res.get("winner"):
+        # 1a (เปิดก๊อก all-bidders): เก็บผู้ยื่นทุกราย ทันทีที่มี bidders — ไม่รอ winner ทางการ
+        # prelim = priceProposal, W0 = priceAgree (INSERT OR REPLACE อัปเดต row เดิม). ข้อมูลสะสมเร็วขึ้น
+        if res.get("bidders"):
             store.record_bid_results(pid, res["bidders"])
+        if res.get("bidders") and res.get("winner"):
             # closed-loop: เทียบราคาคาด vs จริง (ก่อน enqueue → การ์ดอ่าน prediction ที่ update แล้ว)
             if verify_hook is not None:
                 try:

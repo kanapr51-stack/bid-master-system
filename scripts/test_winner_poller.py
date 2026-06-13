@@ -70,4 +70,29 @@ def test_verify_hook():
 
 
 test_verify_hook()
+
+
+# ── 1a: capture all-bidders ตอน PRELIM (มี bidders แต่ยังไม่มี winner) ──────────
+def test_capture_bidders_at_prelim():
+    """เปิดก๊อก: prelim มี bidders (priceProposal) แต่ winner ยังว่าง → ต้อง record_bid_results
+    แต่ยังไม่ enqueue winner / ไม่ close (ยังไม่ถึง W0)."""
+    captured, enqueued, closed = [], [], []
+    class FakeStore:
+        def get_active_follows(self):
+            return [{"project_id": "P1", "customer_id": 1, "last_stage_notified": "D0",
+                     "starred_at": "2026-06-05T00:00:00"}]
+        def record_bid_results(self, pid, bidders): captured.append((pid, len(bidders)))
+        def enqueue_for_customer(self, cid, data): enqueued.append(data.get("source_stage"))
+        def mark_stage_notified(self, *a): pass
+        def close_follow(self, *a): closed.append(a)
+    res = {"bidders": [{"receiveTin": "1", "priceProposal": "950000", "priceAgree": ""},
+                       {"receiveTin": "2", "priceProposal": "1100000", "priceAgree": ""}]}  # ไม่มี winner
+    wp.poll_winners(FakeStore(), lambda pid: res, now="2026-06-06T00:00:00", log=lambda m: None, max_days=60)
+    assert captured == [("P1", 2)], f"ต้อง capture bidders ตอน prelim: {captured}"
+    assert "followed_winner" not in enqueued, "ยังไม่ควร enqueue winner"
+    assert closed == [], "ยังไม่ควร close (ยังไม่ W0)"
+    print("✅ capture all-bidders ตอน prelim (เปิดก๊อก ไม่รอ winner)")
+
+
+test_capture_bidders_at_prelim()
 print("ALL PASS winner poller")

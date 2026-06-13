@@ -35,4 +35,28 @@ def test_select_filters_and_dedup():
     print("✅ select_candidates filter + dedup")
 
 test_select_filters_and_dedup()
+
+def test_backfill_one_status():
+    store = db.SubscriptionStore()
+    # stored: มี bidder → เขียน + fetched_at = announce_date ที่ส่งเข้า
+    bb.get_procure_result = lambda pid: {"winner": "ก", "bidders": [
+        {"receiveNameTh": "ก", "receiveTin": "1", "priceAgree": "90", "priceProposal": "90"},
+        {"receiveNameTh": "ข", "receiveTin": "2", "priceProposal": "110"}]}
+    assert bb.backfill_one(store, "Q1", "2568-03-03") == "stored"
+    rows = store.get_bid_results("Q1")
+    assert len(rows) == 2 and all(r["fetched_at"] == "2568-03-03" for r in rows), rows
+    # empty: bidders ว่าง → ไม่เขียน
+    bb.get_procure_result = lambda pid: {"bidders": []}
+    assert bb.backfill_one(store, "Q2", "2568-01-01") == "empty"
+    assert store.get_bid_results("Q2") == []
+    # error: ไม่มี key bidders ({}) → error
+    bb.get_procure_result = lambda pid: {}
+    assert bb.backfill_one(store, "Q3", "2568-01-01") == "error"
+    # error: exception → error (fail-open, ไม่โยนต่อ)
+    def _boom(pid): raise RuntimeError("net")
+    bb.get_procure_result = _boom
+    assert bb.backfill_one(store, "Q4", "2568-01-01") == "error"
+    print("✅ backfill_one stored/empty/error")
+
+test_backfill_one_status()
 print("ALL PASS backfill_bidders")

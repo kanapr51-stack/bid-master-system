@@ -33,3 +33,20 @@ def select_candidates(conn, provinces: list, fy: list, seen: set, limit=None) ->
     params = [*provinces, *COMPETITIVE_SET, *fy]
     rows = [(pid, d) for pid, d in conn.execute(sql, params) if pid not in seen]
     return rows[:limit] if limit is not None else rows
+
+
+def backfill_one(store, pid: str, announce_date: str) -> str:
+    """ดึง 1 งาน → เก็บ bidders. คืน 'stored'|'empty'|'error'.
+    fetched_at = announce_date (งานเก่า ไม่ใช่ now → recency ถูก). fail-open: exception → 'error'."""
+    try:
+        res = get_procure_result(pid)
+    except Exception as e:
+        log(f"  {pid} fetch พลาด: {type(e).__name__}: {e}")
+        return "error"
+    if "bidders" not in res:          # {} = API error/rate หลัง retry ใน _get → ไม่ mark seen
+        return "error"
+    bidders = res["bidders"]
+    if not bidders:
+        return "empty"
+    store.record_bid_results(pid, bidders, fetched_at=announce_date or None)
+    return "stored"

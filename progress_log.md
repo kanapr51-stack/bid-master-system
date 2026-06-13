@@ -712,3 +712,11 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 2. **R1 gate:** `--dry-run` นับ candidate (ถ้า << ~3-4K = cgd_winners ไม่ครบ → ทบทวน Approach B)
 3. probe `--limit 100` (วัด error/rate-limit) → 4. full run (nohup) → 5. verify bid_results losers>0
 - หลัง 2A สะสมข้อมูล → brainstorm **2B** (dominant-detection) ด้วย evidence จริง
+
+### 🐛 Deploy debug (2026-06-14) — R1 ผ่าน แต่ probe เจอ rate-limit → fix cooldown
+- R1 gate: **candidates 3046** ✅ (cgd_winners บน VPS ครบ ไม่ต้อง Approach B)
+- probe --limit 100: **stored=26 error=74** — พังรวดหลัง ~job 26
+- diag (`_diag_egp.py`, single call): token_len 252, **status 200**, body ครบ → endpoint/token ปกติ
+- root cause: **generateToken rate-limit เมื่อยิงเร็ว** (~26-30/รอบ ตรง memory) ไม่ใช่ WAF/IP block (ถ้าบล็อกต้อง 0 สำเร็จ)
+- **fix `7091b75`:** batch-cooldown ทุก 25 งาน พัก 130s (>2 นาที, winner_sweep pattern) + CLI `--cooldown-every/--cooldown-sec` · TDD ผ่าน
+- ⏳ next: re-probe ยืนยัน error ต่ำ → full run (~5-6 ชม. cooldown รวม, overnight) → verify · ลบ `_diag_egp.py` ทีหลัง

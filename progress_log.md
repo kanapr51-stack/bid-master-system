@@ -683,3 +683,32 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 ### Followup
 - ⏳ verify หลัง winner_sweep timer รันรอบถัดไป — bid_results jobs ต้อง > 1 มากๆ
 - ถัดไป: เฟส 2 (ใช้ all-bidders ใน predictor) · B (self-calibrate win-rate)
+
+## งานที่ N+127: เฟส 2A Backfill Engine — code DONE (รอ run VPS) (2026-06-14)
+
+### สถานะ: ✅ code เสร็จ (subagent-driven, 4 tasks TDD) · ⏸ รอ push + run VPS (Task 5 manual)
+
+### บริบท (brainstorm → spec → plan → implement)
+เฟส 2 (all-bidders ใน predictor) แตกเป็น **2A (evidence/backfill)** + **2B (dominant-detection predictor, ทีหลังเมื่อมีข้อมูล)**. north-star ของกัญจน์: จับ pattern "เจ้าใหญ่ชนะขาดลอย" (เช่น หนองเดิ่น/งาน 67129346506 ผู้ชนะลดลึกกว่ากลุ่ม ~20%) → เสนอราคา 2 ฉากทัศน์ (เจ้าใหญ่มา/ไม่มา). 2A = เติม loser history ก่อน
+- spec: `docs/superpowers/specs/2026-06-13-allbidders-backfill-2a-design.md`
+- plan: `docs/superpowers/plans/2026-06-13-allbidders-backfill-2a.md`
+- probe ยืนยัน: `getProcureResult` คืน full field งานเก่า (งานทดสอบ 46 ผู้ยื่น + losers)
+
+### สิ่งที่ทำ — `scripts/backfill_bidders.py` (writer ล้วน ไม่แตะ predictor)
+- **T1** select_candidates — filter cgd_winners (จังหวัด/COMPETITIVE_SET/fy/win_price>0) + ตัดที่มีใน bid_results + seen
+- **T2** backfill_one — fetch+store, **`fetched_at=announce_date`** (recency 2B ถูก), fail-open (stored/empty/error)
+- **T3** run loop — checkpoint `backfill_seen.json` (resume 2 ชั้น) + progress ETA
+- **T4** CLI main() — `--provinces/--fy/--limit/--dry-run`
+- ทุก task: spec-review + code-quality-review (subagent) + final holistic review = Ready to ship
+- review fixes: limit is-not-None · log {} path · ETA · drop _t alias · test dry_run/limit · 2B note (TIN-fallback `name:%`)
+
+### Verify
+- test `scripts/test_backfill_bidders.py` ผ่านหมด (select/backfill_one/run-resume/dry_run+limit)
+- smoke `--dry-run` บน dev = candidates 0 (cgd_winners ว่าง) ไม่ traceback
+- scope: นครพนม+บึงกาฬ · competitive set · FY2567-2569 ~3-4K งาน ≈ 2-3 ชม.
+
+### Followup — Task 5 (manual, VPS)
+1. `git push origin main` → VPS `bash scripts/deploy.sh`
+2. **R1 gate:** `--dry-run` นับ candidate (ถ้า << ~3-4K = cgd_winners ไม่ครบ → ทบทวน Approach B)
+3. probe `--limit 100` (วัด error/rate-limit) → 4. full run (nohup) → 5. verify bid_results losers>0
+- หลัง 2A สะสมข้อมูล → brainstorm **2B** (dominant-detection) ด้วย evidence จริง

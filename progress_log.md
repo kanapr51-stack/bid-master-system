@@ -676,6 +676,10 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 - เช็ค caller `sweep_egp` = 1 ตัวเดียว (main:490) ก่อนเปลี่ยน return เป็น tuple ✅ (resolve checkpoint concern)
 - 4 test ผ่านหมด: bid_results / winner_sweep / winner_poller / competitor_trend_series
 
+### Deploy ✅ (2026-06-13)
+- push `4c61b5c` → VPS `deploy.sh` fast-forward สำเร็จ · schema v1.13 ready · bms-api active
+- **baseline `bid_results jobs: 1`** (ก่อน 1b เก็บผ่าน path 1a poller เท่านั้น) → เทียบหลัง winner_sweep timer รอบถัดไป ควรพุ่งขึ้น (winner+loser+prelim)
+
 ### Followup
-- **Task 4 (manual):** `git push origin main` → VPS `bash scripts/deploy.sh` (กัญจน์รัน) → verify bid_results โต รอบ sweep ถัดไป
-- หลัง deploy: เฟส 2 (ใช้ all-bidders ใน predictor) · B (self-calibrate win-rate)
+- ⏳ verify หลัง winner_sweep timer รันรอบถัดไป — bid_results jobs ต้อง > 1 มากๆ
+- ถัดไป: เฟส 2 (ใช้ all-bidders ใน predictor) · B (self-calibrate win-rate)

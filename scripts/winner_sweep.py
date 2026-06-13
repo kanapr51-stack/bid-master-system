@@ -372,6 +372,21 @@ def _load_env():
             os.environ.setdefault(k.strip(), v.strip())
 
 
+def persist_bid_results(store, bidders_by_jid: dict, log=log) -> int:
+    """เขียน all-bidders ลง bid_results — sequential (connection เดียว เลี่ยง parallel)
+    + fail-open (พังต่อ job ไม่ทำ sweep ล้ม). คืนจำนวน job ที่เก็บสำเร็จ."""
+    n = 0
+    for jid, bidders in bidders_by_jid.items():
+        if not bidders:
+            continue
+        try:
+            store.record_bid_results(jid, bidders)
+            n += 1
+        except Exception as e:
+            log(f"  bid_results เก็บ {jid} พลาด: {type(e).__name__}: {e}")
+    return n
+
+
 def main():
     ap = argparse.ArgumentParser(
         description="Daily winner sweep: CGD batch (old pending) + eGP rotation (fallback)")

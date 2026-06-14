@@ -53,7 +53,10 @@
 ```
 winrate_grid(auctions, prices, budget) -> dict | None
     # prices = [area_price_lo, area_price_med, area_price_hi] (None ตัดทิ้ง)
-    # คืน {"ns": [k_lo, k_mid, k_hi], "rows": [(price, [w_lo, w_mid, w_hi])], "n_mean": float, "n_sd": float}
+    # คืน {"ns": [k_lo, k_mid, k_hi], "rows": [(price, [w_lo, w_mid, w_hi])],
+    #      "n_mean": float, "n_sd": float,
+    #      "n_auctions": int,    # จำนวนงาน (auctions) ที่ใช้คำนวณสถิติ
+    #      "n_bids": int}        # จำนวน bid (ผู้ยื่นรวมทุกงาน) ที่ประกอบเป็น F_bid
     # None ถ้า gate ไม่ผ่าน (auctions < MIN_AUCTIONS / SD คำนวณไม่ได้ / ไม่มี bid)
 
 winrate_lines(grid, basis="") -> list[str]
@@ -76,9 +79,12 @@ winrate_lines(grid, basis="") -> list[str]
    1,600,000     55%    42%    32%
    1,800,000     28%    18%    11%
    📊 สนามนี้เฉลี่ย 6 ผู้ยื่น (±2) · อิงอำเภอ
+   📈 สถิติจาก 18 งาน · 107 ผู้ยื่น
    * ยิ่งผู้ยื่นเยอะ โอกาสยิ่งต่ำ
 ```
 
+- **บรรทัด `📈 สถิติจาก N งาน · M ผู้ยื่น`** = transparency ความน่าเชื่อถือ (N=`n_auctions`, M=`n_bids`).
+  N น้อย (เช่น 5-9) → กัญจน์รู้เองว่าให้ระวัง.
 - คอลัมน์ collapse ได้ (SD เล็ก) → เหลือ 1-2 คอลัมน์.
 - ตาราง plain-text (LINE มือถือฟอนต์ไม่ fix → คอลัมน์อาจเยื้องนิด, กัญจน์รับได้แล้ว).
 
@@ -96,6 +102,8 @@ scope ที่ B โผล่ = scope ที่ backfill ครบ.
 4. **Consistency** — สนาม synthetic ที่รู้ winner-median → ราคานั้นคอลัมน์กลาง ≈ 50% (±tol).
 5. **Gating** — auctions < MIN_AUCTIONS หรือ SD=0(จุดเดียว) → grid=None → การ์ด fallback เดิม.
 6. **Render** — `winrate_lines` จัดตาราง + header + footer ถูก · grid=None → [].
+7. **Sample size** — `winrate_grid` คืน `n_auctions` = จำนวน auctions, `n_bids` = จำนวน bid รวม ถูกต้อง ·
+   `winrate_lines` มีบรรทัด `📈 สถิติจาก N งาน · M ผู้ยื่น`.
 
 ## 10. Risks & open items
 

@@ -31,7 +31,9 @@ def _winner_idx(auction):
 
 
 def analyze_field(auctions: list) -> dict:
-    """tiered detection. auctions = [ [(name, disc_pct, is_winner)] ]. คืน dict (ดู File Structure)."""
+    """tiered detection. auctions = [ [(name, disc_pct, is_winner)] ].
+    คืน {tier:0|1|2, n_auctions, pack_disc_med, dominant:{name,show_rate,win_disc_med,win_gap_med}|None,
+         landslide_gap_med}."""
     auctions = [a for a in auctions if len(a) >= 2]
     n = len(auctions)
     base = {"tier": 0, "n_auctions": n, "pack_disc_med": None,
@@ -66,10 +68,10 @@ def analyze_field(auctions: list) -> dict:
         if ap >= MIN_APPEAR and wins[name] / ap >= WIN_FRACTION:
             wg = _median(win_gap[name])
             if wg is not None and wg > LANDSLIDE_GAP:
-                cands.append((ap, name, wg))
+                cands.append((ap, wg, name))
     if cands:
-        cands.sort(reverse=True)             # appear มากสุดก่อน
-        ap, name, wg = cands[0]
+        cands.sort(reverse=True)             # appear มากสุดก่อน, เสมอ→gap มากกว่า (ไม่ tiebreak ด้วยชื่อ)
+        ap, wg, name = cands[0]
         base["tier"] = 1
         base["dominant"] = {"name": name, "show_rate": ap / n,
                             "win_disc_med": _median(win_disc[name]), "win_gap_med": wg}

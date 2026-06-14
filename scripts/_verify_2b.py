@@ -1,0 +1,23 @@
+"""_verify_2b.py — smoke: field_block บน scope จริง (ดู 2B ติด tier ไหน + output การ์ด). debug ชั่วคราว.
+รัน: BMS_DATA_DIR=/opt/bms/data python scripts/_verify_2b.py"""
+import os, sys
+os.environ.setdefault("BMS_DATA_DIR", "/opt/bms/data")
+sys.path.insert(0, os.path.dirname(__file__))
+sys.stdout.reconfigure(encoding="utf-8")
+import bid_field as bf
+from Sebastian_Customer_DB import get_connection
+
+SCOPES = [("นครพนม", ["ถนน"]), ("นครพนม", ["อาคาร"]), ("นครพนม", ["ประปา"]),
+          ("นครพนม", ["ก่อสร้าง"]), ("บึงกาฬ", ["ถนน"]), ("บึงกาฬ", ["ก่อสร้าง"])]
+
+with get_connection() as conn:
+    for prov, tok in SCOPES:
+        fr = bf.analyze_field(bf._field_auctions(conn, prov, tok))
+        block = bf.field_lines(fr, 2_000_000)   # budget ตัวอย่าง 2M
+        print(f"=== {prov} {tok} === n_auctions={fr['n_auctions']} tier={fr['tier']}")
+        if block:
+            for ln in block:
+                print(ln)
+        else:
+            print("  (ไม่โชว์ — tier0/ข้อมูลน้อย)")
+        print()

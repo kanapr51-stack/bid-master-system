@@ -67,12 +67,13 @@ def _short(name):
     return name.replace("ห้างหุ้นส่วนจำกัด", "หจก.").replace("บริษัท", "บ.").strip()
 
 
-def field_lines(fr: dict, budget_now) -> list:
-    """บรรทัดการ์ดเจ้าตลาด (ใครชนะ scope นี้บ่อย + ลดเฉลี่ย). [] ถ้า tier0/ไม่มี leader/ไม่มี budget."""
+def field_lines(fr: dict, budget_now, scope_label="") -> list:
+    """บรรทัดการ์ดเจ้าตลาด (ใครชนะ scope นี้บ่อย + ลดเฉลี่ย). [] ถ้า tier0/ไม่มี leader/ไม่มี budget.
+    scope_label = ป้ายบอก scope เช่น ' (ต.นาทม)' / ' (อ.นาทม)'."""
     if not fr or fr.get("tier", 0) == 0 or not fr.get("leaders") or not budget_now:
         return []
     b = float(budget_now)
-    lines = ["🏆 เจ้าตลาดหมวดงานนี้ (ทั้งจังหวัด):"]
+    lines = [f"🏆 เจ้าตลาดหมวดงานนี้{scope_label}:"]
     for ld in fr["leaders"]:
         wd = ld["win_disc_med"]
         disc_txt = f" · ลดเฉลี่ย ~{wd:.0f}%" if wd is not None else ""
@@ -131,7 +132,8 @@ def _field_auctions(conn, province, tokens, subdistrict=None, district=None) -> 
     return list(byp.values())
 
 
-def field_block(conn, province, tokens, budget_now, subdistrict=None, district=None) -> list:
+def field_block(conn, province, tokens, budget_now, subdistrict=None, district=None,
+                scope_label="") -> list:
     """read → analyze → lines. [] ถ้าไม่เข้าเงื่อนไข (graceful). จุดเชื่อม predictor."""
     auctions = _field_auctions(conn, province, tokens, subdistrict, district)
-    return field_lines(analyze_field(auctions), budget_now)
+    return field_lines(analyze_field(auctions), budget_now, scope_label)

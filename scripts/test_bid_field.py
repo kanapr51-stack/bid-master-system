@@ -36,8 +36,9 @@ def test_field_lines():
     fr = {"tier": 1, "leaders": [
         {"name": "ห้างหุ้นส่วนจำกัด บัญชาศรี", "win_rate": 0.48, "wins": 10, "appears": 21, "win_disc_med": 21.0},
         {"name": "ห้างหุ้นส่วนจำกัด เมืองทอง", "win_rate": 0.69, "wins": 9, "appears": 13, "win_disc_med": 29.0}]}
-    txt = "\n".join(bf.field_lines(fr, 2_000_000))
+    txt = "\n".join(bf.field_lines(fr, 2_000_000, " (ต.นาทม)"))
     assert "เจ้าตลาด" in txt and "หจก. เมืองทอง" in txt, txt    # ย่อชื่อ
+    assert "(ต.นาทม)" in txt, txt                               # scope label
     assert "69%" in txt and "9/13" in txt, txt                  # win-rate + count
     assert "1,420,000" in txt, txt                              # ใช้ลดลึกสุด 29% (เมืองทอง) 2M*(1-0.29) ไม่ใช่ 21%
     assert "หจก. บัญชาศรี" in txt, txt                          # leader #1

@@ -93,7 +93,7 @@ def winrate_lines(grid, basis="") -> list:
     sd_txt = f" (±{round(grid['n_sd'])})" if len(ns) > 1 else ""
     lines.append(f"   📊 สนามนี้เฉลี่ย {round(grid['n_mean'])} ผู้ยื่น{sd_txt} · อิง{basis}")
     lines.append(f"   📈 สถิติจาก {grid['n_auctions']} งาน · {grid['n_bids']} ผู้ยื่น")
-    lines.append("   * คอลัมน์กลาง = สนามปกติ · ยิ่งผู้ยื่นเยอะ โอกาสยิ่งต่ำ")
+    lines.append("   * คอลัมน์ตรงค่าเฉลี่ย = เป้า 75/50/25 · ยิ่งผู้ยื่นเยอะ โอกาสยิ่งต่ำ")
     return lines
 
 

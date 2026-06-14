@@ -1,7 +1,7 @@
 """bid_field.py — "เจ้าตลาด" intel จาก full-field bids (2B). ใครชนะ scope นี้บ่อย + ลดเฉลี่ยเท่าไหร่.
 v2 pivot (evidence 2026-06-14): landslide หายาก (5-10%/scope) แต่มีเจ้าตลาดชัด (ชนะ 48-83% ชิดๆ)
 → จับด้วย win-frequency ไม่ใช่ landslide-gap. graceful gate. ดู spec 2026-06-14-dominant-detection-2b."""
-import sqlite3, sys, os
+import sqlite3, sys, os, math
 from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(__file__))
@@ -19,6 +19,47 @@ def _median(xs):
     if n == 0:
         return None
     return s[n // 2] if n % 2 else (s[n // 2 - 1] + s[n // 2]) / 2.0
+
+
+def _cdf(sorted_bids, x):
+    """F_bid(x) = สัดส่วน bid ≤ x (empirical CDF). sorted_bids เรียงแล้ว."""
+    import bisect
+    return bisect.bisect_right(sorted_bids, x) / len(sorted_bids)
+
+
+def winrate_grid(auctions, prices, budget):
+    """ตาราง win% conditional ตามจำนวนผู้ยื่น. win% = F_bid(disc)^k.
+    auctions = [[(name,disc,is_winner)]] · prices = [lo,med,hi] (None ตัด) · budget = งบงานปัจจุบัน.
+    คืน {ns, rows, n_mean, n_sd, n_auctions, n_bids, budget} หรือ None ถ้า gate ไม่ผ่าน."""
+    auctions = [a for a in auctions if len(a) >= 2]
+    n_auctions = len(auctions)
+    try:
+        bud = float(budget)
+    except (TypeError, ValueError):
+        bud = 0
+    ps = [p for p in (prices or []) if p is not None]
+    if n_auctions < MIN_AUCTIONS or bud <= 0 or not ps:
+        return None
+    bids = sorted(d for a in auctions for (_n, d, _w) in a)
+    if not bids:
+        return None
+    sizes = [len(a) for a in auctions]
+    n_mean = sum(sizes) / n_auctions
+    var = sum((s - n_mean) ** 2 for s in sizes) / (n_auctions - 1)   # sample variance
+    n_sd = math.sqrt(var)
+    raw = [round(n_mean - n_sd), round(n_mean), round(n_mean + n_sd)]
+    ns = []
+    for k in raw:                                  # clamp ≥2 + dedupe รักษาลำดับ
+        k = max(2, k)
+        if k not in ns:
+            ns.append(k)
+    rows = []
+    for p in ps:
+        disc = (bud - p) / bud * 100.0
+        f = _cdf(bids, disc)
+        rows.append((p, [round(f ** k * 100) for k in ns]))
+    return {"ns": ns, "rows": rows, "n_mean": n_mean, "n_sd": n_sd,
+            "n_auctions": n_auctions, "n_bids": len(bids), "budget": bud}
 
 
 def _winner_idx(auction):

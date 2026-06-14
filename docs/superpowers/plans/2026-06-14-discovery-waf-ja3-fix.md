@@ -159,10 +159,12 @@ git commit -m "feat(discovery): _is_challenge — detect Cloudflare challenge (b
 
 ---
 
-## Task 2: rewrite `_get()` — curl_cffi + retry/backoff + exceptions + metrics
+## Task 2A: curl_cffi migration (root cause) — `_get` + exception + CF_CHALLENGE metric
+
+> concern: เปลี่ยน HTTP layer แก้ JA3 (root cause). **ยังไม่มี retry** — challenge → graceful None ทันที (circuit breaker เดิมรับต่อ). retry อยู่ Task 2B
 
 **Files:**
-- Modify: `scripts/Sebastian_Province_Discovery.py` (imports ~line 26-43, `_get` ~line 127-141)
+- Modify: `scripts/Sebastian_Province_Discovery.py` (imports ~line 32, HEADERS ~line 37-43, `_get` ~line 127-141)
 - Modify: `scripts/test_discovery_http.py` (เพิ่ม test)
 
 - [ ] **Step 1: เขียน test ที่ fail** — เพิ่มใน `scripts/test_discovery_http.py` (ก่อน `if __name__`)
@@ -188,22 +190,19 @@ class FakeCffi:
         return item
 
 
-def _patch(items):
-    """ติดตั้ง FakeCffi + no-op sleep/jitter, คืน (fake, restore_fn, printed_lines)"""
+def _patch_cffi(items):
+    """ติดตั้ง FakeCffi แทน spd.cffi_requests → คืน (fake, restore_fn)"""
     fake = FakeCffi(items)
-    orig = (spd.cffi_requests, spd.time.sleep, spd.random.uniform, spd.print)
-    printed = []
+    orig = spd.cffi_requests
     spd.cffi_requests = fake
-    spd.time.sleep = lambda *a, **k: None
-    spd.random.uniform = lambda a, b: 0.0
 
     def restore():
-        spd.cffi_requests, spd.time.sleep, spd.random.uniform = orig[0], orig[1], orig[2]
-    return fake, restore, printed
+        spd.cffi_requests = orig
+    return fake, restore
 
 
 def test_get_success():
-    fake, restore, _ = _patch([FakeResp(200, '{"data":1}', json_data={"data": 1})])
+    fake, restore = _patch_cffi([FakeResp(200, '{"data":1}', json_data={"data": 1})])
     try:
         assert spd._get("tok", {}) == {"data": 1}
         assert fake.calls == 1
@@ -212,34 +211,19 @@ def test_get_success():
     print("✅ test_get_success")
 
 
-def test_get_recovered_after_challenge():
-    # challenge 2 ครั้งแล้วสำเร็จ → คืน JSON ที่ attempt 2
-    items = [FakeResp(200, "just a moment", "text/html"),
-             FakeResp(403, "blocked", "text/html"),
-             FakeResp(200, '{"ok":1}', json_data={"ok": 1})]
-    fake, restore, _ = _patch(items)
-    try:
-        assert spd._get("tok", {"page": "3"}) == {"ok": 1}
-        assert fake.calls == 3
-    finally:
-        restore()
-    print("✅ test_get_recovered_after_challenge")
-
-
-def test_get_persistent_challenge_returns_none():
-    # challenge ตลอด → None หลัง MAX_CHALLENGE_RETRY (=3) → เรียก get 4 ครั้ง (1+3)
-    items = [FakeResp(503, "just a moment", "text/html")] * (spd.MAX_CHALLENGE_RETRY + 1)
-    fake, restore, _ = _patch(items)
+def test_get_challenge_returns_none():
+    # Task 2A (ยังไม่มี retry): challenge → None ทันที, เรียก get ครั้งเดียว
+    fake, restore = _patch_cffi([FakeResp(503, "just a moment", "text/html")])
     try:
         assert spd._get("tok", {}) is None
-        assert fake.calls == spd.MAX_CHALLENGE_RETRY + 1
+        assert fake.calls == 1
     finally:
         restore()
-    print("✅ test_get_persistent_challenge_returns_none")
+    print("✅ test_get_challenge_returns_none")
 
 
 def test_get_ratelimit_propagates():
-    fake, restore, _ = _patch([FakeResp(200, "Rate limit exceeded", "text/plain")])
+    fake, restore = _patch_cffi([FakeResp(200, "Rate limit exceeded", "text/plain")])
     try:
         raised = False
         try:
@@ -253,7 +237,7 @@ def test_get_ratelimit_propagates():
 
 
 def test_get_network_error_returns_none():
-    fake, restore, _ = _patch([FakeRequestsError("dns fail")])
+    fake, restore = _patch_cffi([FakeRequestsError("dns fail")])
     try:
         assert spd._get("tok", {}) is None
     finally:
@@ -263,7 +247,7 @@ def test_get_network_error_returns_none():
 
 def test_get_json_error_logged_not_swallowed():
     # response ok แต่ json() พัง → คืน None + ต้อง print (ไม่กลืนเงียบ)
-    fake, restore, _ = _patch([FakeResp(200, "weird", json_raises=True)])
+    fake, restore = _patch_cffi([FakeResp(200, "weird", json_raises=True)])
     logs = []
     orig_print = spd.print
     spd.print = lambda *a, **k: logs.append(" ".join(str(x) for x in a))
@@ -276,13 +260,12 @@ def test_get_json_error_logged_not_swallowed():
     print("✅ test_get_json_error_logged_not_swallowed")
 ```
 
-อัปเดต `__main__` runner ให้เรียก test ใหม่:
+อัปเดต `__main__` runner:
 ```python
 if __name__ == "__main__":
     test_is_challenge()
     test_get_success()
-    test_get_recovered_after_challenge()
-    test_get_persistent_challenge_returns_none()
+    test_get_challenge_returns_none()
     test_get_ratelimit_propagates()
     test_get_network_error_returns_none()
     test_get_json_error_logged_not_swallowed()
@@ -292,15 +275,15 @@ if __name__ == "__main__":
 - [ ] **Step 2: รัน test ให้เห็น fail**
 
 Run: `python scripts/test_discovery_http.py`
-Expected: FAIL — `AttributeError: ... has no attribute 'cffi_requests'` (หรือ `MAX_CHALLENGE_RETRY`) เพราะยังไม่แก้ `_get`/imports
+Expected: FAIL — `AttributeError: ... has no attribute 'cffi_requests'` (ยังไม่แก้ imports/`_get`)
 
 - [ ] **Step 3: แก้ imports** ใน `scripts/Sebastian_Province_Discovery.py`
 
-ลบบรรทัด `import requests` (line 32) แล้วเพิ่มแทนที่ด้วย:
+ลบบรรทัด `import requests` (line 32) แล้วใส่แทนที่:
 ```python
-import random
 from curl_cffi import requests as cffi_requests
 ```
+> หมายเหตุ: `import random` ยังไม่ต้องใส่ใน 2A (ใช้ตอน 2B). `import time` มีอยู่แล้ว (line 26)
 
 - [ ] **Step 4: ลบ User-Agent ออกจาก HEADERS** (line ~37-43)
 
@@ -326,15 +309,160 @@ HEADERS = {
 }
 ```
 
-- [ ] **Step 5: เพิ่ม constants** — วางใกล้ constants อื่นด้านบนไฟล์ (เช่นหลัง `HEADERS`)
+- [ ] **Step 5: rewrite `_get` (single attempt, no retry)** — แทนที่ทั้งฟังก์ชัน (line ~127-141)
 
 ```python
-# Cloudflare challenge retry (spec 2026-06-14): transient challenge → retry; persistent → circuit breaker เดิม
+def _get(token: str, params: dict, path: str = "") -> dict | None:
+    # Safe to retry because discovery requests are idempotent GETs. (retry เพิ่มใน Task 2B)
+    url = API + path
+    hdrs = {**HEADERS, "X-Announcement-Token": token}
+    pg = params.get("page", "-")
+    try:
+        r = cffi_requests.get(url, params=params, headers=hdrs,
+                              timeout=TIMEOUT, impersonate="chrome120")
+    except cffi_requests.RequestsError:    # network/transport error → graceful None
+        return None
+    except Exception as e:                 # bug จริง — อย่ากลืนเงียบ ต้องเห็นใน journald
+        print(f"❌ _get unexpected error (path={path or '/'} page={pg}): {e}")
+        return None
+
+    # rate limit = plain text เดิม — แยกจาก challenge, ไม่แตะ logic
+    if "rate limit" in (r.text or "").lower():
+        raise RateLimited()
+
+    if _is_challenge(r):
+        print(f"⚠️ CF_CHALLENGE path={path or '/'} page={pg}")
+        return None      # Task 2A: ยังไม่ retry → circuit breaker เดิมใน fetch_all_d0 รับต่อ
+
+    if not r.ok:
+        return None
+    try:
+        return r.json()
+    except Exception as e:                  # JSON decode ผิดปกติ (ไม่ใช่ challenge) — log ให้เห็น
+        print(f"❌ _get JSON decode error (path={path or '/'} page={pg}): {e}")
+        return None
+```
+
+- [ ] **Step 6: รัน test ให้ผ่าน**
+
+Run: `python scripts/test_discovery_http.py`
+Expected: ทุกบรรทัด `✅` + `✅ ALL test_discovery_http PASS`
+
+- [ ] **Step 7: เช็ค `requests` ไม่ถูกอ้างที่อื่น** (กัน NameError หลังลบ import)
+
+Run: `grep -n "requests\." scripts/Sebastian_Province_Discovery.py`
+Expected: เจอแต่ `cffi_requests.get(...)` — ไม่มี `requests.` เปล่าๆ. ถ้าเจอ ให้แก้เป็น `cffi_requests.`
+
+- [ ] **Step 8: py_compile**
+
+Run: `python -m py_compile scripts/Sebastian_Province_Discovery.py`
+Expected: ไม่มี error
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add scripts/Sebastian_Province_Discovery.py scripts/test_discovery_http.py
+git commit -m "feat(discovery): _get via curl_cffi impersonate chrome120 (JA3 root cause)
+
+requests → cffi_requests (แก้ JA3 fingerprint) + ตัด UA manual + exception ไม่กลืน bug
++ CF_CHALLENGE metric. challenge → graceful None (retry ใน Task 2B). spec 2026-06-14"
+```
+
+---
+
+## Task 2B: retry/backoff (resilience) + CF_RECOVERED metric
+
+> concern: resilience — transient challenge → retry แบบ exponential backoff + jitter. แยกจาก 2A (root-cause migration)
+
+**Files:**
+- Modify: `scripts/Sebastian_Province_Discovery.py` (imports +`random`, +constants, `_get` ใส่ retry loop)
+- Modify: `scripts/test_discovery_http.py` (ขยาย helper + test retry)
+
+- [ ] **Step 1: เขียน/แก้ test ที่ fail**
+
+(1) ขยาย helper — เพิ่ม `_patch` ที่ patch sleep/jitter ด้วย (ใส่ต่อจาก `_patch_cffi` ใน `scripts/test_discovery_http.py`):
+```python
+def _patch(items):
+    """เหมือน _patch_cffi + no-op time.sleep & random.uniform (สำหรับ test retry — ไม่หน่วงจริง)"""
+    fake, restore_cffi = _patch_cffi(items)
+    orig_sleep, orig_uniform = spd.time.sleep, spd.random.uniform
+    spd.time.sleep = lambda *a, **k: None
+    spd.random.uniform = lambda a, b: 0.0
+
+    def restore():
+        spd.time.sleep, spd.random.uniform = orig_sleep, orig_uniform
+        restore_cffi()
+    return fake, restore
+```
+
+(2) แก้ `test_get_challenge_returns_none` (จาก 2A) → เป็น persistent (retry ครบแล้วยัง None):
+```python
+def test_get_persistent_challenge_returns_none():
+    # challenge ตลอด → None หลัง MAX_CHALLENGE_RETRY (=3) → เรียก get 4 ครั้ง (1+3)
+    items = [FakeResp(503, "just a moment", "text/html")] * (spd.MAX_CHALLENGE_RETRY + 1)
+    fake, restore = _patch(items)
+    try:
+        assert spd._get("tok", {}) is None
+        assert fake.calls == spd.MAX_CHALLENGE_RETRY + 1
+    finally:
+        restore()
+    print("✅ test_get_persistent_challenge_returns_none")
+```
+
+(3) เพิ่ม test recovered:
+```python
+def test_get_recovered_after_challenge():
+    # challenge 2 ครั้งแล้วสำเร็จ → คืน JSON + print CF_RECOVERED
+    items = [FakeResp(200, "just a moment", "text/html"),
+             FakeResp(403, "blocked", "text/html"),
+             FakeResp(200, '{"ok":1}', json_data={"ok": 1})]
+    fake, restore = _patch(items)
+    logs = []
+    orig_print = spd.print
+    spd.print = lambda *a, **k: logs.append(" ".join(str(x) for x in a))
+    try:
+        assert spd._get("tok", {"page": "3"}) == {"ok": 1}
+        assert fake.calls == 3
+        assert any("CF_RECOVERED" in m for m in logs), logs
+    finally:
+        spd.print = orig_print
+        restore()
+    print("✅ test_get_recovered_after_challenge")
+```
+
+(4) อัปเดต `__main__` runner — แทน `test_get_challenge_returns_none` ด้วย 2 ตัวใหม่:
+```python
+if __name__ == "__main__":
+    test_is_challenge()
+    test_get_success()
+    test_get_persistent_challenge_returns_none()
+    test_get_recovered_after_challenge()
+    test_get_ratelimit_propagates()
+    test_get_network_error_returns_none()
+    test_get_json_error_logged_not_swallowed()
+    print("\n✅ ALL test_discovery_http PASS")
+```
+
+- [ ] **Step 2: รัน test ให้เห็น fail**
+
+Run: `python scripts/test_discovery_http.py`
+Expected: FAIL — `AttributeError: ... 'MAX_CHALLENGE_RETRY'` หรือ persistent test เจอ `fake.calls == 1` (ยังไม่ retry)
+
+- [ ] **Step 3: เพิ่ม `import random`** ใน `scripts/Sebastian_Province_Discovery.py` (ใกล้ `from curl_cffi import ...`)
+
+```python
+import random
+```
+
+- [ ] **Step 4: เพิ่ม constants** — วางใกล้ `HEADERS`
+
+```python
+# Cloudflare challenge retry (spec 2026-06-14): transient → retry; persistent → circuit breaker เดิม
 MAX_CHALLENGE_RETRY = 3
 CHALLENGE_BACKOFF_BASE = 2   # วินาที → 2, 4, 8 (+ jitter)
 ```
 
-- [ ] **Step 6: rewrite `_get`** (แทนที่ทั้งฟังก์ชัน line ~127-141)
+- [ ] **Step 5: ใส่ retry loop ใน `_get`** — แทนที่ฟังก์ชัน `_get` (เวอร์ชัน 2A) ด้วย:
 
 ```python
 def _get(token: str, params: dict, path: str = "") -> dict | None:
@@ -347,8 +475,6 @@ def _get(token: str, params: dict, path: str = "") -> dict | None:
         try:
             r = cffi_requests.get(url, params=params, headers=hdrs,
                                   timeout=TIMEOUT, impersonate="chrome120")
-        except RateLimited:
-            raise
         except cffi_requests.RequestsError:   # network/transport error → graceful None
             return None
         except Exception as e:                # bug จริง — อย่ากลืนเงียบ ต้องเห็นใน journald
@@ -365,7 +491,7 @@ def _get(token: str, params: dict, path: str = "") -> dict | None:
             if attempt < MAX_CHALLENGE_RETRY:
                 time.sleep(CHALLENGE_BACKOFF_BASE * (2 ** attempt) + random.uniform(0, 1))
                 continue
-            return None     # persistent — ยอมแพ้หลัง retry → no_data path เดิม (circuit breaker เดิมรับต่อ)
+            return None     # persistent — ยอมแพ้หลัง retry → circuit breaker เดิมรับต่อ
 
         if not r.ok:
             return None
@@ -379,29 +505,24 @@ def _get(token: str, params: dict, path: str = "") -> dict | None:
     return None
 ```
 
-- [ ] **Step 7: รัน test ให้ผ่านทั้งหมด**
+- [ ] **Step 6: รัน test ให้ผ่านทั้งหมด**
 
 Run: `python scripts/test_discovery_http.py`
-Expected: ทุกบรรทัด `✅` + `✅ ALL test_discovery_http PASS`
+Expected: ทุกบรรทัด `✅` (รวม persistent + recovered) + `✅ ALL test_discovery_http PASS`
 
-- [ ] **Step 8: เช็ค `requests` ไม่ถูกอ้างที่อื่นแล้ว** (กัน NameError หลังลบ import)
-
-Run: `grep -n "requests\." scripts/Sebastian_Province_Discovery.py`
-Expected: เจอแต่ `cffi_requests.get(...)` — ไม่มี `requests.get`/`requests.xxx` เปล่าๆ. ถ้าเจอ `requests.` เปล่า ให้แก้เป็น `cffi_requests.`
-
-- [ ] **Step 9: py_compile**
+- [ ] **Step 7: py_compile**
 
 Run: `python -m py_compile scripts/Sebastian_Province_Discovery.py`
 Expected: ไม่มี error
 
-- [ ] **Step 10: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add scripts/Sebastian_Province_Discovery.py scripts/test_discovery_http.py
-git commit -m "feat(discovery): _get via curl_cffi impersonate + retry/backoff + metrics
+git commit -m "feat(discovery): retry/backoff + jitter on Cloudflare challenge + CF_RECOVERED
 
-แก้ JA3 root cause (requests → cffi_requests chrome120) + retry/jitter เมื่อเจอ Turnstile
-+ exception ไม่กลืน bug + CF_CHALLENGE/CF_RECOVERED metric. spec 2026-06-14"
+transient challenge → exponential backoff (2/4/8s) + jitter retry สูงสุด 3 ครั้ง
++ CF_RECOVERED metric. persistent → None (circuit breaker เดิม). spec 2026-06-14"
 ```
 
 ---
@@ -468,12 +589,12 @@ Expected: `"status": "ok"`
 ## Self-Review (เทียบ plan กับ spec)
 
 - **§0 Precondition (pin)** → Task 0 ✅
-- **§3.1 curl_cffi + ตัด UA** → Task 2 Step 3-4 ✅
+- **§3.1 curl_cffi + ตัด UA** → Task 2A Step 3-4 ✅
 - **§3.2 _is_challenge (body>status + content-type)** → Task 1 ✅
-- **§3.3 retry/backoff + jitter** → Task 2 Step 6 ✅
-- **§3.4 CF_CHALLENGE + CF_RECOVERED** → Task 2 Step 6 + test ✅
-- **§3.5 exception policy (ไม่กลืน bug)** → Task 2 Step 6 + test_get_json_error/network_error ✅
-- **§4 reuse circuit breaker** → ไม่แตะ `fetch_all_d0` (return None เข้า path เดิม) ✅
+- **§3.3 retry/backoff + jitter** → Task 2B Step 5 ✅
+- **§3.4 CF_CHALLENGE** → Task 2A · **CF_RECOVERED** → Task 2B ✅
+- **§3.5 exception policy (ไม่กลืน bug)** → Task 2A Step 5 + test_get_json_error/network_error ✅
+- **§4 reuse circuit breaker** → ไม่แตะ `fetch_all_d0` (return None เข้า path เดิม) ทั้ง 2A/2B ✅
 - **§5 dependency pin** → Task 0 ✅
 - **§6 testing (5 _is_challenge + retry + exception)** → Task 1 + Task 2 tests ✅
 - **§7 rollout** → Task 4 ✅

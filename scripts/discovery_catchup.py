@@ -22,6 +22,10 @@ HB_FILE = os.path.join(DATA, "last_discovery_run.json")
 TOKEN_FILE = os.path.join(DATA, "token_state.json")
 SLOT_HOURS_UTC = [0, 6, 12]   # = 07/13/19 ไทย (ตรงกับ bms-province-discovery.timer)
 SLACK_SEC = 5 * 60            # margin กันรันซ้ำตอน slot เพิ่งผ่านพอดี
+# WAF/Turnstile challenge → slot ได้ no_data → ถ้าไม่ throttle catch-up จะ re-fire ทุก harvest cycle (15 นาที)
+# = Discord spam + ยิง API ซ้ำตอน IP โดน challenge. ใช้ ts ของ heartbeat (เขียนทุกรอบ ทั้ง ok/no_data)
+# เป็น "เพิ่ง attempt เมื่อไหร่" → ถ้าเพิ่งลองไม่นานให้ skip. ดู memory project_discovery_nodata_waf_turnstile
+CATCHUP_RETRY_SEC = 20 * 60
 
 
 def _load(path):
@@ -98,14 +102,21 @@ def main() -> int:
     # 2) discovery slot (incremental) — พลาดไหม?
     hb = _load(HB_FILE)
     last_ok = _iso_to_epoch(hb.get("ts", "")) if (hb and hb.get("status") == "ok") else 0.0
+    last_attempt = _iso_to_epoch(hb.get("ts", "")) if hb else 0.0   # ts เขียนทุกรอบ (ok/no_data)
     slot = _most_recent_slot(now_dt)
     if slot != 0 and last_ok < slot - SLACK_SEC:
-        thai = (datetime.fromtimestamp(slot, timezone.utc) + timedelta(hours=7)).strftime("%H:%M")
-        print(f"catchup: 🔄 พลาด discovery slot {thai} ไทย → รัน incremental")
-        _discord(f"🔄 BMS catch-up: พลาด discovery รอบ {thai} ไทย → รันให้ทันที")
-        r = subprocess.run([PY, script, "--worker", "--ingest"], cwd="/opt/bms/app", env=base_env)
-        print(f"catchup: discovery exit={r.returncode}")
-        ran_heavy = True
+        # slot ยังไม่สำเร็จ — แต่ถ้าเพิ่ง attempt ไปไม่นาน (เช่น WAF challenge) อย่ารัน/แจ้งซ้ำถี่ๆ
+        if last_attempt and (now - last_attempt) < CATCHUP_RETRY_SEC:
+            print(f"catchup: slot ยังไม่สำเร็จ แต่เพิ่ง attempt {int(now-last_attempt)}s ที่แล้ว "
+                  f"(<{CATCHUP_RETRY_SEC}s) — skip กัน spam/ซ้ำเติม WAF")
+        else:
+            thai = (datetime.fromtimestamp(slot, timezone.utc) + timedelta(hours=7)).strftime("%H:%M")
+            retry_tag = " (retry)" if last_attempt else ""
+            print(f"catchup: 🔄 พลาด discovery slot {thai} ไทย → รัน incremental{retry_tag}")
+            _discord(f"🔄 BMS catch-up: discovery รอบ {thai} ไทย ยังไม่สำเร็จ → รันให้ทันที{retry_tag}")
+            r = subprocess.run([PY, script, "--worker", "--ingest"], cwd="/opt/bms/app", env=base_env)
+            print(f"catchup: discovery exit={r.returncode}")
+            ran_heavy = True
     else:
         print(f"catchup: ไม่พลาด discovery slot (last_ok={int(now-last_ok)}s ago)")
 

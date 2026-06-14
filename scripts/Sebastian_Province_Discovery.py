@@ -191,7 +191,11 @@ def fetch_all_d0(token: str, moi_id: str, budget_year: str,
         # P1: abort ทันที (ไม่ return [] แล้วปล่อยจังหวัดถัดไปโดนซ้ำ) → main เขียน heartbeat+alert
         raise RateLimited(f"{province}: count rate-limited (ยังโดนหลัง retry)")
     if total < 0:
-        print(f"  ❌ {province}: token reject (validateCfTurnTile) — token หมดอายุ/ผิด")
+        # token ผ่าน TokenService (สด) แต่ server ตอบ recordsTotal=None → reject ที่ขอบ
+        # = Cloudflare Turnstile/WAF challenge IP (ไม่ใช่ token หมดอายุ)
+        # ดู memory project_discovery_nodata_waf_turnstile
+        print(f"  ❌ {province}: server reject (validateCfTurnTile) — WAF/Cloudflare challenge IP "
+              f"(token ฝั่งเราสด ไม่ใช่หมดอายุ)")
         return []
     mode_tag = " [incremental]" if incremental else ""
     print(f"  {province} (moiId={moi_id}): {total} โครงการ / {pages} หน้า{mode_tag}")
@@ -431,8 +435,10 @@ def main():
         print(f"\n⚠️ rate-limited — paginate ได้ {len(all_recs)} รายการก่อนชน ({e}) → ดำเนินต่อด้วย partial")
 
     if not all_recs:
-        print("\n⚠️ ไม่ได้ข้อมูล — ตรวจ token (อาจหมดอายุ 30 นาที)")
-        _write_heartbeat("no_data", total=0)
+        # token สด (ผ่าน TokenService แล้ว) แต่ได้ 0 record = server reject = WAF/Turnstile challenge IP
+        # ไม่ใช่ token หมดอายุ — ดู memory project_discovery_nodata_waf_turnstile
+        print("\n⚠️ ได้ 0 record ทั้งที่ token สด — น่าจะ WAF/Cloudflare challenge IP (validateCfTurnTile)")
+        _write_heartbeat("no_data", total=0, reason="server_reject")
         sys.exit(2)
 
     active = [r for r in all_recs if r["project_status"] != "R"]

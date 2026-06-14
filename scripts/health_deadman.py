@@ -114,8 +114,12 @@ def check() -> list:
             issues.append(("discovery_stale", "WARN",
                            f"DISCOVERY STALE — ไม่มี discovery run {hrs} ชม."))
         if hb.get("status") == "no_data":
+            # fact: ถ้า reason=server_reject = ได้ 0 ทั้งที่ token ฝั่งเราสด (server ปฏิเสธที่ขอบ)
+            # ไม่เดาสาเหตุเกิน fact — วิธีแก้ดู RUNBOOK (WAF/Turnstile challenge IP)
+            extra = (" (server reject แม้ token ฝั่งเราสด — ไม่ใช่ token หมดอายุ)"
+                     if hb.get("reason") == "server_reject" else "")
             issues.append(("discovery_nodata", "WARN",
-                           "DISCOVERY NO_DATA — discovery รอบล่าสุดได้ 0 รายการ"))
+                           f"DISCOVERY NO_DATA — discovery รอบล่าสุดได้ 0 รายการ{extra}"))
 
     # --- resolve plane checks (INC-001 P1: กันพังเงียบแบบ resolve-down) ---
     # alert = อาการ (fact) เท่านั้น — ไม่เดาสาเหตุ. วิธีแก้ ดู deploy/RUNBOOK.md

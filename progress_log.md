@@ -796,3 +796,28 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 - debug scripts รอลบ: `_diag_egp.py` `_analyze_bidfield.py` `_verify_2b.py` `_show_card.py`
 - ถัดไปหลัง 2B: **B = self-calibrate win-rate** (headline a/b/c ยังเป็น heuristic) · trickle เติมข้อมูล
 - spec/plan 2B: `docs/superpowers/{specs,plans}/2026-06-14-dominant-detection-2b*` (spec มี v2 pivot §6b/§7b)
+
+---
+
+## งานที่ N+130: Discovery alert noise — root cause = WAF Turnstile + tier-1 fix (2026-06-14)
+
+### สถานะ: ✅ เสร็จ (tier 1) — รอ deploy VPS เพื่อมีผล
+
+### Root cause (ขุด journalctl VPS — systematic debugging)
+- กัญจน์กังวล Discord เด้ง 🟠 NO_DATA + "พลาด discovery รอบ 19:00" ซ้ำ 2 รอบ
+- **smoking gun** (full-nkp 12:30 UTC): `🔑 token OK เหลือ 1507s` → `❌ validateCfTurnTile` ทันที
+  → token สด แต่ server ปฏิเสธ = **Cloudflare Turnstile/WAF challenge IP ของ VPS** (INC-001 กลับมา) ไม่ใช่ token หมดอายุ
+- challenge เป็น **intermittent** (catch-up 19:10/19:40 scan 40 ผ่าน) → ยังไม่มีงานหายจริง + ตลาดเงียบ (announce ล่าสุด 06-12)
+- cascade: reject → all_recs ว่าง → heartbeat no_data → (a) deadman NO_DATA (b) catch-up เด้ง "พลาด slot" ทุก harvest cycle
+
+### Fix (tier 1 — 3 ไฟล์, ไม่แตะ data)
+- `Sebastian_Province_Discovery.py`: แก้ข้อความ "token หมดอายุ" (หลอก) → "WAF/Cloudflare challenge IP (token สด)" + heartbeat ติด `reason=server_reject`
+- `health_deadman.py`: NO_DATA alert รายงาน fact "server reject แม้ token สด" (ไม่เดาสาเหตุเกิน)
+- `discovery_catchup.py`: `CATCHUP_RETRY_SEC=20m` — กัน re-fire ซ้ำตอน WAF (ใช้ ts heartbeat = last attempt). sim ยืนยัน incident 2 spam → เหลือ 1 + กู้คืนทัน
+- py_compile ผ่านทั้ง 3 · ยังไม่ push
+
+### Followup
+- **ต้อง deploy VPS** ถึงมีผล: `cd /opt/bms/app && git pull && bash scripts/deploy.sh`
+- tier 2 (ถ้าเอา): retry/backoff เมื่อเจอ Turnstile · tier 3: ADR-003 residential IP fallback ([[project_incident_control_plane]])
+- full-sweep catch-up (lines 113-129) ยังไม่ใส่ cooldown — secondary, ใช้ marker คนละตัว (followup ถ้า spam)
+- memory: `project_discovery_nodata_waf_turnstile`

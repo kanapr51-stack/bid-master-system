@@ -61,6 +61,24 @@ def winrate_grid(auctions, prices, budget):
             "n_auctions": n_auctions, "n_bids": len(bids), "budget": bud}
 
 
+def winrate_lines(grid, basis="") -> list:
+    """render ตาราง win% (pure). [] ถ้า grid None.
+    คอลัมน์ = จำนวนผู้ยื่น (mean±SD) · แถว = ราคา a/b/c · footer = ค่าเฉลี่ย + sample size."""
+    if not grid:
+        return []
+    ns, rows = grid["ns"], grid["rows"]
+    lines = [f"💵 แนะนำราคายื่น (งบ {grid['budget']:,.0f}) — โอกาสชนะตามจำนวนผู้ยื่น"]
+    lines.append("   ผู้ยื่น →   " + "  ".join(f"{k}ราย".rjust(6) for k in ns))
+    for price, ws in rows:
+        cells = "  ".join(f"{w}%".rjust(6) for w in ws)
+        lines.append(f"   {price:>10,.0f}  {cells}")
+    sd_txt = f" (±{round(grid['n_sd'])})" if len(ns) > 1 else ""
+    lines.append(f"   📊 สนามนี้เฉลี่ย {round(grid['n_mean'])} ผู้ยื่น{sd_txt} · อิง{basis}")
+    lines.append(f"   📈 สถิติจาก {grid['n_auctions']} งาน · {grid['n_bids']} ผู้ยื่น")
+    lines.append("   * ยิ่งผู้ยื่นเยอะ โอกาสยิ่งต่ำ")
+    return lines
+
+
 def _winner_idx(auction):
     """index ผู้ชนะ: is_winner ก่อน, fallback disc สูงสุด."""
     for i, (_n, _d, w) in enumerate(auction):

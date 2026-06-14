@@ -53,8 +53,24 @@ def test_grid_gate():
     assert bf.winrate_grid([auc(20, 10) for _ in range(5)], [800000], 0) is None, "ไม่มี budget → None"
     print("✅ gating (น้อย/ว่าง/ไม่มี budget → None)")
 
+def test_winrate_lines_render():
+    grid = {"ns": [4, 6, 8],
+            "rows": [(1400000, [78, 68, 59]), (1600000, [55, 42, 32]), (1800000, [28, 18, 11])],
+            "n_mean": 6.0, "n_sd": 2.0, "n_auctions": 18, "n_bids": 107, "budget": 2000000}
+    lines = bf.winrate_lines(grid, "อำเภอ")
+    txt = "\n".join(lines)
+    assert "โอกาสชนะตามจำนวนผู้ยื่น" in txt, txt
+    assert "งบ 2,000,000" in txt, txt
+    assert "4ราย" in txt and "6ราย" in txt and "8ราย" in txt, txt
+    assert "1,400,000" in txt and "78%" in txt, txt
+    assert "เฉลี่ย 6 ผู้ยื่น" in txt and "(±2)" in txt and "อิงอำเภอ" in txt, txt
+    assert "📈 สถิติจาก 18 งาน · 107 ผู้ยื่น" in txt, txt
+    assert bf.winrate_lines(None, "อำเภอ") == [], "None → []"
+    print("✅ winrate_lines render + sample size")
+
 test_grid_math()
 test_grid_columns_and_monotonic()
 test_grid_rows_monotonic()
 test_grid_gate()
-print("ALL PASS winrate_grid (part 1)")
+test_winrate_lines_render()
+print("ALL PASS winrate_grid")

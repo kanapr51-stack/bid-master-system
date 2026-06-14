@@ -68,9 +68,39 @@ def test_winrate_lines_render():
     assert bf.winrate_lines(None, "อำเภอ") == [], "None → []"
     print("✅ winrate_lines render + sample size")
 
+def test_field_and_winrate_endtoend():
+    import tempfile, importlib
+    os.environ["BMS_DATA_DIR"] = tempfile.mkdtemp()
+    import Sebastian_Customer_DB as db
+    importlib.reload(db)
+    db.init_schema()
+    s = db.SubscriptionStore()
+    with db.get_connection() as conn:
+        for i in range(6):                                   # 6 auctions ≥ MIN_AUCTIONS
+            conn.execute("INSERT OR REPLACE INTO cgd_winners "
+                         "(project_id, province, proc_type, project_name, budget) VALUES (?,?,?,?,?)",
+                         (f"W{i}", "นครพนม", "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+                          "ก่อสร้างถนน อ.เมือง", 1000000))
+    for i in range(6):
+        s.record_bid_results(f"W{i}", [
+            {"receiveNameTh": "หจก.ก", "receiveTin": "1", "priceProposal": "700000", "priceAgree": "700000"},
+            {"receiveNameTh": "หจก.ข", "receiveTin": "2", "priceProposal": "850000"},
+            {"receiveNameTh": "หจก.ค", "receiveTin": "3", "priceProposal": "900000"}])
+    with db.get_connection() as conn:
+        wl, fl = bf.field_and_winrate(conn, "นครพนม", ["ถนน"], 1000000,
+                                      [700000, 850000, 900000], district="เมือง",
+                                      scope_label=" (อ.เมือง)", basis="อำเภอ")
+    wtxt = "\n".join(wl)
+    assert "โอกาสชนะตามจำนวนผู้ยื่น" in wtxt, wtxt           # B table โผล่
+    assert "📈 สถิติจาก 6 งาน · 18 ผู้ยื่น" in wtxt, wtxt     # 6 งาน × 3 ผู้ยื่น = 18
+    assert isinstance(fl, list), fl                          # 2B block (อาจ [] ถ้าไม่มี leader) — ไม่ error
+    print("✅ field_and_winrate end-to-end (อ่านรอบเดียว → 2 บล็อก)")
+
+
 test_grid_math()
 test_grid_columns_and_monotonic()
 test_grid_rows_monotonic()
 test_grid_gate()
 test_winrate_lines_render()
+test_field_and_winrate_endtoend()
 print("ALL PASS winrate_grid")

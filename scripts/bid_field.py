@@ -195,3 +195,13 @@ def field_block(conn, province, tokens, budget_now, subdistrict=None, district=N
     """read → analyze → lines. [] ถ้าไม่เข้าเงื่อนไข (graceful). จุดเชื่อม predictor."""
     auctions = _field_auctions(conn, province, tokens, subdistrict, district)
     return field_lines(analyze_field(auctions), budget_now, scope_label)
+
+
+def field_and_winrate(conn, province, tokens, budget, prices,
+                      subdistrict=None, district=None, scope_label="", basis=""):
+    """อ่าน _field_auctions รอบเดียว → คืน (winrate_lines [B], field_lines [2B เจ้าตลาด]).
+    graceful: คืน ([],[]) ถ้า scope ว่าง. จุดเชื่อม predictor — กัน query ซ้ำ."""
+    auctions = _field_auctions(conn, province, tokens, subdistrict, district)
+    wl = winrate_lines(winrate_grid(auctions, prices, budget), basis)
+    fl = field_lines(analyze_field(auctions), budget, scope_label)
+    return wl, fl

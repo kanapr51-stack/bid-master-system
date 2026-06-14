@@ -582,19 +582,25 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
         pp25, pp75 = new25, new75
     pred = predict_winning_price(budget, pp25, pp75, ptop, ptopm, area_median=pmed)
     if pred:
-        lines += [""] + predict_lines(pred, basis, contested=contested_only)
-        if basis_old:                             # อิงข้อมูลเก่ากว่า 3 ปี — แจ้งให้ผู้ใช้รู้
+        import bid_field as _bf                       # 2B เจ้าตลาด + B ตาราง win% — อ่าน field รอบเดียว
+        prices = [pred.get("area_price_lo"), pred.get("area_price_med"), pred.get("area_price_hi")]
+        scopes = ([(tambon, None, f" (ต.{tambon})")] if tambon else []) + \
+                 ([(None, amphoe, f" (อ.{amphoe})")] if amphoe else [])
+        _wl, _fl = [], []
+        for _sub, _dist, _lbl in scopes:              # ตำบลก่อน → อำเภอ → เจอ data ที่ระดับไหนใช้ระดับนั้น
+            _wl, _fl = _bf.field_and_winrate(conn, province, tokens, budget, prices,
+                                             subdistrict=_sub, district=_dist,
+                                             scope_label=_lbl, basis=basis)
+            if _wl or _fl:
+                break
+        if _wl:                                        # มี grid → ตาราง B แทนป้าย a/b/c เดิม
+            lines += [""] + _wl
+        else:                                          # ไม่มี → การ์ดเดิม (fallback graceful)
+            lines += [""] + predict_lines(pred, basis, contested=contested_only)
+        if basis_old:
             lines.append("📜 รวมข้อมูลเก่ากว่า 3 ปี (พื้นที่นี้งานน้อย) — ใช้เป็นแนวโน้ม")
-        import bid_field as _bf                    # 2B: เจ้าตลาด local — ตำบลก่อน → อำเภอ → ไม่พอ=ไม่โชว์ (ไม่ขึ้นจังหวัด)
-        _fb = []
-        if tambon:
-            _fb = _bf.field_block(conn, province, tokens, budget, subdistrict=tambon,
-                                  scope_label=f" (ต.{tambon})")
-        if not _fb and amphoe:
-            _fb = _bf.field_block(conn, province, tokens, budget, district=amphoe,
-                                  scope_label=f" (อ.{amphoe})")
-        if _fb:
-            lines += [""] + _fb
+        if _fl:                                        # บล็อกเจ้าตลาด 2B (ต่อท้าย)
+            lines += [""] + _fl
     try:
         explain = _build_explain(
             inputs={"budget": budget, "work_type": wt, "province": province,

@@ -185,6 +185,11 @@ scrape → classify → refresh → download → analyze → cost → rank → n
 3. **Surgical Changes** — แก้เฉพาะที่เกี่ยว ทุกบรรทัดที่เปลี่ยนต้อง trace กลับไปที่ request ได้; ไม่ refactor ของข้างเคียง
 4. **Goal-Driven** — ตั้ง **verifiable success criteria ก่อนเริ่ม** (เงื่อนไขที่รัน command แล้วเห็น pass/fail จริง เช่น "challenge=0 ใน 10 req", "duplicate IDs=0", "winner match 100%") ไม่ใช่ความรู้สึกว่า "น่าจะเสร็จ"
 
+### 🛠️ Debug / Review skills ที่ใช้
+- **Debug** → ใช้ `debug-mantra` (4 ขั้น: reproduce → fail path → falsify → breadcrumb ledger) **แทน** `superpowers:systematic-debugging`
+- **รีวิว change/แผน** → ใช้ `scrutinize` (question scope + trace path จริง ไม่ใช่แค่ diff)
+- **ปิด bug ใหญ่** → ใช้ `post-mortem` เขียน entry ลง `progress_log.md`
+
 ### File Layout
 - `scripts/` — production scripts + helper/probe
 - `docs/` — design docs, catalog, plans

@@ -771,3 +771,28 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 - ⏳ รอกัญจน์ sanity-check: เจ้าตลาด + %ลด ตรงตลาดจริงไหม · threshold (ชนะ40%/ลง5) เหมาะไหม
 - 2A trickle ยังรัน (PID 1159209) → scope อื่นจะ activate เพิ่มเมื่อข้อมูลพอ
 - เมื่อ trickle ครบ: review threshold final + ลบ debug scripts (`_diag_egp.py`, `_analyze_bidfield.py`, `_verify_2b.py`)
+
+---
+
+## งานที่ N+129: CHECKPOINT — ก่อนเปลี่ยน session (2026-06-14)
+
+### สถานะ: ⏸ pause เปลี่ยน session (กัญจน์จะติด rate limit) — กำลัง iterate UX scope เจ้าตลาด 2B
+
+### ✅ เสร็จแล้ว session นี้ (เฟส 2 ครบ 1b+2A+2B — ทั้งหมด LIVE บน prod)
+- **1b** all-bidders capture (winner_sweep) · **2A** backfill engine + auto-trickle (PID 1159209 ยังรัน, มี ~352 jobs FY67-68)
+- **2B v2 เจ้าตลาด intel** (pivot จาก landslide หลัง evidence จริง: landslide หายาก 5-10%, แต่เจ้าตลาดชัด ชนะ 48-83%)
+- iterate scope การ์ด: จังหวัด → **ล่าสุด `bb5d95e` = ตำบล→อำเภอ (graceful hide, ไม่ขึ้นจังหวัด) + ป้าย scope**
+- ทุก commit push แล้ว (origin/main = bb5d95e) · test_bid_field + regression predictor ผ่านหมด
+
+### 🎯 NEXT ACTION (session หน้า)
+1. **รอกัญจน์ redeploy VPS + รัน `_show_card.py`** (commit bb5d95e) — ดูว่าเจ้าตลาด ตำบล/อำเภอ โชว์หรือ hide
+   - คำสั่ง VPS: `cd /opt/bms/app && git pull && bash scripts/deploy.sh && BMS_DATA_DIR=/opt/bms/data /opt/bms/venv/bin/python scripts/_show_card.py`
+   - คาด: พื้นที่เป้าหมาย (นาทม/บึงโขงหลง) ข้อมูล <5 → **เจ้าตลาด hide** (ถูกต้องตามที่กัญจน์ขอ "ตำบลถ้าพอ ไม่พอไม่โชว์")
+2. ตาม result: ถ้า hide เยอะไป → คุยปรับ (ลด MIN_AUCTIONS? หรือยอมรับ?) · ถ้าโชว์ดี → 2B จบ
+3. **open UX**: ควรมีคำเชื่อม a/b/c(ราคาตำบล ลดดุ 28-41%) vs เจ้าตลาด(ลด 14-29%) ไหม — กัญจน์ถามแล้วยังไม่สรุป
+
+### ค้าง/ระวัง
+- ⚠️ deploy = กัญจน์รันเอง VPS (SSH จาก dev ไม่ได้) · backfill ห้ามรันซ้อน (1 process)
+- debug scripts รอลบ: `_diag_egp.py` `_analyze_bidfield.py` `_verify_2b.py` `_show_card.py`
+- ถัดไปหลัง 2B: **B = self-calibrate win-rate** (headline a/b/c ยังเป็น heuristic) · trickle เติมข้อมูล
+- spec/plan 2B: `docs/superpowers/{specs,plans}/2026-06-14-dominant-detection-2b*` (spec มี v2 pivot §6b/§7b)

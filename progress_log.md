@@ -737,3 +737,30 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 - monitor: `grep -E "เสร็จ|batch" /tmp/backfill_trickle.log | tail`
 - fallback ถ้า trickle ตัน: Approach B (รันจากเครื่องบ้าน residential + sync)
 - ขนาน: เริ่ม brainstorm 2B ได้เลย (มี evidence 1094 losers)
+
+---
+
+## งานที่ N+128: เฟส 2B Dominant-Detection — code DONE (รอ deploy) (2026-06-14)
+
+### สถานะ: ✅ code เสร็จ (subagent-driven 4 tasks TDD + 3-stage review) · ⏸ รอ push+deploy · 2A trickle ยังรัน
+
+### Evidence ที่ใช้ออกแบบ (จาก backfill จริง 224 auctions)
+- `_analyze_bidfield.py`: ขาดลอย gap>10% = **24%** · gap>20% = 8% · กลุ่มเกาะแน่น **CV 3.9%** · เฉลี่ย 5.9 ราย/งาน
+- → 2B graceful: โชว์เฉพาะ scope ที่มีโครงสร้างขาดลอย (76% สูสีใช้ a/b/c เดิม)
+
+### สิ่งที่ทำ — `scripts/bid_field.py` (โมดูลใหม่, ไม่แตะ headline a/b/c)
+- **T1** `analyze_field` — tiered (Tier1 ระบุชื่อเจ้าใหญ่+show-rate · Tier2 structural · Tier0 gate)
+- **T2** `field_lines` — baht 2 ฉากทัศน์ (เจ้าใหญ่มา/ไม่มา)
+- **T3** `_field_auctions` — read bid_results JOIN cgd_winners(budget) + ตัด outlier disc>60%
+- **T4** `field_block` + เชื่อมเข้า `cgd_intel._build_intel:588` (4 บรรทัด ต่อท้าย predict_lines, graceful)
+- review fixes: tiebreak by gap (ไม่ใช่ชื่อไทย) · docstring keys · `_field_auctions` catch DatabaseError (parent) กันการ์ดพัง
+
+### Verify
+- `test_bid_field.py` ผ่านหมด (tier1/2/0+gate · field_lines · read+outlier · end-to-end+gate)
+- regression `test_cgd_intel.py` + `test_winrate.py` ผ่าน (field_block คืน [] เมื่อ bid_results ว่าง → predictor เดิมไม่กระทบ)
+- spec/plan: `docs/superpowers/{specs,plans}/2026-06-14-dominant-detection-2b*`
+
+### Followup
+- **Task 5 (manual):** `git push origin main` → VPS `deploy.sh` (ปลอดภัย: gate → โชว์เฉพาะ scope ข้อมูลพอ)
+- **หลัง 2A trickle ครบ:** tune threshold (MIN_APPEAR/LANDSLIDE_GAP) + ดู output งานจริง · พิจารณาโชว์ "ชนะ N/M งาน" (n_wins) ในการ์ด ให้ผู้ใช้ดู sample size (กัน overclaim ตอนข้อมูลบาง)
+- ลบ `_diag_egp.py` + `_analyze_bidfield.py` (debug ชั่วคราว) เมื่อจบ

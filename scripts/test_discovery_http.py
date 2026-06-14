@@ -37,6 +37,101 @@ def test_is_challenge():
     print("✅ test_is_challenge")
 
 
+class FakeRequestsError(Exception):
+    pass
+
+
+class FakeCffi:
+    """แทน spd.cffi_requests — get() คืน item ถัดไปใน queue (response หรือ raise ถ้าเป็น Exception)"""
+    RequestsError = FakeRequestsError
+
+    def __init__(self, items):
+        self._items = list(items)
+        self.calls = 0
+
+    def get(self, *a, **k):
+        item = self._items[self.calls]
+        self.calls += 1
+        if isinstance(item, Exception):
+            raise item
+        return item
+
+
+def _patch_cffi(items):
+    """ติดตั้ง FakeCffi แทน spd.cffi_requests → คืน (fake, restore_fn)"""
+    fake = FakeCffi(items)
+    orig = spd.cffi_requests
+    spd.cffi_requests = fake
+
+    def restore():
+        spd.cffi_requests = orig
+    return fake, restore
+
+
+def test_get_success():
+    fake, restore = _patch_cffi([FakeResp(200, '{"data":1}', json_data={"data": 1})])
+    try:
+        assert spd._get("tok", {}) == {"data": 1}
+        assert fake.calls == 1
+    finally:
+        restore()
+    print("✅ test_get_success")
+
+
+def test_get_challenge_returns_none():
+    # Task 2A (ยังไม่มี retry): challenge → None ทันที, เรียก get ครั้งเดียว
+    fake, restore = _patch_cffi([FakeResp(503, "just a moment", "text/html")])
+    try:
+        assert spd._get("tok", {}) is None
+        assert fake.calls == 1
+    finally:
+        restore()
+    print("✅ test_get_challenge_returns_none")
+
+
+def test_get_ratelimit_propagates():
+    fake, restore = _patch_cffi([FakeResp(200, "Rate limit exceeded", "text/plain")])
+    try:
+        raised = False
+        try:
+            spd._get("tok", {})
+        except spd.RateLimited:
+            raised = True
+        assert raised, "RateLimited ต้อง propagate ไม่ถูกกลืน"
+    finally:
+        restore()
+    print("✅ test_get_ratelimit_propagates")
+
+
+def test_get_network_error_returns_none():
+    fake, restore = _patch_cffi([FakeRequestsError("dns fail")])
+    try:
+        assert spd._get("tok", {}) is None
+    finally:
+        restore()
+    print("✅ test_get_network_error_returns_none")
+
+
+def test_get_json_error_logged_not_swallowed():
+    # response ok แต่ json() พัง → คืน None + ต้อง print (ไม่กลืนเงียบ)
+    fake, restore = _patch_cffi([FakeResp(200, "weird", json_raises=True)])
+    logs = []
+    orig_print = spd.print
+    spd.print = lambda *a, **k: logs.append(" ".join(str(x) for x in a))
+    try:
+        assert spd._get("tok", {}) is None
+        assert any("JSON decode error" in m for m in logs), logs
+    finally:
+        spd.print = orig_print
+        restore()
+    print("✅ test_get_json_error_logged_not_swallowed")
+
+
 if __name__ == "__main__":
     test_is_challenge()
+    test_get_success()
+    test_get_challenge_returns_none()
+    test_get_ratelimit_propagates()
+    test_get_network_error_returns_none()
+    test_get_json_error_logged_not_swallowed()
     print("\n✅ ALL test_discovery_http PASS")

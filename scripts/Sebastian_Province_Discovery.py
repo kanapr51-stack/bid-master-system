@@ -29,15 +29,15 @@ import argparse
 import sqlite3
 from datetime import datetime, timezone
 
-import requests
+from curl_cffi import requests as cffi_requests
 
 sys.stdout.reconfigure(encoding="utf-8")
+print = print  # expose as module attribute so tests can patch spd.print
 
 API = "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement"
-UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-      "(KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36")
 HEADERS = {
-    "User-Agent": UA,
+    # ไม่ตั้ง User-Agent เอง — curl_cffi impersonate="chrome120" ตั้งให้ตรงกับ TLS fingerprint
+    # (UA ไม่ตรง JA3 = ธงเตือนเอง)
     "Referer": "https://process5.gprocurement.go.th/egp-agpc01-web/announcement",
     "Accept": "application/json, text/plain, */*",
     "Content-Type": "application/json",
@@ -140,19 +140,33 @@ def _is_challenge(resp) -> bool:
 
 
 def _get(token: str, params: dict, path: str = "") -> dict | None:
+    # Safe to retry because discovery requests are idempotent GETs. (retry เพิ่มใน Task 2B)
     url = API + path
     hdrs = {**HEADERS, "X-Announcement-Token": token}
+    pg = params.get("page", "-")
     try:
-        r = requests.get(url, params=params, headers=hdrs, timeout=TIMEOUT)
-        # rate limit = plain text ไม่ใช่ JSON → อย่าตีความเป็น token reject
-        if "rate limit" in (r.text or "").lower():
-            raise RateLimited()
-        if not r.ok:
-            return None
+        r = cffi_requests.get(url, params=params, headers=hdrs,
+                              timeout=TIMEOUT, impersonate="chrome120")
+    except cffi_requests.RequestsError:    # network/transport error → graceful None
+        return None
+    except Exception as e:                 # bug จริง — อย่ากลืนเงียบ ต้องเห็นใน journald
+        print(f"❌ _get unexpected error (path={path or '/'} page={pg}): {e}")
+        return None
+
+    # rate limit = plain text เดิม — แยกจาก challenge, ไม่แตะ logic
+    if "rate limit" in (r.text or "").lower():
+        raise RateLimited()
+
+    if _is_challenge(r):
+        print(f"⚠️ CF_CHALLENGE path={path or '/'} page={pg}")
+        return None      # Task 2A: ยังไม่ retry → circuit breaker เดิมใน fetch_all_d0 รับต่อ
+
+    if not r.ok:
+        return None
+    try:
         return r.json()
-    except RateLimited:
-        raise
-    except Exception:
+    except Exception as e:                  # JSON decode ผิดปกติ (ไม่ใช่ challenge) — log ให้เห็น
+        print(f"❌ _get JSON decode error (path={path or '/'} page={pg}): {e}")
         return None
 
 

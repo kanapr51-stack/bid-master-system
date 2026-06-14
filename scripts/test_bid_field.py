@@ -1,4 +1,4 @@
-"""test_bid_field.py — dominant-detection: analyze_field / field_lines / _field_auctions."""
+"""test_bid_field.py — market-leader intel: analyze_field / field_lines / _field_auctions."""
 import os, tempfile, sys
 os.environ["BMS_DATA_DIR"] = tempfile.mkdtemp()
 sys.path.insert(0, os.path.dirname(__file__)); sys.stdout.reconfigure(encoding="utf-8")
@@ -8,62 +8,43 @@ def mk(winner, wdisc, others):
     """auction: ผู้ชนะ + others=[(name,disc)]."""
     return [(winner, wdisc, True)] + [(n, d, False) for n, d in others]
 
-def test_tier1_named_dominant():
-    auctions = [
-        mk("X", 40, [("A", 20), ("B", 19), ("C", 21)]),
-        mk("X", 38, [("A", 20), ("B", 18)]),
-        mk("X", 42, [("D", 22), ("B", 20)]),
-        mk("X", 39, [("A", 21), ("C", 19)]),
-        mk("A", 23, [("B", 21), ("C", 22)]),     # X ไม่มา
-    ]
+def test_leader_detected():
+    # X ลง 6/6 ชนะ 4 (67%) → เจ้าตลาด · Y ลง6 ชนะ2 (33%) ไม่ผ่านเกณฑ์
+    auctions = [mk("X", 30, [("Y", 20), ("Z", 22)]) for _ in range(4)]
+    auctions += [mk("Y", 25, [("X", 20), ("Z", 22)]) for _ in range(2)]
     fr = bf.analyze_field(auctions)
     assert fr["tier"] == 1, fr
-    assert fr["dominant"]["name"] == "X", fr
-    assert abs(fr["dominant"]["show_rate"] - 0.8) < 1e-9, fr   # X ลง 4/5
-    assert fr["dominant"]["win_gap_med"] > 10, fr
-    print("✅ tier1 named dominant")
+    assert fr["leaders"][0]["name"] == "X", fr
+    assert fr["leaders"][0]["wins"] == 4 and fr["leaders"][0]["appears"] == 6, fr
+    assert abs(fr["leaders"][0]["win_rate"] - 4 / 6) < 1e-9, fr
+    assert fr["leaders"][0]["win_disc_med"] == 30, fr
+    assert all(L["name"] != "Y" for L in fr["leaders"]), "Y win-rate 33% ไม่ใช่เจ้าตลาด"
+    print("✅ market leader detected (win-frequency)")
 
-def test_tier2_structural():
-    auctions = [
-        mk("W1", 40, [("A", 20), ("B", 19)]),
-        mk("W2", 38, [("C", 20), ("D", 18)]),
-        mk("W3", 42, [("E", 22), ("F", 20)]),
-        mk("A", 22, [("B", 21)]),                # tight
-        mk("C", 23, [("D", 22)]),                # tight
-    ]
-    fr = bf.analyze_field(auctions)
-    assert fr["tier"] == 2, fr                    # landslide เยอะ แต่ไม่มีเจ้าเด่น
-    assert fr["landslide_gap_med"] == 20, fr
-    print("✅ tier2 structural")
+def test_no_leader_and_gate():
+    names = ["A", "B", "C", "D", "E", "F"]                     # ผู้ชนะกระจาย ไม่มีใครเด่น
+    auctions = [mk(names[i], 25, [(names[(i + 1) % 6], 20), (names[(i + 2) % 6], 22)]) for i in range(6)]
+    assert bf.analyze_field(auctions)["tier"] == 0, "ไม่มีเจ้าตลาด → tier0"
+    assert bf.analyze_field(auctions[:4])["tier"] == 0, "n<MIN_AUCTIONS → gate"
+    print("✅ no leader + gate น้อย")
 
-def test_tier0_tight_and_gate():
-    tight = [mk(f"W{i}", 22, [("A", 21), ("B", 20)]) for i in range(5)]
-    assert bf.analyze_field(tight)["tier"] == 0, "สนามสูสี → tier0"
-    assert bf.analyze_field(tight[:4])["tier"] == 0, "n<MIN_AUCTIONS → gate tier0"
-    print("✅ tier0 tight + gate น้อย")
-
-test_tier1_named_dominant()
-test_tier2_structural()
-test_tier0_tight_and_gate()
+test_leader_detected()
+test_no_leader_and_gate()
 
 def test_field_lines():
-    # tier1: budget 1,000,000 · win_disc 40 → 600,000 · pack 20 → 800,000
-    fr1 = {"tier": 1, "pack_disc_med": 20.0,
-           "dominant": {"name": "ห้างหุ้นส่วนจำกัด เอ็กซ์", "show_rate": 0.8,
-                        "win_disc_med": 40.0, "win_gap_med": 22.0}}
-    lines = bf.field_lines(fr1, 1_000_000); txt = "\n".join(lines)
-    assert "เจ้าใหญ่" in txt and "หจก. เอ็กซ์" in txt, txt   # ย่อชื่อ
-    assert "600,000" in txt and "800,000" in txt, txt        # baht 2 ฉากทัศน์
-    assert "80%" in txt, txt                                  # show-rate
-    # tier0 / ข้อมูลน้อย → []
-    assert bf.field_lines({"tier": 0, "pack_disc_med": None}, 1_000_000) == []
-    assert bf.field_lines(None, 1_000_000) == []
-    assert bf.field_lines(fr1, 0) == []                       # ไม่มี budget
-    # tier2
-    fr2 = {"tier": 2, "pack_disc_med": 20.0, "landslide_gap_med": 18.0, "dominant": None}
-    l2 = "\n".join(bf.field_lines(fr2, 1_000_000))
-    assert "ขาดลอย" in l2 and "800,000" in l2, l2
-    print("✅ field_lines baht (tier1/2/0)")
+    fr = {"tier": 1, "leaders": [
+        {"name": "ห้างหุ้นส่วนจำกัด เมืองทอง", "win_rate": 0.69, "wins": 9, "appears": 13, "win_disc_med": 25.0},
+        {"name": "ห้างหุ้นส่วนจำกัด บัญชาศรี", "win_rate": 0.48, "wins": 10, "appears": 21, "win_disc_med": 22.0}]}
+    txt = "\n".join(bf.field_lines(fr, 2_000_000))
+    assert "เจ้าตลาด" in txt and "หจก. เมืองทอง" in txt, txt    # ย่อชื่อ
+    assert "69%" in txt and "9/13" in txt, txt                  # win-rate + count
+    assert "1,500,000" in txt, txt                              # 2M*(1-0.25) = ต้องลดสู้เจ้าตลาด
+    assert "หจก. บัญชาศรี" in txt, txt                          # leader #2
+    # tier0 / ไม่มี leader / ไม่มี budget → []
+    assert bf.field_lines({"tier": 0, "leaders": []}, 2_000_000) == []
+    assert bf.field_lines(None, 2_000_000) == []
+    assert bf.field_lines(fr, 0) == []
+    print("✅ field_lines leader intel")
 
 test_field_lines()
 
@@ -106,24 +87,23 @@ def test_field_block_endtoend_and_gate():
     # gate: bid_results ว่าง → field_block = [] (ปลอดภัยกับ _build_intel เดิม)
     with db.get_connection() as conn:
         assert bf.field_block(conn, "สกลนคร", ["ถนน"], 1000000) == [], "scope ว่าง → []"
-    # tier1 end-to-end: 5 auction เจ้าใหญ่ Y ลง 4 ชนะขาดลอย
-    with db.get_connection() as conn:
-        for i in range(5):
+        for i in range(6):
             conn.execute("INSERT OR REPLACE INTO cgd_winners (project_id, province, proc_type, project_name, budget) "
                          "VALUES (?,?,?,?,?)",
                          (f"F{i}", "นครพนม", "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)", "ก่อสร้างถนน", 1000000))
-    for i in range(4):  # Y ชนะ 4 งาน ลด 40% ขาดกลุ่มที่ลด 20%
+    for i in range(5):  # วาย ลง 6 ชนะ 5 (83%) → เจ้าตลาด
         s.record_bid_results(f"F{i}", [
-            {"receiveNameTh": "หจก.วาย", "receiveTin": "1", "priceProposal": "600000", "priceAgree": "600000"},
+            {"receiveNameTh": "หจก.วาย", "receiveTin": "1", "priceProposal": "700000", "priceAgree": "700000"},
             {"receiveNameTh": "หจก.พ", "receiveTin": "2", "priceProposal": "800000"},
             {"receiveNameTh": "หจก.ม", "receiveTin": "3", "priceProposal": "810000"}])
-    s.record_bid_results("F4", [   # Y ไม่มา
+    s.record_bid_results("F5", [   # วาย ลงแต่แพ้
         {"receiveNameTh": "หจก.พ", "receiveTin": "2", "priceProposal": "780000", "priceAgree": "780000"},
+        {"receiveNameTh": "หจก.วาย", "receiveTin": "1", "priceProposal": "790000"},
         {"receiveNameTh": "หจก.ม", "receiveTin": "3", "priceProposal": "800000"}])
     with db.get_connection() as conn:
         block = bf.field_block(conn, "นครพนม", ["ถนน"], 1000000)
     txt = "\n".join(block)
-    assert "เจ้าใหญ่" in txt and "วาย" in txt, txt
+    assert "เจ้าตลาด" in txt and "วาย" in txt, txt
     print("✅ field_block end-to-end + gate")
 
 test_field_block_endtoend_and_gate()

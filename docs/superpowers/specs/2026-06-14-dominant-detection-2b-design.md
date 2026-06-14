@@ -1,5 +1,7 @@
 # Dominant-Detection Predictor (2B) — Design
 
+> **⚠️ v2 PIVOT (2026-06-14, หลัง backfill + verify จริง):** evidence ต่อ scope พบ landslide **หายาก (5-10%)** ไม่ใช่ 24% (เลขเดิมเป็น aggregate คนละนิยาม gap) — และเจ้าตลาดชนะ **"ชิดๆ" (gap ~4 จุด)** ไม่ใช่ขาดลอย → exploit "เจ้าใหญ่ไม่มา=กำไรงาม" ใช้ไม่ได้. **แต่มีเจ้าตลาดชัดเจน** (เมืองทอง 69%, ริชบียอนด์ 83%). **Pivot: จับด้วย win-frequency → "เจ้าตลาด intel"** (ใครชนะ scope นี้บ่อย + ลดเฉลี่ยเท่าไหร่ = ต้องลดถึงไหนถึงสู้ได้). §6/§7 ด้านล่างคือ v2 ที่ deploy จริง; §เดิม landslide เก็บไว้เป็นประวัติการออกแบบ.
+
 **วันที่:** 2026-06-14
 **สถานะ:** design — **implement ได้เลย** (โค้ด/test เป็น pure function ไม่ขึ้นกับปริมาณข้อมูล · graceful gate ทำให้ ship ปลอดภัยแม้ข้อมูลยังบาง · evidence 224 auctions พอยืนยัน pattern แล้ว). **ขั้น tune threshold + ดู output งานจริง = pass สั้นๆ หลัง implement** (ไม่บล็อกการเขียนโค้ด) ทำเมื่อ 2A trickle ครบ
 **Sub-project ของ:** เฟส 2 (all-bidders ใน predictor). 2A = evidence layer (backfill) ✅ · **2B = ตัวนี้**
@@ -55,7 +57,26 @@ field_lines(field_result, budget_now) → list[str]   # บรรทัดกา
 - group เป็น auction ต่อ project_id; winner = is_winner=1 (fallback = disc สูงสุด)
 - คืน `[[(bidder_name, disc_pct, is_winner)]]`
 
-## 6. Algorithm — `analyze_field(auctions)` (tiered)
+## 6b. Algorithm v2 (DEPLOYED) — `analyze_field` = market-leader by win-frequency
+
+- Gate: `n < MIN_AUCTIONS(5)` → tier 0
+- per บริษัท: นับ appears (1/auction), wins, win_disc (disc ตอนชนะ)
+- **เจ้าตลาด** = `appears ≥ MIN_APPEAR(5)` **และ** `wins/appears ≥ LEADER_WIN_RATE(0.40)`
+- คืน `leaders` = top 2 เรียง wins มากสุด, แต่ละตัว `{name, win_rate, wins, appears, win_disc_med}`
+- tier 1 = มี ≥1 เจ้าตลาด · tier 0 = ไม่มี/ข้อมูลน้อย (graceful)
+- ทิ้ง: landslide gap / pack / 2-scenario (evidence: margin ชิด ใช้ไม่ได้)
+
+## 7b. Output v2 (DEPLOYED) — `field_lines` = เจ้าตลาด intel
+```
+🏆 เจ้าตลาดงานนี้:
+   • หจก.เมืองทอง — ชนะ 69% (9/13 งาน) · ลดเฉลี่ย ~25%
+   • หจก.บัญชาศรี — ชนะ 48% (10/21 งาน)
+   💡 ต้องลดใกล้ ~25% (≈1,500,000) ถึงสู้เจ้าตลาดได้
+```
+
+---
+
+## 6. Algorithm — `analyze_field(auctions)` (tiered) — [v1 landslide, superseded by §6b]
 
 **Gate ข้อมูล:** ถ้า `len(auctions) < MIN_AUCTIONS` → Tier 0 (return เปล่า)
 

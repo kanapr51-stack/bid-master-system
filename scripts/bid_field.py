@@ -1,17 +1,16 @@
-"""bid_field.py — ตรวจ "เจ้าใหญ่ขาดลอย" จาก full-field bids (2B). เสนอ 2 ฉากทัศน์ในการ์ด D0.
-graceful gate (โชว์เฉพาะ scope ที่ข้อมูลพอ+มีโครงสร้างขาดลอย). ดู spec 2026-06-14-dominant-detection-2b."""
+"""bid_field.py — "เจ้าตลาด" intel จาก full-field bids (2B). ใครชนะ scope นี้บ่อย + ลดเฉลี่ยเท่าไหร่.
+v2 pivot (evidence 2026-06-14): landslide หายาก (5-10%/scope) แต่มีเจ้าตลาดชัด (ชนะ 48-83% ชิดๆ)
+→ จับด้วย win-frequency ไม่ใช่ landslide-gap. graceful gate. ดู spec 2026-06-14-dominant-detection-2b."""
 import sqlite3, sys, os
 from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(__file__))
 from cgd_intel import COMPETITIVE_SET
 
-MIN_AUCTIONS = 5       # scope ต้องมี ≥ นี้ ถึงวิเคราะห์
-MIN_APPEAR = 3         # บริษัทปรากฏ ≥ นี้ ถึง "ระบุชื่อ"
-WIN_FRACTION = 0.5     # ชนะ ≥ ครึ่งที่ลง
-LANDSLIDE_GAP = 10.0   # percentage points (ผู้ชนะขาดที่2)
-LANDSLIDE_RATE = 0.30  # Tier2: ≥30% ของ auctions เป็น landslide
-DISC_MAX = 60.0        # ตัด outlier disc (unit-price เพี้ยน)
+MIN_AUCTIONS = 5        # scope ต้องมี ≥ นี้ ถึงวิเคราะห์
+MIN_APPEAR = 5          # บริษัทต้องลง ≥ นี้ ถึงนับเป็นเจ้าตลาด (ตัดฟลุ๊ค ลง1-2ชนะหมด)
+LEADER_WIN_RATE = 0.40  # ชนะ ≥ 40% ของที่ลง (สุ่ม ~17% ที่ 5.9 ราย → 40% = เด่นจริง)
+DISC_MAX = 60.0         # ตัด outlier disc (unit-price เพี้ยน)
 
 
 def _median(xs):
@@ -31,26 +30,18 @@ def _winner_idx(auction):
 
 
 def analyze_field(auctions: list) -> dict:
-    """tiered detection. auctions = [ [(name, disc_pct, is_winner)] ].
-    คืน {tier:0|1|2, n_auctions, pack_disc_med, dominant:{name,show_rate,win_disc_med,win_gap_med}|None,
-         landslide_gap_med}."""
+    """market-leader detection (win-frequency). auctions = [ [(name, disc_pct, is_winner)] ].
+    คืน {tier:0|1, n_auctions, leaders:[{name,win_rate,wins,appears,win_disc_med}]} — top 2 เรียงชนะมากสุด.
+    tier 1 = มีเจ้าตลาด (ลง≥MIN_APPEAR ∧ ชนะ≥LEADER_WIN_RATE) · tier 0 = ไม่มี/ข้อมูลน้อย."""
     auctions = [a for a in auctions if len(a) >= 2]
     n = len(auctions)
-    base = {"tier": 0, "n_auctions": n, "pack_disc_med": None,
-            "dominant": None, "landslide_gap_med": None}
+    base = {"tier": 0, "n_auctions": n, "leaders": []}
     if n < MIN_AUCTIONS:
         return base
-    pack_discs, gaps = [], []
-    appear, wins = defaultdict(int), defaultdict(int)
-    win_disc, win_gap = defaultdict(list), defaultdict(list)
+    appear, wins, win_disc = defaultdict(int), defaultdict(int), defaultdict(list)
     for a in auctions:
         wi = _winner_idx(a)
         wname, wdisc, _ = a[wi]
-        others = [d for j, (_n, d, _w) in enumerate(a) if j != wi]
-        pack_discs += others
-        second = max(others) if others else wdisc
-        gap = wdisc - second
-        gaps.append(gap)
         seen = set()
         for (nm, _d, _w) in a:
             if nm and nm not in seen:        # นับ 1 บริษัท/auction
@@ -59,27 +50,15 @@ def analyze_field(auctions: list) -> dict:
         if wname:
             wins[wname] += 1
             win_disc[wname].append(wdisc)
-            win_gap[wname].append(gap)
-    base["pack_disc_med"] = _median(pack_discs)
-    landslide = [g for g in gaps if g > LANDSLIDE_GAP]
-    # Tier 1: named dominant
-    cands = []
+    leaders = []
     for name, ap in appear.items():
-        if ap >= MIN_APPEAR and wins[name] / ap >= WIN_FRACTION:
-            wg = _median(win_gap[name])
-            if wg is not None and wg > LANDSLIDE_GAP:
-                cands.append((ap, wg, name))
-    if cands:
-        cands.sort(reverse=True)             # appear มากสุดก่อน, เสมอ→gap มากกว่า (ไม่ tiebreak ด้วยชื่อ)
-        ap, wg, name = cands[0]
+        if ap >= MIN_APPEAR and wins[name] / ap >= LEADER_WIN_RATE:
+            leaders.append({"name": name, "win_rate": wins[name] / ap, "wins": wins[name],
+                            "appears": ap, "win_disc_med": _median(win_disc[name])})
+    if leaders:
+        leaders.sort(key=lambda L: (-L["wins"], -L["win_rate"]))   # ชนะมากสุดก่อน, เสมอ→win-rate สูง
         base["tier"] = 1
-        base["dominant"] = {"name": name, "show_rate": ap / n,
-                            "win_disc_med": _median(win_disc[name]), "win_gap_med": wg}
-        return base
-    # Tier 2: structural landslide
-    if len(landslide) / n >= LANDSLIDE_RATE:
-        base["tier"] = 2
-        base["landslide_gap_med"] = _median(landslide)
+        base["leaders"] = leaders[:2]
     return base
 
 
@@ -89,32 +68,21 @@ def _short(name):
 
 
 def field_lines(fr: dict, budget_now) -> list:
-    """บรรทัดการ์ดเจ้าใหญ่ (baht ตาม budget งานปัจจุบัน). [] ถ้า tier0/ข้อมูลน้อย/ไม่มี budget."""
-    if not fr or fr.get("tier", 0) == 0 or fr.get("pack_disc_med") is None or not budget_now:
+    """บรรทัดการ์ดเจ้าตลาด (ใครชนะ scope นี้บ่อย + ลดเฉลี่ย). [] ถ้า tier0/ไม่มี leader/ไม่มี budget."""
+    if not fr or fr.get("tier", 0) == 0 or not fr.get("leaders") or not budget_now:
         return []
     b = float(budget_now)
-
-    def price(disc):
-        return round(b * (1 - disc / 100.0))
-
-    pack = price(fr["pack_disc_med"])
-    if fr["tier"] == 1:
-        d = fr["dominant"]
-        nm = _short(d["name"])
-        sr = d["show_rate"] * 100
-        win = price(d["win_disc_med"])
-        risk = (f"   ⚠️ {nm} มาบ่อย ({sr:.0f}%) — ยื่นตื้นมีความเสี่ยง" if d["show_rate"] >= 0.5
-                else f"   {nm} ลงไม่บ่อย ({sr:.0f}%) — มีโอกาสยื่นตื้น")
-        return [
-            f"🏆 สนามนี้มีเจ้าใหญ่: {nm} (ลง ~{sr:.0f}% ของงาน · ชนะขาดลอยเฉลี่ย {d['win_gap_med']:.0f}%)",
-            f"   • ถ้า {nm} มา → ต้องยื่นต่ำกว่า ~{win:,.0f} (ระดับเจ้าใหญ่) ถึงแซง (กำไรบาง)",
-            f"   • ถ้าไม่มา → กลุ่มที่เหลืออยู่ ~{pack:,.0f} → ยื่นต่ำกว่ากลุ่มนิดเดียวก็ชนะ (กำไรงาม)",
-            risk,
-        ]
-    return [    # tier 2
-        f"🏆 สนามนี้ผู้ชนะมักขาดลอย ~{fr['landslide_gap_med']:.0f}% (ไม่มีเจ้าเด่นชัด)",
-        f"   • กลุ่มหลักอยู่ ~{pack:,.0f} → ถ้าคู่แข่งดุไม่มา ยื่นต่ำกว่ากลุ่มก็ชนะ",
-    ]
+    lines = ["🏆 เจ้าตลาดงานนี้:"]
+    for ld in fr["leaders"]:
+        wd = ld["win_disc_med"]
+        disc_txt = f" · ลดเฉลี่ย ~{wd:.0f}%" if wd is not None else ""
+        lines.append(f"   • {_short(ld['name'])} — ชนะ {ld['win_rate'] * 100:.0f}% "
+                     f"({ld['wins']}/{ld['appears']} งาน){disc_txt}")
+    top = fr["leaders"][0]
+    if top["win_disc_med"] is not None:
+        price = round(b * (1 - top["win_disc_med"] / 100.0))
+        lines.append(f"   💡 ต้องลดใกล้ ~{top['win_disc_med']:.0f}% (≈{price:,.0f}) ถึงสู้เจ้าตลาดได้")
+    return lines
 
 
 def _field_auctions(conn, province, tokens, subdistrict=None, district=None) -> list:

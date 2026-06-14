@@ -97,10 +97,24 @@ def test_field_and_winrate_endtoend():
     print("✅ field_and_winrate end-to-end (อ่านรอบเดียว → 2 บล็อก)")
 
 
+def test_gate_fallback_to_old_card():
+    """scope ที่ bid_results ว่าง → ([],[]) → predict() จะ fallback การ์ดเดิม (graceful)."""
+    import tempfile, importlib
+    os.environ["BMS_DATA_DIR"] = tempfile.mkdtemp()
+    import Sebastian_Customer_DB as db
+    importlib.reload(db); db.init_schema()
+    with db.get_connection() as conn:
+        wl, fl = bf.field_and_winrate(conn, "นครพนม", ["ถนน"], 1000000,
+                                      [700000, 800000, 900000], district="ไม่มี", basis="อำเภอ")
+    assert wl == [] and fl == [], (wl, fl)                    # ว่าง → predict() ใช้ predict_lines เดิม
+    print("✅ gate: scope บาง → ([],[]) → การ์ดเดิม")
+
+
 test_grid_math()
 test_grid_columns_and_monotonic()
 test_grid_rows_monotonic()
 test_grid_gate()
 test_winrate_lines_render()
 test_field_and_winrate_endtoend()
+test_gate_fallback_to_old_card()
 print("ALL PASS winrate_grid")

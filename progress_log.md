@@ -846,3 +846,27 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 - full-sweep catch-up cooldown ยังไม่ทำ (secondary, §9 plan) — ทำถ้ายัง spam
 - ADR-003 defer ต่อ (มีหลักฐานว่าไม่จำเป็น)
 - กลับไป 2B เจ้าตลาด/self-calibrate (checkpoint N+129) ได้
+
+---
+
+## งานที่ N+132: งาน B — conditional win-rate (self-calibrate ตามจำนวนผู้ยื่น) — code DONE (รอ deploy) (2026-06-15)
+
+### สถานะ: ✅ code+test เสร็จบน dev (subagent-driven 4 tasks) — รอ deploy VPS + ดูการ์ดจริง
+
+### Root cause / สิ่งที่ทำ
+- heuristic เดิม: a/b/c win% = 75/50/25 ตายตัว (percentile rank ผู้ชนะ). insight: ในประมูลซองปิด ชนะ ⇔ ลดดุกว่าผู้ชนะ ⇒ winner-CDF = percentile เดิม → "full-field unconditional" = ของซ้ำ
+- **B = conditional ตามจำนวนผู้ยื่น** (จุดที่ full-field 2A เพิ่มค่าจริง): F_bid (CDF disc ผู้ยื่นรายเดียว) + n stats (mean±SD) → win% = `F_bid(disc)^k` · ตาราง 3 คอลัมน์ dynamic = mean−SD/mean/mean+SD ราย
+- กัญจน์ขอเพิ่ม: บรรทัด `📈 สถิติจาก N งาน · M ผู้ยื่น` (sample size = ความน่าเชื่อถือ)
+
+### Fix / ผล
+- `bid_field.py`: `_cdf` + `winrate_grid` (pure, gate None เมื่อ <5 auctions) + `winrate_lines` (render) + `field_and_winrate` (อ่าน `_field_auctions` **รอบเดียว** ป้อนทั้ง 2B+B)
+- `cgd_intel.predict()`: แทนบล็อก a/b/c ด้วยตาราง B เมื่อมี grid · ไม่มี → fallback `predict_lines` เดิม (graceful) · 2B เจ้าตลาดต่อท้ายเหมือนเดิม
+- `test_winrate_grid.py`: 7 เคส (math F^k / columns mean±SD / monotonic / gate / render / end-to-end / gate-fallback) — ผ่านหมด
+- backward-compat: test_winrate / test_bid_field / test_competitor_trend_series ผ่านหมด · py_compile OK
+- spec: `docs/superpowers/specs/2026-06-15-conditional-winrate-b-design.md` · plan: `docs/superpowers/plans/2026-06-15-conditional-winrate-b.md`
+- commits: 7f0e342 (T1) · 4b19e22 (T2) · 5924d01 (T3) + review fixes
+
+### Followup
+- **deploy VPS**: `cd /opt/bms/app && git pull && bash scripts/deploy.sh` แล้วดู `_show_card.py` — scope full-field ≥5 เห็นตาราง · scope บางเห็นการ์ดเดิม
+- ตาราง B โผล่จริงต้องรอ backfill 2A ครบ (ตอนนี้ ~924/3032) — ยิ่งครบยิ่งหลาย scope
+- ถัดไป: validate iid assumption (F^k vs winner-CDF จริง) หลัง trickle ครบ · R2 recency-weight F_bid (ถ้า drift)

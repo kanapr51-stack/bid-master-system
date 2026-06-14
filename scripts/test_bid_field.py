@@ -66,4 +66,36 @@ def test_field_lines():
     print("✅ field_lines baht (tier1/2/0)")
 
 test_field_lines()
+
+def test_field_auctions_read():
+    import Sebastian_Customer_DB as db
+    db.init_schema()
+    with db.get_connection() as conn:
+        conn.executemany(
+            "INSERT OR REPLACE INTO cgd_winners (project_id, province, proc_type, project_name, budget) "
+            "VALUES (?,?,?,?,?)",
+            [("J1", "นครพนม", "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)", "ก่อสร้างถนน ต.นาทม", 1000000),
+             ("J2", "นครพนม", "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)", "ก่อสร้างถนน ต.นาทม", 2000000),
+             ("JX", "ขอนแก่น", "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)", "ก่อสร้างถนน", 1000000)])  # นอก scope
+    s = db.SubscriptionStore()
+    # J1: winner ลด 30% (700k) + loser ลด 10% (900k) + outlier ลด 95% (50k → ตัด)
+    s.record_bid_results("J1", [
+        {"receiveNameTh": "หจก.ก", "receiveTin": "1", "priceProposal": "700000", "priceAgree": "700000"},
+        {"receiveNameTh": "หจก.ข", "receiveTin": "2", "priceProposal": "900000"},
+        {"receiveNameTh": "หจก.outlier", "receiveTin": "3", "priceProposal": "50000"}])
+    s.record_bid_results("J2", [
+        {"receiveNameTh": "หจก.ก", "receiveTin": "1", "priceProposal": "1600000", "priceAgree": "1600000"},
+        {"receiveNameTh": "หจก.ค", "receiveTin": "4", "priceProposal": "1800000"}])
+    s.record_bid_results("JX", [
+        {"receiveNameTh": "หจก.z", "receiveTin": "9", "priceProposal": "500000", "priceAgree": "500000"}])
+    with db.get_connection() as conn:
+        auctions = bf._field_auctions(conn, "นครพนม", ["ถนน"], subdistrict="นาทม")
+    assert len(auctions) == 2, auctions                  # J1,J2 (JX นอกจังหวัด ตัด)
+    j1 = next(a for a in auctions if any(abs(d - 30.0) < 1e-9 for _n, d, _w in a))  # J1 มี disc 30
+    discs = sorted(d for _n, d, _w in j1)
+    assert discs == [10.0, 30.0], discs                  # (1-700k/1M)=30, (1-900k/1M)=10 · outlier 95% ตัด
+    assert any(w for _n, _d, w in j1), "มี winner flag"
+    print("✅ _field_auctions read + disc + outlier filter")
+
+test_field_auctions_read()
 print("ALL PASS bid_field")

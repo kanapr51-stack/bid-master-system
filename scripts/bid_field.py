@@ -115,3 +115,47 @@ def field_lines(fr: dict, budget_now) -> list:
         f"🏆 สนามนี้ผู้ชนะมักขาดลอย ~{fr['landslide_gap_med']:.0f}% (ไม่มีเจ้าเด่นชัด)",
         f"   • กลุ่มหลักอยู่ ~{pack:,.0f} → ถ้าคู่แข่งดุไม่มา ยื่นต่ำกว่ากลุ่มก็ชนะ",
     ]
+
+
+def _field_auctions(conn, province, tokens, subdistrict=None, district=None) -> list:
+    """full-field auctions ของ scope จาก bid_results JOIN cgd_winners(budget).
+    คืน [ [(bidder_name, disc_pct, is_winner)] ] · ตัด outlier disc นอก [0,DISC_MAX] · graceful []."""
+    pt = ",".join("?" for _ in COMPETITIVE_SET)
+    like = " OR ".join("cw.project_name LIKE ?" for _ in tokens)
+    where = ["cw.province=?", f"cw.proc_type IN ({pt})", f"({like})", "cw.budget>0"]
+    params = [province, *COMPETITIVE_SET] + [f"%{t}%" for t in tokens]
+    if subdistrict is not None:                  # geocode column เพี้ยน → match จากชื่องาน (เหมือน competitor_trend)
+        where.append("(cw.project_name LIKE ? OR cw.project_name LIKE ?)")
+        params += [f"%ตำบล{subdistrict}%", f"%ต.{subdistrict}%"]
+    if district is not None:
+        where.append("(cw.project_name LIKE ? OR cw.project_name LIKE ?)")
+        params += [f"%อำเภอ{district}%", f"%อ.{district}%"]
+    sql = ("SELECT b.project_id, b.bidder_name, b.price_proposal, b.price_agree, b.is_winner, cw.budget "
+           "FROM bid_results b JOIN cgd_winners cw ON cw.project_id=b.project_id "
+           "WHERE " + " AND ".join(where))
+    try:
+        rows = conn.execute(sql, params).fetchall()
+    except sqlite3.OperationalError:
+        return []
+    byp = defaultdict(list)
+    for pid, name, pp, pa, isw, budget in rows:
+        bid = None
+        for x in (pp, pa):                        # sealed bid = proposal (winner ใช้ agree ถ้า proposal ว่าง)
+            try:
+                f = float(x)
+                if f > 0:
+                    bid = f
+                    break
+            except (TypeError, ValueError):
+                pass
+        try:
+            bud = float(budget)
+        except (TypeError, ValueError):
+            bud = 0
+        if not bid or bud <= 0:
+            continue
+        disc = (bud - bid) / bud * 100.0
+        if disc < 0 or disc > DISC_MAX:           # ตัด outlier (unit-price เพี้ยน)
+            continue
+        byp[pid].append((name or "", disc, bool(isw)))
+    return list(byp.values())

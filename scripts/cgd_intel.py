@@ -585,8 +585,8 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
         lines += [""] + predict_lines(pred, basis, contested=contested_only)
         if basis_old:                             # อิงข้อมูลเก่ากว่า 3 ปี — แจ้งให้ผู้ใช้รู้
             lines.append("📜 รวมข้อมูลเก่ากว่า 3 ปี (พื้นที่นี้งานน้อย) — ใช้เป็นแนวโน้ม")
-        import bid_field as _bf                    # 2B: บล็อกเจ้าใหญ่ขาดลอย (graceful — [] ถ้าข้อมูลไม่พอ)
-        _fb = _bf.field_block(conn, province, tokens, budget, basis_sub, basis_dist)
+        import bid_field as _bf                    # 2B: เจ้าตลาด — scope จังหวัด (เจ้าใหญ่วิ่งทั้งจังหวัด,
+        _fb = _bf.field_block(conn, province, tokens, budget)   # คนละ scope กับราคาอ้างอิงท้องถิ่น) · graceful []
         if _fb:
             lines += [""] + _fb
     try:

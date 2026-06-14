@@ -72,7 +72,7 @@ def field_lines(fr: dict, budget_now) -> list:
     if not fr or fr.get("tier", 0) == 0 or not fr.get("leaders") or not budget_now:
         return []
     b = float(budget_now)
-    lines = ["🏆 เจ้าตลาดงานนี้:"]
+    lines = ["🏆 เจ้าตลาดหมวดงานนี้ (ทั้งจังหวัด):"]
     for ld in fr["leaders"]:
         wd = ld["win_disc_med"]
         disc_txt = f" · ลดเฉลี่ย ~{wd:.0f}%" if wd is not None else ""

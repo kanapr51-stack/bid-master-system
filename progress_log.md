@@ -826,7 +826,7 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 
 ## งานที่ N+131: Discovery WAF/JA3 durable fix (tier 2) — code เสร็จ (2026-06-14)
 
-### สถานะ: ✅ code+test เสร็จ (local main) · ⏸ รอ pin version + push + deploy
+### สถานะ: ✅ DEPLOYED + verified จาก VPS (5997fdf) — 0 challenge ⇒ JA3 = root cause ยืนยัน
 
 ### สิ่งที่ทำ (subagent-driven, brainstorm→spec→plan→execute)
 - ต้นตอ tier-1 = WAF Turnstile (N+130). tier-2 นี้แก้ root cause = **JA3 fingerprint**: `requests` ธรรมดา → Cloudflare จับเป็น bot
@@ -836,11 +836,13 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 - test ครบ (`scripts/test_discovery_http.py` 7 ตัว) ผ่านหมด · py_compile OK · **smoke จริง: count_d0(นครพนม)=877/88หน้า ผ่าน curl_cffi**
 - commits: afe3ee7 (Task1) · a3d2e86+a32da05 (Task2A+quality fix) · 6fbe72d (Task2B)
 
-### NEXT (ต้องการกัญจน์)
-1. **Task 0 (BLOCKER)**: pin curl_cffi == version ที่ VPS รันจริง (ssh `pip show curl_cffi`) แล้ว commit
-2. push + deploy VPS (`git pull && pip install -r requirements.txt && deploy.sh`)
-3. วัด metric: `journalctl -u 'bms-province-discovery*' | grep -c CF_CHALLENGE/CF_RECOVERED` ก่อน-หลัง → ยืนยัน JA3 = root cause → defer ADR-003
+### ✅ เสร็จครบ
+1. Task 0 pin curl_cffi==0.15.0 (VPS+local ตรง) `5997fdf`
+2. push + deploy VPS สำเร็จ (Schema v1.13, bms-api active)
+3. **verify จาก VPS: discovery scan นครพนม 877/บึงกาฬ 445 สำเร็จ 0 challenge 0 retry** = JA3 คือเหตุจริง (IP เดิม+token เดิม เปลี่ยนแค่ fingerprint = ผ่าน)
 
-### ค้าง/ระวัง
-- ยังไม่ push (รอ pin version ก่อน ตาม spec §0)
-- full-sweep catch-up cooldown ยังไม่ทำ (secondary, ใน §9 plan)
+### Followup (เบา)
+- ติดตาม metric `journalctl -u 'bms-province-discovery*' | grep -c CF_CHALLENGE` 1-2 วัน ยืนยันอีกชั้น (คาดใกล้ 0)
+- full-sweep catch-up cooldown ยังไม่ทำ (secondary, §9 plan) — ทำถ้ายัง spam
+- ADR-003 defer ต่อ (มีหลักฐานว่าไม่จำเป็น)
+- กลับไป 2B เจ้าตลาด/self-calibrate (checkpoint N+129) ได้

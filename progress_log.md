@@ -728,3 +728,12 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 - monitor: `tail -n6 /tmp/backfill_full.log` · done: `grep เสร็จ ...`
 - พรุ่งนี้: verify losers>0 → ลบ `_diag_egp.py` → brainstorm **2B dominant-detection** ด้วย evidence จริง
 - ⚠️ กฎ: backfill ห้ามรันซ้อน (1 process เท่านั้น) ไม่งั้น token throttle
+
+### 🐛 Full run ตันที่ ~150 → auto-trickle (2026-06-14 เช้า)
+- full run จบแบบ **stored=149 error=2770** — cooldown 130s/25 ทนได้ ~149 งาน แล้วโดน throttle ยาวจนจบ run
+- diag หลัง run: **status 200** → IP **ฟื้นเอง** (block ชั่วคราว ไม่ถาวร) → VPS ยิงได้ ~150/ช่วง แล้วต้องพักนาน (ชม.) — ตรง INC-001
+- มีข้อมูลแล้ว: **bid_results jobs=278, rows=1371, losers=1094** (evidence ตั้งต้น 2B พอ)
+- **fix: auto-trickle** (ไม่เขียนโค้ดใหม่) — bash loop `--limit 100 --cooldown-every 999` ×30 batch เว้น 25 นาที/batch (gap = ตัว recover จริง). resumable ข้ามงานเสร็จ. PID 1159209 → `/tmp/backfill_trickle.log` · ~1 วัน hands-off
+- monitor: `grep -E "เสร็จ|batch" /tmp/backfill_trickle.log | tail`
+- fallback ถ้า trickle ตัน: Approach B (รันจากเครื่องบ้าน residential + sync)
+- ขนาน: เริ่ม brainstorm 2B ได้เลย (มี evidence 1094 losers)

@@ -81,3 +81,37 @@ def analyze_field(auctions: list) -> dict:
         base["tier"] = 2
         base["landslide_gap_med"] = _median(landslide)
     return base
+
+
+def _short(name):
+    """ย่อชื่อ: ห้างหุ้นส่วนจำกัด→หจก. · บริษัท→บ."""
+    return name.replace("ห้างหุ้นส่วนจำกัด", "หจก.").replace("บริษัท", "บ.").strip()
+
+
+def field_lines(fr: dict, budget_now) -> list:
+    """บรรทัดการ์ดเจ้าใหญ่ (baht ตาม budget งานปัจจุบัน). [] ถ้า tier0/ข้อมูลน้อย/ไม่มี budget."""
+    if not fr or fr.get("tier", 0) == 0 or fr.get("pack_disc_med") is None or not budget_now:
+        return []
+    b = float(budget_now)
+
+    def price(disc):
+        return round(b * (1 - disc / 100.0))
+
+    pack = price(fr["pack_disc_med"])
+    if fr["tier"] == 1:
+        d = fr["dominant"]
+        nm = _short(d["name"])
+        sr = d["show_rate"] * 100
+        win = price(d["win_disc_med"])
+        risk = (f"   ⚠️ {nm} มาบ่อย ({sr:.0f}%) — ยื่นตื้นมีความเสี่ยง" if d["show_rate"] >= 0.5
+                else f"   {nm} ลงไม่บ่อย ({sr:.0f}%) — มีโอกาสยื่นตื้น")
+        return [
+            f"🏆 สนามนี้มีเจ้าใหญ่: {nm} (ลง ~{sr:.0f}% ของงาน · ชนะขาดลอยเฉลี่ย {d['win_gap_med']:.0f}%)",
+            f"   • ถ้า {nm} มา → ต้องยื่นต่ำกว่า ~{win:,.0f} (ระดับเจ้าใหญ่) ถึงแซง (กำไรบาง)",
+            f"   • ถ้าไม่มา → กลุ่มที่เหลืออยู่ ~{pack:,.0f} → ยื่นต่ำกว่ากลุ่มนิดเดียวก็ชนะ (กำไรงาม)",
+            risk,
+        ]
+    return [    # tier 2
+        f"🏆 สนามนี้ผู้ชนะมักขาดลอย ~{fr['landslide_gap_med']:.0f}% (ไม่มีเจ้าเด่นชัด)",
+        f"   • กลุ่มหลักอยู่ ~{pack:,.0f} → ถ้าคู่แข่งดุไม่มา ยื่นต่ำกว่ากลุ่มก็ชนะ",
+    ]

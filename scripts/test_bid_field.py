@@ -45,4 +45,25 @@ def test_tier0_tight_and_gate():
 test_tier1_named_dominant()
 test_tier2_structural()
 test_tier0_tight_and_gate()
+
+def test_field_lines():
+    # tier1: budget 1,000,000 · win_disc 40 → 600,000 · pack 20 → 800,000
+    fr1 = {"tier": 1, "pack_disc_med": 20.0,
+           "dominant": {"name": "ห้างหุ้นส่วนจำกัด เอ็กซ์", "show_rate": 0.8,
+                        "win_disc_med": 40.0, "win_gap_med": 22.0}}
+    lines = bf.field_lines(fr1, 1_000_000); txt = "\n".join(lines)
+    assert "เจ้าใหญ่" in txt and "หจก. เอ็กซ์" in txt, txt   # ย่อชื่อ
+    assert "600,000" in txt and "800,000" in txt, txt        # baht 2 ฉากทัศน์
+    assert "80%" in txt, txt                                  # show-rate
+    # tier0 / ข้อมูลน้อย → []
+    assert bf.field_lines({"tier": 0, "pack_disc_med": None}, 1_000_000) == []
+    assert bf.field_lines(None, 1_000_000) == []
+    assert bf.field_lines(fr1, 0) == []                       # ไม่มี budget
+    # tier2
+    fr2 = {"tier": 2, "pack_disc_med": 20.0, "landslide_gap_med": 18.0, "dominant": None}
+    l2 = "\n".join(bf.field_lines(fr2, 1_000_000))
+    assert "ขาดลอย" in l2 and "800,000" in l2, l2
+    print("✅ field_lines baht (tier1/2/0)")
+
+test_field_lines()
 print("ALL PASS bid_field")

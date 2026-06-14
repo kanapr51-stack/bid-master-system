@@ -760,7 +760,14 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 - regression `test_cgd_intel.py` + `test_winrate.py` ผ่าน (field_block คืน [] เมื่อ bid_results ว่าง → predictor เดิมไม่กระทบ)
 - spec/plan: `docs/superpowers/{specs,plans}/2026-06-14-dominant-detection-2b*`
 
+### ✅ v2 PIVOT + LIVE (2026-06-14) — evidence พลิก landslide → market-leader
+- verify จริงต่อ scope: **landslide หายาก 5-10%** (ไม่ใช่ 24% aggregate) · เจ้าตลาดชนะ **"ชิดๆ" gap~4จุด** → exploit "ไม่มา=กำไรงาม" ใช้ไม่ได้
+- **แต่มีเจ้าตลาดชัด** → pivot จับ **win-frequency**: `analyze_field` คืน `leaders[]` (ลง≥5 ∧ ชนะ≥40%) · `field_lines` โชว์ "เจ้าตลาด + ชนะ X% + ลดเฉลี่ย Y% + เจ้าตลาดลดได้ถึง Z% ต้องลดลึกกว่านี้"
+- fix: "ต้องลด" ใช้ disc **ลึกสุด** ในกลุ่ม (ไม่ใช่คนชนะเยอะสุด) กันแนะนำต่ำเกินจนแพ้
+- **LIVE บน prod** (commit 9f31e83) · verify จริง 4/5 scope จับเจ้าตลาด: นครพนม=บัญชาศรี/เมืองทอง · บึงกาฬ=ริชบียอนด์/ศิรประภา/พัฒนกิจ
+- test_bid_field ผ่านหมด · regression predictor เดิมผ่าน · spec อัปเดต v2 (§6b/§7b)
+
 ### Followup
-- **Task 5 (manual):** `git push origin main` → VPS `deploy.sh` (ปลอดภัย: gate → โชว์เฉพาะ scope ข้อมูลพอ)
-- **หลัง 2A trickle ครบ:** tune threshold (MIN_APPEAR/LANDSLIDE_GAP) + ดู output งานจริง · พิจารณาโชว์ "ชนะ N/M งาน" (n_wins) ในการ์ด ให้ผู้ใช้ดู sample size (กัน overclaim ตอนข้อมูลบาง)
-- ลบ `_diag_egp.py` + `_analyze_bidfield.py` (debug ชั่วคราว) เมื่อจบ
+- ⏳ รอกัญจน์ sanity-check: เจ้าตลาด + %ลด ตรงตลาดจริงไหม · threshold (ชนะ40%/ลง5) เหมาะไหม
+- 2A trickle ยังรัน (PID 1159209) → scope อื่นจะ activate เพิ่มเมื่อข้อมูลพอ
+- เมื่อ trickle ครบ: review threshold final + ลบ debug scripts (`_diag_egp.py`, `_analyze_bidfield.py`, `_verify_2b.py`)

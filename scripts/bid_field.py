@@ -135,7 +135,7 @@ def _field_auctions(conn, province, tokens, subdistrict=None, district=None) -> 
            "WHERE " + " AND ".join(where))
     try:
         rows = conn.execute(sql, params).fetchall()
-    except sqlite3.OperationalError:
+    except sqlite3.DatabaseError:          # missing table/locked/corrupt → graceful (ไม่ทำการ์ดพัง)
         return []
     byp = defaultdict(list)
     for pid, name, pp, pa, isw, budget in rows:

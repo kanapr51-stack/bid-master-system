@@ -583,12 +583,11 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
     pred = predict_winning_price(budget, pp25, pp75, ptop, ptopm, area_median=pmed)
     if pred:
         import bid_field as _bf                       # 2B เจ้าตลาด + B ตาราง win% — อ่าน field รอบเดียว
-        prices = [pred.get("area_price_lo"), pred.get("area_price_med"), pred.get("area_price_hi")]
         scopes = ([(tambon, None, f" (ต.{tambon})")] if tambon else []) + \
                  ([(None, amphoe, f" (อ.{amphoe})")] if amphoe else [])
         _wl, _fl = [], []                             # scopes=[] (ไม่มี ต./อ.) → คงเป็น [] → ตก fallback predict_lines
         for _sub, _dist, _lbl in scopes:              # ตำบลก่อน → อำเภอ → เจอ data ที่ระดับไหนใช้ระดับนั้น
-            _wl, _fl = _bf.field_and_winrate(conn, province, tokens, budget, prices,
+            _wl, _fl = _bf.field_and_winrate(conn, province, tokens, budget,
                                              subdistrict=_sub, district=_dist,
                                              scope_label=_lbl, basis=basis)
             if _wl or _fl:

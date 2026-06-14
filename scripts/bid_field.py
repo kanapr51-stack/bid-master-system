@@ -1,7 +1,7 @@
 """bid_field.py — "เจ้าตลาด" intel จาก full-field bids (2B). ใครชนะ scope นี้บ่อย + ลดเฉลี่ยเท่าไหร่.
 v2 pivot (evidence 2026-06-14): landslide หายาก (5-10%/scope) แต่มีเจ้าตลาดชัด (ชนะ 48-83% ชิดๆ)
 → จับด้วย win-frequency ไม่ใช่ landslide-gap. graceful gate. ดู spec 2026-06-14-dominant-detection-2b."""
-import sqlite3, sys, os, math, bisect
+import sqlite3, sys, os, math
 from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(__file__))
@@ -21,23 +21,33 @@ def _median(xs):
     return s[n // 2] if n % 2 else (s[n // 2 - 1] + s[n // 2]) / 2.0
 
 
-def _cdf(sorted_bids, x):
-    """F_bid(x) = สัดส่วน bid ≤ x (empirical CDF). sorted_bids เรียงแล้ว."""
-    return bisect.bisect_right(sorted_bids, x) / len(sorted_bids)
+def _quantile(sorted_vals, q):
+    """ค่าที่ percentile q (0..1) — linear interpolation. sorted_vals เรียงแล้ว, ไม่ว่าง."""
+    if q <= 0:
+        return sorted_vals[0]
+    if q >= 1:
+        return sorted_vals[-1]
+    pos = q * (len(sorted_vals) - 1)
+    lo = int(pos)
+    frac = pos - lo
+    if lo + 1 < len(sorted_vals):
+        return sorted_vals[lo] + frac * (sorted_vals[lo + 1] - sorted_vals[lo])
+    return sorted_vals[lo]
 
 
-def winrate_grid(auctions, prices, budget):
-    """ตาราง win% conditional ตามจำนวนผู้ยื่น. win% = F_bid(disc)^k.
-    auctions = [[(name,disc,is_winner)]] · prices = [lo,med,hi] (None ตัด) · budget = งบงานปัจจุบัน.
-    คืน {ns, rows, n_mean, n_sd, n_auctions, n_bids, budget} หรือ None ถ้า gate ไม่ผ่าน."""
+def winrate_grid(auctions, budget, targets=(75, 50, 25)):
+    """ตาราง win% conditional ตามจำนวนผู้ยื่น (B.1 — เลือกราคาแถวจาก win เป้าหมาย).
+    ราคาแต่ละแถว = ราคาที่ให้ win% = target ที่สนามปกติ (k_mid) จาก inverse-CDF ของ bid จริง.
+    win% คอลัมน์ k = target^(k/k_mid) (ราคา=ข้อมูลจริง · การกระจายข้ามคอลัมน์=โมเดล F_bid^k).
+    auctions = [[(name,disc,is_winner)]] · budget = งบงานปัจจุบัน.
+    คืน {ns, rows, n_mean, n_sd, n_auctions, n_bids, budget} หรือ None ถ้า gate ไม่ผ่าน/ราคายุบ."""
     auctions = [a for a in auctions if len(a) >= 2]
     n_auctions = len(auctions)
     try:
         bud = float(budget)
     except (TypeError, ValueError):
         bud = 0
-    ps = [p for p in (prices or []) if p is not None]
-    if n_auctions < MIN_AUCTIONS or bud <= 0 or not ps:
+    if n_auctions < MIN_AUCTIONS or bud <= 0:
         return None
     bids = sorted(d for a in auctions for (_n, d, _w) in a)
     if not bids:
@@ -52,11 +62,19 @@ def winrate_grid(auctions, prices, budget):
         k = max(2, k)
         if k not in ns:
             ns.append(k)
-    rows = []
-    for p in ps:
-        disc = (bud - p) / bud * 100.0
-        f = _cdf(bids, disc)
-        rows.append((p, [round(f ** k * 100) for k in ns]))
+    k_mid = ns[len(ns) // 2]                        # คอลัมน์กลาง = สนามปกติ (≈ mean)
+    rows, seen_price = [], set()
+    for t in targets:                              # ราคาที่ให้ win=t ที่ k_mid (invert F_bid)
+        tf = t / 100.0
+        disc = _quantile(bids, tf ** (1.0 / k_mid))     # F_bid(disc) = tf^(1/k_mid)
+        price = round(bud * (1 - disc / 100.0))
+        if price in seen_price:                         # กันราคาซ้ำ (สนามแคบ)
+            continue
+        seen_price.add(price)
+        rows.append((price, [round(tf ** (k / k_mid) * 100) for k in ns]))
+    if len(rows) < 2:                              # ราคายุบ (<2 แถว) → ไม่มีประโยชน์ → fallback การ์ดเดิม
+        return None
+    rows.sort()                                     # ราคาน้อย→มาก (ดุ→กำไร)
     return {"ns": ns, "rows": rows, "n_mean": n_mean, "n_sd": n_sd,
             "n_auctions": n_auctions, "n_bids": len(bids), "budget": bud}
 
@@ -75,7 +93,7 @@ def winrate_lines(grid, basis="") -> list:
     sd_txt = f" (±{round(grid['n_sd'])})" if len(ns) > 1 else ""
     lines.append(f"   📊 สนามนี้เฉลี่ย {round(grid['n_mean'])} ผู้ยื่น{sd_txt} · อิง{basis}")
     lines.append(f"   📈 สถิติจาก {grid['n_auctions']} งาน · {grid['n_bids']} ผู้ยื่น")
-    lines.append("   * ยิ่งผู้ยื่นเยอะ โอกาสยิ่งต่ำ")
+    lines.append("   * คอลัมน์กลาง = สนามปกติ · ยิ่งผู้ยื่นเยอะ โอกาสยิ่งต่ำ")
     return lines
 
 
@@ -197,11 +215,11 @@ def field_block(conn, province, tokens, budget_now, subdistrict=None, district=N
     return field_lines(analyze_field(auctions), budget_now, scope_label)
 
 
-def field_and_winrate(conn, province, tokens, budget, prices,
+def field_and_winrate(conn, province, tokens, budget,
                       subdistrict=None, district=None, scope_label="", basis=""):
     """อ่าน _field_auctions รอบเดียว → คืน (winrate_lines [B], field_lines [2B เจ้าตลาด]).
     graceful: คืน ([],[]) ถ้า scope ว่าง. จุดเชื่อม predictor — กัน query ซ้ำ."""
     auctions = _field_auctions(conn, province, tokens, subdistrict, district)
-    wl = winrate_lines(winrate_grid(auctions, prices, budget), basis)
+    wl = winrate_lines(winrate_grid(auctions, budget), basis)
     fl = field_lines(analyze_field(auctions), budget, scope_label)
     return wl, fl

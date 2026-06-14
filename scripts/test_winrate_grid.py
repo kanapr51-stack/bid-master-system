@@ -1,4 +1,4 @@
-"""test_winrate_grid.py — งาน B: conditional win-rate (F_bid^k) + ตาราง 3 ระดับ."""
+"""test_winrate_grid.py — งาน B/B.1: conditional win-rate ตาราง 3 ระดับ (invert F_bid)."""
 import os, sys, tempfile
 os.environ.setdefault("BMS_DATA_DIR", tempfile.mkdtemp())   # กัน import แตะ prod DB
 os.environ.setdefault("BMS_ENV", "dev")
@@ -9,49 +9,38 @@ def auc(*discs):
     """auction จาก list ของ disc — รายแรกเป็น winner (grid ไม่สน winner flag)."""
     return [(f"b{i}", d, i == 0) for i, d in enumerate(discs)]
 
-def test_grid_math():
-    # 5 auctions × 4 bidders (n คงที่=4 → SD=0 → 1 คอลัมน์ k=4)
-    # pooled disc: 10 ตัวที่ 10%, 10 ตัวที่ 30% → F_bid(30)=20/20=1.0 · F_bid(10)=10/20=0.5
-    auctions = [auc(30, 30, 10, 10) for _ in range(5)]
-    g = bf.winrate_grid(auctions, [700000, 900000, None], 1000000)
+def test_grid_invert_targets():
+    # n คงที่=4 → ns=[4], k_mid=4. bids กระจายละเอียด (distinct) → 3 quantile แยกราคาได้
+    auctions = [[(f"b{j}", i * 2 + j * 0.5, j == 0) for j in range(4)] for i in range(5)]  # disc 0..9.5
+    g = bf.winrate_grid(auctions, 1000000)             # targets default (75,50,25)
     assert g is not None, g
     assert g["ns"] == [4], g["ns"]
     assert g["n_auctions"] == 5 and g["n_bids"] == 20, g
-    rows = dict((p, w) for p, w in g["rows"])
-    assert rows[700000] == [100], rows          # disc 30 → 1.0^4=100%
-    assert rows[900000] == [6], rows            # disc 10 → 0.5^4=6.25%→6%
-    print("✅ grid math (F_bid^k) ถูกต้อง")
+    mids = [w[0] for _, w in g["rows"]]                # n const → 1 คอลัมน์ (=k_mid)
+    assert mids == [75, 50, 25], mids                  # คอลัมน์กลาง = target เป๊ะ (by construction)
+    prices = [p for p, _ in g["rows"]]
+    assert prices[0] < prices[1] < prices[2], prices   # ราคาเรียงขึ้น (75%ดุสุด→25%กำไร) ไม่ยุบ
+    print("✅ invert: คอลัมน์กลาง = 75/50/25 + ราคาไม่ยุบ")
 
-def test_grid_columns_and_monotonic():
-    # ขนาดสนาม [2,4,4,4,6] → mean=4, sample-SD=√2≈1.41 → คอลัมน์ [3,4,5]
+def test_grid_invert_columns():
+    # ขนาดสนาม [2,4,4,4,6] → mean=4 sd≈1.41 → ns=[3,4,5], k_mid=ns[1]=4
     sizes = [2, 4, 4, 4, 6]
-    auctions = []
-    for s in sizes:
-        auctions.append(auc(*[5 + 2 * j for j in range(s)]))   # disc 5,7,9,...
-    # price 900000 → disc 10% → F_bid(10)=14/20=0.7 (อยู่ใน (0,1) → k มีผลจริง)
-    g = bf.winrate_grid(auctions, [900000, None, None], 1000000)
+    auctions = [[(f"b{j}", j * 1.7, j == 0) for j in range(s)] for s in sizes]
+    g = bf.winrate_grid(auctions, 1000000)
     assert g["ns"] == [3, 4, 5], g["ns"]
-    assert g["rows"][0][0] == 900000, g["rows"]      # row label ตรง price ที่ส่ง
-    ws = g["rows"][0][1]
-    assert len(ws) == 3, ws
-    assert ws[0] > ws[1] > ws[2], ("คู่แข่งเยอะ → win% ลด (strict)", ws)   # 34>24>17
-    print("✅ คอลัมน์ mean±SD + monotonic (k↑→%↓)")
-
-def test_grid_rows_monotonic():
-    auctions = [auc(30, 20, 10, 25) for _ in range(5)]    # n=4 คงที่
-    g = bf.winrate_grid(auctions, [700000, 800000, 900000], 1000000)  # disc 30/20/10
-    w_lo = g["rows"][0][1][0]   # 700000 (disc 30)
-    w_hi = g["rows"][2][1][0]   # 900000 (disc 10)
-    assert w_lo > w_hi, ("ราคาต่ำต้องชนะมากกว่า", w_lo, w_hi)
-    print("✅ ราคาต่ำ → win% สูงกว่า (rows monotonic)")
+    r0 = g["rows"][0][1]                               # row เป้า 75% (ราคาต่ำสุด)
+    assert r0[1] == 75, r0                             # คอลัมน์กลาง (k=4) = target เป๊ะ
+    assert r0[0] > r0[1] > r0[2], ("k น้อย→win สูง", r0)   # 81 > 75 > 70
+    print("✅ invert columns: mid=target, monotonic by k")
 
 def test_grid_gate():
-    auctions = [auc(20, 10) for _ in range(4)]            # n_auctions=4 < MIN_AUCTIONS(5)
-    assert bf.winrate_grid(auctions, [800000], 1000000) is None, "gate <5 → None"
-    assert bf.winrate_grid([], [800000], 1000000) is None, "ว่าง → None"
-    assert bf.winrate_grid([auc(20, 10) for _ in range(5)], [], 1000000) is None, "ไม่มี price → None"
-    assert bf.winrate_grid([auc(20, 10) for _ in range(5)], [800000], 0) is None, "ไม่มี budget → None"
-    print("✅ gating (น้อย/ว่าง/ไม่มี budget → None)")
+    base = [[(f"b{j}", j * 2.0, j == 0) for j in range(4)] for _ in range(5)]
+    assert bf.winrate_grid(base[:4], 1000000) is None, "gate <5 → None"
+    assert bf.winrate_grid([], 1000000) is None, "ว่าง → None"
+    assert bf.winrate_grid(base, 0) is None, "ไม่มี budget → None"
+    narrow = [[(f"b{j}", 20.0, j == 0) for j in range(4)] for _ in range(5)]  # disc เท่ากันหมด
+    assert bf.winrate_grid(narrow, 1000000) is None, "ราคายุบ <2 แถว → None"
+    print("✅ gating (<5 / ว่าง / ไม่มี budget / ราคายุบ → None)")
 
 def test_winrate_lines_render():
     grid = {"ns": [4, 6, 8],
@@ -69,7 +58,7 @@ def test_winrate_lines_render():
     print("✅ winrate_lines render + sample size")
 
 def test_field_and_winrate_endtoend():
-    import tempfile, importlib
+    import importlib
     os.environ["BMS_DATA_DIR"] = tempfile.mkdtemp()
     import Sebastian_Customer_DB as db
     importlib.reload(db)
@@ -81,38 +70,36 @@ def test_field_and_winrate_endtoend():
                          "(project_id, province, proc_type, project_name, budget) VALUES (?,?,?,?,?)",
                          (f"W{i}", "นครพนม", "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
                           "ก่อสร้างถนน อ.เมือง", 1000000))
-    for i in range(6):
+    for i in range(6):                                       # disc กระจาย (10/15/22/30) → ราคาไม่ยุบ
         s.record_bid_results(f"W{i}", [
             {"receiveNameTh": "หจก.ก", "receiveTin": "1", "priceProposal": "700000", "priceAgree": "700000"},
-            {"receiveNameTh": "หจก.ข", "receiveTin": "2", "priceProposal": "850000"},
-            {"receiveNameTh": "หจก.ค", "receiveTin": "3", "priceProposal": "900000"}])
+            {"receiveNameTh": "หจก.ข", "receiveTin": "2", "priceProposal": "780000"},
+            {"receiveNameTh": "หจก.ค", "receiveTin": "3", "priceProposal": "850000"},
+            {"receiveNameTh": "หจก.ง", "receiveTin": "4", "priceProposal": "900000"}])
     with db.get_connection() as conn:
         wl, fl = bf.field_and_winrate(conn, "นครพนม", ["ถนน"], 1000000,
-                                      [700000, 850000, 900000], district="เมือง",
-                                      scope_label=" (อ.เมือง)", basis="อำเภอ")
+                                      district="เมือง", scope_label=" (อ.เมือง)", basis="อำเภอ")
     wtxt = "\n".join(wl)
     assert "โอกาสชนะตามจำนวนผู้ยื่น" in wtxt, wtxt           # B table โผล่
-    assert "📈 สถิติจาก 6 งาน · 18 ผู้ยื่น" in wtxt, wtxt     # 6 งาน × 3 ผู้ยื่น = 18
+    assert "📈 สถิติจาก 6 งาน · 24 ผู้ยื่น" in wtxt, wtxt     # 6 งาน × 4 ผู้ยื่น = 24
     assert isinstance(fl, list), fl                          # 2B block (อาจ [] ถ้าไม่มี leader) — ไม่ error
     print("✅ field_and_winrate end-to-end (อ่านรอบเดียว → 2 บล็อก)")
 
-
 def test_gate_fallback_to_old_card():
     """scope ที่ bid_results ว่าง → ([],[]) → predict() จะ fallback การ์ดเดิม (graceful)."""
-    import tempfile, importlib
+    import importlib
     os.environ["BMS_DATA_DIR"] = tempfile.mkdtemp()
     import Sebastian_Customer_DB as db
     importlib.reload(db); db.init_schema()
     with db.get_connection() as conn:
         wl, fl = bf.field_and_winrate(conn, "นครพนม", ["ถนน"], 1000000,
-                                      [700000, 800000, 900000], district="ไม่มี", basis="อำเภอ")
+                                      district="ไม่มี", basis="อำเภอ")
     assert wl == [] and fl == [], (wl, fl)                    # ว่าง → predict() ใช้ predict_lines เดิม
     print("✅ gate: scope บาง → ([],[]) → การ์ดเดิม")
 
 
-test_grid_math()
-test_grid_columns_and_monotonic()
-test_grid_rows_monotonic()
+test_grid_invert_targets()
+test_grid_invert_columns()
 test_grid_gate()
 test_winrate_lines_render()
 test_field_and_winrate_endtoend()

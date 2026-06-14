@@ -1,7 +1,7 @@
 """bid_field.py — "เจ้าตลาด" intel จาก full-field bids (2B). ใครชนะ scope นี้บ่อย + ลดเฉลี่ยเท่าไหร่.
 v2 pivot (evidence 2026-06-14): landslide หายาก (5-10%/scope) แต่มีเจ้าตลาดชัด (ชนะ 48-83% ชิดๆ)
 → จับด้วย win-frequency ไม่ใช่ landslide-gap. graceful gate. ดู spec 2026-06-14-dominant-detection-2b."""
-import sqlite3, sys, os, math
+import sqlite3, sys, os, math, bisect
 from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(__file__))
@@ -23,7 +23,6 @@ def _median(xs):
 
 def _cdf(sorted_bids, x):
     """F_bid(x) = สัดส่วน bid ≤ x (empirical CDF). sorted_bids เรียงแล้ว."""
-    import bisect
     return bisect.bisect_right(sorted_bids, x) / len(sorted_bids)
 
 

@@ -31,6 +31,7 @@ def test_grid_columns_and_monotonic():
     # price 900000 → disc 10% → F_bid(10)=14/20=0.7 (อยู่ใน (0,1) → k มีผลจริง)
     g = bf.winrate_grid(auctions, [900000, None, None], 1000000)
     assert g["ns"] == [3, 4, 5], g["ns"]
+    assert g["rows"][0][0] == 900000, g["rows"]      # row label ตรง price ที่ส่ง
     ws = g["rows"][0][1]
     assert len(ws) == 3, ws
     assert ws[0] > ws[1] > ws[2], ("คู่แข่งเยอะ → win% ลด (strict)", ws)   # 34>24>17

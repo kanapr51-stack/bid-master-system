@@ -178,6 +178,13 @@ scrape → classify → refresh → download → analyze → cost → rank → n
 6. **Backup ก่อนเปลี่ยน schema** — `backups/[name]_[timestamp].json`
 7. **ทุก research/probe → save raw data** ลง `data/` หรือ `docs/`
 
+### 🧭 4 หลักก่อนแตะโค้ดทุกครั้ง (Karpathy guidelines)
+
+1. **Think Before Coding** — surface assumption อย่าเดาเงียบๆ; ถ้าไม่ชัด เสนอหลายทางเลือก + เชียร์ทางที่ง่ายกว่า
+2. **Simplicity First** — เขียนเท่าที่ขอ ไม่มี abstraction/flexibility/error-handling สำหรับ edge case ที่ไม่ควรเกิด
+3. **Surgical Changes** — แก้เฉพาะที่เกี่ยว ทุกบรรทัดที่เปลี่ยนต้อง trace กลับไปที่ request ได้; ไม่ refactor ของข้างเคียง
+4. **Goal-Driven** — ตั้ง **verifiable success criteria ก่อนเริ่ม** (เงื่อนไขที่รัน command แล้วเห็น pass/fail จริง เช่น "challenge=0 ใน 10 req", "duplicate IDs=0", "winner match 100%") ไม่ใช่ความรู้สึกว่า "น่าจะเสร็จ"
+
 ### File Layout
 - `scripts/` — production scripts + helper/probe
 - `docs/` — design docs, catalog, plans

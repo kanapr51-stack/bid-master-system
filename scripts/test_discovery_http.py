@@ -68,6 +68,19 @@ def _patch_cffi(items):
     return fake, restore
 
 
+def _patch(items):
+    """เหมือน _patch_cffi + no-op time.sleep & random.uniform (สำหรับ test retry — ไม่หน่วงจริง)"""
+    fake, restore_cffi = _patch_cffi(items)
+    orig_sleep, orig_uniform = spd.time.sleep, spd.random.uniform
+    spd.time.sleep = lambda *a, **k: None
+    spd.random.uniform = lambda a, b: 0.0
+
+    def restore():
+        spd.time.sleep, spd.random.uniform = orig_sleep, orig_uniform
+        restore_cffi()
+    return fake, restore
+
+
 def test_get_success():
     fake, restore = _patch_cffi([FakeResp(200, '{"data":1}', json_data={"data": 1})])
     try:
@@ -78,15 +91,36 @@ def test_get_success():
     print("✅ test_get_success")
 
 
-def test_get_challenge_returns_none():
-    # Task 2A (ยังไม่มี retry): challenge → None ทันที, เรียก get ครั้งเดียว
-    fake, restore = _patch_cffi([FakeResp(503, "just a moment", "text/html")])
+def test_get_persistent_challenge_returns_none():
+    # challenge ตลอด → None หลัง MAX_CHALLENGE_RETRY (=3) → เรียก get 4 ครั้ง (1+3)
+    items = [FakeResp(503, "just a moment", "text/html")] * (spd.MAX_CHALLENGE_RETRY + 1)
+    fake, restore = _patch(items)
     try:
         assert spd._get("tok", {}) is None
-        assert fake.calls == 1
+        assert fake.calls == spd.MAX_CHALLENGE_RETRY + 1
     finally:
         restore()
-    print("✅ test_get_challenge_returns_none")
+    print("✅ test_get_persistent_challenge_returns_none")
+
+
+def test_get_recovered_after_challenge():
+    # challenge 2 ครั้งแล้วสำเร็จ → คืน JSON + print CF_RECOVERED
+    import builtins
+    items = [FakeResp(200, "just a moment", "text/html"),
+             FakeResp(403, "blocked", "text/html"),
+             FakeResp(200, '{"ok":1}', json_data={"ok": 1})]
+    fake, restore = _patch(items)
+    logs = []
+    orig_print = builtins.print
+    builtins.print = lambda *a, **k: logs.append(" ".join(str(x) for x in a))
+    try:
+        assert spd._get("tok", {"page": "3"}) == {"ok": 1}
+        assert fake.calls == 3
+        assert any("CF_RECOVERED" in m for m in logs), logs
+    finally:
+        builtins.print = orig_print
+        restore()
+    print("✅ test_get_recovered_after_challenge")
 
 
 def test_get_ratelimit_propagates():
@@ -131,7 +165,8 @@ def test_get_json_error_logged_not_swallowed():
 if __name__ == "__main__":
     test_is_challenge()
     test_get_success()
-    test_get_challenge_returns_none()
+    test_get_persistent_challenge_returns_none()
+    test_get_recovered_after_challenge()
     test_get_ratelimit_propagates()
     test_get_network_error_returns_none()
     test_get_json_error_logged_not_swallowed()

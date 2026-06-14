@@ -30,6 +30,7 @@ import sqlite3
 from datetime import datetime, timezone
 
 from curl_cffi import requests as cffi_requests
+import random
 
 sys.stdout.reconfigure(encoding="utf-8")
 
@@ -41,6 +42,10 @@ HEADERS = {
     "Accept": "application/json, text/plain, */*",
     "Content-Type": "application/json",
 }
+
+# Cloudflare challenge retry (spec 2026-06-14): transient → retry; persistent → circuit breaker เดิม
+MAX_CHALLENGE_RETRY = 3
+CHALLENGE_BACKOFF_BASE = 2   # วินาที → 2, 4, 8 (+ jitter)
 
 # moiId → ชื่อจังหวัด (ที่ตรงกับ subscription_provinces)
 PROVINCE_MOI = {
@@ -139,34 +144,43 @@ def _is_challenge(resp) -> bool:
 
 
 def _get(token: str, params: dict, path: str = "") -> dict | None:
-    # Safe to retry because discovery requests are idempotent GETs. (retry เพิ่มใน Task 2B)
+    # Safe to retry because discovery requests are idempotent GETs.
     url = API + path
     hdrs = {**HEADERS, "X-Announcement-Token": token}
+    challenged = False   # เคยเจอ challenge ใน call นี้ไหม → log CF_RECOVERED ถ้าหลังจากนั้นสำเร็จ
     pg = params.get("page", "-")
-    try:
-        r = cffi_requests.get(url, params=params, headers=hdrs,
-                              timeout=TIMEOUT, impersonate="chrome120")
-    except cffi_requests.RequestsError:    # network/transport error → graceful None
-        return None
-    except Exception as e:                 # bug จริง — อย่ากลืนเงียบ ต้องเห็นใน journald
-        print(f"❌ _get unexpected error (path={path or '/'} page={pg}): {e}")
-        return None
+    for attempt in range(MAX_CHALLENGE_RETRY + 1):
+        try:
+            r = cffi_requests.get(url, params=params, headers=hdrs,
+                                  timeout=TIMEOUT, impersonate="chrome120")
+        except cffi_requests.RequestsError:   # network/transport error → graceful None
+            return None
+        except Exception as e:                # bug จริง — อย่ากลืนเงียบ ต้องเห็นใน journald
+            print(f"❌ _get unexpected error (path={path or '/'} page={pg}): {e}")
+            return None
 
-    # rate limit = plain text เดิม — แยกจาก challenge, ไม่แตะ logic
-    if "rate limit" in (r.text or "").lower():
-        raise RateLimited()
+        # rate limit = plain text เดิม — แยกจาก challenge, ไม่แตะ logic
+        if "rate limit" in (r.text or "").lower():
+            raise RateLimited()
 
-    if _is_challenge(r):
-        print(f"⚠️ CF_CHALLENGE path={path or '/'} page={pg}")
-        return None      # Task 2A: ยังไม่ retry → circuit breaker เดิมใน fetch_all_d0 รับต่อ
+        if _is_challenge(r):
+            challenged = True
+            print(f"⚠️ CF_CHALLENGE attempt={attempt} path={path or '/'} page={pg}")
+            if attempt < MAX_CHALLENGE_RETRY:
+                time.sleep(CHALLENGE_BACKOFF_BASE * (2 ** attempt) + random.uniform(0, 1))
+                continue
+            return None     # persistent — ยอมแพ้หลัง retry → circuit breaker เดิมรับต่อ
 
-    if not r.ok:
-        return None
-    try:
-        return r.json()
-    except Exception as e:                  # JSON decode ผิดปกติ (ไม่ใช่ challenge) — log ให้เห็น
-        print(f"❌ _get JSON decode error (path={path or '/'} page={pg}): {e}")
-        return None
+        if not r.ok:
+            return None
+        if challenged:
+            print(f"✅ CF_RECOVERED attempt={attempt} path={path or '/'} page={pg}")
+        try:
+            return r.json()
+        except Exception as e:                # JSON decode ผิดปกติ (ไม่ใช่ challenge) — log ให้เห็น
+            print(f"❌ _get JSON decode error (path={path or '/'} page={pg}): {e}")
+            return None
+    return None
 
 
 def count_d0(token: str, moi_id: str, budget_year: str,

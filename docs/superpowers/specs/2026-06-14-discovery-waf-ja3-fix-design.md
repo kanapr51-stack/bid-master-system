@@ -7,6 +7,21 @@
 
 ---
 
+## 0. Precondition (BLOCKER — ต้องทำก่อนเริ่ม implementation)
+
+> **Implementation MUST NOT begin until VPS curl_cffi version is verified and pinned.**
+
+เหตุผล: spec อิงกับ behavior ของ RSS ที่พิสูจน์แล้ว. ถ้า RSS=0.15.0 แต่ discovery รันคนละ version → `impersonate="chrome120"` behavior อาจต่าง → spec พังทันที.
+
+ขั้นตอน:
+1. `ssh -i ~/.ssh/bms_vps root@45.76.156.166 '/opt/bms/venv/bin/pip show curl_cffi'`
+2. pin `requirements.txt`: `curl_cffi>=0.15` → `curl_cffi==<version ที่ VPS รันจริง>` (คาด `==0.15.0`)
+3. ยืนยัน RSS + discovery ใช้ venv เดียวกัน (`/opt/bms/venv`)
+
+(รายละเอียด §5)
+
+---
+
 ## 1. ปัญหา & Root cause (ยืนยันด้วยหลักฐาน)
 
 Discovery บน VPS โดน Cloudflare Turnstile challenge เป็นพักๆ → `validateCfTurnTile` reject ทั้งที่ token สด (full-nkp log: `🔑 token OK เหลือ 1507s` → `❌ validateCfTurnTile` ทันที).
@@ -44,11 +59,15 @@ Tier-1 (commit `e7b9712`, deployed) แก้แล้วเฉพาะ **alert
 **สำคัญ:** Cloudflare บางทีส่ง `200 OK` แต่ body เป็น `<html>Just a moment...` → **อย่า rely status code อย่างเดียว**. ตรวจ body ก่อน:
 ```python
 def _is_challenge(resp) -> bool:
+    # priority: body marker > status (CF ส่ง 200 OK + "Just a moment" ได้)
     text = (resp.text or "").lower()
     markers = ("just a moment", "cf-mitigated", "turnstile", "challenge-platform")
     if any(m in text for m in markers):
         return True
-    if resp.status_code in (403, 503):
+    # content-type เสริม: block status + ไม่ใช่ JSON = ไม่ใช่ error ปกติของ API → ถือเป็น challenge
+    # (กัน false positive: 403 ที่เป็น JSON error จริงจะไม่ retry เปล่า)
+    ctype = resp.headers.get("content-type", "").lower()
+    if resp.status_code in (403, 503) and "application/json" not in ctype:
         return True
     return False
 ```
@@ -66,14 +85,22 @@ def _is_challenge(resp) -> bool:
 - **แยกจาก `RateLimited`** (rate limit = plain text เดิม ไม่แตะ logic)
 - retry ปลอดภัยเพราะ GET idempotent (condition #2, ยืนยันแล้ว: discovery ไม่มี POST, ทุก call ผ่าน `_get`)
 
-### 3.4 Logging / metric (condition #5)
-ทุกครั้งที่เจอ challenge → log บรรทัด **tag คงที่ greppable** (วัด challenge/day ก่อน-หลัง deploy ได้):
+### 3.4 Logging / metric (condition #5 + Comment 4)
+**tag คงที่ greppable 2 ตัว** ให้เห็นภาพ challenge vs recovered vs persistent:
 ```python
+# เจอ challenge (ทุกครั้ง)
 print(f"⚠️ CF_CHALLENGE attempt={attempt} path={path or '/'} page={params.get('page','-')}")
+# challenge → retry → สำเร็จ (เห็นว่า retry ได้ผล)
+print(f"✅ CF_RECOVERED attempt={attempt} path={path or '/'} page={params.get('page','-')}")
 ```
-> เลือก `print` tag (ไม่ใช่ `logging` module) ให้เข้ากับ pattern เดิมของไฟล์ (print ล้วน, ไม่มี logging setup). journald เก็บ stdout → นับได้ด้วย:
-> `journalctl -u 'bms-province-discovery*' --since today | grep -c CF_CHALLENGE`
-> (ถ้ากัญจน์อยากได้ logging module จริงๆ ปรับได้ตอน plan)
+นับได้:
+```
+challenge = journalctl -u 'bms-province-discovery*' --since today | grep -c CF_CHALLENGE
+recovered = ... | grep -c CF_RECOVERED
+persistent = challenge - recovered   # = ที่ retry ไม่ผ่าน → no_data
+```
+ตัวอย่างที่อยากเห็นหลัง deploy: `challenge=30 recovered=29 persistent=1` (เดิมก่อน curl_cffi อาจ ~47/วัน)
+> เลือก `print` tag (ไม่ใช่ `logging` module) ให้เข้ากับ pattern เดิมของไฟล์ (print ล้วน, ไม่มี logging setup). journald เก็บ stdout. (ถ้ากัญจน์อยากได้ logging module จริงๆ ปรับได้ตอน plan)
 
 ### 3.5 โครง `_get` ใหม่ (pseudo)
 ```python
@@ -87,27 +114,44 @@ def _get(token, params, path=""):
     # Safe to retry because discovery requests are idempotent GETs.
     url = API + path
     hdrs = {**HEADERS, "X-Announcement-Token": token}   # HEADERS = ไม่มี UA แล้ว
+    challenged = False   # เคยเจอ challenge ใน call นี้ไหม → ใช้ log CF_RECOVERED
+    pg = params.get("page", "-")
     for attempt in range(MAX_CHALLENGE_RETRY + 1):
         try:
             r = cffi_requests.get(url, params=params, headers=hdrs,
                                   timeout=TIMEOUT, impersonate="chrome120")
-            if "rate limit" in (r.text or "").lower():
-                raise RateLimited()
-            if _is_challenge(r):
-                print(f"⚠️ CF_CHALLENGE attempt={attempt} path={path or '/'} page={params.get('page','-')}")
-                if attempt < MAX_CHALLENGE_RETRY:
-                    time.sleep(CHALLENGE_BACKOFF_BASE * (2 ** attempt) + random.uniform(0, 1))
-                    continue
-                return None     # ยอมแพ้หลัง retry → no_data path เดิม
-            if not r.ok:
-                return None
-            return r.json()
         except RateLimited:
             raise
-        except Exception:
+        except cffi_requests.RequestsError:   # network/transport error → graceful None
+            return None
+        except Exception as e:                # bug จริง (อย่ากลืนเงียบ — ต้องเห็น)
+            print(f"❌ _get unexpected error (path={path or '/'} page={pg}): {e}")
+            return None
+
+        # rate limit = plain text เดิม — แยกจาก challenge, ไม่แตะ
+        if "rate limit" in (r.text or "").lower():
+            raise RateLimited()
+
+        if _is_challenge(r):
+            challenged = True
+            print(f"⚠️ CF_CHALLENGE attempt={attempt} path={path or '/'} page={pg}")
+            if attempt < MAX_CHALLENGE_RETRY:
+                time.sleep(CHALLENGE_BACKOFF_BASE * (2 ** attempt) + random.uniform(0, 1))
+                continue
+            return None     # persistent — ยอมแพ้หลัง retry → no_data path เดิม
+
+        if not r.ok:
+            return None
+        if challenged:
+            print(f"✅ CF_RECOVERED attempt={attempt} path={path or '/'} page={pg}")
+        try:
+            return r.json()
+        except Exception as e:                # JSON decode ผิดปกติ (ไม่ใช่ challenge) — log ให้เห็น
+            print(f"❌ _get JSON decode error (path={path or '/'} page={pg}): {e}")
             return None
     return None
 ```
+> **exception policy (Comment 1):** `RateLimited` → propagate; network error (`RequestsError`) → graceful None; unexpected/bug + JSON decode → **print แล้วค่อย None** (ไม่กลืนเงียบ — bug ต้องเห็นใน journald). ชื่อ exception class ของ curl_cffi (`RequestsError`) ต้อง verify กับ version ที่ pin ตอน plan
 
 ---
 
@@ -121,15 +165,15 @@ def _get(token, params, path=""):
 ## 5. Dependency (condition #4 — pin version)
 - `requirements.txt` ปัจจุบัน: `curl_cffi>=0.15` (**ไม่ pin = เสี่ยง drift**; `impersonate="chrome120"` behavior อาจเปลี่ยนข้าม major version)
 - local verified = `0.15.0`
-- **Action (pre-impl, ใน plan):**
-  1. ยืนยัน version บน VPS: `ssh -i ~/.ssh/bms_vps root@45.76.156.166 '/opt/bms/venv/bin/pip show curl_cffi'`
-  2. pin `requirements.txt` เป็น `==<version ที่ VPS รันจริง>` (น่าจะ `==0.15.0`) — RSS+discovery ใช้ venv เดียวกัน → discovery จะได้ behavior เดียวกับ RSS ที่พิสูจน์แล้ว
+- **เป็น Precondition/BLOCKER → ดู §0** (ต้อง verify VPS + pin ก่อนเริ่ม)
+- RSS + discovery ใช้ venv เดียวกัน (`/opt/bms/venv`) → pin = guarantee discovery ได้ behavior เดียวกับ RSS ที่พิสูจน์แล้ว
 
 ---
 
 ## 6. Testing
-- **unit `_is_challenge`:** sample 4 แบบ — (a) JSON ปกติ → False, (b) 200 + body "just a moment" → True (body>status), (c) 403 body ว่าง → True, (d) plain "rate limit exceeded" → จัดการโดย RateLimited ไม่ใช่ challenge
-- **unit retry:** mock `cffi_requests.get` — challenge 2 ครั้งแล้ว success → คืน JSON (attempt 3); challenge ตลอด → คืน None หลัง MAX_CHALLENGE_RETRY; นับ sleep ถูกเรียกตามจำนวน
+- **unit `_is_challenge`:** sample — (a) JSON ปกติ (200, application/json) → False, (b) 200 + body "just a moment" → True (body>status), (c) 403 + text/html → True, (d) 403 + application/json (error จริง) → False (content-type กัน false positive), (e) plain "rate limit exceeded" → จัดการโดย RateLimited ไม่ใช่ challenge
+- **unit retry:** mock `cffi_requests.get` — challenge 2 ครั้งแล้ว success → คืน JSON + print CF_RECOVERED (attempt 2); challenge ตลอด → คืน None หลัง MAX_CHALLENGE_RETRY + print CF_CHALLENGE 4 ครั้ง; นับ `time.sleep`/`random.uniform` ถูกเรียกตามจำนวน
+- **unit exception (Comment 1):** `RateLimited` → propagate (ไม่ถูกกลืน); `RequestsError` → None เงียบ; Exception อื่น/JSON decode → คืน None **+ print error** (assert ว่า print ถูกเรียก = ไม่กลืนเงียบ)
 - **smoke:** รัน `Sebastian_Province_Discovery.py --dry-run` (มี token สด) → scan ผ่านด้วย curl_cffi, ไม่ regression
 - **post-deploy metric:** เทียบ `grep -c CF_CHALLENGE` ก่อน/หลัง → ยืนยัน JA3 เป็น root cause
 
@@ -144,6 +188,20 @@ def _get(token, params, path=""):
 
 ---
 
-## 8. Out of scope / followup
+## 8. Rollback
+**Trigger** (เงื่อนไขที่บอกว่าต้องถอย):
+- `CF_CHALLENGE`/วัน เพิ่มเหนือ baseline ก่อนแก้ (= curl_cffi ทำให้แย่ลง)
+- dry-run / scan regression หลัง deploy (discovery ได้ 0 หรือ error)
+- RSS หรือ endpoint อื่นได้รับผลกระทบ (เช่น curl_cffi version ที่ pin ชน dependency อื่น)
+
+**Action:** `git revert <commit>` → push → VPS `git pull && bash scripts/deploy.sh`
+
+**Expected outcome:** discovery กลับไปใช้ `requests` เดิมทันที (behavior known-good)
+
+**ทำไม revert ปลอดภัย:** scope แค่ไฟล์เดียว (`Sebastian_Province_Discovery.py`) + `requirements.txt` 1 บรรทัด · ไม่แตะ data/schema/migration · ไม่แตะ deadman/catchup · circuit breaker เดิมยังทำงาน
+
+---
+
+## 9. Out of scope / followup
 - full-sweep catch-up cooldown (lines 113-129 ใน catchup) — secondary, ทำถ้า spam
-- ADR-003 residential IP — defer จนมีหลักฐาน (§7.5)
+- ADR-003 residential IP — defer จนมีหลักฐาน (§7 ข้อ 5)

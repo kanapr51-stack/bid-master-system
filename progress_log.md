@@ -870,3 +870,24 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 - **deploy VPS**: `cd /opt/bms/app && git pull && bash scripts/deploy.sh` แล้วดู `_show_card.py` — scope full-field ≥5 เห็นตาราง · scope บางเห็นการ์ดเดิม
 - ตาราง B โผล่จริงต้องรอ backfill 2A ครบ (ตอนนี้ ~924/3032) — ยิ่งครบยิ่งหลาย scope
 - ถัดไป: validate iid assumption (F^k vs winner-CDF จริง) หลัง trickle ครบ · R2 recency-weight F_bid (ถ้า drift)
+
+---
+
+## งานที่ N+133: B.1 — เลือกราคาแถวจาก win เป้าหมาย (invert F_bid) — code DONE (รอ push/deploy) (2026-06-15)
+
+### สถานะ: ✅ code+test+review เสร็จ (b052b71 + footer fix) — รอ push + redeploy VPS
+
+### Root cause (เจอจาก deploy จริง N+132)
+- deploy แล้วการ์ดนาทมโชว์ตาราง B จริง แต่ output แย่: ราคา 3 แถวมาจาก winner p25/p75 → สนาม disc ลึก+แคบ ทำ **win% แบน 86-100% ทุกแถว** + **2 แถวยุบติดกัน** (1,222,800 vs 1,223,143 ต่าง 343 บาท) → ตารางไม่ช่วยตัดสินใจ
+
+### Fix (B.1)
+- เลิกใช้ winner p25/p75 เป็นราคาแถว → **คำนวณราคาที่ให้ win=target (75/50/25) ที่สนามปกติ** จาก inverse-CDF: `disc = quantile(bids, (t/100)^(1/k_mid))` · win% คอลัมน์ k = `(t/100)^(k/k_mid)` → คอลัมน์ตรงค่าเฉลี่ย = target เป๊ะ
+- `winrate_grid(auctions, budget, targets=(75,50,25))` ตัด param `prices` · ตัด `_cdf` เพิ่ม `_quantile` · gate ราคายุบ <2 แถว → None (fallback)
+- ripple: `field_and_winrate`/`predict()` เลิกส่ง prices
+- smoke (data ต่อเนื่อง): คอลัมน์กลาง 75/50/25 เป๊ะ · ราคาไล่ระดับไม่ยุบ (1,138,622/1,171,015/1,218,701) ✅
+- test 6 เคส + backward-compat ผ่านหมด · spec §10b อัปเดต · review = ready to merge
+
+### Followup
+- **push + redeploy VPS** แล้วดู `_show_card.py` นาทม → ควรเห็นตารางไล่ระดับมีความหมาย (ไม่ใช่ 86-100% แบน)
+- **ปัญหา #3 ยังไม่แก้:** เลขงานตาราง (`_field_auctions`) ≠ บล็อกคู่แข่ง (winner-stats) — UX แยกประเด็น
+- validate iid หลัง backfill ครบ (ตอนนี้ ~924/3032)

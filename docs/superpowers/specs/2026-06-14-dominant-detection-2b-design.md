@@ -1,7 +1,7 @@
 # Dominant-Detection Predictor (2B) — Design
 
 **วันที่:** 2026-06-14
-**สถานะ:** design (รอ implement — รอ 2A trickle สะสมข้อมูลครบก่อน validate threshold)
+**สถานะ:** design — **implement ได้เลย** (โค้ด/test เป็น pure function ไม่ขึ้นกับปริมาณข้อมูล · graceful gate ทำให้ ship ปลอดภัยแม้ข้อมูลยังบาง · evidence 224 auctions พอยืนยัน pattern แล้ว). **ขั้น tune threshold + ดู output งานจริง = pass สั้นๆ หลัง implement** (ไม่บล็อกการเขียนโค้ด) ทำเมื่อ 2A trickle ครบ
 **Sub-project ของ:** เฟส 2 (all-bidders ใน predictor). 2A = evidence layer (backfill) ✅ · **2B = ตัวนี้**
 
 ---
@@ -130,7 +130,7 @@ LANDSLIDE_RATE = 0.30 # Tier 2: ≥30% ของ auctions เป็น landslide
 
 ## 12. Risks & open items
 
-- **R1: ข้อมูล named-dominant อาจบาง** (224 auctions กระจายหลายหมวด/พื้นที่ → recurrence ต่อ scope อาจน้อย). Mitigation: tiered (fallback Tier 2 structural) + gate MIN_AUCTIONS. **validate หลัง trickle ครบ** ก่อน implement (รัน `_analyze_bidfield`-style ต่อ scope ดู recurrence)
+- **R1: ข้อมูล named-dominant อาจบาง** (224 auctions กระจายหลายหมวด/พื้นที่ → recurrence ต่อ scope อาจน้อย). Mitigation: tiered (fallback Tier 2 structural) + gate MIN_AUCTIONS → ปลอดภัย ship ได้แม้บาง (gate ไม่แสดงเอง). **validate + tune threshold หลัง trickle ครบ** (pass สั้นๆ หลัง implement ไม่ใช่ก่อน)
 - **R2: budget จาก cgd_winners อาจ NULL บางงาน** → bid นั้นคำนวณ disc ไม่ได้ → ข้าม (graceful) ; ถ้าเยอะกระทบ → fallback gap-based (ไม่ใช้ %)
 - **R3: bidder_name มี TIN-fallback `name:%`** (จาก 1b/2A) — bid_field อ่าน bidder_name (ไม่ใช่ tin) อยู่แล้ว → ไม่กระทบ; แต่บริษัทเดียวกันคนละสะกดอาจนับแยก → ใช้ exact name ก่อน (ปรับ fuzzy ทีหลังถ้าจำเป็น)
 - **R4: threshold ตั้งจาก 224 auctions** — ปรับหลัง trickle ครบ ~3046

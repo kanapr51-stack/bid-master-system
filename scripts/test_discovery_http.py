@@ -114,15 +114,16 @@ def test_get_network_error_returns_none():
 
 def test_get_json_error_logged_not_swallowed():
     # response ok แต่ json() พัง → คืน None + ต้อง print (ไม่กลืนเงียบ)
+    import builtins
     fake, restore = _patch_cffi([FakeResp(200, "weird", json_raises=True)])
     logs = []
-    orig_print = spd.print
-    spd.print = lambda *a, **k: logs.append(" ".join(str(x) for x in a))
+    orig_print = builtins.print   # _get ใช้ bare print() → resolve เป็น builtins.print
+    builtins.print = lambda *a, **k: logs.append(" ".join(str(x) for x in a))
     try:
         assert spd._get("tok", {}) is None
         assert any("JSON decode error" in m for m in logs), logs
     finally:
-        spd.print = orig_print
+        builtins.print = orig_print
         restore()
     print("✅ test_get_json_error_logged_not_swallowed")
 

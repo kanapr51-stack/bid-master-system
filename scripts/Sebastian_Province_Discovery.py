@@ -32,7 +32,6 @@ from datetime import datetime, timezone
 from curl_cffi import requests as cffi_requests
 
 sys.stdout.reconfigure(encoding="utf-8")
-print = print  # expose as module attribute so tests can patch spd.print
 
 API = "https://process5.gprocurement.go.th/egp-atpj27-service/pb/a-egp-allt-project/announcement"
 HEADERS = {

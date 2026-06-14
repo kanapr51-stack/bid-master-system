@@ -78,10 +78,12 @@ def field_lines(fr: dict, budget_now) -> list:
         disc_txt = f" · ลดเฉลี่ย ~{wd:.0f}%" if wd is not None else ""
         lines.append(f"   • {_short(ld['name'])} — ชนะ {ld['win_rate'] * 100:.0f}% "
                      f"({ld['wins']}/{ld['appears']} งาน){disc_txt}")
-    top = fr["leaders"][0]
-    if top["win_disc_med"] is not None:
-        price = round(b * (1 - top["win_disc_med"] / 100.0))
-        lines.append(f"   💡 ต้องลดใกล้ ~{top['win_disc_med']:.0f}% (≈{price:,.0f}) ถึงสู้เจ้าตลาดได้")
+    # ต้องสู้กับเจ้าตลาดที่ "ลดลึกสุด" (ไม่ใช่คนชนะเยอะสุด) — ลึกสุดคือเพดานที่ต้องแซง
+    deepest = max((ld["win_disc_med"] for ld in fr["leaders"] if ld["win_disc_med"] is not None),
+                  default=None)
+    if deepest is not None:
+        price = round(b * (1 - deepest / 100.0))
+        lines.append(f"   💡 เจ้าตลาดลดได้ถึง ~{deepest:.0f}% (≈{price:,.0f}) — ต้องลดลึกกว่านี้ถึงชนะ")
     return lines
 
 

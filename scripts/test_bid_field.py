@@ -32,14 +32,15 @@ test_leader_detected()
 test_no_leader_and_gate()
 
 def test_field_lines():
+    # leader[0]=บัญชาศรี (ชนะเยอะสุด ลด 21%) · leader[1]=เมืองทอง (ลดลึกกว่า 29%)
     fr = {"tier": 1, "leaders": [
-        {"name": "ห้างหุ้นส่วนจำกัด เมืองทอง", "win_rate": 0.69, "wins": 9, "appears": 13, "win_disc_med": 25.0},
-        {"name": "ห้างหุ้นส่วนจำกัด บัญชาศรี", "win_rate": 0.48, "wins": 10, "appears": 21, "win_disc_med": 22.0}]}
+        {"name": "ห้างหุ้นส่วนจำกัด บัญชาศรี", "win_rate": 0.48, "wins": 10, "appears": 21, "win_disc_med": 21.0},
+        {"name": "ห้างหุ้นส่วนจำกัด เมืองทอง", "win_rate": 0.69, "wins": 9, "appears": 13, "win_disc_med": 29.0}]}
     txt = "\n".join(bf.field_lines(fr, 2_000_000))
     assert "เจ้าตลาด" in txt and "หจก. เมืองทอง" in txt, txt    # ย่อชื่อ
     assert "69%" in txt and "9/13" in txt, txt                  # win-rate + count
-    assert "1,500,000" in txt, txt                              # 2M*(1-0.25) = ต้องลดสู้เจ้าตลาด
-    assert "หจก. บัญชาศรี" in txt, txt                          # leader #2
+    assert "1,420,000" in txt, txt                              # ใช้ลดลึกสุด 29% (เมืองทอง) 2M*(1-0.29) ไม่ใช่ 21%
+    assert "หจก. บัญชาศรี" in txt, txt                          # leader #1
     # tier0 / ไม่มี leader / ไม่มี budget → []
     assert bf.field_lines({"tier": 0, "leaders": []}, 2_000_000) == []
     assert bf.field_lines(None, 2_000_000) == []

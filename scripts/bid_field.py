@@ -159,3 +159,9 @@ def _field_auctions(conn, province, tokens, subdistrict=None, district=None) -> 
             continue
         byp[pid].append((name or "", disc, bool(isw)))
     return list(byp.values())
+
+
+def field_block(conn, province, tokens, budget_now, subdistrict=None, district=None) -> list:
+    """read → analyze → lines. [] ถ้าไม่เข้าเงื่อนไข (graceful). จุดเชื่อม predictor."""
+    auctions = _field_auctions(conn, province, tokens, subdistrict, district)
+    return field_lines(analyze_field(auctions), budget_now)

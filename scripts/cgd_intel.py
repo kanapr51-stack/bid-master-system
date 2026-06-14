@@ -585,6 +585,10 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
         lines += [""] + predict_lines(pred, basis, contested=contested_only)
         if basis_old:                             # อิงข้อมูลเก่ากว่า 3 ปี — แจ้งให้ผู้ใช้รู้
             lines.append("📜 รวมข้อมูลเก่ากว่า 3 ปี (พื้นที่นี้งานน้อย) — ใช้เป็นแนวโน้ม")
+        import bid_field as _bf                    # 2B: บล็อกเจ้าใหญ่ขาดลอย (graceful — [] ถ้าข้อมูลไม่พอ)
+        _fb = _bf.field_block(conn, province, tokens, budget, basis_sub, basis_dist)
+        if _fb:
+            lines += [""] + _fb
     try:
         explain = _build_explain(
             inputs={"budget": budget, "work_type": wt, "province": province,

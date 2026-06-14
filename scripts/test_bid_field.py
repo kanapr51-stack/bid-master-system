@@ -98,4 +98,33 @@ def test_field_auctions_read():
     print("✅ _field_auctions read + disc + outlier filter")
 
 test_field_auctions_read()
+
+def test_field_block_endtoend_and_gate():
+    import Sebastian_Customer_DB as db
+    db.init_schema()
+    s = db.SubscriptionStore()
+    # gate: bid_results ว่าง → field_block = [] (ปลอดภัยกับ _build_intel เดิม)
+    with db.get_connection() as conn:
+        assert bf.field_block(conn, "สกลนคร", ["ถนน"], 1000000) == [], "scope ว่าง → []"
+    # tier1 end-to-end: 5 auction เจ้าใหญ่ Y ลง 4 ชนะขาดลอย
+    with db.get_connection() as conn:
+        for i in range(5):
+            conn.execute("INSERT OR REPLACE INTO cgd_winners (project_id, province, proc_type, project_name, budget) "
+                         "VALUES (?,?,?,?,?)",
+                         (f"F{i}", "นครพนม", "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)", "ก่อสร้างถนน", 1000000))
+    for i in range(4):  # Y ชนะ 4 งาน ลด 40% ขาดกลุ่มที่ลด 20%
+        s.record_bid_results(f"F{i}", [
+            {"receiveNameTh": "หจก.วาย", "receiveTin": "1", "priceProposal": "600000", "priceAgree": "600000"},
+            {"receiveNameTh": "หจก.พ", "receiveTin": "2", "priceProposal": "800000"},
+            {"receiveNameTh": "หจก.ม", "receiveTin": "3", "priceProposal": "810000"}])
+    s.record_bid_results("F4", [   # Y ไม่มา
+        {"receiveNameTh": "หจก.พ", "receiveTin": "2", "priceProposal": "780000", "priceAgree": "780000"},
+        {"receiveNameTh": "หจก.ม", "receiveTin": "3", "priceProposal": "800000"}])
+    with db.get_connection() as conn:
+        block = bf.field_block(conn, "นครพนม", ["ถนน"], 1000000)
+    txt = "\n".join(block)
+    assert "เจ้าใหญ่" in txt and "วาย" in txt, txt
+    print("✅ field_block end-to-end + gate")
+
+test_field_block_endtoend_and_gate()
 print("ALL PASS bid_field")

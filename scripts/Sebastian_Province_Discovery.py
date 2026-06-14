@@ -124,6 +124,21 @@ class RateLimited(Exception):
     """eGP ตอบ plain text 'Rate limit exceeded' — แยกจาก token reject"""
 
 
+def _is_challenge(resp) -> bool:
+    """ตรวจ Cloudflare challenge — priority: body marker > status
+    (CF ส่ง 200 OK + body 'Just a moment' ได้ → อย่า rely status อย่างเดียว)"""
+    text = (resp.text or "").lower()
+    markers = ("just a moment", "cf-mitigated", "turnstile", "challenge-platform")
+    if any(m in text for m in markers):
+        return True
+    # content-type เสริม: block status + ไม่ใช่ JSON = ไม่ใช่ error ปกติของ API → challenge
+    # (กัน false positive: 403 ที่เป็น JSON error จริงจะไม่ retry เปล่า)
+    ctype = resp.headers.get("content-type", "").lower()
+    if resp.status_code in (403, 503) and "application/json" not in ctype:
+        return True
+    return False
+
+
 def _get(token: str, params: dict, path: str = "") -> dict | None:
     url = API + path
     hdrs = {**HEADERS, "X-Announcement-Token": token}

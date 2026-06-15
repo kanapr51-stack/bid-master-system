@@ -130,4 +130,26 @@ def test_run_cooldown_paces():
     print("✅ run cooldown paces (กัน rate-limit)")
 
 test_run_cooldown_paces()
+
+def test_select_district_filter():
+    """districts → กรองจากชื่องาน (LIKE %อำเภอX% / %อ.X%) เหมือน _fetch (geocode column เพี้ยน)."""
+    with db.get_connection() as conn:
+        conn.execute("DELETE FROM bid_results")
+        conn.executemany(
+            "INSERT OR REPLACE INTO cgd_winners "
+            "(project_id, province, proc_type, fiscal_year, win_price, budget, announce_date, project_name) "
+            "VALUES (?,?,?,?,?,?,?,?)",
+            [("D1", "นครพนม", "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)", "2568", 100, 200, "2568-01-01", "ก่อสร้างถนน อำเภอนาทม"),
+             ("D2", "นครพนม", "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)", "2568", 100, 200, "2568-01-01", "ก่อสร้างถนน อ.นาทม"),
+             ("D3", "นครพนม", "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)", "2568", 100, 200, "2568-01-01", "ก่อสร้างถนน อำเภอเมือง")])
+    with db.get_connection() as conn:
+        ids = {pid for pid, _ in bb.select_candidates(conn, ["นครพนม"], ["2568"], seen=set(), districts=["นาทม"])}
+    assert ids == {"D1", "D2"}, ids       # match 'อำเภอนาทม' + 'อ.นาทม' · ตัด 'อำเภอเมือง' (และงานไม่มีชื่อ)
+    # districts=None → ไม่กรองอำเภอ (D3 กลับมา)
+    with db.get_connection() as conn:
+        ids_all = {pid for pid, _ in bb.select_candidates(conn, ["นครพนม"], ["2568"], seen=set())}
+    assert {"D1", "D2", "D3"} <= ids_all, ids_all
+    print("✅ select_candidates district filter (ชื่องาน LIKE)")
+
+test_select_district_filter()
 print("ALL PASS backfill_bidders")

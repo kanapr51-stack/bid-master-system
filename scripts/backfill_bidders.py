@@ -22,17 +22,23 @@ def log(msg: str):
     print(msg, flush=True)
 
 
-def select_candidates(conn, provinces: list, fy: list, seen: set, limit=None) -> list:
+def select_candidates(conn, provinces: list, fy: list, seen: set, limit=None, districts=None) -> list:
     """คืน [(project_id, announce_date)] จาก cgd_winners ตาม scope, ตัดที่มีใน bid_results + seen.
+    districts=[อำเภอ] → กรองจากชื่องาน (LIKE %อำเภอX%/%อ.X% เหมือน _fetch — geocode column เพี้ยน).
     เรียง announce_date ใหม่→เก่า (งานสดก่อน). limit=None → ทั้งหมด."""
     pv = ",".join("?" for _ in provinces)
     fyp = ",".join("?" for _ in fy)
     ct = ",".join("?" for _ in COMPETITIVE_SET)
-    sql = (f"SELECT project_id, COALESCE(announce_date,'') FROM cgd_winners "
-           f"WHERE province IN ({pv}) AND proc_type IN ({ct}) AND fiscal_year IN ({fyp}) "
-           f"AND win_price>0 AND project_id NOT IN (SELECT DISTINCT project_id FROM bid_results) "
-           f"ORDER BY announce_date DESC")
+    where = (f"province IN ({pv}) AND proc_type IN ({ct}) AND fiscal_year IN ({fyp}) "
+             f"AND win_price>0 AND project_id NOT IN (SELECT DISTINCT project_id FROM bid_results)")
     params = [*provinces, *COMPETITIVE_SET, *fy]
+    if districts:
+        dcond = " OR ".join("(project_name LIKE ? OR project_name LIKE ?)" for _ in districts)
+        where += f" AND ({dcond})"
+        for d in districts:
+            params += [f"%อำเภอ{d}%", f"%อ.{d}%"]
+    sql = (f"SELECT project_id, COALESCE(announce_date,'') FROM cgd_winners "
+           f"WHERE {where} ORDER BY announce_date DESC")
     rows = [(pid, d) for pid, d in conn.execute(sql, params) if pid not in seen]
     return rows[:limit] if limit is not None else rows
 
@@ -71,7 +77,7 @@ def save_seen(seen: set):
 
 
 def run(provinces: list, fy: list, limit=None, dry_run=False, sleep=SLEEP,
-        cooldown_every=COOLDOWN_EVERY, cooldown_sec=COOLDOWN_SEC) -> dict:
+        cooldown_every=COOLDOWN_EVERY, cooldown_sec=COOLDOWN_SEC, districts=None) -> dict:
     """loop backfill ทุก candidate. resumable (seen) + fail-open. คืน stats dict.
     Resume 2 ชั้น: stored ตัดด้วย bid_results SQL · empty ตัดด้วย seen-set.
     Rate-limit: พักยาว cooldown_sec ทุก cooldown_every งาน (กัน generateToken throttle — VPS พังหลัง ~26 งานถ้าไม่พัก).
@@ -79,7 +85,7 @@ def run(provinces: list, fy: list, limit=None, dry_run=False, sleep=SLEEP,
     เพราะ record_bid_results = INSERT OR REPLACE) · งาน empty ที่ภายหลังมี bidder จะไม่ถูกดึงซ้ำ (อยู่ใน seen)."""
     seen = load_seen()
     with get_connection() as conn:
-        cands = select_candidates(conn, provinces, fy, seen, limit)
+        cands = select_candidates(conn, provinces, fy, seen, limit, districts=districts)
     log(f"candidates: {len(cands)} งาน (seen={len(seen)}, dry_run={dry_run})")
     stats = {"stored": 0, "empty": 0, "error": 0}
     if dry_run:
@@ -113,6 +119,7 @@ def main():
     ap = argparse.ArgumentParser(description="Backfill full-bidder list (2A) จาก cgd_winners → bid_results")
     ap.add_argument("--provinces", default="นครพนม,บึงกาฬ", help="คั่นด้วย ,")
     ap.add_argument("--fy", default="2567,2568,2569", help="ปีงบ คั่นด้วย ,")
+    ap.add_argument("--districts", default="", help="อำเภอ คั่นด้วย , (กรองจากชื่องาน) — ว่าง=ทั้งจังหวัด")
     ap.add_argument("--limit", type=int, default=None, help="จำกัดจำนวนงาน (probe run)")
     ap.add_argument("--dry-run", action="store_true", help="นับ candidate อย่างเดียว ไม่ดึง API")
     ap.add_argument("--cooldown-every", type=int, default=COOLDOWN_EVERY, help="พักยาวทุก N งาน (กัน rate-limit)")
@@ -121,7 +128,8 @@ def main():
     run([p.strip() for p in args.provinces.split(",") if p.strip()],
         [f.strip() for f in args.fy.split(",") if f.strip()],
         limit=args.limit, dry_run=args.dry_run,
-        cooldown_every=args.cooldown_every, cooldown_sec=args.cooldown_sec)
+        cooldown_every=args.cooldown_every, cooldown_sec=args.cooldown_sec,
+        districts=[d.strip() for d in args.districts.split(",") if d.strip()] or None)
 
 
 if __name__ == "__main__":

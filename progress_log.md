@@ -1054,3 +1054,24 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 ### Followup
 - backfill bid_results ตำบล/อำเภอเป้าหมาย (บ้านแพง/บึงโขงหลง/นาทม) → ปลดล็อก 🟡 อำเภอ + center local จริง
 - rotation progress_log (>1000 บรรทัด) ยังค้าง
+
+---
+
+## งานที่ N+140: Targeted backfill 3 อำเภอ → ต.นาทม ปลดล็อก 🟢 local (2026-06-16)
+
+### สถานะ: ✅ พิสูจน์ loop B′ + backfill ครบ — นาทม จาก 🟠 จังหวัด → 🟢 อำเภอจริง + 2B เจ้าตลาดโผล่
+
+### สิ่งที่ทำ
+- เพิ่ม `--districts` filter ใน `backfill_bidders.py` (กรองอำเภอจากชื่องาน LIKE — geocode column เพี้ยน 85%) + test `commit fb3e7af` push origin
+- รัน targeted backfill 3 อำเภอ (นาทม/บึงโขงหลง/บ้านแพง · นครพนม+บึงกาฬ · fy 2566-68) บน VPS — 113 candidates
+- 🐛 รอบแรก crash: `PermissionError backfill_seen.json` (เจ้าของ root จาก trickle เดิม, รันเป็น bms เขียน checkpoint ไม่ได้) → fix `chown bms:bms` (ssh root) → rerun resume (113→65, bid_results dedup ตัดที่เก็บแล้ว) → `✅ stored=65 empty=0 error=0`
+
+### ผล (closed-loop validation รอบ 2)
+- coverage: นาทม 23→**53** · บึงโขงหลง 10→**24** · บ้านแพง 33→**72**
+- **ต.นาทม:** 🟠 จังหวัด(63 งาน, center 8) → **🟢 local**(6 งานอำเภอจริง 47 ราย, คอลัมน์ 5/8/11) · a/b/c ถูกตารางแทน (🟢) · **🏆 2B เจ้าตลาดโผล่** ("เอส.ที.เค.เพาเวอร์ ชนะ 60% 3/5") — เพราะ full-field ≥5 แล้ว
+- **ต.บึงโขงหลง:** ยัง 🟠 — อำเภอมี winner concrete+แข่งจริง+RECENT_FY **แค่ 3 งาน** → ไม่มีทางถึง MIN_AUCTIONS(5) = **เพดานเชิงโครงสร้าง** (backfill ไม่ช่วย) · price sacred ทำงาน (ราคา local + disclaimer ครบ)
+
+### บทเรียน
+- backfill bid_results = lever ปลดล็อก 🟢/🟡 ได้จริง **เมื่ออำเภอมี cf-winner ≥5** · อำเภอที่ winner cf-filtered <5 = ติด 🟠 ถาวร (ต้องผ่อน cf หรือแก้ threshold = B″)
+- ค้าง: **RECENT_FY ตัดปี 2569 (ปัจจุบัน)** — งานสด weight 1.0 ไม่ถูกนับ → fix ให้รวม 2569 ช่วย ESS พื้นที่บางทุกที่ (กัญจน์ยังไม่ตัดสิน)
+- ดู [[project_winrate_bprime_coverage_limit]]

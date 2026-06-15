@@ -891,3 +891,26 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 - **push + redeploy VPS** แล้วดู `_show_card.py` นาทม → ควรเห็นตารางไล่ระดับมีความหมาย (ไม่ใช่ 86-100% แบน)
 - **ปัญหา #3 ยังไม่แก้:** เลขงานตาราง (`_field_auctions`) ≠ บล็อกคู่แข่ง (winner-stats) — UX แยกประเด็น
 - validate iid หลัง backfill ครบ (ตอนนี้ ~924/3032)
+
+---
+
+## งานที่ N+134: #3 ตาราง B ใช้ population เดียวกับราคา (project_ids) — code DONE (รอ deploy) (2026-06-15)
+
+### สถานะ: ✅ code+test+review เสร็จ pushed (eb9457e) — รอ redeploy VPS
+
+### Root cause (debug-mantra + breadcrumb prod)
+- B.1 deploy แล้วเห็น "ตาราง 11 งาน" ข้าง "บล็อกคู่แข่ง ตำบล4/อำเภอ6" → งง
+- breadcrumb: bid_results ตำบลนาทม = **4** (<5) → ตาราง fall-through ไป**อำเภอ = 11** (ไม่กรอง year/subtype) ส่วนคู่แข่งอำเภอ (กรอง) = 6
+- 2 สาเหตุ: (1) table fall-through scope กว้างกว่าที่โชว์ (2) `_field_auctions` ไม่กรอง fiscal_year/subtype/nature ที่ price/`_fetch` กรอง
+
+### Fix (option A — population เดียวกับราคา)
+- `_field_auctions(... project_ids=)` → ดึงเฉพาะ id ที่ price ใช้ (`used_rows` กรองครบ) แทน scope-match กว้าง
+- `_fetch` SELECT เพิ่ม `project_id` → `used_rows` มี id · `predict()` เลิก scope-loop ตำบล→อำเภอ ส่ง `_ids` จาก used_rows
+- ป้าย `📈 จาก N งานที่มีข้อมูลผู้ยื่นครบ` (subset ≤ คู่แข่ง ชัดเจน — win-rate ใช้ได้เฉพาะงานที่รู้ผู้ยื่นครบ)
+- review fixes: dedupe used_rows blend (audit n/raw_records ไม่ซ้ำ) · ลบ `field_block` (dead หลังเลิก loop)
+- test +project_ids mode · backward-compat (cgd_intel/bid_field/winrate/competitor/road/water) ผ่านหมด
+
+### Followup
+- **redeploy VPS** → ดู `_show_card.py` นาทม: ตาราง "N งาน" ควร ≤ คู่แข่ง + population ตรงกัน (subtype/year เดียวกัน)
+- tradeoff รับแล้ว: ตาราง B โผล่น้อยลง (กรองแคบ) จนกว่า backfill ครบ
+- validate iid หลัง backfill ครบ

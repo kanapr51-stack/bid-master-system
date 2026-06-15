@@ -74,10 +74,10 @@ def test_field_auctions_read():
     with db.get_connection() as conn:
         auctions = bf._field_auctions(conn, "นครพนม", ["ถนน"], subdistrict="นาทม")
     assert len(auctions) == 2, auctions                  # J1,J2 (JX นอกจังหวัด ตัด)
-    j1 = next(a for a in auctions if any(abs(d - 30.0) < 1e-9 for _n, d, _w in a))  # J1 มี disc 30
-    discs = sorted(d for _n, d, _w in j1)
+    j1 = next(a for a in auctions if any(abs(t[1] - 30.0) < 1e-9 for t in a))  # J1 มี disc 30
+    discs = sorted(t[1] for t in j1)
     assert discs == [10.0, 30.0], discs                  # (1-700k/1M)=30, (1-900k/1M)=10 · outlier 95% ตัด
-    assert any(w for _n, _d, w in j1), "มี winner flag"
+    assert any(t[2] for t in j1), "มี winner flag"
     print("✅ _field_auctions read + disc + outlier filter")
 
 test_field_auctions_read()

@@ -134,6 +134,31 @@ def test_weighted_quantile():
     assert bf._weighted_quantile(heavy_high, 0.5) > 25.0, "น้ำหนักเอียงสูง → median สูง"
     print("✅ _weighted_quantile (Hazen weighted)")
 
+def test_field_auctions_fiscal_year():
+    """_field_auctions คืน 4-tuple (name, disc, is_winner, fiscal_year)."""
+    import importlib
+    os.environ["BMS_DATA_DIR"] = tempfile.mkdtemp()
+    import Sebastian_Customer_DB as db
+    importlib.reload(db); db.init_schema()
+    s = db.SubscriptionStore()
+    with db.get_connection() as conn:
+        conn.execute("INSERT OR REPLACE INTO cgd_winners "
+                     "(project_id, province, proc_type, project_name, budget, fiscal_year) "
+                     "VALUES (?,?,?,?,?,?)",
+                     ("F1", "นครพนม", "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)", "ก่อสร้างถนน", 1000000, 2568))
+    s.record_bid_results("F1", [
+        {"receiveNameTh": "หจก.ก", "receiveTin": "1", "priceProposal": "700000", "priceAgree": "700000"},
+        {"receiveNameTh": "หจก.ข", "receiveTin": "2", "priceProposal": "850000"}])
+    with db.get_connection() as conn:
+        au = bf._field_auctions(conn, "นครพนม", ["ถนน"])
+    assert au and len(au[0][0]) == 4, au                          # 4-tuple
+    assert au[0][0][3] == 2568, au[0][0]                          # fiscal_year ตัวที่ 4
+    # 2B ยังทำงาน (รับ 4-tuple ไม่พัง)
+    fr = bf.analyze_field(au)
+    assert isinstance(fr, dict) and "tier" in fr, fr
+    print("✅ _field_auctions 4-tuple + analyze_field รับได้")
+
+
 test_grid_invert_targets()
 test_grid_invert_columns()
 test_grid_gate()
@@ -142,4 +167,5 @@ test_field_and_winrate_endtoend()
 test_field_auctions_project_ids()
 test_gate_fallback_to_old_card()
 test_weighted_quantile()
+test_field_auctions_fiscal_year()
 print("ALL PASS winrate_grid")

@@ -77,7 +77,7 @@ def winrate_grid(auctions, budget, targets=(75, 50, 25)):
         bud = 0
     if n_auctions < MIN_AUCTIONS or bud <= 0:
         return None
-    bids = sorted(d for a in auctions for (_n, d, _w) in a)
+    bids = sorted(t[1] for a in auctions for t in a)
     if not bids:
         return None
     sizes = [len(a) for a in auctions]
@@ -127,14 +127,14 @@ def winrate_lines(grid, basis="") -> list:
 
 def _winner_idx(auction):
     """index ผู้ชนะ: is_winner ก่อน, fallback disc สูงสุด."""
-    for i, (_n, _d, w) in enumerate(auction):
-        if w:
+    for i, t in enumerate(auction):
+        if t[2]:
             return i
     return max(range(len(auction)), key=lambda i: auction[i][1])
 
 
 def analyze_field(auctions: list) -> dict:
-    """market-leader detection (win-frequency). auctions = [ [(name, disc_pct, is_winner)] ].
+    """market-leader detection (win-frequency). auctions = [ [(name, disc_pct, is_winner, fiscal_year)] ].
     คืน {tier:0|1, n_auctions, leaders:[{name,win_rate,wins,appears,win_disc_med}]} — top 2 เรียงชนะมากสุด.
     tier 1 = มีเจ้าตลาด (ลง≥MIN_APPEAR ∧ ชนะ≥LEADER_WIN_RATE) · tier 0 = ไม่มี/ข้อมูลน้อย."""
     auctions = [a for a in auctions if len(a) >= 2]
@@ -145,9 +145,10 @@ def analyze_field(auctions: list) -> dict:
     appear, wins, win_disc = defaultdict(int), defaultdict(int), defaultdict(list)
     for a in auctions:
         wi = _winner_idx(a)
-        wname, wdisc, _ = a[wi]
+        wname, wdisc = a[wi][0], a[wi][1]
         seen = set()
-        for (nm, _d, _w) in a:
+        for t in a:
+            nm = t[0]
             if nm and nm not in seen:        # นับ 1 บริษัท/auction
                 appear[nm] += 1
                 seen.add(nm)
@@ -196,7 +197,7 @@ def _field_auctions(conn, province, tokens, subdistrict=None, district=None, pro
     """full-field auctions ของ scope จาก bid_results JOIN cgd_winners(budget).
     project_ids != None → ดึงเฉพาะ id ชุดนั้น (population เดียวกับที่ price ใช้ — เลขตรงกัน).
     project_ids = None → query ตาม scope (province + tokens + ตำบล/อำเภอ จากชื่องาน).
-    คืน [ [(bidder_name, disc_pct, is_winner)] ] · ตัด outlier disc นอก [0,DISC_MAX] · graceful []."""
+    คืน [ [(bidder_name, disc_pct, is_winner, fiscal_year)] ] · ตัด outlier disc นอก [0,DISC_MAX] · graceful []."""
     if project_ids is not None:
         # invariant: caller (predict) ส่ง id จาก used_rows ที่ _fetch กรอง proc_type/subtype/year แล้ว
         ids = list(dict.fromkeys(project_ids))   # dedupe รักษาลำดับ
@@ -215,7 +216,8 @@ def _field_auctions(conn, province, tokens, subdistrict=None, district=None, pro
         if district is not None:
             where.append("(cw.project_name LIKE ? OR cw.project_name LIKE ?)")
             params += [f"%อำเภอ{district}%", f"%อ.{district}%"]
-    sql = ("SELECT b.project_id, b.bidder_name, b.price_proposal, b.price_agree, b.is_winner, cw.budget "
+    sql = ("SELECT b.project_id, b.bidder_name, b.price_proposal, b.price_agree, b.is_winner, "
+           "cw.budget, cw.fiscal_year "
            "FROM bid_results b JOIN cgd_winners cw ON cw.project_id=b.project_id "
            "WHERE " + " AND ".join(where))
     try:
@@ -223,7 +225,7 @@ def _field_auctions(conn, province, tokens, subdistrict=None, district=None, pro
     except sqlite3.DatabaseError:          # missing table/locked/corrupt → graceful (ไม่ทำการ์ดพัง)
         return []
     byp = defaultdict(list)
-    for pid, name, pp, pa, isw, budget in rows:
+    for pid, name, pp, pa, isw, budget, fy in rows:
         bid = None
         for x in (pp, pa):                        # sealed bid = proposal (winner ใช้ agree ถ้า proposal ว่าง)
             try:
@@ -242,7 +244,11 @@ def _field_auctions(conn, province, tokens, subdistrict=None, district=None, pro
         disc = (bud - bid) / bud * 100.0
         if disc < 0 or disc > DISC_MAX:           # ตัด outlier (unit-price เพี้ยน)
             continue
-        byp[pid].append((name or "", disc, bool(isw)))
+        try:
+            fy_int = int(fy) if fy is not None else None
+        except (TypeError, ValueError):
+            fy_int = None
+        byp[pid].append((name or "", disc, bool(isw), fy_int))
     return list(byp.values())
 
 

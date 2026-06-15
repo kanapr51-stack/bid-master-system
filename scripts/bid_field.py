@@ -1,7 +1,7 @@
 """bid_field.py — "เจ้าตลาด" intel จาก full-field bids (2B). ใครชนะ scope นี้บ่อย + ลดเฉลี่ยเท่าไหร่.
 v2 pivot (evidence 2026-06-14): landslide หายาก (5-10%/scope) แต่มีเจ้าตลาดชัด (ชนะ 48-83% ชิดๆ)
 → จับด้วย win-frequency ไม่ใช่ landslide-gap. graceful gate. ดู spec 2026-06-14-dominant-detection-2b."""
-import sqlite3, sys, os, math, logging
+import sqlite3, sys, os, math, logging, json, time
 from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(__file__))
@@ -51,6 +51,56 @@ def _weighted_quantile(pairs, q):
     return pts[-1][1]
 
 
+def _center_stats(auctions) -> dict:
+    """centering math (สกัดจาก _evaluate_winrate): mean/sd จำนวนผู้ยื่น → ns + k_mid.
+    auctions = [[(name,disc,is_winner[,fy])]] · auction <2 ผู้ยื่นถูกตัด.
+    ว่าง → {n:0, n_mean:0, n_sd:0, ns:[], k_mid:None}."""
+    sizes = [len(a) for a in auctions if len(a) >= 2]
+    n = len(sizes)
+    if n == 0:
+        return {"n": 0, "n_mean": 0.0, "n_sd": 0.0, "ns": [], "k_mid": None}
+    n_mean = sum(sizes) / n
+    var = sum((s - n_mean) ** 2 for s in sizes) / (n - 1) if n > 1 else 0.0
+    n_sd = math.sqrt(var)
+    raw = [round(n_mean - n_sd), round(n_mean), round(n_mean + n_sd)]
+    ns = []
+    for k in raw:
+        k = max(2, k)
+        if k not in ns:
+            ns.append(k)
+    return {"n": n, "n_mean": n_mean, "n_sd": n_sd, "ns": ns, "k_mid": ns[len(ns) // 2]}
+
+
+def _monitor_path() -> str:
+    d = os.environ.get("BMS_DATA_DIR") or os.path.join(os.path.dirname(__file__), "..", "data")
+    return os.path.join(d, "winrate_center_monitor.ndjson")
+
+
+def _log_center_breadcrumb(local_auc, amphoe_auc, province_auc, grid, conf, basis="") -> None:
+    """observe-only: เมื่อ ladder ผ่อน (conf!=None) บันทึกเทียบ center stats 3 scope (local/อำเภอ/จังหวัด)
+    ลง ndjson — สะสม evidence ว่า B″ (center บนอำเภอแทนจังหวัด) เปลี่ยนตารางจริงพอจะคุ้มไหม.
+    exception-safe: ทุก error เป็น no-op (ห้ามทำการ์ดพัง). ไม่แตะ grid/conf/output."""
+    try:
+        if not grid or conf is None:
+            return
+        cl, ca, cp = (_center_stats(local_auc or []), _center_stats(amphoe_auc or []),
+                      _center_stats(province_auc or []))
+        rec = {
+            "ts": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            "basis": basis, "conf": conf[1],
+            "n_local": cl["n"], "n_amphoe": ca["n"], "n_province": cp["n"],
+            "mean_local": round(cl["n_mean"], 2), "mean_amphoe": round(ca["n_mean"], 2),
+            "mean_province": round(cp["n_mean"], 2),
+            "kmid_amphoe": ca["k_mid"], "kmid_province": cp["k_mid"], "kmid_chosen": grid["k_mid"],
+            "amphoe_eligible": ca["n"] >= MIN_N_AUCTIONS,
+            "delta_mean": round(abs(cp["n_mean"] - ca["n_mean"]), 2),
+        }
+        with open(_monitor_path(), "a", encoding="utf-8") as f:
+            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    except Exception:
+        _log.debug("center breadcrumb skip", exc_info=True)
+
+
 def _evaluate_winrate(auctions, budget, local_auctions=None, targets=(75, 50, 25)):
     """source-of-truth: gate + ESS + weighted quantile + local-n centering.
     คืน dict เสมอ — ok=True พร้อม grid fields, หรือ ok=False พร้อม fail_reason
@@ -84,17 +134,8 @@ def _evaluate_winrate(auctions, budget, local_auctions=None, targets=(75, 50, 25
     src = [a for a in (local_auctions or []) if len(a) >= 2]
     if len(src) < MIN_N_AUCTIONS:
         src = auctions
-    sizes = [len(a) for a in src]
-    n_mean = sum(sizes) / len(sizes)
-    var = sum((s - n_mean) ** 2 for s in sizes) / (len(sizes) - 1) if len(sizes) > 1 else 0.0
-    n_sd = math.sqrt(var)
-    raw = [round(n_mean - n_sd), round(n_mean), round(n_mean + n_sd)]
-    ns = []
-    for k in raw:
-        k = max(2, k)
-        if k not in ns:
-            ns.append(k)
-    k_mid = ns[len(ns) // 2]
+    cs = _center_stats(src)
+    n_mean, n_sd, ns, k_mid = cs["n_mean"], cs["n_sd"], cs["ns"], cs["k_mid"]
     rows, seen_price = [], set()
     for t in targets:
         tf = t / 100.0
@@ -310,6 +351,10 @@ def field_and_winrate(conn, province, tokens, budget, subdistrict=None, district
     _log.info("winrate basis=%s conf=%s ess=%.1f k_local=%s fail_reason=%s",
               basis, ("local" if conf is None else conf[1]) if grid else "none",
               grid["ess"] if grid else 0.0, grid["k_mid"] if grid else None, reason)
+    # B″ offline monitor (observe-only) — เมื่อผ่อนถึงอำเภอ/จังหวัด สะสม center-error เทียบ scope
+    if grid and conf is not None:
+        _log_center_breadcrumb(local_auc, attempts[1] if len(attempts) > 1 else [],
+                               attempts[2] if len(attempts) > 2 else [], grid, conf, basis)
     wl = winrate_lines(grid, conf, price_basis=basis) if grid else []
     fl = field_lines(analyze_field(local_auc), budget, scope_label)
     return wl, fl, conf

@@ -571,6 +571,34 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 - Win-Rate B′ closed-loop สมบูรณ์: นาทม 🟢 + 2B เจ้าตลาด · บึงโขงหลง 🟠 graceful + price sacred
 
 ### Followup
-- rotation progress_log (>1100 บรรทัด) ยังค้าง
-- B″ offline monitor (center error วัดหลายพื้นที่) — เปิดเมื่อมี evidence ว่า %ตารางเพี้ยนหลายที่
+- ~~rotation progress_log~~ ✅ done (N+142) · ~~B″ offline monitor~~ ✅ implemented (N+142)
+- ดู [[project_winrate_bprime_coverage_limit]]
+
+---
+
+## งานที่ N+142: B″ offline center-error monitor (observe-only) + rotate progress_log (2026-06-16, overnight)
+
+### สถานะ: ✅ code+test DONE (commit local รอกัญจน์ review+deploy เช้า · ไม่ push)
+
+### สิ่งที่ทำ (autonomous คืนกัญจน์นอน)
+1. **rotate progress_log** N+101..N+121 → archive (1120→576 บรรทัด, เหลือ 20 entry · commit แยก)
+2. **B″ offline monitor** — ตอบ decision N+141 ("เก็บ monitor วัด center error ก่อนตัดสิน B″"):
+   - `bid_field._center_stats(auctions)` — สกัด centering math (mean/sd→ns/k_mid) จาก `_evaluate_winrate` (DRY, refactor behavior-preserving)
+   - `bid_field._log_center_breadcrumb(...)` — **observe-only**: เมื่อ ladder ผ่อน (conf!=None) เขียน ndjson เทียบ center stats 3 scope (local/อำเภอ/จังหวัด) + delta_mean + amphoe_eligible. exception-safe (ห้ามทำการ์ดพัง)
+   - wire ใน `field_and_winrate` — 3 บรรทัด หลังได้ grid/conf (ไม่แตะ output)
+   - `scripts/analyze_center_monitor.py` — `summarize()` + decision branch (eligible≥5 ∧ %Δ≥2 ≥50% → "B″ คุ้ม")
+   - spec: `docs/superpowers/specs/2026-06-16-winrate-center-monitor-design.md`
+
+### Verify (TDD — RED→GREEN ทุกชิ้น)
+- `test_center_monitor.py` 7 tests PASS (center_stats · breadcrumb เขียน/skip/exception-safe · integration field_and_winrate · summarize)
+- **regression: test_winrate_grid + test_bid_field + test_cgd_intel = ALL PASS** → พิสูจน์ observe-only ไม่เปลี่ยน output
+- py_compile clean · analysis render ถูก (synthetic 6 recs: median Δ=4.0, %≥2=60%)
+
+### NEXT (กัญจน์ เช้า)
+1. review diff → push (commit local 3 ก้อน: rotate · monitor · [N+142 doc])
+2. deploy VPS → monitor เริ่มสะสม breadcrumb เงียบๆ ตอน D0 จริงที่ผ่อน 🟡/🟠
+3. หลังสะสม ~2 สัปดาห์ → `analyze_center_monitor.py` ดู distribution → ตัดสิน B″ ด้วย evidence จริง
+
+### Followup
+- monitor = observe-only ยังไม่เปลี่ยน centering (= B″ เอง ยัง defer ตาม decision N+141)
 - ดู [[project_winrate_bprime_coverage_limit]]

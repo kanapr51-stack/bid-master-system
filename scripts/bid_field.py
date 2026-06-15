@@ -119,20 +119,26 @@ def winrate_grid(auctions, budget, local_auctions=None, targets=(75, 50, 25)):
     return g if g.get("ok") else None
 
 
-def winrate_lines(grid, basis="") -> list:
+def winrate_lines(grid, conf=None, price_basis="") -> list:
     """render ตาราง win% (pure). [] ถ้า grid None.
-    คอลัมน์ = จำนวนผู้ยื่น (mean±SD) · แถว = ราคา a/b/c · footer = ค่าเฉลี่ย + sample size."""
+    conf=None → 🟢 local (ไม่มี disclaimer). conf=(emoji, scope_word) → assisted:
+    เพิ่มป้าย scope + ⚠️ ย้ำว่าราคาด้านบนยังอิง price_basis (กันเข้าใจผิดว่าราคาตาราง=ราคาแนะนำ)."""
     if not grid:
         return []
     ns, rows = grid["ns"], grid["rows"]
-    lines = [f"💵 แนะนำราคายื่น (งบ {grid['budget']:,.0f}) — โอกาสชนะตามจำนวนผู้ยื่น"]
+    lines = [f"💵 โอกาสชนะตามจำนวนผู้ยื่น (งบ {grid['budget']:,.0f})"]
     lines.append("   ผู้ยื่น →   " + "  ".join(f"{k}ราย".rjust(6) for k in ns))
     for price, ws in rows:
         cells = "  ".join(f"{w}%".rjust(6) for w in ws)
         lines.append(f"   {price:>10,.0f}  {cells}")
     sd_txt = f" (±{round(grid['n_sd'])})" if len(ns) > 1 else ""
-    lines.append(f"   📊 สนามนี้เฉลี่ย {round(grid['n_mean'])} ผู้ยื่น{sd_txt} · อิง{basis}")
+    lines.append(f"   📊 สนามนี้เฉลี่ย {round(grid['n_mean'])} ผู้ยื่น{sd_txt}")
     lines.append(f"   📈 จาก {grid['n_auctions']} งานที่มีข้อมูลผู้ยื่นครบ · {grid['n_bids']} ราย")
+    if conf:
+        emoji, scope_word = conf
+        lines.append(f"   {emoji} โอกาส% อิง{scope_word} (พื้นที่นี้ข้อมูลบาง)")
+        if price_basis:
+            lines.append(f"   ⚠️ ราคาด้านบนยังอิง{price_basis} — ตารางนี้บอกเฉพาะ \"โอกาสชนะ%\"")
     lines.append("   * คอลัมน์ตรงค่าเฉลี่ย = เป้า 75/50/25 · ยิ่งผู้ยื่นเยอะ โอกาสยิ่งต่ำ")
     return lines
 

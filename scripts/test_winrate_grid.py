@@ -45,17 +45,28 @@ def test_grid_gate():
 def test_winrate_lines_render():
     grid = {"ns": [4, 6, 8],
             "rows": [(1400000, [78, 68, 59]), (1600000, [55, 42, 32]), (1800000, [28, 18, 11])],
-            "n_mean": 6.0, "n_sd": 2.0, "n_auctions": 18, "n_bids": 107, "budget": 2000000}
-    lines = bf.winrate_lines(grid, "อำเภอ")
+            "n_mean": 6.0, "n_sd": 2.0, "n_auctions": 18, "n_bids": 107,
+            "ess": 40.0, "k_mid": 6, "budget": 2000000}
+    lines = bf.winrate_lines(grid)                       # 🟢 local (conf=None)
     txt = "\n".join(lines)
-    assert "โอกาสชนะตามจำนวนผู้ยื่น" in txt, txt
-    assert "งบ 2,000,000" in txt, txt
-    assert "4ราย" in txt and "6ราย" in txt and "8ราย" in txt, txt
-    assert "1,400,000" in txt and "78%" in txt, txt
-    assert "เฉลี่ย 6 ผู้ยื่น" in txt and "(±2)" in txt and "อิงอำเภอ" in txt, txt
+    assert "โอกาสชนะตามจำนวนผู้ยื่น" in txt and "งบ 2,000,000" in txt, txt
+    assert "4ราย" in txt and "1,400,000" in txt and "78%" in txt, txt
+    assert "เฉลี่ย 6 ผู้ยื่น" in txt and "(±2)" in txt, txt
     assert "📈 จาก 18 งานที่มีข้อมูลผู้ยื่นครบ · 107 ราย" in txt, txt
-    assert bf.winrate_lines(None, "อำเภอ") == [], "None → []"
-    print("✅ winrate_lines render + sample size")
+    assert "⚠️" not in txt, "🟢 local ไม่มี disclaimer"
+    assert bf.winrate_lines(None) == [], "None → []"
+    print("✅ winrate_lines render (🟢 local)")
+
+def test_winrate_lines_assisted():
+    grid = {"ns": [3, 5, 7], "rows": [(1100000, [85, 75, 66]), (1200000, [36, 25, 16])],
+            "n_mean": 5.0, "n_sd": 2.0, "n_auctions": 9, "n_bids": 41,
+            "ess": 12.0, "k_mid": 5, "budget": 2000000}
+    lines = bf.winrate_lines(grid, conf=("🟡", "อำเภอ"), price_basis="ตำบล")
+    txt = "\n".join(lines)
+    assert "🟡 โอกาส% อิงอำเภอ" in txt, txt
+    assert "⚠️ ราคาด้านบนยังอิงตำบล" in txt, txt          # disclaimer เน้น (review R2)
+    assert 'โอกาสชนะ%' in txt, txt
+    print("✅ winrate_lines assisted (🟡 + disclaimer ราคา local)")
 
 def test_field_and_winrate_endtoend():
     import importlib
@@ -194,6 +205,7 @@ test_grid_invert_targets()
 test_grid_invert_columns()
 test_grid_gate()
 test_winrate_lines_render()
+test_winrate_lines_assisted()
 test_field_and_winrate_endtoend()
 test_field_auctions_project_ids()
 test_gate_fallback_to_old_card()

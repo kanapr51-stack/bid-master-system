@@ -952,3 +952,30 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 - 🔜 refinement: center คอลัมน์ด้วย n ของ **local scope** (งานเล็กพื้นที่เป้าหมาย ~3-5 ราย) ไม่ใช่ province mean (8)
 - ⚠️ ยัง n=1 — เก็บ closed-loop เพิ่มยืนยัน calibration
 - memory: [[project_winrate_closed_loop]] · [[project_value_principle]]
+
+---
+
+## งานที่ N+136: CHECKPOINT — ก่อนเปลี่ยน session (2026-06-15)
+
+### สถานะ: ⏸ pause เปลี่ยน session — B/B.1/#3 จบ+deploy+validate แล้ว · B′ ไว้ session หน้า
+
+### ✅ เสร็จแล้ว session นี้ (ทั้งหมด pushed + deployed บน VPS, origin/main = `54f02c8`)
+- **งาน B** (conditional win-rate ตาราง 3 คอลัมน์ ตามจำนวนผู้ยื่น) — code+test+review, LIVE
+- **B.1** (invert F_bid — ราคาแถวจาก win เป้าหมาย 75/50/25, แก้ปัญหา win% แบน 86-100% + ราคายุบ) — LIVE, verify การ์ดจริงนาทมไล่ระดับสวย
+- **#3** (ตาราง B ใช้ population เดียวกับราคา ผ่าน project_ids จาก used_rows — กรอง subtype/year ตรงราคา) — LIVE
+- **closed-loop validation แรก** (งานจริง 69059374770 โพธิ์หมากแข้ง): filter จัดเต็ม + อ่านคอลัมน์ตรง n จริง (5 ราย) → ทำนายผู้นำ **แม่น 0.04%** (690,430 vs จริง 690,000)
+- Discovery JA3 fix (N+131) ยัง LIVE · backfill 2A trickle ต่อ (~924+/3032, PID 1187503)
+
+### 🎯 NEXT ACTION (session หน้า) — งาน B′ (decided กัญจน์: ใช้ filter จัดเต็ม ผ่อนแค่ scope)
+**3 ชิ้น (จากหลักฐาน closed-loop วันนี้):**
+1. **ผ่อน scope สำหรับ win-rate** — fallback ตำบล→อำเภอ→จังหวัด เมื่อ local full-field <5 (ให้ตารางขึ้น). คง filter cf จัดเต็มเหมือนราคา. ป้าย "อิงจว." ชัด
+2. **recency-weight F_bid** — `winrate_grid` ตอนนี้แบนเรียบ (R2) ไม่ถ่วงปี · ฝั่งราคาถ่วงแล้ว (`recency_weight` half-life 1ปี) → ใส่ให้ F_bid เพราะใช้ include_old ทุกปี
+3. **center คอลัมน์ด้วย n ของ local scope** — ไม่ใช่ province mean (งานเล็กพื้นที่เป้าหมาย ~3-5 ราย, province mean=8 ลึกเกิน)
+- **วิธีทำ:** `superpowers:brainstorming` → spec → `superpowers:writing-plans` → `superpowers:subagent-driven-development`
+- ไฟล์เกี่ยว: `scripts/bid_field.py` (winrate_grid/_field_auctions/field_and_winrate) · `scripts/cgd_intel.py` predict() ~584 · spec เดิม `docs/superpowers/specs/2026-06-15-conditional-winrate-b-design.md`
+
+### ค้าง/ระวัง
+- ⚠️ deploy = กัญจน์รันเอง VPS (`cd /opt/bms/app && git pull && bash scripts/deploy.sh`) · SSH จาก dev ไม่ได้
+- ⚠️ คำสั่ง python -c หลายบรรทัดบน VPS terminal **ตัดบรรทัดกลางสตริง** → ใช้ heredoc ไฟล์ `/tmp/*.py` เสมอ
+- closed-loop เก็บเพิ่ม (n>1) ระหว่างทาง B′ ได้ — งานที่ PRELIM แล้วใช้ `prelim_summary.fetch_prelim_summary(pid, method_id)`
+- test เดิมต้องผ่าน: test_winrate_grid / test_bid_field / test_cgd_intel (BMS_ENV=dev) / test_winrate

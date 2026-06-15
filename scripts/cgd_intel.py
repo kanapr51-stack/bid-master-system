@@ -583,17 +583,21 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
         pp25, pp75 = new25, new75
     pred = predict_winning_price(budget, pp25, pp75, ptop, ptopm, area_median=pmed)
     if pred:
-        import bid_field as _bf                       # 2B เจ้าตลาด + B ตาราง win% — population เดียวกับราคา (used_rows)
+        import bid_field as _bf                       # 2B เจ้าตลาด + B′ ตาราง win% (population เดียวกับราคา)
         _ids = [r["project_id"] for r in used_rows if r.get("project_id")]
         _lbl = (f" (ต.{tambon})" if basis == "ตำบล"
                 else f" (อ.{amphoe})" if basis == "อำเภอ"
                 else f" (ต.{tambon}+อ.{amphoe})" if basis.startswith("ตำบล+")
                 else f" (ใน{province})")
-        _wl, _fl = _bf.field_and_winrate(conn, province, tokens, budget,
-                                         scope_label=_lbl, basis=basis, project_ids=_ids)
-        if _wl:                                        # มี grid → ตาราง B แทนป้าย a/b/c เดิม
+        _wl, _fl, _conf = _bf.field_and_winrate(conn, province, tokens, budget,
+                                                scope_label=_lbl, basis=basis, project_ids=_ids,
+                                                cf=cf, amphoe=amphoe)
+        if _wl and _conf is None:                      # 🟢 local → ตารางแทน a/b/c (consistent ทุกอย่าง local)
             lines += [""] + _wl
-        else:                                          # ไม่มี → การ์ดเดิม (fallback graceful)
+        elif _wl:                                      # 🟡/🟠 assisted → คงราคา local + ตารางต่อท้าย (price sacred)
+            lines += [""] + predict_lines(pred, basis, contested=contested_only)
+            lines += [""] + _wl
+        else:                                          # ไม่มี grid → การ์ดเดิม (graceful)
             lines += [""] + predict_lines(pred, basis, contested=contested_only)
         if basis_old:
             lines.append("📜 รวมข้อมูลเก่ากว่า 3 ปี (พื้นที่นี้งานน้อย) — ใช้เป็นแนวโน้ม")

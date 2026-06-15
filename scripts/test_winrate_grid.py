@@ -232,6 +232,44 @@ def test_eval_local_n_centering():
     print("✅ local-n centering + fallback เมื่อ local<MIN_N_AUCTIONS")
 
 
+def test_predict_assisted_keeps_local_price():
+    """🟡 assisted: ตาราง win% ต่อท้าย + บล็อกราคา a/b/c local ยังอยู่ (ไม่ถูกแทน)."""
+    import importlib
+    os.environ["BMS_DATA_DIR"] = tempfile.mkdtemp()
+    import Sebastian_Customer_DB as db
+    importlib.reload(db); db.init_schema()
+    import cgd_intel as ci
+    importlib.reload(ci)
+    import bid_field as bf2
+    importlib.reload(bf2)
+    s = db.SubscriptionStore()
+    with db.get_connection() as conn:
+        for i in range(8):                                   # อำเภอหนา, ตำบลบาง
+            tb = "โพธิ์หมากแข้ง" if i < 2 else f"อื่น{i}"
+            conn.execute("INSERT OR REPLACE INTO cgd_winners (project_id, province, dept, proc_type, "
+                         "project_name, winner, budget, win_price, discount_pct, fiscal_year) "
+                         "VALUES (?,?,?,?,?,?,?,?,?,?)",
+                         (f"A{i}", "บึงกาฬ", "อบต.ทดสอบ", "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+                          f"ก่อสร้างถนน คสล. ตำบล{tb} อำเภอบึงโขงหลง", "หจก.ผู้ชนะ",
+                          1000000, 820000, 18.0, "2568"))
+        s2 = db.SubscriptionStore()
+    for i in range(8):
+        s.record_bid_results(f"A{i}", [
+            {"receiveNameTh": "หจก.ก", "receiveTin": "1", "priceProposal": "780000", "priceAgree": "780000"},
+            {"receiveNameTh": "หจก.ข", "receiveTin": "2", "priceProposal": "840000"},
+            {"receiveNameTh": "หจก.ค", "receiveTin": "3", "priceProposal": "900000"}])
+    with db.get_connection() as conn:
+        ctx = ci.intel_context("บึงกาฬ", "ก่อสร้างถนน คสล. ตำบลโพธิ์หมากแข้ง อำเภอบึงโขงหลง",
+                               dept_name="อบต.ทดสอบ", project_id="X1", budget=1000000, conn=conn)
+    assert ctx and ctx.get("lines"), ctx
+    txt = "\n".join(ctx["lines"])
+    # ถ้าโผล่ตาราง assisted → ต้องคงบล็อกราคา local (predict_lines = "แนะนำราคายื่น") + disclaimer
+    if "🟡" in txt or "🟠" in txt:
+        assert "แนะนำราคายื่น" in txt, "assisted: ต้องคงบล็อกราคา local (ไม่ถูกตารางแทน)"
+        assert "ราคาด้านบนยังอิง" in txt, txt
+    print("✅ predict assisted คงราคา local (หรือ 🟢/no-table graceful)")
+
+
 test_grid_invert_targets()
 test_grid_invert_columns()
 test_grid_gate()
@@ -246,4 +284,5 @@ test_field_auctions_fiscal_year()
 test_eval_fail_reasons()
 test_eval_ess_gate_recency()
 test_eval_local_n_centering()
+test_predict_assisted_keeps_local_price()
 print("ALL PASS winrate_grid")

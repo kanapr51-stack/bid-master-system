@@ -13,6 +13,8 @@ MIN_AUCTIONS = 5        # scope ต้องมี ≥ นี้ ถึงวิ
 MIN_APPEAR = 5          # บริษัทต้องลง ≥ นี้ ถึงนับเป็นเจ้าตลาด (ตัดฟลุ๊ค ลง1-2ชนะหมด)
 LEADER_WIN_RATE = 0.40  # ชนะ ≥ 40% ของที่ลง (สุ่ม ~17% ที่ 5.9 ราย → 40% = เด่นจริง)
 DISC_MAX = 60.0         # ตัด outlier disc (unit-price เพี้ยน)
+ESS_FLOOR = 6          # effective sample (weighted) ขั้นต่ำ — bootstrap (ขยับ 8/10 เมื่อ backfill โต = B″)
+MIN_N_AUCTIONS = 3     # local auctions ขั้นต่ำที่จะเชื่อ n centering (2 → variance ไร้ความหมาย)
 
 
 def _median(xs):
@@ -21,20 +23,6 @@ def _median(xs):
     if n == 0:
         return None
     return s[n // 2] if n % 2 else (s[n // 2 - 1] + s[n // 2]) / 2.0
-
-
-def _quantile(sorted_vals, q):
-    """ค่าที่ percentile q (0..1) — linear interpolation. sorted_vals เรียงแล้ว, ไม่ว่าง."""
-    if q <= 0:
-        return sorted_vals[0]
-    if q >= 1:
-        return sorted_vals[-1]
-    pos = q * (len(sorted_vals) - 1)
-    lo = int(pos)
-    frac = pos - lo
-    if lo + 1 < len(sorted_vals):
-        return sorted_vals[lo] + frac * (sorted_vals[lo + 1] - sorted_vals[lo])
-    return sorted_vals[lo]
 
 
 def _weighted_quantile(pairs, q):
@@ -63,48 +51,72 @@ def _weighted_quantile(pairs, q):
     return pts[-1][1]
 
 
-def winrate_grid(auctions, budget, targets=(75, 50, 25)):
-    """ตาราง win% conditional ตามจำนวนผู้ยื่น (B.1 — เลือกราคาแถวจาก win เป้าหมาย).
-    ราคาแต่ละแถว = ราคาที่ให้ win% = target ที่สนามปกติ (k_mid) จาก inverse-CDF ของ bid จริง.
-    win% คอลัมน์ k = target^(k/k_mid) (ราคา=ข้อมูลจริง · การกระจายข้ามคอลัมน์=โมเดล F_bid^k).
-    auctions = [[(name,disc,is_winner)]] · budget = งบงานปัจจุบัน.
-    คืน {ns, rows, n_mean, n_sd, n_auctions, n_bids, budget} หรือ None ถ้า gate ไม่ผ่าน/ราคายุบ."""
+def _evaluate_winrate(auctions, budget, local_auctions=None, targets=(75, 50, 25)):
+    """source-of-truth: gate + ESS + weighted quantile + local-n centering.
+    คืน dict เสมอ — ok=True พร้อม grid fields, หรือ ok=False พร้อม fail_reason
+    (AUCTIONS/ESS/BOTH/BUDGET/PRICE_COLLAPSE). auctions/local_auctions = [[(name,disc,is_winner[,fy])]].
+    local_auctions = scope แคบสุด (≥MIN_N_AUCTIONS) สำหรับ center คอลัมน์ (None → ใช้ auctions)."""
     auctions = [a for a in auctions if len(a) >= 2]
     n_auctions = len(auctions)
     try:
         bud = float(budget)
     except (TypeError, ValueError):
         bud = 0
-    if n_auctions < MIN_AUCTIONS or bud <= 0:
-        return None
-    bids = sorted(t[1] for a in auctions for t in a)
-    if not bids:
-        return None
-    sizes = [len(a) for a in auctions]
-    n_mean = sum(sizes) / n_auctions
-    var = sum((s - n_mean) ** 2 for s in sizes) / (n_auctions - 1)   # sample variance
+    if bud <= 0:
+        return {"ok": False, "fail_reason": "BUDGET", "ess": 0.0}
+    pairs = []                                          # (disc, recency_weight)
+    for a in auctions:
+        for bid in a:
+            fy = bid[3] if len(bid) > 3 else None
+            pairs.append((bid[1], recency_weight(fy)))
+    ess = 0.0
+    if pairs:
+        ess = sum(w for _d, w in pairs)   # Σw (current-year bid = weight 1.0) — ประมาณ n ที่ปรับความสด
+    fail = []
+    if n_auctions < MIN_AUCTIONS:
+        fail.append("AUCTIONS")
+    if ess < ESS_FLOOR:
+        fail.append("ESS")
+    if fail:
+        reason = "BOTH" if len(fail) == 2 else fail[0]
+        return {"ok": False, "fail_reason": reason, "ess": ess}
+    # n centering: ใช้ local ถ้าหนาพอ ไม่งั้น F-scope
+    src = [a for a in (local_auctions or []) if len(a) >= 2]
+    if len(src) < MIN_N_AUCTIONS:
+        src = auctions
+    sizes = [len(a) for a in src]
+    n_mean = sum(sizes) / len(sizes)
+    var = sum((s - n_mean) ** 2 for s in sizes) / (len(sizes) - 1) if len(sizes) > 1 else 0.0
     n_sd = math.sqrt(var)
     raw = [round(n_mean - n_sd), round(n_mean), round(n_mean + n_sd)]
     ns = []
-    for k in raw:                                  # clamp ≥2 + dedupe รักษาลำดับ
+    for k in raw:
         k = max(2, k)
         if k not in ns:
             ns.append(k)
-    k_mid = ns[len(ns) // 2]                        # คอลัมน์กลาง = สนามปกติ (≈ mean)
+    k_mid = ns[len(ns) // 2]
     rows, seen_price = [], set()
-    for t in targets:                              # ราคาที่ให้ win=t ที่ k_mid (invert F_bid)
+    for t in targets:
         tf = t / 100.0
-        disc = _quantile(bids, tf ** (1.0 / k_mid))     # F_bid(disc) = tf^(1/k_mid)
+        disc = _weighted_quantile(pairs, tf ** (1.0 / k_mid))    # ราคา = inverse weighted-CDF
         price = round(bud * (1 - disc / 100.0))
-        if price in seen_price:                         # กันราคาซ้ำ (สนามแคบ)
+        if price in seen_price:
             continue
         seen_price.add(price)
         rows.append((price, [round(tf ** (k / k_mid) * 100) for k in ns]))
-    if len(rows) < 2:                              # ราคายุบ (<2 แถว) → ไม่มีประโยชน์ → fallback การ์ดเดิม
-        return None
-    rows.sort()                                     # ราคาน้อย→มาก (ดุ→กำไร)
-    return {"ns": ns, "rows": rows, "n_mean": n_mean, "n_sd": n_sd,
-            "n_auctions": n_auctions, "n_bids": len(bids), "budget": bud}
+    if len(rows) < 2:
+        return {"ok": False, "fail_reason": "PRICE_COLLAPSE", "ess": ess}
+    rows.sort()
+    return {"ok": True, "fail_reason": "OK", "ns": ns, "rows": rows,
+            "n_mean": n_mean, "n_sd": n_sd, "n_auctions": n_auctions,
+            "n_bids": len(pairs), "ess": ess, "k_mid": k_mid, "budget": bud}
+
+
+def winrate_grid(auctions, budget, local_auctions=None, targets=(75, 50, 25)):
+    """ตาราง win% conditional (B′). wrapper ของ _evaluate_winrate — คง contract dict|None.
+    None เมื่อ gate ไม่ผ่าน (ดู fail_reason ใน _evaluate_winrate)."""
+    g = _evaluate_winrate(auctions, budget, local_auctions, targets)
+    return g if g.get("ok") else None
 
 
 def winrate_lines(grid, basis="") -> list:

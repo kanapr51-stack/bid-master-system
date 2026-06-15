@@ -159,6 +159,37 @@ def test_field_auctions_fiscal_year():
     print("✅ _field_auctions 4-tuple + analyze_field รับได้")
 
 
+def test_eval_fail_reasons():
+    base = [[(f"b{j}", j * 2.0, j == 0, 2569) for j in range(4)] for _ in range(5)]   # 5×4, disc 0/2/4/6
+    assert bf._evaluate_winrate(base[:4], 1000000)["fail_reason"] == "AUCTIONS"        # <5 auctions
+    assert bf._evaluate_winrate(base, 0)["fail_reason"] == "BUDGET"
+    narrow = [[(f"b{j}", 20.0, j == 0, 2569) for j in range(4)] for _ in range(5)]     # disc เท่ากัน
+    nr = bf._evaluate_winrate(narrow, 1000000)
+    assert nr["ess"] >= bf.ESS_FLOOR, nr          # anchor: ผ่าน gate ก่อน (กัน ESS_FLOOR ขยับแล้ว test เพี้ยน)
+    assert nr["fail_reason"] == "PRICE_COLLAPSE"
+    ok = bf._evaluate_winrate(base, 1000000)
+    assert ok["ok"] and ok["fail_reason"] == "OK" and ok["ess"] >= 6, ok
+    print("✅ _evaluate_winrate fail_reason (AUCTIONS/BUDGET/PRICE_COLLAPSE/OK)")
+
+def test_eval_ess_gate_recency():
+    # 5 auctions แต่ส่วนใหญ่เก่ามาก (2562) → ESS ต่ำ → gate ESS fail
+    old = [[(f"b{j}", j * 3.0, j == 0, 2562) for j in range(2)] for _ in range(5)]     # 10 bids เก่า → w≈0.008
+    r = bf._evaluate_winrate(old, 1000000)
+    assert r["fail_reason"] == "ESS", r                      # ESS < 6 (เก่าจาง)
+    print("✅ ESS gate (งานเก่าจาง → ESS fail)")
+
+def test_eval_local_n_centering():
+    # F-scope กว้าง n~8 (สนามใหญ่), local_auctions แคบ n~4 → center ตาม local
+    big = [[(f"b{j}", j * 1.3, j == 0, 2569) for j in range(8)] for _ in range(5)]     # n=8
+    local = [[(f"b{j}", j * 1.3, j == 0, 2569) for j in range(4)] for _ in range(4)]   # n=4, 4 auctions ≥3
+    g = bf._evaluate_winrate(big, 1000000, local_auctions=local)
+    assert g["ok"] and g["ns"][len(g["ns"]) // 2] == 4, g["ns"]    # center=4 (local) ไม่ใช่ 8
+    # local น้อยกว่า MIN_N_AUCTIONS(3) → fallback ใช้ F-scope n
+    g2 = bf._evaluate_winrate(big, 1000000, local_auctions=local[:2])
+    assert g2["ns"][len(g2["ns"]) // 2] == 8, g2["ns"]            # center=8 (F-scope) เพราะ local<3
+    print("✅ local-n centering + fallback เมื่อ local<MIN_N_AUCTIONS")
+
+
 test_grid_invert_targets()
 test_grid_invert_columns()
 test_grid_gate()
@@ -168,4 +199,7 @@ test_field_auctions_project_ids()
 test_gate_fallback_to_old_card()
 test_weighted_quantile()
 test_field_auctions_fiscal_year()
+test_eval_fail_reasons()
+test_eval_ess_gate_recency()
+test_eval_local_n_centering()
 print("ALL PASS winrate_grid")

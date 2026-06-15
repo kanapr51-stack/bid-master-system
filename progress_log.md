@@ -914,3 +914,32 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 - **redeploy VPS** → ดู `_show_card.py` นาทม: ตาราง "N งาน" ควร ≤ คู่แข่ง + population ตรงกัน (subtype/year เดียวกัน)
 - tradeoff รับแล้ว: ตาราง B โผล่น้อยลง (กรองแคบ) จนกว่า backfill ครบ
 - validate iid หลัง backfill ครบ
+
+---
+
+## งานที่ N+135: 🎯 Closed-loop validation แรกของ B.1 (งานจริง 69059374770) (2026-06-15)
+
+### สถานะ: ✅ validation สำเร็จ — ทำนายแม่น 0.4% (n=1, หลักฐานหนุน option B)
+
+### เคส
+- งานจริงกำลังประมูล: ถนน คสล. ต.โพธิ์หมากแข้ง อ.บึงโขงหลง จ.บึงกาฬ · งบ 971,000 · อบต. (scope ที่เคยเป็น [[project_scope_selection_bug]])
+- ดึง id → `get_procurement_detail` (งบ/ชื่อ) → `format_notification` ทำนาย · PRELIM เพิ่งประกาศ → `prelim_summary.fetch_prelim_summary` ได้ผลจริง
+
+### ผลจริง (PRELIM 15 มิ.ย. 12:05)
+- ผู้ยื่น **5 ราย** · ราคาต่ำสุด **690,000** (ลด **28.9%**)
+
+### เทียบคำทำนาย
+| ทำนาย | ค่า | ห่างจากจริง |
+|---|---|---|
+| **ตารางจังหวัด รุ่น 50% (7 ราย)** | 687,217 (ลด 29.0%) | **0.4% / 0.1จุด** 🎯 |
+| การ์ด local (ตำบล 2 งาน) | ช่วงลด 26–36% | อยู่ในช่วง ✅ |
+| ผู้ยื่นเฉลี่ย จว. | 7 (ช่วง 2–14) | จริง 5 = ในช่วง ✅ |
+
+### ⚠️ สำคัญ (กัน misread)
+- ตารางจังหวัดที่แม่นนั้นมาจาก **broad population** (`_field_auctions` scope mode = road จังหวัด **ไม่กรอง subtype/nature/ปี**) — **ไม่ใช่** production #3 ที่กรองครบ (อันนั้น <5 → ไม่ขึ้นตาราง โชว์ local 625k/721k แทน)
+- ⇒ ความแม่นนี้เป็น **หลักฐานหนุน option B** (ผ่อน subtype → ใช้ broad → ตารางขึ้นบ่อย+แม่น) ไม่ใช่หนุน A
+- n=1 เท่านั้น — ต้องเก็บเพิ่ม (option C) ก่อนสรุป
+
+### Followup
+- เก็บ closed-loop เพิ่มหลายงาน (C) → ถ้า broad แม่นต่อเนื่อง = ตัดสินใจ B (ผ่อน subtype สำหรับ win-rate)
+- memory: [[project_winrate_closed_loop]] · [[project_value_principle]]

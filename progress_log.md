@@ -1075,3 +1075,32 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 - backfill bid_results = lever ปลดล็อก 🟢/🟡 ได้จริง **เมื่ออำเภอมี cf-winner ≥5** · อำเภอที่ winner cf-filtered <5 = ติด 🟠 ถาวร (ต้องผ่อน cf หรือแก้ threshold = B″)
 - ค้าง: **RECENT_FY ตัดปี 2569 (ปัจจุบัน)** — งานสด weight 1.0 ไม่ถูกนับ → fix ให้รวม 2569 ช่วย ESS พื้นที่บางทุกที่ (กัญจน์ยังไม่ตัดสิน)
 - ดู [[project_winrate_bprime_coverage_limit]]
+
+---
+
+## งานที่ N+141: RECENT_FY += 2569 (รวมปีงบปัจจุบัน) → validate ต.บึงโขงหลง (2026-06-16)
+
+### สถานะ: 🚧 code แก้+test ผ่าน · validation รอรันบน VPS (ข้อมูล cgd_winners/bid_results อยู่ VPS เท่านั้น)
+
+### สิ่งที่ทำ
+- `cgd_intel.py:27` `RECENT_FY = ("2566","2567","2568")` → **เพิ่ม `"2569"`** (กัญจน์สั่ง 2026-06-16). เหตุผล: 2569=ปีงบปัจจุบัน งานสด recency-weight 1.0 แต่ถูก hard SQL filter ตัดทิ้ง → ESS พื้นที่บางขาดงานสดที่ควรนับมากสุด
+- RECENT_FY ใช้เป็น hard filter ใน `_fetch`/`_fetch_scope` (cgd_intel) + `competitor_trend` → กระทบ price scope + winrate ladder (`_scope_ids`→`_field_auctions`)
+- เขียน `scripts/_validate_winrate_tambon.py` — เรียก `intel_context()` ต.บึงโขงหลง+ต.นาทม, เปิด log `bid_field` เห็นบรรทัด `winrate ... conf=<tier>` (tier จริง ไม่เดาจาก emoji)
+
+### Verify (local — code ไม่พัง)
+- **test_cgd_intel(BMS_ENV=dev) · test_winrate_grid · test_bid_field = ALL PASS** · py_compile clean
+- ไม่มี test hardcode len(RECENT_FY)==3; fixture ใช้ fy=2568 (อยู่ใน set ทั้งก่อน/หลัง)
+
+### ⚠️ Validation บล็อก: ข้อมูลอยู่ VPS
+- local `bms_customers.db`: cgd_winners=0, bid_results=0 · `winner_history.db` ไม่มี table bid_results → **validate ต.บึงโขงหลง รันบน dev ไม่ได้**
+- SSH dev→VPS = Permission denied (ตรงกับ resume note) → กัญจน์ต้อง `git pull` + รัน validate บน VPS เอง
+
+### NEXT (กัญจน์ บน VPS)
+1. confirm push → `git pull` บน VPS
+2. `BMS_DATA_DIR=/opt/bms/data python3 scripts/_validate_winrate_tambon.py`
+3. ดู conf tier ต.บึงโขงหลง: 🟠 จังหวัด (เพดานโครงสร้างยืน) หรือ 🟡/🟢 (2569 ปลดล็อก)
+
+### Followup
+- rotation progress_log (>1078 บรรทัด) ยังค้าง
+- ถ้า 2569 ยังไม่ปลด บึงโขงหลง → ยืนยัน B″ (ผ่อน cf / center intermediate scope) เป็นทางเดียว
+- ดู [[project_winrate_bprime_coverage_limit]]

@@ -1109,7 +1109,12 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 - **บึงโขงหลงปลดล็อก 🟡 ด้วย data ไม่ได้** (backfill หมดแล้ว + 2569 หมดแล้ว ยัง 3 งาน) → เหลือแค่ B″ (ผ่อน cf / center intermediate scope) หรือ **ยอมรับ 🟠 = คำตอบสถิติที่ถูก** (อำเภอ data น้อยจริง center จังหวัดปลอดภัยกว่า)
 - 🔍 จุดที่ B″ น่าทำสุด = **center column** บึงโขงหลงโชว์ "เฉลี่ย 9 ผู้ยื่น (±6)" จากจังหวัด แต่อำเภอจริง ~3-4 ราย → ตาราง%อาจให้ภาพสนามแน่นเกินจริง (center ที่ intermediate=อำเภอ จะใกล้ความจริงกว่า แม้ conf ยัง 🟠)
 
+### ✅ DECISION (กัญจน์ 2026-06-16): ยอมรับ 🟠 บึงโขงหลง — ปิดงาน
+- 🟠 จังหวัด = คำตอบสถิติที่ถูกสำหรับอำเภอ data น้อย (center จังหวัดปลอดภัยกว่าเดา n จาก 3 งาน). 2569 keep.
+- **B″ (center-intermediate) = defer** → เก็บเป็น offline monitor ก่อน (วัด center error หลายพื้นที่ค่อยตัดสิน) ตามแผน B″ เดิม + value-principle (evidence ก่อน hypothesis)
+- Win-Rate B′ closed-loop สมบูรณ์: นาทม 🟢 + 2B เจ้าตลาด · บึงโขงหลง 🟠 graceful + price sacred
+
 ### Followup
 - rotation progress_log (>1100 บรรทัด) ยังค้าง
-- **รอ decision กัญจน์:** ยอมรับ 🟠 บึงโขงหลง (จบ) หรือเริ่ม B″ (center intermediate scope)
+- B″ offline monitor (center error วัดหลายพื้นที่) — เปิดเมื่อมี evidence ว่า %ตารางเพี้ยนหลายที่
 - ดู [[project_winrate_bprime_coverage_limit]]

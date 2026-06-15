@@ -1080,7 +1080,7 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 
 ## งานที่ N+141: RECENT_FY += 2569 (รวมปีงบปัจจุบัน) → validate ต.บึงโขงหลง (2026-06-16)
 
-### สถานะ: 🚧 code แก้+test ผ่าน · validation รอรันบน VPS (ข้อมูล cgd_winners/bid_results อยู่ VPS เท่านั้น)
+### สถานะ: ✅ DONE — 2569 deployed VPS (ae39c43) · validation: บึงโขงหลงยัง 🟠 (เพดานยืน) · นาทม 🟢 ไม่ regression
 
 ### สิ่งที่ทำ
 - `cgd_intel.py:27` `RECENT_FY = ("2566","2567","2568")` → **เพิ่ม `"2569"`** (กัญจน์สั่ง 2026-06-16). เหตุผล: 2569=ปีงบปัจจุบัน งานสด recency-weight 1.0 แต่ถูก hard SQL filter ตัดทิ้ง → ESS พื้นที่บางขาดงานสดที่ควรนับมากสุด
@@ -1100,7 +1100,16 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 2. `BMS_DATA_DIR=/opt/bms/data python3 scripts/_validate_winrate_tambon.py`
 3. ดู conf tier ต.บึงโขงหลง: 🟠 จังหวัด (เพดานโครงสร้างยืน) หรือ 🟡/🟢 (2569 ปลดล็อก)
 
+### ✅ ผล validation บน VPS (BMS_DATA_DIR=/opt/bms/data, ae39c43)
+- **ต.บึงโขงหลง:** `conf=จังหวัด ess=142.5 k_local=9` → **ยัง 🟠 จังหวัด** (2569 ไม่ปลดล็อก). อำเภอ full-field concrete-contested = **3 งานเท่าเดิม** (เดชา28%/ชัยฤทธิ์41%/ว่องเจริญ36%) < MIN_AUCTIONS(5). จังหวัด 35→**36 งาน** 300→**314 ราย** (fy2569 active แต่ +1 งานเท่านั้น = coverage 2569 ยังบาง ปีงบเพิ่งเริ่ม/poll ไม่ทัน) → **ยืนยันเพดานโครงสร้าง N+140**: อำเภอบึงโขงหลงเล็กเกินไป งาน concrete-contested ไม่ถึง 5 ไม่ว่าปีไหน
+- **ต.นาทม:** `conf=local ess=16.8 k_local=8` → **ยัง 🟢 local ไม่ regression** · 6 งานอำเภอ 47 ราย · 🏆 2B เจ้าตลาด หจก.เอส.ที.เค.เพาเวอร์ (ชนะ 60% 3/5, ลด ~39%) ยังโผล่ → 2569 ปลอดภัย ไม่ทำของเดิมพัง
+
+### บทเรียน / decision
+- **2569 = keep** — ไม่ regression + จะช่วยเองเมื่อ coverage fy2569 หนาขึ้น (ตอนนี้บางเพราะปีงบเพิ่งเริ่ม)
+- **บึงโขงหลงปลดล็อก 🟡 ด้วย data ไม่ได้** (backfill หมดแล้ว + 2569 หมดแล้ว ยัง 3 งาน) → เหลือแค่ B″ (ผ่อน cf / center intermediate scope) หรือ **ยอมรับ 🟠 = คำตอบสถิติที่ถูก** (อำเภอ data น้อยจริง center จังหวัดปลอดภัยกว่า)
+- 🔍 จุดที่ B″ น่าทำสุด = **center column** บึงโขงหลงโชว์ "เฉลี่ย 9 ผู้ยื่น (±6)" จากจังหวัด แต่อำเภอจริง ~3-4 ราย → ตาราง%อาจให้ภาพสนามแน่นเกินจริง (center ที่ intermediate=อำเภอ จะใกล้ความจริงกว่า แม้ conf ยัง 🟠)
+
 ### Followup
-- rotation progress_log (>1078 บรรทัด) ยังค้าง
-- ถ้า 2569 ยังไม่ปลด บึงโขงหลง → ยืนยัน B″ (ผ่อน cf / center intermediate scope) เป็นทางเดียว
+- rotation progress_log (>1100 บรรทัด) ยังค้าง
+- **รอ decision กัญจน์:** ยอมรับ 🟠 บึงโขงหลง (จบ) หรือเริ่ม B″ (center intermediate scope)
 - ดู [[project_winrate_bprime_coverage_limit]]

@@ -979,3 +979,26 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 - ⚠️ คำสั่ง python -c หลายบรรทัดบน VPS terminal **ตัดบรรทัดกลางสตริง** → ใช้ heredoc ไฟล์ `/tmp/*.py` เสมอ
 - closed-loop เก็บเพิ่ม (n>1) ระหว่างทาง B′ ได้ — งานที่ PRELIM แล้วใช้ `prelim_summary.fetch_prelim_summary(pid, method_id)`
 - test เดิมต้องผ่าน: test_winrate_grid / test_bid_field / test_cgd_intel (BMS_ENV=dev) / test_winrate
+
+## งานที่ N+137: CHECKPOINT — B′ design+plan เสร็จ พร้อม execute (2026-06-15)
+
+### สถานะ: ⏸ pause เปลี่ยน session — spec+plan committed, รอ subagent-driven execution (กัญจน์เลือกเริ่ม session หน้า)
+
+### ✅ เสร็จแล้ว session นี้ (committed บน main, `c1d8b90`)
+- **Brainstorm B′ → design freeze** — แก้ tension "ผ่อน scope vs price=local" (กัญจน์จับว่าราคาต้องอิง local)
+- **ปรึกษา ChatGPT 2 รอบ → converge 8/8** (`/report-to-chatgpt`): KS runtime-gate + ESS-blend → ถอยเป็น B″ + offline monitor. ChatGPT ยอมรับว่า Claude ถูกทั้ง 2 จุด
+- **spec** `docs/superpowers/specs/2026-06-15-winrate-b-prime-design.md` — review กัญจน์ 8.5/10, แก้ 3 จุด (MIN_N_AUCTIONS=3, assisted disclaimer เน้น, fail_reason log) commit `a059601`
+- **plan** `docs/superpowers/plans/2026-06-15-winrate-b-prime.md` — 7 tasks TDD bite-sized, self-review เทียบ spec ครบ commit `c1d8b90`
+
+### 🎯 NEXT ACTION (session หน้า) — EXECUTE plan B′
+- **พิมพ์ "resume"** → อ่าน checkpoint นี้ → invoke `superpowers:subagent-driven-development` ชี้ไป plan `docs/superpowers/plans/2026-06-15-winrate-b-prime.md`
+- dispatch implementer subagent ต่อ task (7 tasks) + two-stage review (spec → quality) ต่อ task · fresh subagent ต่อ task (ส่ง full task text ไม่ให้อ่าน plan เอง)
+- **3 knobs:** (1) scope ladder mirror ราคา ผ่อน อำเภอ→จังหวัด · (2) recency-weighted quantile + ESS floor=6 · (3) center n local (MIN_N_AUCTIONS=3)
+- ไฟล์แก้: `scripts/bid_field.py` (หลัก) · `scripts/cgd_intel.py` (integration ~586) · `scripts/test_winrate_grid.py`
+- **หลักการห้ามพลาด:** price sacred (assisted คงบล็อกราคา local + ตารางต่อท้าย, 🟢 เท่านั้นที่แทน a/b/c) · F ก้อนเดียว (center=target)
+
+### ค้าง/ระวัง
+- ⚠️ deploy = กัญจน์รัน VPS เอง (SSH จาก dev ไม่ได้) · python -c หลายบรรทัดบน VPS พัง → heredoc /tmp/*.py
+- Task 7 มี Sophia sanity audit + progress_log N+137→138 update ก่อน final commit
+- เริ่ม implementation ต้องอยู่บน branch — ตอนนี้ main · subagent-driven แนะนำ branch ก่อน execute (หรือ worktree)
+- uncommitted เดิม (settings.local/discovery_seen/rss_log + debug scripts) = runtime ไม่เกี่ยว B′ ไม่ต้อง commit

@@ -88,8 +88,9 @@ def test_field_and_winrate_endtoend():
             {"receiveNameTh": "หจก.ค", "receiveTin": "3", "priceProposal": "850000"},
             {"receiveNameTh": "หจก.ง", "receiveTin": "4", "priceProposal": "900000"}])
     with db.get_connection() as conn:
-        wl, fl = bf.field_and_winrate(conn, "นครพนม", ["ถนน"], 1000000,
-                                      district="เมือง", scope_label=" (อ.เมือง)", basis="อำเภอ")
+        wl, fl, conf = bf.field_and_winrate(conn, "นครพนม", ["ถนน"], 1000000,
+                                            district="เมือง", scope_label=" (อ.เมือง)", basis="อำเภอ")
+    assert conf is None, conf                                # ไม่ผ่อน scope → 🟢 local
     wtxt = "\n".join(wl)
     assert "โอกาสชนะตามจำนวนผู้ยื่น" in wtxt, wtxt           # B table โผล่
     assert "📈 จาก 6 งานที่มีข้อมูลผู้ยื่นครบ · 24 ราย" in wtxt, wtxt  # 6 งาน × 4 ผู้ยื่น = 24
@@ -129,10 +130,40 @@ def test_gate_fallback_to_old_card():
     import Sebastian_Customer_DB as db
     importlib.reload(db); db.init_schema()
     with db.get_connection() as conn:
-        wl, fl = bf.field_and_winrate(conn, "นครพนม", ["ถนน"], 1000000,
-                                      district="ไม่มี", basis="อำเภอ")
-    assert wl == [] and fl == [], (wl, fl)                    # ว่าง → predict() ใช้ predict_lines เดิม
+        wl, fl, conf = bf.field_and_winrate(conn, "นครพนม", ["ถนน"], 1000000,
+                                            district="ไม่มี", basis="อำเภอ")
+    assert wl == [] and fl == [] and conf is None, (wl, fl, conf)
     print("✅ gate: scope บาง → ([],[]) → การ์ดเดิม")
+
+
+def test_ladder_relax_to_amphoe():
+    """local (ตำบล) full-field < MIN_AUCTIONS → ผ่อนไปอำเภอ → conf 🟡 + ตารางขึ้น."""
+    import importlib
+    os.environ["BMS_DATA_DIR"] = tempfile.mkdtemp()
+    import Sebastian_Customer_DB as db
+    importlib.reload(db); db.init_schema()
+    s = db.SubscriptionStore()
+    bids = [{"receiveNameTh": "หจก.ก", "receiveTin": "1", "priceProposal": "700000", "priceAgree": "700000"},
+            {"receiveNameTh": "หจก.ข", "receiveTin": "2", "priceProposal": "780000"},
+            {"receiveNameTh": "หจก.ค", "receiveTin": "3", "priceProposal": "860000"}]
+    with db.get_connection() as conn:
+        for i in range(6):                                   # 6 งานในอำเภอ (พอ), แต่ตำบลมีแค่ 2
+            tb = "ตำบลโพธิ์" if i < 2 else f"ตำบลอื่น{i}"
+            conn.execute("INSERT OR REPLACE INTO cgd_winners (project_id, province, proc_type, "
+                         "project_name, budget, fiscal_year, win_price, winner) VALUES (?,?,?,?,?,?,?,?)",
+                         (f"L{i}", "นครพนม", "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+                          f"ก่อสร้างถนน {tb} อำเภอนาทม", 1000000, "2568", 820000, f"หจก.ชนะ{i}"))
+    for i in range(6):
+        s.record_bid_results(f"L{i}", bids)
+    tambon_ids = ["L0", "L1"]                                # ตำบล = 2 auctions (<5)
+    with db.get_connection() as conn:
+        wl, fl, conf = bf.field_and_winrate(conn, "นครพนม", ["ถนน"], 1000000,
+                                            basis="ตำบล", project_ids=tambon_ids,
+                                            cf={}, amphoe="นาทม")
+    assert conf is not None and conf[0] == "🟡", conf        # ผ่อนไปอำเภอ
+    assert any("โอกาสชนะตามจำนวนผู้ยื่น" in x for x in wl), wl    # ตารางขึ้น (เดิมไม่ขึ้น)
+    assert any("ราคาด้านบนยังอิงตำบล" in x for x in wl), wl       # disclaimer
+    print("✅ ladder: ตำบลบาง → ผ่อนอำเภอ 🟡 + ตารางขึ้น")
 
 
 def test_weighted_quantile():
@@ -209,6 +240,7 @@ test_winrate_lines_assisted()
 test_field_and_winrate_endtoend()
 test_field_auctions_project_ids()
 test_gate_fallback_to_old_card()
+test_ladder_relax_to_amphoe()
 test_weighted_quantile()
 test_field_auctions_fiscal_year()
 test_eval_fail_reasons()

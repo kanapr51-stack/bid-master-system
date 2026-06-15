@@ -270,12 +270,46 @@ def _field_auctions(conn, province, tokens, subdistrict=None, district=None, pro
     return list(byp.values())
 
 
-def field_and_winrate(conn, province, tokens, budget,
-                      subdistrict=None, district=None, scope_label="", basis="", project_ids=None):
-    """อ่าน _field_auctions รอบเดียว → คืน (winrate_lines [B], field_lines [2B เจ้าตลาด]).
-    project_ids = ชุดงานที่ price ใช้ (population เดียวกัน → เลขตรงกัน). graceful ([],[]) ถ้าว่าง.
-    จุดเชื่อม predictor — กัน query ซ้ำ."""
-    auctions = _field_auctions(conn, province, tokens, subdistrict, district, project_ids=project_ids)
-    wl = winrate_lines(winrate_grid(auctions, budget), basis)
-    fl = field_lines(analyze_field(auctions), budget, scope_label)
-    return wl, fl
+_CONF = {0: None, 1: ("🟡", "อำเภอ"), 2: ("🟠", "จังหวัด")}   # ระยะผ่อนจาก price scope
+
+
+def _scope_ids(conn, province, tokens, cf, subdistrict=None, district=None):
+    """project_ids ของ scope (คง cf จัดเต็มผ่าน _fetch_scope — population เดียวกับราคา). [] ถ้าว่าง/error."""
+    try:
+        from cgd_intel import _fetch_scope
+        rows, _old = _fetch_scope(conn, province, tokens,
+                                  subdistrict=subdistrict, district=district, **(cf or {}))
+        return [r["project_id"] for r in rows if r.get("project_id")]
+    except Exception:                                   # graceful แต่ surface (กัน silent swallow)
+        _log.warning("_scope_ids failed (district=%s) → []", district, exc_info=True)
+        return []
+
+
+def field_and_winrate(conn, province, tokens, budget, subdistrict=None, district=None,
+                      scope_label="", basis="", project_ids=None, cf=None, amphoe=None):
+    """orchestrator: อ่าน price-scope auctions → ลองทำตาราง → ผ่อน ladder (อำเภอ→จังหวัด)
+    จน gate ผ่าน. คืน (winrate_lines, field_lines[2B], conf). conf=None(🟢)/('🟡','อำเภอ')/('🟠','จังหวัด').
+    n centering = price-scope auctions (local) เสมอ. 2B (field_lines) อิง price-scope."""
+    if project_ids is not None:
+        local_auc = _field_auctions(conn, province, tokens, project_ids=project_ids)
+    else:
+        local_auc = _field_auctions(conn, province, tokens, subdistrict, district)
+    attempts = [local_auc]                                  # 0 = price scope (🟢)
+    if amphoe and cf is not None:                           # ผ่อนได้เฉพาะตอนรู้ amphoe + cf
+        attempts.append(_field_auctions(conn, province, tokens,
+                        project_ids=_scope_ids(conn, province, tokens, cf, district=amphoe)))
+        attempts.append(_field_auctions(conn, province, tokens,
+                        project_ids=_scope_ids(conn, province, tokens, cf)))
+    grid, conf, reason = None, None, "OK"
+    for i, auc_ in enumerate(attempts):
+        ev = _evaluate_winrate(auc_, budget, local_auctions=local_auc)
+        reason = ev["fail_reason"]
+        if ev.get("ok"):
+            grid, conf = ev, _CONF.get(i)
+            break
+    _log.info("winrate basis=%s conf=%s ess=%.1f k_local=%s fail_reason=%s",
+              basis, ("local" if conf is None else conf[1]) if grid else "none",
+              grid["ess"] if grid else 0.0, grid["k_mid"] if grid else None, reason)
+    wl = winrate_lines(grid, conf, price_basis=basis) if grid else []
+    fl = field_lines(analyze_field(local_auc), budget, scope_label)
+    return wl, fl, conf

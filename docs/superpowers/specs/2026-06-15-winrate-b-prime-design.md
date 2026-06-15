@@ -1,7 +1,8 @@
 # Win-Rate B′ — ขยาย coverage ด้วย machinery เดิม — Design
 
 **วันที่:** 2026-06-15
-**สถานะ:** design — approved (กัญจน์ + ChatGPT consult converged 8/8) → next: writing-plans
+**สถานะ:** design — APPROVED WITH MINOR REVISIONS (กัญจน์ 8.5/10 + ChatGPT consult converged 8/8)
+→ revisions applied: MIN_N_AUCTIONS=3, assisted disclaimer เน้น, fail_reason log → next: writing-plans
 **ต่อจาก:** B/B.1/#3 (LIVE, closed-loop validate งานจริง 69059374770 แม่น 0.04%). spec เดิม `2026-06-15-conditional-winrate-b-design.md`
 
 ---
@@ -61,12 +62,14 @@ F_bid เลือก scope แบบ mirror บล็อกราคา แล�
 
 ### Knob 3 — Local n centering (decouple เดียวที่ปลอดภัย)
 
-- แม้ F_bid ผ่อนไปจังหวัด → **center คอลัมน์ด้วย n ของ scope แคบสุดที่มี full-field ≥2 auctions**
+- แม้ F_bid ผ่อนไปจังหวัด → **center คอลัมน์ด้วย n ของ scope แคบสุดที่มี full-field ≥ `MIN_N_AUCTIONS(3)` auctions**
   (= สนามจริงพื้นที่เป้าหมาย). คำนวณ `n_mean/n_sd` จาก auctions ของ local scope นั้น.
+  - **`MIN_N_AUCTIONS = 3`** (ไม่ใช่ 2 — review กัญจน์): 2 auctions → variance estimate แทบไม่มีความหมาย
+    (เช่น 5+2 ราย → mean 3.5, sd 2.1 → คอลัมน์ 1/4/6 noise). ต้อง ≥3 ถึงไว้ใจ SD.
 - `k_mid` (ใช้ทั้ง price inverse-CDF + % eval) = มาจาก local n → **center column = target เป๊ะ**
   (consistency รักษาไว้ แม้ F=จังหวัด, k=ตำบล: `price_t = budget(1−Wquantile(F_bids, target^(1/k_mid)))`,
   `win%_k = target^(k/k_mid)`).
-- ถ้า local scope ไม่มี full-field เลย → ใช้ n ของ F-scope + tag "ประมาณจากระดับ[scope]".
+- ถ้า local scope ไม่มี full-field ≥ MIN_N_AUCTIONS → ใช้ n ของ F-scope + tag "ประมาณจากระดับ[scope]".
 
 ## 5. Confidence tag (UI — รับจาก ChatGPT)
 
@@ -83,6 +86,8 @@ F_bid เลือก scope แบบ mirror บล็อกราคา แล�
 - **🟢 local:** ตาราง win% **แทน** บล็อก a/b/c เดิม (เพราะ local ล้วน — consistent กับราคาหลัก).
 - **🟡/🟠 assisted:** **คงบล็อกราคา local a/b/c ไว้** (`predict_lines` ปกติ) + ตาราง win% ต่อท้าย
   (label assisted) → ราคาหลักยัง local, ตารางเป็นข้อมูลเสริมโอกาสชนะ. **ไม่ให้ราคา assisted บัง local.**
+  - **เน้น disclaimer ชัด (review กัญจน์):** ตาราง assisted **ต้องมีบรรทัดเตือนแยก** `⚠️ ราคาด้านบนยังอิง[local]
+    — ตารางนี้บอกเฉพาะ "โอกาส%"` กันผู้ใช้อ่านเร็วแล้วเข้าใจว่าราคาในตาราง = ราคาแนะนำ.
 - ถ้า grid=None → บล็อก a/b/c เดิม (เหมือนวันนี้).
 
 ## 7. Output (ตัวอย่าง 🟡 assisted, local n=5, F=อำเภอ)
@@ -98,7 +103,8 @@ F_bid เลือก scope แบบ mirror บล็อกราคา แล�
    1,218,701      36%    25%    16%
    📊 สนามนี้เฉลี่ย 5 ผู้ยื่น (±2)
    📈 จาก 9 งานที่มีข้อมูลผู้ยื่นครบ · 41 ราย
-   🟡 โอกาส% อิงระดับอำเภอ (พื้นที่นี้ข้อมูลบาง) · ราคาด้านบนอิงตำบล
+   🟡 โอกาส% อิงระดับอำเภอ (พื้นที่นี้ข้อมูลบาง)
+   ⚠️ ราคาด้านบนยังอิงตำบล — ตารางนี้บอกเฉพาะ "โอกาสชนะ%"
    * คอลัมน์ตรงค่าเฉลี่ย = เป้า 75/50/25 · ยิ่งผู้ยื่นเยอะ โอกาสยิ่งต่ำ
 ```
 
@@ -114,7 +120,7 @@ _field_auctions(...)  # +SELECT cw.fiscal_year → tuple เพิ่ม fiscal_
 
 winrate_grid(auctions, budget, local_auctions=None, targets=(75,50,25)) -> dict | None
     # auctions      = F_bid scope (อาจผ่อนกว้าง) — ใช้ทำ weighted CDF + ราคา
-    # local_auctions= scope แคบสุดมี full-field (≥2) — ใช้ center n เท่านั้น (None → ใช้ auctions)
+    # local_auctions= scope แคบสุดมี full-field (≥ MIN_N_AUCTIONS=3) — ใช้ center n เท่านั้น (None → ใช้ auctions)
     # weighted CDF + ESS gate(≥6) + local-n centering
     # คืน {ns, rows, n_mean, n_sd, n_auctions, n_bids, ess, budget, k_mid} | None
 
@@ -133,8 +139,12 @@ field_and_winrate(...)  # orchestrate ladder: ลอง scope → gate → ผ�
 
 ## 9. Breadcrumb log (offline monitor — เตรียม B″)
 
-`_log.info` ต่อ render: `winrate scope=%s conf=%s ess=%.1f k_local=%s k_fscope=%s delta_k=%s`
+`_log.info` ต่อ render: `winrate scope=%s conf=%s ess=%.1f k_local=%s k_fscope=%s delta_k=%s fail_reason=%s`
 → ภายหลัง analyze offline: KS(F_local,F_broad) distribution, Δk distribution → ตัดสิน B″ (clamp/shrinkage).
+
+- **`fail_reason` (review กัญจน์)** = สาเหตุที่ scope หนึ่งไม่ผ่าน gate ก่อนผ่อน/หรือ None สุดท้าย:
+  `AUCTIONS` (auctions<5) / `ESS` (ESS<6) / `BOTH` / `PRICE_COLLAPSE` (<2 แถว) / `OK`.
+  → 6 เดือนข้างหน้าถาม "ทำไมตารางไม่ขึ้น" ตอบได้ทันทีจาก log โดยไม่ต้อง reproduce.
 
 ## 10. Gating (graceful)
 
@@ -151,11 +161,15 @@ field_and_winrate(...)  # orchestrate ladder: ลอง scope → gate → ผ�
 2. **Recency** — งานปีเก่าถ่วงน้อยลง → CDF เลื่อนตามงานสด (synthetic 2 ปี ต่างชัด).
 3. **ESS gate** — ESS<6 → ladder up / None ถูก (synthetic น้ำหนักเบ้).
 4. **Local n centering** — F=province auctions (n~8) + local_auctions (n~4) → คอลัมน์ center=4 ไม่ใช่ 8.
-   center column = target เป๊ะ แม้ F≠local.
+   center column = target เป๊ะ แม้ F≠local. · local_auctions <MIN_N_AUCTIONS(3) → fallback ใช้ n ของ F-scope.
 5. **Ladder** — mirror: local ผ่าน→ไม่ผ่อน(🟢) · local fail+อำเภอผ่าน→🟡 · สุด ladder fail→None.
 6. **Consistency** — center column = target (75/50/25) ทุกกรณี (รวม assisted).
 7. **Render+tag** — `winrate_lines` มี tag 🟢🟡🟠 + บรรทัด price-basis ถูก · grid=None → [].
-8. **Backward-compat** — `test_winrate.py`/`test_bid_field.py`/`test_cgd_intel.py` เดิมผ่าน (BMS_ENV=dev).
+8. **Assisted semantic** (review กัญจน์) — conf≠🟢 (price_basis=ตำบล, F=อำเภอ) → render **ต้องมี**
+   บรรทัด `⚠️ ราคาด้านบนยังอิงตำบล`. กัน regression UX (ผู้ใช้เข้าใจราคาตาราง = ราคาแนะนำ).
+9. **fail_reason** — gate fail แต่ละแบบ → grid/log มี fail_reason ถูก (AUCTIONS/ESS/BOTH/PRICE_COLLAPSE).
+10. **Backward-compat** — `test_winrate.py`/`test_bid_field.py`/`test_cgd_intel.py` เดิมผ่าน (BMS_ENV=dev)
+    + 4-tuple ไม่ทำ 2B (`analyze_field`) พัง.
 
 ## 12. Definition of Done (verifiable)
 

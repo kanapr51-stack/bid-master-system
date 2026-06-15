@@ -53,7 +53,7 @@ def test_winrate_lines_render():
     assert "4ราย" in txt and "6ราย" in txt and "8ราย" in txt, txt
     assert "1,400,000" in txt and "78%" in txt, txt
     assert "เฉลี่ย 6 ผู้ยื่น" in txt and "(±2)" in txt and "อิงอำเภอ" in txt, txt
-    assert "📈 สถิติจาก 18 งาน · 107 ผู้ยื่น" in txt, txt
+    assert "📈 จาก 18 งานที่มีข้อมูลผู้ยื่นครบ · 107 ราย" in txt, txt
     assert bf.winrate_lines(None, "อำเภอ") == [], "None → []"
     print("✅ winrate_lines render + sample size")
 
@@ -81,9 +81,35 @@ def test_field_and_winrate_endtoend():
                                       district="เมือง", scope_label=" (อ.เมือง)", basis="อำเภอ")
     wtxt = "\n".join(wl)
     assert "โอกาสชนะตามจำนวนผู้ยื่น" in wtxt, wtxt           # B table โผล่
-    assert "📈 สถิติจาก 6 งาน · 24 ผู้ยื่น" in wtxt, wtxt     # 6 งาน × 4 ผู้ยื่น = 24
+    assert "📈 จาก 6 งานที่มีข้อมูลผู้ยื่นครบ · 24 ราย" in wtxt, wtxt  # 6 งาน × 4 ผู้ยื่น = 24
     assert isinstance(fl, list), fl                          # 2B block (อาจ [] ถ้าไม่มี leader) — ไม่ error
     print("✅ field_and_winrate end-to-end (อ่านรอบเดียว → 2 บล็อก)")
+
+
+def test_field_auctions_project_ids():
+    """project_ids mode → ดึงเฉพาะ id ที่ส่ง (population เดียวกับราคา)."""
+    import importlib
+    os.environ["BMS_DATA_DIR"] = tempfile.mkdtemp()
+    import Sebastian_Customer_DB as db
+    importlib.reload(db); db.init_schema()
+    s = db.SubscriptionStore()
+    with db.get_connection() as conn:
+        for pid in ("P1", "P2", "P3"):
+            conn.execute("INSERT OR REPLACE INTO cgd_winners "
+                         "(project_id, province, proc_type, project_name, budget) VALUES (?,?,?,?,?)",
+                         (pid, "นครพนม", "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)", "ก่อสร้างถนน", 1000000))
+    for pid in ("P1", "P2", "P3"):
+        s.record_bid_results(pid, [
+            {"receiveNameTh": "หจก.ก", "receiveTin": "1", "priceProposal": "700000", "priceAgree": "700000"},
+            {"receiveNameTh": "หจก.ข", "receiveTin": "2", "priceProposal": "850000"}])
+    with db.get_connection() as conn:
+        au_all = bf._field_auctions(conn, "นครพนม", ["ถนน"])
+        au_sel = bf._field_auctions(conn, "นครพนม", ["ถนน"], project_ids=["P1", "P2", "P1"])  # dup ตัด
+        au_empty = bf._field_auctions(conn, "นครพนม", ["ถนน"], project_ids=[])
+    assert len(au_all) == 3, au_all                          # scope mode = ทั้งหมด
+    assert len(au_sel) == 2, au_sel                          # project_ids → เฉพาะ P1,P2
+    assert au_empty == [], au_empty                          # ว่าง → []
+    print("✅ _field_auctions project_ids mode (population เดียวกับราคา)")
 
 def test_gate_fallback_to_old_card():
     """scope ที่ bid_results ว่าง → ([],[]) → predict() จะ fallback การ์ดเดิม (graceful)."""
@@ -103,5 +129,6 @@ test_grid_invert_columns()
 test_grid_gate()
 test_winrate_lines_render()
 test_field_and_winrate_endtoend()
+test_field_auctions_project_ids()
 test_gate_fallback_to_old_card()
 print("ALL PASS winrate_grid")

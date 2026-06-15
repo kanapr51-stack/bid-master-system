@@ -92,7 +92,7 @@ def winrate_lines(grid, basis="") -> list:
         lines.append(f"   {price:>10,.0f}  {cells}")
     sd_txt = f" (±{round(grid['n_sd'])})" if len(ns) > 1 else ""
     lines.append(f"   📊 สนามนี้เฉลี่ย {round(grid['n_mean'])} ผู้ยื่น{sd_txt} · อิง{basis}")
-    lines.append(f"   📈 สถิติจาก {grid['n_auctions']} งาน · {grid['n_bids']} ผู้ยื่น")
+    lines.append(f"   📈 จาก {grid['n_auctions']} งานที่มีข้อมูลผู้ยื่นครบ · {grid['n_bids']} ราย")
     lines.append("   * คอลัมน์ตรงค่าเฉลี่ย = เป้า 75/50/25 · ยิ่งผู้ยื่นเยอะ โอกาสยิ่งต่ำ")
     return lines
 
@@ -164,19 +164,28 @@ def field_lines(fr: dict, budget_now, scope_label="") -> list:
     return lines
 
 
-def _field_auctions(conn, province, tokens, subdistrict=None, district=None) -> list:
+def _field_auctions(conn, province, tokens, subdistrict=None, district=None, project_ids=None) -> list:
     """full-field auctions ของ scope จาก bid_results JOIN cgd_winners(budget).
+    project_ids != None → ดึงเฉพาะ id ชุดนั้น (population เดียวกับที่ price ใช้ — เลขตรงกัน).
+    project_ids = None → query ตาม scope (province + tokens + ตำบล/อำเภอ จากชื่องาน).
     คืน [ [(bidder_name, disc_pct, is_winner)] ] · ตัด outlier disc นอก [0,DISC_MAX] · graceful []."""
-    pt = ",".join("?" for _ in COMPETITIVE_SET)
-    like = " OR ".join("cw.project_name LIKE ?" for _ in tokens)
-    where = ["cw.province=?", f"cw.proc_type IN ({pt})", f"({like})", "cw.budget>0"]
-    params = [province, *COMPETITIVE_SET] + [f"%{t}%" for t in tokens]
-    if subdistrict is not None:                  # geocode column เพี้ยน → match จากชื่องาน (เหมือน competitor_trend)
-        where.append("(cw.project_name LIKE ? OR cw.project_name LIKE ?)")
-        params += [f"%ตำบล{subdistrict}%", f"%ต.{subdistrict}%"]
-    if district is not None:
-        where.append("(cw.project_name LIKE ? OR cw.project_name LIKE ?)")
-        params += [f"%อำเภอ{district}%", f"%อ.{district}%"]
+    if project_ids is not None:
+        ids = list(dict.fromkeys(project_ids))   # dedupe รักษาลำดับ
+        if not ids:
+            return []
+        where = [f"b.project_id IN ({','.join('?' for _ in ids)})", "cw.budget>0"]
+        params = list(ids)
+    else:
+        pt = ",".join("?" for _ in COMPETITIVE_SET)
+        like = " OR ".join("cw.project_name LIKE ?" for _ in tokens)
+        where = ["cw.province=?", f"cw.proc_type IN ({pt})", f"({like})", "cw.budget>0"]
+        params = [province, *COMPETITIVE_SET] + [f"%{t}%" for t in tokens]
+        if subdistrict is not None:              # geocode column เพี้ยน → match จากชื่องาน (เหมือน competitor_trend)
+            where.append("(cw.project_name LIKE ? OR cw.project_name LIKE ?)")
+            params += [f"%ตำบล{subdistrict}%", f"%ต.{subdistrict}%"]
+        if district is not None:
+            where.append("(cw.project_name LIKE ? OR cw.project_name LIKE ?)")
+            params += [f"%อำเภอ{district}%", f"%อ.{district}%"]
     sql = ("SELECT b.project_id, b.bidder_name, b.price_proposal, b.price_agree, b.is_winner, cw.budget "
            "FROM bid_results b JOIN cgd_winners cw ON cw.project_id=b.project_id "
            "WHERE " + " AND ".join(where))
@@ -216,10 +225,11 @@ def field_block(conn, province, tokens, budget_now, subdistrict=None, district=N
 
 
 def field_and_winrate(conn, province, tokens, budget,
-                      subdistrict=None, district=None, scope_label="", basis=""):
+                      subdistrict=None, district=None, scope_label="", basis="", project_ids=None):
     """อ่าน _field_auctions รอบเดียว → คืน (winrate_lines [B], field_lines [2B เจ้าตลาด]).
-    graceful: คืน ([],[]) ถ้า scope ว่าง. จุดเชื่อม predictor — กัน query ซ้ำ."""
-    auctions = _field_auctions(conn, province, tokens, subdistrict, district)
+    project_ids = ชุดงานที่ price ใช้ (population เดียวกัน → เลขตรงกัน). graceful ([],[]) ถ้าว่าง.
+    จุดเชื่อม predictor — กัน query ซ้ำ."""
+    auctions = _field_auctions(conn, province, tokens, subdistrict, district, project_ids=project_ids)
     wl = winrate_lines(winrate_grid(auctions, budget), basis)
     fl = field_lines(analyze_field(auctions), budget, scope_label)
     return wl, fl

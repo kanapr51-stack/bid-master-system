@@ -319,10 +319,10 @@ def _fetch(conn, province: str, tokens: list, *, subdistrict=None, district=None
         params += [f"%{k}%" for k in _nonlocal]
     try:
         cur = conn.execute(
-            "SELECT project_name, winner, win_price, discount_pct, district, subdistrict, fiscal_year "
+            "SELECT project_id, project_name, winner, win_price, discount_pct, district, subdistrict, fiscal_year "
             "FROM cgd_winners WHERE " + " AND ".join(where), params)
-        return [{"project_name": r[0], "winner": r[1], "win_price": r[2],
-                 "discount_pct": r[3], "district": r[4], "subdistrict": r[5], "fiscal_year": r[6]}
+        return [{"project_id": r[0], "project_name": r[1], "winner": r[2], "win_price": r[3],
+                 "discount_pct": r[4], "district": r[5], "subdistrict": r[6], "fiscal_year": r[7]}
                 for r in cur.fetchall()]
     except sqlite3.OperationalError:
         return []   # ไม่มี table/column cgd_winners → graceful
@@ -582,16 +582,14 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
         pp25, pp75 = new25, new75
     pred = predict_winning_price(budget, pp25, pp75, ptop, ptopm, area_median=pmed)
     if pred:
-        import bid_field as _bf                       # 2B เจ้าตลาด + B ตาราง win% — อ่าน field รอบเดียว
-        scopes = ([(tambon, None, f" (ต.{tambon})")] if tambon else []) + \
-                 ([(None, amphoe, f" (อ.{amphoe})")] if amphoe else [])
-        _wl, _fl = [], []                             # scopes=[] (ไม่มี ต./อ.) → คงเป็น [] → ตก fallback predict_lines
-        for _sub, _dist, _lbl in scopes:              # ตำบลก่อน → อำเภอ → เจอ data ที่ระดับไหนใช้ระดับนั้น
-            _wl, _fl = _bf.field_and_winrate(conn, province, tokens, budget,
-                                             subdistrict=_sub, district=_dist,
-                                             scope_label=_lbl, basis=basis)
-            if _wl or _fl:
-                break
+        import bid_field as _bf                       # 2B เจ้าตลาด + B ตาราง win% — population เดียวกับราคา (used_rows)
+        _ids = [r["project_id"] for r in used_rows if r.get("project_id")]
+        _lbl = (f" (ต.{tambon})" if basis == "ตำบล"
+                else f" (อ.{amphoe})" if basis == "อำเภอ"
+                else f" (ต.{tambon}+อ.{amphoe})" if basis.startswith("ตำบล+")
+                else f" (ใน{province})")
+        _wl, _fl = _bf.field_and_winrate(conn, province, tokens, budget,
+                                         scope_label=_lbl, basis=basis, project_ids=_ids)
         if _wl:                                        # มี grid → ตาราง B แทนป้าย a/b/c เดิม
             lines += [""] + _wl
         else:                                          # ไม่มี → การ์ดเดิม (fallback graceful)

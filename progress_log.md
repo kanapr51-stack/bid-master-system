@@ -1002,3 +1002,31 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 - Task 7 มี Sophia sanity audit + progress_log N+137→138 update ก่อน final commit
 - เริ่ม implementation ต้องอยู่บน branch — ตอนนี้ main · subagent-driven แนะนำ branch ก่อน execute (หรือ worktree)
 - uncommitted เดิม (settings.local/discovery_seen/rss_log + debug scripts) = runtime ไม่เกี่ยว B′ ไม่ต้อง commit
+
+---
+
+## งานที่ N+138: Win-Rate B′ — ladder+recency+local-n — DONE (2026-06-15)
+
+### สถานะ: ✅ เสร็จ (code+test) — branch `worktree-winrate-b-prime` · รอกัญจน์ merge + deploy VPS
+
+### สิ่งที่ทำ (subagent-driven-development, 7 tasks TDD บน worktree)
+ทำตาม plan `docs/superpowers/plans/2026-06-15-winrate-b-prime.md` ครบ 7 task · fresh subagent ต่อ task + two-stage review (spec→quality) ต่อ task · Sophia sanity audit = SAFE
+- **T1** `_weighted_quantile` (recency-weighted Hazen) + recency import → `12a7238`
+- **T2** `_field_auctions` 4-tuple (+fiscal_year) + fix 2B consumers รับ 4-tuple → `54d46ae`
+- **T3** `_evaluate_winrate` source-of-truth (gate auctions≥5 + ESS≥6 + recency CDF + local-n center + fail_reason) → `19aa5df`
+- **T4** `winrate_lines` conf tag 🟢🟡🟠 + assisted disclaimer → `a8e5e8c`
+- **T5** `field_and_winrate` ladder (local→อำเภอ→จังหวัด ผ่าน `_scope_ids`→`_fetch_scope`+cf) + breadcrumb log → `8e944f1`
+- **T6** `cgd_intel._build_intel` integration: 🟢 ตารางแทน a/b/c · 🟡🟠 คงราคา local + ตารางต่อท้าย (price sacred) → `075dea1`
+- **T7** verification: py_compile + 5 test files ALL PASS + Sophia SAFE
+
+### 2 decision เบี่ยงจาก spec (ตรวจ + ยืนยันแล้ว)
+1. **ESS = Σw (ไม่ใช่ Kish `(Σw)²/Σw²`)** — spec เขียนสูตร Kish ผิด: Kish=n เมื่อน้ำหนักเท่ากัน → งานเก่าทั้งหมดผ่าน gate (ขัดเจตนา). test+comment ของ spec เองต้องการให้งานเก่า fail → มีแต่ Σw (recency-effective count) ที่ทำได้. independent review ยืนยัน. **design doc แก้แล้ว**
+2. **scope ladder ใช้ `_fetch_scope`+cf (กัญจน์เลือก Option A)** — implementer คนแรกเลี่ยงไป query bid_results ตรง (ทิ้ง cf) เพราะ test data ไม่สมจริง (fy=2569 นอก RECENT_FY, win_price=NULL). แก้กลับเป็น spec + แก้ test data (fy="2568", win_price>0) → "population เดียวกับราคา" ตามหลักแกน
+
+### Verify (DoD)
+`test_winrate_grid`(14) · `test_bid_field`(5) · `test_cgd_intel`(22) · `test_winrate` · `test_recency` = ALL PASS · py_compile clean · Sophia SAFE
+
+### Followup
+- กัญจน์ merge `worktree-winrate-b-prime` → main + deploy VPS (heredoc /tmp/*.py)
+- B″ (out of scope): hierarchical shrinkage, KS shape-gate, k-clamp, auto-tier ESS floor — เก็บ offline monitor data ก่อน
+- progress_log 1004 บรรทัด → rotation ค้าง (ทำหลัง merge บน main)

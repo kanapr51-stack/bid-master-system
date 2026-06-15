@@ -56,7 +56,10 @@ F_bid เลือก scope แบบ mirror บล็อกราคา แล�
 - **Weighted F_bid:** `F_bid(x) = (Σ w[bid≤x]) / (Σ w)` แทนนับหัว.
 - **Weighted quantile** (`_weighted_quantile`): หา x ที่ cumulative-weight fraction = q (linear interp
   บน cumulative weight, แบบเดียวกับ `_quantile` แต่ถ่วงน้ำหนัก).
-- **ESS gate** = `(Σw)² / Σ(w²)`. เป็นส่วนหนึ่งของ gate Knob 1 (ข้อ 2). `ESS_FLOOR = 6`
+- **ESS gate** = `Σw` (recency-effective count: งานปีปัจจุบัน w=1.0, งานเก่าจางตาม half-life).
+  เป็นส่วนหนึ่งของ gate Knob 1 (ข้อ 2). `ESS_FLOOR = 6`
+  > ⚠️ แก้จาก implementation (N+138): เดิม spec เขียน Kish `(Σw)²/Σw²` ผิด — Kish=n เมื่อน้ำหนักเท่ากัน
+  > → งานเก่าทั้งหมดผ่าน gate (ขัดเจตนา "งานเก่าจาง ESS ต่ำ"). `Σw` ตรง test+เจตนา (independent review ยืนยัน)
   (bootstrap: half-life 1ปี + 4+4 bids → ESS≈6-7; ต่ำกว่า 5 ไม่ไว้ใจ). **คงที่ใน B′** —
   comment ว่าขยับ 8 (backfill>60%) / 10 (>90%) ภายหลัง (auto-tier = B″).
 

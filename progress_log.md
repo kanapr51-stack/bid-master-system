@@ -1030,3 +1030,27 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 - กัญจน์ merge `worktree-winrate-b-prime` → main + deploy VPS (heredoc /tmp/*.py)
 - B″ (out of scope): hierarchical shrinkage, KS shape-gate, k-clamp, auto-tier ESS floor — เก็บ offline monitor data ก่อน
 - progress_log 1004 บรรทัด → rotation ค้าง (ทำหลัง merge บน main)
+
+---
+
+## งานที่ N+139: Win-Rate B′ — deploy VPS + closed-loop validation แรก (2026-06-15)
+
+### สถานะ: ✅ LIVE บน VPS (origin/main d543cf1 → git pull + deploy.sh) · worker timers ใช้โค้ดใหม่รอบถัดไป
+
+### ผล validation (2 งานจริง พื้นที่ข้อมูลบาง — เดิม B.1 ตารางไม่ขึ้น)
+1. **ต.นาทม อ.นาทม นครพนม** (งบ 2.0M) — ตำบล 4 งาน/อำเภอ 6 งาน · ราคา local อิงตำบล+อำเภอ (น้ำหนักตำบล 57%) 1.18M(75%)/1.22M(25%) · **ตาราง 🟠 อิงจังหวัด** จาก 61 งาน 611 ราย, center 8 ผู้ยื่น(±5)
+2. **ต.บึงโขงหลง อ.บึงโขงหลง บึงกาฬ** (งบ 1.5M) — ตำบล 2/อำเภอ 3 · ราคา local อิงตำบล 0.89M/1.09M · **ตาราง 🟠 อิงจังหวัด** จาก 35 งาน 300 ราย, center 9(±6)
+
+### ✅ ของหลักทำงานครบตาม design
+- ตารางขึ้นในพื้นที่บาง (เดิมไม่ขึ้น) · **price sacred**: ราคา local "💵 แนะนำราคายื่น" คงอยู่ + ตารางต่อท้าย · ⚠️ disclaimer "ราคาด้านบนยังอิงตำบล..." · conf 🟠 ถูก
+
+### 🔍 Observation (ขีดจำกัดข้อมูล ไม่ใช่ bug)
+- ทั้ง 2 งาน **ผ่อนถึง 🟠 จังหวัด** (ไม่หยุด 🟡 อำเภอ) + **center 8-9 ผู้ยื่น** (ไม่ใช่ 3-5 ของพื้นที่จริง)
+- **root:** ตำบล/อำเภอมี full-field auctions (งานที่มี bid_results รายชื่อผู้ยื่นครบ) < MIN_AUCTIONS(5) → gate ไม่ผ่าน → ladder ผ่อนถึงจังหวัด; และ local full-field < MIN_N_AUCTIONS(3) → n-centering fallback ใช้ n จังหวัด (8) ตามที่ design ตั้งใจ (local <3 = n noisy)
+- **คอขวดจริง = bid_results coverage** (getProcureResult poll ไม่ครบทุกงาน) → ขีดจำกัดข้อมูล ไม่ใช่ logic. แก้ด้วย backfill ผู้ยื่นพื้นที่เป้าหมาย ไม่ใช่แก้โค้ด
+- **B″ candidate:** center บน intermediate scope (อำเภอ n) แทนกระโดดจังหวัด เมื่อ local full-field <3 แต่อำเภอพอ
+- ดู [[project_winrate_bprime_coverage_limit]]
+
+### Followup
+- backfill bid_results ตำบล/อำเภอเป้าหมาย (บ้านแพง/บึงโขงหลง/นาทม) → ปลดล็อก 🟡 อำเภอ + center local จริง
+- rotation progress_log (>1000 บรรทัด) ยังค้าง

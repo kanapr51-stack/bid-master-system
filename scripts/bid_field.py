@@ -1,11 +1,13 @@
 """bid_field.py — "เจ้าตลาด" intel จาก full-field bids (2B). ใครชนะ scope นี้บ่อย + ลดเฉลี่ยเท่าไหร่.
 v2 pivot (evidence 2026-06-14): landslide หายาก (5-10%/scope) แต่มีเจ้าตลาดชัด (ชนะ 48-83% ชิดๆ)
 → จับด้วย win-frequency ไม่ใช่ landslide-gap. graceful gate. ดู spec 2026-06-14-dominant-detection-2b."""
-import sqlite3, sys, os, math
+import sqlite3, sys, os, math, logging
 from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(__file__))
-from cgd_intel import COMPETITIVE_SET
+from cgd_intel import COMPETITIVE_SET, recency_weight
+
+_log = logging.getLogger(__name__)
 
 MIN_AUCTIONS = 5        # scope ต้องมี ≥ นี้ ถึงวิเคราะห์
 MIN_APPEAR = 5          # บริษัทต้องลง ≥ นี้ ถึงนับเป็นเจ้าตลาด (ตัดฟลุ๊ค ลง1-2ชนะหมด)
@@ -33,6 +35,32 @@ def _quantile(sorted_vals, q):
     if lo + 1 < len(sorted_vals):
         return sorted_vals[lo] + frac * (sorted_vals[lo + 1] - sorted_vals[lo])
     return sorted_vals[lo]
+
+
+def _weighted_quantile(pairs, q):
+    """ค่าที่ cumulative-weight quantile q (0..1) — Hazen plotting position บนน้ำหนักสะสม.
+    pairs = [(value, weight)] · weight>0. น้ำหนักเท่ากัน → ใกล้ median ปกติ. ว่าง → 0."""
+    sp = sorted(pairs)
+    if not sp:
+        return 0.0
+    total = sum(w for _v, w in sp)
+    if total <= 0:
+        return sp[0][0]
+    pts, cum = [], 0.0
+    for v, w in sp:
+        pts.append(((cum + w / 2.0) / total, v))    # Hazen: กึ่งกลางช่วงน้ำหนัก
+        cum += w
+    if q <= pts[0][0]:
+        return pts[0][1]
+    if q >= pts[-1][0]:
+        return pts[-1][1]
+    for i in range(1, len(pts)):
+        p0, v0 = pts[i - 1]
+        p1, v1 = pts[i]
+        if q <= p1:
+            frac = (q - p0) / (p1 - p0) if p1 > p0 else 0.0
+            return v0 + frac * (v1 - v0)
+    return pts[-1][1]
 
 
 def winrate_grid(auctions, budget, targets=(75, 50, 25)):

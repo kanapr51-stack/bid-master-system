@@ -124,6 +124,16 @@ def test_gate_fallback_to_old_card():
     print("✅ gate: scope บาง → ([],[]) → การ์ดเดิม")
 
 
+def test_weighted_quantile():
+    pairs = [(0.0, 1.0), (10.0, 1.0), (20.0, 1.0), (30.0, 1.0)]   # น้ำหนักเท่ากัน
+    q50 = bf._weighted_quantile(pairs, 0.5)
+    assert 10.0 <= q50 <= 20.0, q50                               # กลาง ๆ
+    assert bf._weighted_quantile(pairs, 0.0) == 0.0               # ต่ำสุด
+    assert bf._weighted_quantile(pairs, 1.0) == 30.0             # สูงสุด
+    heavy_high = [(0.0, 0.1), (30.0, 10.0)]                       # ถ่วงค่าสูง
+    assert bf._weighted_quantile(heavy_high, 0.5) > 25.0, "น้ำหนักเอียงสูง → median สูง"
+    print("✅ _weighted_quantile (Hazen weighted)")
+
 test_grid_invert_targets()
 test_grid_invert_columns()
 test_grid_gate()
@@ -131,4 +141,5 @@ test_winrate_lines_render()
 test_field_and_winrate_endtoend()
 test_field_auctions_project_ids()
 test_gate_fallback_to_old_card()
+test_weighted_quantile()
 print("ALL PASS winrate_grid")

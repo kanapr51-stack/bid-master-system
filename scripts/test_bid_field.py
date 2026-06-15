@@ -86,9 +86,9 @@ def test_field_block_endtoend_and_gate():
     import Sebastian_Customer_DB as db
     db.init_schema()
     s = db.SubscriptionStore()
-    # gate: bid_results ว่าง → field_block = [] (ปลอดภัยกับ _build_intel เดิม)
+    # gate: bid_results ว่าง → field_and_winrate fl=[] (ปลอดภัยกับ _build_intel)
     with db.get_connection() as conn:
-        assert bf.field_block(conn, "สกลนคร", ["ถนน"], 1000000) == [], "scope ว่าง → []"
+        assert bf.field_and_winrate(conn, "สกลนคร", ["ถนน"], 1000000)[1] == [], "scope ว่าง → []"
         for i in range(6):
             conn.execute("INSERT OR REPLACE INTO cgd_winners (project_id, province, proc_type, project_name, budget) "
                          "VALUES (?,?,?,?,?)",
@@ -103,10 +103,10 @@ def test_field_block_endtoend_and_gate():
         {"receiveNameTh": "หจก.วาย", "receiveTin": "1", "priceProposal": "790000"},
         {"receiveNameTh": "หจก.ม", "receiveTin": "3", "priceProposal": "800000"}])
     with db.get_connection() as conn:
-        block = bf.field_block(conn, "นครพนม", ["ถนน"], 1000000)
+        block = bf.field_and_winrate(conn, "นครพนม", ["ถนน"], 1000000)[1]
     txt = "\n".join(block)
     assert "เจ้าตลาด" in txt and "วาย" in txt, txt
-    print("✅ field_block end-to-end + gate")
+    print("✅ field_and_winrate 2B block end-to-end + gate")
 
 test_field_block_endtoend_and_gate()
 print("ALL PASS bid_field")

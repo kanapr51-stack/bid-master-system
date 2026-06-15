@@ -170,6 +170,7 @@ def _field_auctions(conn, province, tokens, subdistrict=None, district=None, pro
     project_ids = None → query ตาม scope (province + tokens + ตำบล/อำเภอ จากชื่องาน).
     คืน [ [(bidder_name, disc_pct, is_winner)] ] · ตัด outlier disc นอก [0,DISC_MAX] · graceful []."""
     if project_ids is not None:
+        # invariant: caller (predict) ส่ง id จาก used_rows ที่ _fetch กรอง proc_type/subtype/year แล้ว
         ids = list(dict.fromkeys(project_ids))   # dedupe รักษาลำดับ
         if not ids:
             return []
@@ -215,13 +216,6 @@ def _field_auctions(conn, province, tokens, subdistrict=None, district=None, pro
             continue
         byp[pid].append((name or "", disc, bool(isw)))
     return list(byp.values())
-
-
-def field_block(conn, province, tokens, budget_now, subdistrict=None, district=None,
-                scope_label="") -> list:
-    """read → analyze → lines. [] ถ้าไม่เข้าเงื่อนไข (graceful). จุดเชื่อม predictor."""
-    auctions = _field_auctions(conn, province, tokens, subdistrict, district)
-    return field_lines(analyze_field(auctions), budget_now, scope_label)
 
 
 def field_and_winrate(conn, province, tokens, budget,

@@ -547,7 +547,8 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
                     pp75 = blend_disc(pp75, a75, tn)
                     pmed = blend_disc(pmed, amed, tn)
                     basis = f"ตำบล+อำเภอ · น้ำหนักตำบล {round(z * 100)}%"
-                    used_rows = t_rows + a_rows   # explain: อ้างอิงทั้งสอง scope
+                    # dedupe by project_id — งานตำบลก็ match อำเภอด้วย (กัน n พอง + raw_records ซ้ำ + _ids ซ้ำ)
+                    used_rows = list({r["project_id"]: r for r in (t_rows + a_rows)}.values())
                 # else: ตำบลบางแต่ดี (สด+หลายเจ้า) → ใช้ตำบลล้วน (basis="ตำบล" คงเดิม)
     else:
         p_rows, p_old = _fetch_scope(conn, province, tokens, **cf)

@@ -636,5 +636,28 @@ harvest X-Announcement-Token ผูกกับ **"เน็ตที่ Cloudfl
 
 ### NEXT
 - กัญจน์กลับถึงเน็ตบ้าน + เปิดเครื่อง → discovery resume + catch-up เอง
-- ก่อนย้ายหอ: ร่างแผน residential-proxy decoupling (ทางเลือก ข ที่กัญจน์ค้างไว้)
+- ~~ก่อนย้ายหอ: ร่างแผน residential-proxy decoupling~~ ✅ ร่างแล้ว (N+144, ADR-004)
 - ดู [[project_harvest_network_trust]] · [[project_incident_control_plane]] · [[project_deploy_debt]]
+
+---
+
+## งานที่ N+144: Harvest Token Decoupling plan (ADR-004) — probe-first (2026-06-17, overnight)
+
+### สถานะ: ✅ draft เสร็จ (รอกัญจน์ review+เลือก · ยังไม่ implement) — `docs/superpowers/specs/2026-06-17-harvest-token-decoupling-plan.md`
+
+### ที่มา
+followup N+143 "ทางเลือก ข" — ตัด discovery จาก "PC บ้าน + เน็ต residential เดียว" ก่อนกัญจน์ย้ายหอ.
+
+### แก่นของแผน (probe-first, อย่า assume → ซื้อ hardware ก่อนเวลา)
+- **Key unknown:** `harvest_and_push.py:10` เขียนว่า "VPS/datacenter เสี่ยง challenge" — แต่เป็น assumption **ก่อน** JA3 fix (5997fdf ที่ทำ VPS discovery search ผ่าน 0 challenge). **ยังไม่เคย test VPS harvest token โดยตรง** (N+143 พิสูจน์แค่ laptop เน็ตเดินทาง)
+- **Decision tree ถูก→แพง:** PROBE 1 = headless Chrome บน VPS ดู response path (`cfturnstile/validate` มี token vs `bypasscloudflare` ไม่มี). ได้ → **Option 0 ฟรี** (port harvest ไป VPS เลิก scp). ตัน → PROBE 2 residential proxy trial → Option A. ตันทั้งคู่ → Option C ชั่วคราว (WakeToRun)
+- **🔑 insight:** **RPi (candidate เดิม) แก้ N+143 ไม่ตรงปม** — ปมคือผูก "network-trust" ไม่ใช่ "device". RPi ในหอที่เน็ตไม่ residential = ตันเท่าเดิม. ทาง decouple จริง = 0 หรือ A (ตัด dependency เรื่องประเภทเน็ต)
+
+### NEXT (กัญจน์ หลัง discovery heal)
+1. รัน PROBE 1 บน VPS (headless Chrome → log path) = ฟรี ตอบ unknown ใหญ่สุด
+2. ผลออก → เลือก Option 0/A → implement
+3. เพิ่ม alert harvest_stale>60m (deadman มีบางส่วน)
+
+### Followup
+- ทั้ง resolve plane (ADR-003 VPS throttled ✅) + harvest plane (ADR-004 รอ) decouple = ตัด PC บ้านหมด → ปิด [[project_deploy_debt]] ก้อนใหญ่
+- ดู [[project_harvest_network_trust]] · [[project_incident_control_plane]]

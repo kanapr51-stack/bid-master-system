@@ -602,3 +602,39 @@ L1 Z-blend(n/(n+3))+gate · L3 recency(half-life 1) · win-headline a/b/c · 1a 
 ### Followup
 - monitor = observe-only ยังไม่เปลี่ยน centering (= B″ เอง ยัง defer ตาม decision N+141)
 - ดู [[project_winrate_bprime_coverage_limit]]
+
+---
+
+## งานที่ N+143: Discovery ล่มตอนเดินทาง → diagnose harvest ผูกเน็ตที่ Cloudflare ไว้ใจ (2026-06-17)
+
+### สถานะ: 🔴 discovery down (รอ auto-heal ตอนกลับเน็ตบ้าน) · 📝 diagnose + decision บันทึกแล้ว · ไม่แตะ prod
+
+### อาการ
+กัญจน์เดินทาง เครื่องบ้านปิดทั้งวัน → VPS discovery fail ทุกรอบตั้งแต่ ~13:00 (16 มิ.ย. เวลาไทย):
+`❌ ไม่ได้ token (provider=manual, state=expired)`. รอบสำเร็จล่าสุด 07:00 (16 มิ.ย.) = +0 งานใหม่ → ตอนหลุดไม่มีงานค้าง. VPS service อื่น (winner-poller/line-sender/enrichment/canary/deadman) ปกติ.
+
+### Root cause (เชิงสถาปัตยกรรม — ไม่ใช่ bug)
+harvest X-Announcement-Token ผูกกับ **"เน็ตที่ Cloudflare จัดว่าไว้ใจ (residential)"** ไม่ใช่ IP เฉพาะ:
+- เน็ตบ้าน → path `cfturnstile/validate` (มี blessed token) → harvest จับได้ auto
+- hotel wifi / mobile hotspot → path `cfturnstile/bypasscloudflare` (**ไม่มี** token)
+
+### ลองทุกทางจาก laptop เน็ตเดินทาง — ตันหมด (พิสูจน์แล้ว)
+1. mint generateToken (curl) → reject `validateCfTurnTile:false`
+2. generateToken **ในหน้า browser** (มี cf_clearance) → ก็ reject (token ไม่ portable)
+3. อ่าน token จาก localStorage/sessionStorage → ไม่มี (SPA สร้างสดทุก req)
+4. ปุ่มค้นหา disabled ถาวร → trigger search ให้ token หลุดไม่ได้
+5. harvest validate (browser-level + waitForDebuggerOnStart + fresh profile) → เน็ตนี้วิ่ง bypasscloudflare ไม่มี token
+6. ทดสอบ hotspot ตรงๆ → ยัง bypasscloudflare เหมือนเดิม
+
+### Decision
+- **ปล่อย auto-heal ตอนกลับบ้าน** (gap เสี่ยงต่ำ — +0 งานล่าสุด, D0 เงียบ). อย่างมงงม harvest เน็ตเดินทางอีก
+- **ต้อง decouple ก่อนกัญจน์ย้ายหอ** (เน็ตหออาจไม่ residential → เสี่ยงตันถาวร) → residential-proxy ให้ VPS (ADR-003) / RPi พกพา
+- บันทึก memory `project_harvest_network_trust.md` (กัน Claude ครั้งหน้างมซ้ำ)
+
+### Tooling สร้างไว้ (ยังไม่ commit — experimental/diagnostic)
+`scripts/harvest_existing_tab.py`, `scripts/harvest_fresh_browser.py` (browser-level CDP harvest + diagnostic endpoint logging)
+
+### NEXT
+- กัญจน์กลับถึงเน็ตบ้าน + เปิดเครื่อง → discovery resume + catch-up เอง
+- ก่อนย้ายหอ: ร่างแผน residential-proxy decoupling (ทางเลือก ข ที่กัญจน์ค้างไว้)
+- ดู [[project_harvest_network_trust]] · [[project_incident_control_plane]] · [[project_deploy_debt]]

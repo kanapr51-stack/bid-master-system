@@ -661,3 +661,59 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 ### Followup
 - ทั้ง resolve plane (ADR-003 VPS throttled ✅) + harvest plane (ADR-004 รอ) decouple = ตัด PC บ้านหมด → ปิด [[project_deploy_debt]] ก้อนใหญ่
 - ดู [[project_harvest_network_trust]] · [[project_incident_control_plane]]
+
+---
+
+## งานที่ N+145: Backfill ทั้งจังหวัด — WAF block VPS → pivot residential home-fetch (2026-06-18)
+
+### สถานะ: 🚧 fetch กำลังรันบนเครื่องบ้าน (~2,606 งาน, ETA ~2 ชม.) · รอ sync กลับ VPS
+
+### บริบท
+กัญจน์ขอ backfill bid_results **ทั้งจังหวัด** (นครพนม+บึงกาฬ) — เดิมทำเฉพาะ 3 อำเภอเป้าหมาย (N+140). dry-run: **2,632 candidate** (FY2566-69, competitive-set, ทุกประเภทงาน ไม่ใช่แค่ก่อสร้าง)
+
+### 🐛 Root cause: ไม่ใช่ rate-limit แต่เป็น WAF block (ยืนยันด้วย raw HTTP)
+- ลอง trickle บน VPS → batch 1 **stored=26 error=74** (74% fail ตั้งแต่ call แรก)
+- diag single-call: `generateToken` POST **status 200 แต่ body = F5 BIG-IP "Request Rejected ... support ID"** (ไม่ใช่ JSON token) → **WAF reject IP datacenter**
+- VPS time ตอนเทสต์ = ~01:16 ไทย ยังโดน 74% → ไม่ใช่ time-of-day แต่เป็น IP datacenter ไม่ถูกไว้ใจ (ตรง [[project_discovery_nodata_waf_turnstile]] + [[project_harvest_network_trust]])
+- **เทสต์เครื่องบ้าน (residential): token POST 200 → JSON token จริง** → eGP WAF ไว้ใจ IP บ้าน
+
+### Approach B (กัญจน์เลือก): fetch บ้าน → sync VPS — ไม่ขยับ DB 460MB
+1. VPS: `select_candidates` dump → `/tmp/backfill_cands.json` (2,606 หลัง dedup) → scp ลงบ้าน
+2. บ้าน: `scripts/_backfill_home_fetch.py` (ONE-OFF) — get_procure_result ทีละงาน, resumable, dump `data/_backfill_home/backfill_results.json` = `{pid:{bidders,announce_date}}`. smoke 3/3 ผ่าน · checkpoint แรก **25/25 stored error=0**
+3. (รอ) scp results กลับ VPS → import ผ่าน `record_bid_results` (storage path เดิม test แล้ว, INSERT OR REPLACE ปลอดภัย PK project+tin)
+
+### หยุด trickle VPS แล้ว (pkill) — ได้ +26 งาน (bid_results 1055→1081) ไม่เสียหาย
+
+### NEXT (เมื่อ fetch เสร็จ)
+1. scp `backfill_results.json` → VPS → import (verify bid_results jobs เพิ่ม ~2,600)
+2. sanity: duplicate, winner sane → ลบ `_backfill_home_fetch.py` + temp files
+3. คิด durable fix: residential-proxy (ADR-004) ให้ VPS ยิงเองได้ ไม่ต้องพึ่งเครื่องบ้าน
+- ดู [[project_harvest_network_trust]] · [[project_winrate_bprime_coverage_limit]]
+
+---
+
+## งานที่ N+146: False-positive matcher — งานไตเทียมหลุด LINE → negative keyword surgical (2026-06-19)
+
+### สถานะ: ✅ เสร็จ (deploy VPS + verify)
+
+### บริบท
+กัญจน์เช็ก discovery รอบ 00:25 (catchup จากฟลุค harvest token บนเน็ตเดินทาง) — ส่ง LINE ไป **3 งาน** (customer 2-5) ไม่ใช่ 0 ตามที่ผมเดาจาก Discord summary. 1 ใน 3 = **"ซ่อมแซมระบบน้ำบริสุทธิ์สำหรับเครื่องไตเทียม" (รพ.ธาตุพนม)** = งานการแพทย์ ไม่เกี่ยวก่อสร้าง
+
+### 🐛 Root cause
+- keyword ก่อสร้าง `"ท่อ"` (substring) ไปโดน **"เดินท่อ / ท่อน้ำทิ้ง"** ในชื่องาน → `passes_keyword=(True,'ท่อ')`
+- `negative_keywords` = **ว่าง `[]`** → ไม่มีตัวกรองออก → keyword✓ + จังหวัด✓ + หาตำบลไม่ได้ → `soft_include` → ส่ง LINE
+- (บทเรียนผม: ดู product DB `delivery_log`/`notification_queue` เป็น source of truth ไม่ใช่ Discord summary — Discord "ไม่แจ้ง LINE" สะท้อนแค่ filter อำเภอ pilot ไม่ใช่ queue ต่อ tenant)
+
+### Fix: surgical negative `"น้ำบริสุทธิ์"` (ไม่ใช่ "ไตเทียม")
+- sanity scan 2,430 ชื่องาน: "น้ำบริสุทธิ์" โดน **1 งานพอดี** (ตัวที่ผิด) — zero collateral
+- **ไม่ใช้ "ไตเทียม"** เพราะจะตัด **"จ้างก่อสร้างซ่อมแซมศูนย์ไตเทียม"** (อาคาร = งานก่อสร้าง legit) = false negative
+- ไม่ทำ rule ใหญ่ (จ้างเหมาบริการ+เครื่อง/ระบบ) — งานบริการแพทย์ส่วนใหญ่ถูกตัดอยู่แล้ว (ซื้อ→material gate / จ้างเหมาไม่โดน keyword), ตรง design recall-biased+reactive negative
+
+### Verify (VPS, config deploy แล้ว)
+- ไตเทียม → `❌ CUT (negative:น้ำบริสุทธิ์)` · ถนนนาทม×2 / ผิวทางศรีสงคราม / ชลประทาน → `✅ ผ่าน` (ไม่มี regression)
+- backup: `backups/matching_preferences_local_20260619_023621.json` + VPS `.bak_20260619_023621.json`
+- deploy แบบ scp ไฟล์ตรง (ไม่ git pull) เพราะ VPS git (ae39c43) ≠ local main (fed5704) diverged — deploy debt
+
+### Followup
+- ⚠️ **per-tenant matching debt:** negative นี้ global=profile ก่อสร้างเท่านั้น. รับ tenant อุปกรณ์การแพทย์เมื่อไหร่ "ไตเทียม/เอกซเรย์" = positive ของเขา → matching prefs ต้องแยก per-tenant ([[project_architecture_decision_subscribe_filter]]). อย่าทำตอนนี้ (YAGNI)
+- ถ้างานบริการแพทย์หลุดมาอีก → เติม negative แม่นๆ ทีละตัว (reactive loop)

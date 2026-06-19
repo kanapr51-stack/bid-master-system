@@ -740,3 +740,19 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 ### Followup
 - ข้อ 6 ประชาพิจารณ์ deadline = defer (ต้องเพิ่ม ingestion ดึงวันสิ้นสุดวิจารณ์ร่าง TOR จาก eGP)
 - คำ "รับฟังคำประชาวิจารณ์" ใส่ตามที่กัญจน์ขอ (ระบบเดิมใช้ "รับฟังคำวิจารณ์")
+
+## งานที่ N+148: Portal — แถบค้นหา + ID งานใต้ชื่อ (2026-06-20)
+
+### สถานะ: ✅ เสร็จ (deploy VPS scp + restart)
+
+### สิ่งที่ทำ (`_portal_page_html`)
+- **🆔 ID งานใต้ชื่อ** ทุกการ์ด (`.jid`)
+- **🔍 แถบค้นหา** client-side: `<input id=q>` + inline JS filter `.job` ตาม textContent (ค้นชื่อ/ID/พื้นที่) — wrap แต่ละกลุ่มใน `.gw` เพื่อซ่อนหัวกลุ่มที่ไม่มีผล + `#nohit` ตอนไม่เจอ. ไม่มี endpoint ใหม่ (กรองเฉพาะงานที่ติดตามในหน้า ~5-15 งาน)
+- แถบค้นหาโผล่เฉพาะ n>0 (หน้าว่างไม่มี)
+
+### Verify
+- test_portal_page อัปเดต (มี search/jid/JS assert) + test_portal_jobs → PASS
+- deploy: VPS content == HEAD (normalize CRLF→LF: e0c5fb5) → backup + scp + restart bms-api active
+
+### หมายเหตุ deploy debt
+- scp จาก Windows = CRLF → VPS hash ≠ git LF hash เสมอ (content เท่ากัน). เช็ค divergence ต้อง `tr -d '\r'` ก่อน sha256 ไม่งั้น false-positive

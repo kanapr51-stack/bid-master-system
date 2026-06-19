@@ -35,8 +35,13 @@ assert "ประกาศผู้ชนะทางการ" in h and "ปร
 assert "หจก.X" in h and "738,000" in h and "ลด 26%" in h and "หจก.Y" in h, h
 # req5: pre label เปลี่ยน
 assert "รับฟังคำประชาวิจารณ์" in h and "รับฟังความเห็น" not in h, h
-# escape ยังทำงาน
-assert "&lt;script&gt;" in h and "<script>x" not in h, "escape ผิด"
+# escape ยังทำงาน (ชื่องาน escape — script injection ในชื่อต้องไม่หลุด)
+assert "&lt;script&gt;x&lt;/script&gt;" in h, "escape ชื่อผิด"
+# แถบค้นหา + ID ใต้ชื่อ
+assert "class=\"search\"" in h and "ค้นหางาน" in h, "ไม่มีแถบค้นหา"
+assert "🆔 PD" in h and "🆔 PW" in h, "ไม่มี ID ใต้ชื่อ"
+assert "querySelectorAll('.gw')" in h, "ไม่มี JS filter"
+# หน้าว่าง: ไม่มีแถบค้นหา
 h0 = api._portal_page_html({"won": [], "bidding": [], "pre": []}, 0)
-assert "ยังไม่มีงานที่ติดตาม" in h0, h0
+assert "ยังไม่มีงานที่ติดตาม" in h0 and "class=\"search\"" not in h0, h0
 print("OK test_portal_page")

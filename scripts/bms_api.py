@@ -460,9 +460,14 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0) -> str:
         "body{font-family:-apple-system,'Segoe UI',sans-serif;margin:0;padding:18px;background:#f5f6f8;color:#222}"
         ".wrap{max-width:480px;margin:0 auto}"
         ".h{font-size:19px;font-weight:700;margin:4px 0 14px}"
+        ".search{width:100%;box-sizing:border-box;padding:11px 14px;font-size:15px;"
+        "border:1px solid #ddd;border-radius:12px;margin:0 0 6px;outline:none}"
+        ".search:focus{border-color:#1d72b4}"
+        ".nohit{font-size:14px;color:#999;margin:14px 0;display:none}"
         ".grp{font-size:14px;font-weight:700;color:#555;margin:16px 0 8px}"
         ".job{background:#fff;border-radius:14px;padding:14px 16px;margin:8px 0;box-shadow:0 2px 10px rgba(0,0,0,.06)}"
-        ".jn{font-size:15px;font-weight:600;margin:0 0 4px}"
+        ".jn{font-size:15px;font-weight:600;margin:0 0 2px}"
+        ".jid{font-size:12px;color:#aaa;margin:0 0 4px}"
         ".meta{font-size:13px;color:#888;margin:3px 0}"
         ".dl{font-size:13px;color:#d9534f;margin:3px 0}"
         ".win{font-size:14px;font-weight:600;color:#1a7f37;margin:3px 0}"
@@ -481,11 +486,17 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0) -> str:
         body.append("<div class=\"msg\">ยังไม่มีงานที่ติดตาม — กดดาว ⭐ ในข้อความแจ้งเตือนเพื่อเริ่มติดตามครับ</div>")
         return head + "".join(body) + foot
 
+    body.append(
+        "<input id=\"q\" class=\"search\" type=\"search\" autocomplete=\"off\" "
+        "placeholder=\"🔍 ค้นหางาน (ชื่อ / ID / พื้นที่)\">")
+    body.append("<div id=\"nohit\" class=\"nohit\">ไม่พบงานที่ตรงกับคำค้น</div>")
+
     def _baht(x):
         return f"{x:,.0f}" if x else "-"
 
     def _card(j, kind):
-        L = [f"<div class=\"jn\">🏗️ {_h.escape(j['name'] or '')}</div>"]
+        L = [f"<div class=\"jn\">🏗️ {_h.escape(j['name'] or '')}</div>",
+             f"<div class=\"jid\">🆔 {_h.escape(str(j['project_id']))}</div>"]
         if j["location"]:
             L.append(f"<div class=\"meta\">📍 {_h.escape(j['location'])}</div>")
         if kind == "bidding":
@@ -519,12 +530,22 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0) -> str:
     for key, label in (("bidding", "🔵 ประกาศวันยื่นซอง"), ("prelim", "📊 สรุปราคาเบื้องต้น"),
                        ("pre", "🟣 รับฟังคำประชาวิจารณ์"), ("won", "🏆 ประกาศผู้ชนะทางการ")):
         if groups.get(key):
-            body.append(f"<div class=\"grp\">{label} ({len(groups[key])})</div>")
-            for j in groups[key]:
-                body.append(_card(j, key))
+            cards = "".join(_card(j, key) for j in groups[key])
+            body.append(f"<div class=\"gw\"><div class=\"grp\">{label} ({len(groups[key])})</div>{cards}</div>")
     exp_str = _fmt_exp_th(exp_epoch)
     if exp_str:
         body.append(f"<div class=\"exp\">🔗 ลิงก์นี้ใช้ได้ถึง {exp_str}</div>")
+    body.append(
+        "<script>(function(){var q=document.getElementById('q');"
+        "if(!q)return;var nh=document.getElementById('nohit');"
+        "q.addEventListener('input',function(){"
+        "var s=q.value.trim().toLowerCase(),tot=0;"
+        "document.querySelectorAll('.gw').forEach(function(g){var v=0;"
+        "g.querySelectorAll('.job').forEach(function(c){"
+        "var on=!s||c.textContent.toLowerCase().indexOf(s)>=0;"
+        "c.style.display=on?'':'none';if(on)v++;});"
+        "g.style.display=v?'':'none';tot+=v;});"
+        "if(nh)nh.style.display=tot?'none':'block';});})();</script>")
     return head + "".join(body) + foot
 
 

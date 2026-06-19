@@ -31,3 +31,19 @@ d2 = pv.job_detail(c, "69010000002")
 assert d2["bidders"][0]["discount"] is None, d2                  # budget=0
 assert pv.job_detail(c, "NOPE") is None
 print("OK job_detail")
+
+# --- company_profile ---
+c = _seed()
+c.execute("INSERT INTO projects_seen VALUES ('68010000003','งานเก่า',2000000,'นครพนม')")
+c.execute("INSERT INTO bid_results VALUES ('68010000003','หจก.เอ','T1','1600000','1600000',1,0)")
+p = pv.company_profile(c, "T1")
+assert p["name"] == "หจก.เอ" and p["total_bids"] == 3, p          # T1 อยู่ 3 งาน
+assert p["wins"] == 2 and p["win_rate"] == round(2/3*100, 1), p
+assert set(p["provinces"]) == {"นครพนม", "บึงกาฬ"}, p["provinces"]
+years = [g["year"] for g in p["by_year"]]
+assert years == [2569, 2568], years                              # ใหม่→เก่า
+assert sum(g["bids"] for g in p["by_year"]) == p["total_bids"], p["by_year"]
+assert p["discount_avg"] is not None, p
+assert sum(h["count"] for h in p["discount_hist"]) >= 1, p["discount_hist"]
+assert pv.company_profile(c, "NOPE") is None
+print("OK company_profile")

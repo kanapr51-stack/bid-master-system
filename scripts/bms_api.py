@@ -347,6 +347,39 @@ def _to_float(v):
         return None
 
 
+_TH_MONTHS = ["", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+              "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."]
+
+
+def _fmt_date_th(s: str) -> str:
+    """'YYYY-MM-DD' → 'D ด. YYYY(พ.ศ.)'. ถ้า parse ไม่ได้ (เช่น ฟอร์แมตไทยอยู่แล้ว) คืนค่าเดิม."""
+    if not s:
+        return ""
+    try:
+        d = datetime.fromisoformat(str(s)[:10]).date()
+    except (ValueError, TypeError):
+        return s
+    return f"{d.day} {_TH_MONTHS[d.month]} {d.year + 543}"
+
+
+def _countdown_th(deadline_str: str) -> str:
+    """'YYYY-MM-DD' → ข้อความนับถอยหลังถึงวันยื่นซอง (เทียบวันนี้ tz ไทย). คืน '' ถ้า parse ไม่ได้."""
+    if not deadline_str:
+        return ""
+    try:
+        d = datetime.fromisoformat(str(deadline_str)[:10]).date()
+    except (ValueError, TypeError):
+        return ""
+    days = (d - datetime.now(TZ_TH).date()).days
+    if days < 0:
+        return "เลยกำหนดแล้ว"
+    if days == 0:
+        return "วันนี้วันสุดท้าย!"
+    if days == 1:
+        return "พรุ่งนี้วันสุดท้าย"
+    return f"เหลืออีก {days} วัน"
+
+
 def _portal_jobs(user_id: str):
     """งานที่ user ติดตาม (active+closed) จัดกลุ่ม stage. คืน {won,bidding,pre} | None (ไม่มี customer).
     won = มีผู้ชนะ (bid_results) หรือ announce W* · bidding = D0 ยังไม่มีผล · pre = อื่น (B*)."""
@@ -356,9 +389,10 @@ def _portal_jobs(user_id: str):
             return None
         cid = cust["id"]
         follows = conn.execute(
-            "SELECT project_id FROM followed_jobs WHERE customer_id=? AND status IN ('active','closed')",
+            "SELECT project_id, last_stage_notified FROM followed_jobs "
+            "WHERE customer_id=? AND status IN ('active','closed')",
             (cid,)).fetchall()
-        groups = {"won": [], "bidding": [], "pre": []}
+        groups = {"won": [], "prelim": [], "bidding": [], "pre": []}
         for f in follows:
             pid = f["project_id"]
             ps = conn.execute(
@@ -382,12 +416,14 @@ def _portal_jobs(user_id: str):
                 "SELECT bidder_name, price_proposal, price_agree, is_winner FROM bid_results WHERE project_id=?",
                 (pid,)).fetchall()
             ann = ps["announce_type"] or ""
+            lsn = (f["last_stage_notified"] if "last_stage_notified" in f.keys() else "") or ""
             job = {"project_id": pid, "name": ps["project_name"] or pid, "location": location,
                    "deadline": deadline, "pred_lo": pr["area_price_lo"] if pr else None,
                    "pred_hi": pr["area_price_hi"] if pr else None,
-                   "winner": None, "winner_price": None, "winner_disc": None, "competitors": []}
+                   "winner": None, "winner_price": None, "winner_disc": None, "competitors": [],
+                   "prelim_low": None, "prelim_n": 0}
             win = next((r for r in results if r["is_winner"]), None)
-            if win or ann.startswith("W"):
+            if win or ann.startswith("W") or lsn == "W0":
                 if win:
                     wp = _to_float(win["price_agree"]) or _to_float(win["price_proposal"])
                     job["winner"] = win["bidder_name"]
@@ -402,6 +438,11 @@ def _portal_jobs(user_id: str):
                         job["competitors"].append({"name": r["bidder_name"], "price": _to_float(r["price_proposal"])})
                     job["competitors"] = job["competitors"][:3]
                 groups["won"].append(job)
+            elif lsn == "PRELIM":
+                props = [p for p in (_to_float(r["price_proposal"]) for r in results) if p]
+                job["prelim_low"] = min(props) if props else None
+                job["prelim_n"] = len(props)
+                groups["prelim"].append(job)
             elif ann == "D0":
                 groups["bidding"].append(job)
             else:
@@ -427,7 +468,8 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0) -> str:
         ".win{font-size:14px;font-weight:600;color:#1a7f37;margin:3px 0}"
         ".dots{font-size:12px;color:#999;margin:4px 0}"
         ".badge{font-size:11px;padding:2px 8px;border-radius:10px;color:#fff;margin-left:6px}"
-        ".bd{background:#1d72b4}.bw{background:#1a7f37}.bp{background:#b0883b}"
+        ".bd{background:#1d72b4}.bw{background:#1a7f37}.bp{background:#7a5cc6}.bs{background:#c2410c}"
+        ".cd{font-size:13px;font-weight:600;color:#1d72b4;margin:3px 0}"
         ".msg{font-size:15px;color:#555;margin:12px 0}"
         ".exp{font-size:11px;color:#bbb;margin-top:18px;text-align:center}"
         "</style></head><body><div class=\"wrap\">"
@@ -443,17 +485,27 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0) -> str:
         return f"{x:,.0f}" if x else "-"
 
     def _card(j, kind):
-        L = [f"<div class=\"jn\">🏗️ {_h.escape((j['name'] or '')[:80])}</div>"]
+        L = [f"<div class=\"jn\">🏗️ {_h.escape(j['name'] or '')}</div>"]
         if j["location"]:
             L.append(f"<div class=\"meta\">📍 {_h.escape(j['location'])}</div>")
         if kind == "bidding":
-            L.append("<div class=\"dots\">●━━●━━○<span class=\"badge bd\">กำลังประมูล</span></div>")
+            L.append("<div class=\"dots\">●━━●━━○<span class=\"badge bd\">ประกาศวันยื่นซอง</span></div>")
             if j["deadline"]:
-                L.append(f"<div class=\"dl\">⏰ ยื่นซอง {_h.escape(j['deadline'])}</div>")
+                L.append(f"<div class=\"dl\">⏰ ยื่นซอง {_h.escape(_fmt_date_th(j['deadline']))}</div>")
+                cd = _countdown_th(j["deadline"])
+                if cd:
+                    L.append(f"<div class=\"cd\">⏳ {cd}</div>")
             if j["pred_lo"] and j["pred_hi"]:
                 L.append(f"<div class=\"meta\">💵 คาด {_baht(j['pred_lo'])}–{_baht(j['pred_hi'])} บาท</div>")
+        elif kind == "prelim":
+            L.append("<div class=\"dots\">●━━●━━◐<span class=\"badge bs\">สรุปราคาเบื้องต้น</span></div>")
+            if j["prelim_low"]:
+                n = f" ({j['prelim_n']} ราย)" if j["prelim_n"] else ""
+                L.append(f"<div class=\"win\">💰 ราคาต่ำสุดที่เสนอ {_baht(j['prelim_low'])} บาท{n}</div>")
+            else:
+                L.append("<div class=\"meta\">💰 เปิดเผยราคาเบื้องต้นแล้ว — รอประกาศผู้ชนะทางการ</div>")
         elif kind == "won":
-            L.append("<div class=\"dots\">●━━●━━●<span class=\"badge bw\">ประกาศผล</span></div>")
+            L.append("<div class=\"dots\">●━━●━━●<span class=\"badge bw\">ประกาศผู้ชนะทางการ</span></div>")
             if j["winner"]:
                 disc = f" (ลด {j['winner_disc']:.0f}%)" if j["winner_disc"] is not None else ""
                 L.append(f"<div class=\"win\">🏆 {_h.escape(j['winner'])} · {_baht(j['winner_price'])}{disc}</div>")
@@ -461,11 +513,12 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0) -> str:
                     comp = " · ".join(f"{_h.escape((c['name'] or '')[:18])} {_baht(c['price'])}" for c in j["competitors"])
                     L.append(f"<div class=\"meta\">👥 {comp}</div>")
         else:
-            L.append("<div class=\"dots\">●━━○━━○<span class=\"badge bp\">รับฟังความเห็น</span></div>")
+            L.append("<div class=\"dots\">●━━○━━○<span class=\"badge bp\">รับฟังคำประชาวิจารณ์</span></div>")
         return "<div class=\"job\">" + "".join(L) + "</div>"
 
-    for key, label in (("bidding", "🔵 กำลังประมูล"), ("pre", "⭐ รับฟังความเห็น"), ("won", "🏆 ประกาศผลแล้ว")):
-        if groups[key]:
+    for key, label in (("bidding", "🔵 ประกาศวันยื่นซอง"), ("prelim", "📊 สรุปราคาเบื้องต้น"),
+                       ("pre", "🟣 รับฟังคำประชาวิจารณ์"), ("won", "🏆 ประกาศผู้ชนะทางการ")):
+        if groups.get(key):
             body.append(f"<div class=\"grp\">{label} ({len(groups[key])})</div>")
             for j in groups[key]:
                 body.append(_card(j, key))

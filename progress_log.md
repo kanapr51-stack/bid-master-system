@@ -717,3 +717,26 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 ### Followup
 - ⚠️ **per-tenant matching debt:** negative นี้ global=profile ก่อสร้างเท่านั้น. รับ tenant อุปกรณ์การแพทย์เมื่อไหร่ "ไตเทียม/เอกซเรย์" = positive ของเขา → matching prefs ต้องแยก per-tenant ([[project_architecture_decision_subscribe_filter]]). อย่าทำตอนนี้ (YAGNI)
 - ถ้างานบริการแพทย์หลุดมาอีก → เติม negative แม่นๆ ทีละตัว (reactive loop)
+
+## งานที่ N+147: Portal "งานที่ติดตาม" — UI 5 ปรับ (ชื่อเต็ม/แยก PRELIM-W0/countdown/rename) (2026-06-20)
+
+### สถานะ: ✅ เสร็จ (deploy VPS scp + restart)
+
+### บริบท
+กัญจน์ขอแก้หน้า `/portal` (ลิงก์ "งานของฉัน") 6 อย่าง. ทำได้ 5 ใน `scripts/bms_api.py` ไฟล์เดียว. ข้อ 6 (deadline+countdown ขั้นประชาพิจารณ์ B0) **defer** — ไม่มี data (B0 ข้าม deadline gate, `Sebastian_Enrichment_Worker.py:311`)
+
+### สิ่งที่ทำ (`_portal_jobs` data + `_portal_page_html` view)
+1. ชื่องานเต็ม — เอา `[:80]` ออก
+2. แยกการ์ด **PRELIM (สรุปราคาเบื้องต้น)** vs **W0 (ประกาศผู้ชนะทางการ)** — สัญญาณ = `followed_jobs.last_stage_notified` (เพิ่ม group "prelim" + อ่าน lsn ใน query). prelim โชว์ราคาต่ำสุดจาก bid_results price_proposal (graceful ถ้าไม่มี)
+3. "กำลังประมูล" → "ประกาศวันยื่นซอง"
+4. Countdown `_countdown_th` (เหลือ N วัน/วันนี้/เลยกำหนด) + `_fmt_date_th` วันที่ ISO→ไทย (graceful fallback) บนการ์ด bidding
+5. "รับฟังความเห็น" → "รับฟังคำประชาวิจารณ์"
+
+### Verify
+- test เดิม `test_portal_page.py` + `test_portal_jobs.py` อัปเดต label ใหม่ + เพิ่มเคส prelim → **PASS** ทั้งคู่
+- render จริง: ชื่อ 130+ ตัวไม่ตัด ✓ · 4 กลุ่มแยกถูก ✓ · countdown "เหลืออีก N วัน" ✓
+- deploy: VPS bms_api.py sha == local HEAD (ไม่มี hotfix ค้าง) → backup `.bak` + scp + `systemctl restart bms-api`
+
+### Followup
+- ข้อ 6 ประชาพิจารณ์ deadline = defer (ต้องเพิ่ม ingestion ดึงวันสิ้นสุดวิจารณ์ร่าง TOR จาก eGP)
+- คำ "รับฟังคำประชาวิจารณ์" ใส่ตามที่กัญจน์ขอ (ระบบเดิมใช้ "รับฟังคำวิจารณ์")

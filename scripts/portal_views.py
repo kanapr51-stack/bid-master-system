@@ -104,3 +104,78 @@ def company_profile(conn, tin):
     return {"name": name, "tin": tin, "is_sme": is_sme, "total_bids": total, "wins": wins,
             "win_rate": win_rate, "provinces": provinces, "discount_hist": hist,
             "discount_avg": disc_avg, "by_year": by_year}
+
+
+_CSS = (
+    "body{font-family:-apple-system,'Segoe UI',sans-serif;margin:0;padding:18px;background:#f5f6f8;color:#222}"
+    ".wrap{max-width:480px;margin:0 auto}"
+    ".back{display:inline-block;font-size:14px;color:#1d72b4;text-decoration:none;margin:0 0 12px}"
+    ".h{font-size:18px;font-weight:700;margin:2px 0 4px}"
+    ".jid{font-size:12px;color:#aaa;margin:0 0 6px}"
+    ".meta{font-size:13px;color:#777;margin:3px 0}"
+    ".msg{font-size:15px;color:#555;margin:14px 0}"
+    ".bidhead{font-size:14px;font-weight:700;color:#555;margin:16px 0 6px}"
+    ".brow{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:8px 0;border-bottom:1px solid #eee}"
+    ".brow .bn{flex:1;color:#333;text-decoration:none}.brow .bp{white-space:nowrap;text-align:right;color:#555}"
+    ".brow .bp small{color:#999}"
+    ".blink{color:#1d72b4 !important}"
+    ".bwin{font-weight:700}.bwin .bn,.bwin .blink{color:#1a7f37 !important}.bwin .bp{color:#1a7f37}"
+    ".card{background:#fff;border-radius:14px;padding:14px 16px;margin:8px 0;box-shadow:0 2px 10px rgba(0,0,0,.06)}"
+    ".stats{display:flex;gap:8px;margin:10px 0}"
+    ".stat{flex:1;background:#fff;border-radius:12px;padding:10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.05)}"
+    ".stat b{display:block;font-size:18px;color:#1d72b4}.stat span{font-size:11px;color:#888}"
+    ".chart{background:#fff;border-radius:12px;padding:12px 14px;margin:10px 0;box-shadow:0 2px 8px rgba(0,0,0,.05)}"
+    ".chart .ct{font-size:13px;font-weight:700;color:#555;margin:0 0 8px}"
+    ".br2{display:flex;align-items:center;gap:8px;font-size:12px;margin:4px 0}"
+    ".br2 .lab{width:64px;color:#666;white-space:nowrap}"
+    ".br2 .track{flex:1;background:#eef0f3;border-radius:6px;height:14px;overflow:hidden}"
+    ".br2 .fill{display:block;height:100%}"
+    ".br2 .val{width:54px;text-align:right;color:#555;white-space:nowrap}"
+    ".yhead{font-size:14px;font-weight:700;color:#333;margin:14px 0 4px}"
+    ".jrow{display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:6px 0;border-bottom:1px solid #f2f2f2}"
+    ".jrow .jn{flex:1;color:#1d72b4;text-decoration:none}.jrow .jp{white-space:nowrap;text-align:right;color:#666}"
+)
+
+
+def _HEAD(title):
+    return ("<!doctype html><html lang=\"th\"><head><meta charset=\"utf-8\">"
+            "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
+            f"<title>{title}</title><style>{_CSS}</style></head><body><div class=\"wrap\">")
+
+
+_FOOT = "</div></body></html>"
+
+
+def _baht(x):
+    return f"{x:,.0f}" if x else "-"
+
+
+def render_job_page(data, token, exp):
+    tok = _h.escape(token)
+    head = _HEAD("รายละเอียดงาน")
+    back = f"<a class=\"back\" href=\"/portal?t={tok}\">← งานที่ติดตาม</a>"
+    if not data:
+        return head + back + "<div class=\"msg\">ไม่พบรายละเอียดงานนี้</div>" + _FOOT
+    j = data["job"]
+    b = [back, f"<div class=\"h\">🏗️ {_h.escape(j['name'])}</div>",
+         f"<div class=\"jid\">🆔 {_h.escape(str(j['project_id']))}</div>"]
+    if j["location"]:
+        b.append(f"<div class=\"meta\">📍 {_h.escape(j['location'])}</div>")
+    if j["budget"]:
+        b.append(f"<div class=\"meta\">💰 ราคากลาง {_baht(j['budget'])} บาท</div>")
+    b.append(f"<div class=\"bidhead\">ผู้ยื่นทั้งหมด ({len(data['bidders'])} ราย)</div>")
+    for i, bid in enumerate(data["bidders"], 1):
+        wm = "🏆 " if bid["is_winner"] else ""
+        sme = " 🏷SME" if bid["is_sme"] else ""
+        nm = _h.escape(bid["name"] or "(ไม่ระบุชื่อ)")
+        disc = f"ส่วนลด {bid['discount']:.1f}%" if bid["discount"] is not None else "—"
+        cls = "brow bwin" if bid["is_winner"] else "brow"
+        if bid["tin"]:
+            link = (f"/portal/company?t={tok}&tin={_h.escape(bid['tin'])}"
+                    f"&from={_h.escape(str(j['project_id']))}")
+            nmhtml = f"<a class=\"bn blink\" href=\"{link}\">{i}. {wm}{nm}{sme}</a>"
+        else:
+            nmhtml = f"<span class=\"bn\">{i}. {wm}{nm}{sme}</span>"
+        b.append(f"<div class=\"{cls}\">{nmhtml}"
+                 f"<span class=\"bp\">{_baht(bid['price'])}<br><small>{disc}</small></span></div>")
+    return head + "".join(b) + _FOOT

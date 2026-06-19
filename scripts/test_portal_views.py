@@ -47,3 +47,16 @@ assert p["discount_avg"] is not None, p
 assert sum(h["count"] for h in p["discount_hist"]) >= 1, p["discount_hist"]
 assert pv.company_profile(c, "NOPE") is None
 print("OK company_profile")
+
+# --- render_job_page ---
+c = _seed()
+d = pv.job_detail(c, "69010000001")
+h = pv.render_job_page(d, "TOK", 2000000000)
+assert "งานถนน A" in h and "🆔 69010000001" in h, h
+assert "ราคากลาง 1,000,000" in h, h
+assert "/portal/company?t=TOK&tin=T1" in h and "from=69010000001" in h, h   # ลิงก์บริษัท
+assert "ส่วนลด 10.0%" in h, h
+assert "/portal?t=TOK" in h, "ไม่มีปุ่มกลับ"
+h0 = pv.render_job_page(None, "TOK", 0)
+assert "ไม่พบรายละเอียดงานนี้" in h0, h0
+print("OK render_job_page")

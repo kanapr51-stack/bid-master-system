@@ -407,7 +407,7 @@ c.execute("INSERT INTO bid_results VALUES ('68010000003','หจก.เอ','T1'
 p = pv.company_profile(c, "T1")
 h = pv.render_company_page(p, "TOK", "69010000001", 2000000000)
 assert "หจก.เอ" in h, h
-assert "ยื่น" in h and "ชนะ" in h and "win-rate" in h.lower() or "Win" in h or "ชนะ" in h, h
+assert "ยื่น" in h and "ชนะ" in h and "win-rate" in h, h          # stat cards
 assert "ปี 2569" in h and "ปี 2568" in h, h                       # timeline แยกปี
 assert "class=\"fill\"" in h, "ไม่มีกราฟ bar"
 assert "/portal/job?t=TOK&pid=69010000001" in h, "ปุ่มกลับไปงานเดิม"

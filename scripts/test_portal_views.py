@@ -60,3 +60,20 @@ assert "/portal?t=TOK" in h, "ไม่มีปุ่มกลับ"
 h0 = pv.render_job_page(None, "TOK", 0)
 assert "ไม่พบรายละเอียดงานนี้" in h0, h0
 print("OK render_job_page")
+
+# --- render_company_page ---
+c = _seed()
+c.execute("INSERT INTO projects_seen VALUES ('68010000003','งานเก่า',2000000,'นครพนม')")
+c.execute("INSERT INTO bid_results VALUES ('68010000003','หจก.เอ','T1','1600000','1600000',1,0)")
+p = pv.company_profile(c, "T1")
+h = pv.render_company_page(p, "TOK", "69010000001", 2000000000)
+assert "หจก.เอ" in h, h
+assert "ยื่น" in h and "ชนะ" in h and "win-rate" in h, h          # stat cards
+assert "ปี 2569" in h and "ปี 2568" in h, h                       # timeline แยกปี
+assert "class=\"fill\"" in h, "ไม่มีกราฟ bar"
+assert "/portal/job?t=TOK&pid=69010000001" in h, "ปุ่มกลับไปงานเดิม"
+assert "/portal/job?t=TOK&pid=68010000003" in h, "ลิงก์งานใน timeline"
+h0 = pv.render_company_page(None, "TOK", "", 0)
+assert "ไม่พบประวัติบริษัทนี้" in h0, h0
+print("OK render_company_page")
+print("OK test_portal_views")

@@ -179,3 +179,60 @@ def render_job_page(data, token, exp):
         b.append(f"<div class=\"{cls}\">{nmhtml}"
                  f"<span class=\"bp\">{_baht(bid['price'])}<br><small>{disc}</small></span></div>")
     return head + "".join(b) + _FOOT
+
+
+def _bar(lab, value, maxv, color, val_txt):
+    pct = int(value / maxv * 100) if maxv else 0
+    return (f"<div class=\"br2\"><span class=\"lab\">{_h.escape(str(lab))}</span>"
+            f"<span class=\"track\"><span class=\"fill\" style=\"width:{pct}%;background:{color}\"></span></span>"
+            f"<span class=\"val\">{val_txt}</span></div>")
+
+
+def render_company_page(data, token, from_pid, exp):
+    tok = _h.escape(token)
+    head = _HEAD("ประวัติบริษัท")
+    if from_pid:
+        back = f"<a class=\"back\" href=\"/portal/job?t={tok}&pid={_h.escape(str(from_pid))}\">← กลับไปงาน</a>"
+    else:
+        back = f"<a class=\"back\" href=\"/portal?t={tok}\">← งานที่ติดตาม</a>"
+    if not data:
+        return head + back + "<div class=\"msg\">ไม่พบประวัติบริษัทนี้</div>" + _FOOT
+    sme = " 🏷SME" if data["is_sme"] else ""
+    b = [back, f"<div class=\"h\">🏢 {_h.escape(data['name'] or '(ไม่ระบุชื่อ)')}{sme}</div>",
+         f"<div class=\"jid\">{_h.escape(data['tin'])}</div>"]
+    # stat cards
+    b.append("<div class=\"stats\">"
+             f"<div class=\"stat\"><b>{data['total_bids']}</b><span>ยื่น</span></div>"
+             f"<div class=\"stat\"><b>{data['wins']}</b><span>ชนะ</span></div>"
+             f"<div class=\"stat\"><b>{data['win_rate']:.0f}%</b><span>win-rate</span></div>"
+             f"<div class=\"stat\"><b>{len(data['provinces'])}</b><span>จังหวัด</span></div>"
+             "</div>")
+    # chart 1: ยื่น/ชนะ รายปี
+    maxb = max([g["bids"] for g in data["by_year"]] or [1])
+    rows1 = []
+    for g in data["by_year"]:
+        ylab = f"ปี {g['year']}" if g["year"] else "ไม่ทราบปี"
+        rows1.append(_bar(ylab, g["bids"], maxb, "#1d72b4", f"ยื่น {g['bids']}"))
+        rows1.append(_bar("", g["wins"], maxb, "#1a7f37", f"ชนะ {g['wins']}"))
+    b.append("<div class=\"chart\"><div class=\"ct\">📊 ยื่น–ชนะ รายปี</div>" + "".join(rows1) + "</div>")
+    # chart 2: ส่วนลดที่ชอบเสนอ
+    maxh = max([x["count"] for x in data["discount_hist"]] or [1])
+    rows2 = []
+    for x in data["discount_hist"]:
+        lab = f"{x['lo']}-{x['hi']}%" if x["hi"] is not None else f"≥{x['lo']}%"
+        rows2.append(_bar(lab, x["count"], maxh, "#c2410c", str(x["count"])))
+    avg = f" (เฉลี่ย {data['discount_avg']:.1f}%)" if data["discount_avg"] is not None else ""
+    b.append(f"<div class=\"chart\"><div class=\"ct\">💸 ส่วนลดที่ชอบเสนอ{avg}</div>" + "".join(rows2) + "</div>")
+    # timeline แยกรายปี
+    for g in data["by_year"]:
+        ylab = f"ปี {g['year']}" if g["year"] else "ไม่ทราบปี"
+        b.append(f"<div class=\"yhead\">{ylab} — ยื่น {g['bids']} ชนะ {g['wins']}</div>")
+        b.append("<div class=\"card\">")
+        for j in g["jobs"]:
+            mark = "✅" if j["is_winner"] else "▫️"
+            disc = f"ส่วนลด {j['discount']:.1f}%" if j["discount"] is not None else "—"
+            link = f"/portal/job?t={tok}&pid={_h.escape(str(j['project_id']))}"
+            b.append(f"<div class=\"jrow\"><a class=\"jn\" href=\"{link}\">{mark} {_h.escape(j['name'])}</a>"
+                     f"<span class=\"jp\">{_baht(j['price'])}<br><small>{disc}</small></span></div>")
+        b.append("</div>")
+    return head + "".join(b) + _FOOT

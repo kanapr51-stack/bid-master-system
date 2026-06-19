@@ -18,11 +18,12 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 import httpx
-from fastapi import FastAPI, Request, Header, HTTPException
+from fastapi import FastAPI, Request, Header, HTTPException, Query
 from fastapi.responses import HTMLResponse
 
 sys.path.insert(0, str(Path(__file__).parent))
 import follow_token  # noqa: E402
+import portal_views  # noqa: E402
 
 # -- Config -------------------------------------------------------------------
 
@@ -976,6 +977,26 @@ async def portal_get(t: str = ""):
     if jobs is None:
         return HTMLResponse(_follow_page_html(t, "no_customer", {}, "", v[2]))
     return HTMLResponse(_portal_page_html(jobs, v[2]))
+
+
+@app.get("/portal/job")
+async def portal_job_get(t: str = "", pid: str = ""):
+    v = follow_token.verify_token(t)
+    if not v:
+        return HTMLResponse(_follow_page_html(t, "invalid", {}, "", 0))
+    with get_conn() as conn:
+        data = portal_views.job_detail(conn, pid)
+    return HTMLResponse(portal_views.render_job_page(data, t, v[2]))
+
+
+@app.get("/portal/company")
+async def portal_company_get(t: str = "", tin: str = "", from_: str = Query("", alias="from")):
+    v = follow_token.verify_token(t)
+    if not v:
+        return HTMLResponse(_follow_page_html(t, "invalid", {}, "", 0))
+    with get_conn() as conn:
+        data = portal_views.company_profile(conn, tin)
+    return HTMLResponse(portal_views.render_company_page(data, t, from_, v[2]))
 
 
 @app.post("/webhook/line")

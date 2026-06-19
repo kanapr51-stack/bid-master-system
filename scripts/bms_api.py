@@ -413,7 +413,8 @@ def _portal_jobs(user_id: str):
             pr = conn.execute(
                 "SELECT area_price_lo, area_price_hi FROM price_predictions WHERE project_id=?", (pid,)).fetchone()
             results = conn.execute(
-                "SELECT bidder_name, price_proposal, price_agree, is_winner FROM bid_results WHERE project_id=?",
+                "SELECT bidder_name, price_proposal, price_agree, is_winner, is_sme "
+                "FROM bid_results WHERE project_id=?",
                 (pid,)).fetchall()
             ann = ps["announce_type"] or ""
             lsn = (f["last_stage_notified"] if "last_stage_notified" in f.keys() else "") or ""
@@ -421,7 +422,7 @@ def _portal_jobs(user_id: str):
                    "deadline": deadline, "pred_lo": pr["area_price_lo"] if pr else None,
                    "pred_hi": pr["area_price_hi"] if pr else None,
                    "winner": None, "winner_price": None, "winner_disc": None, "competitors": [],
-                   "prelim_low": None, "prelim_n": 0}
+                   "bidders": [], "prelim_low": None, "prelim_n": 0}
             win = next((r for r in results if r["is_winner"]), None)
             if win or ann.startswith("W") or lsn == "W0":
                 if win:
@@ -437,6 +438,12 @@ def _portal_jobs(user_id: str):
                         seen.add(r["bidder_name"])
                         job["competitors"].append({"name": r["bidder_name"], "price": _to_float(r["price_proposal"])})
                     job["competitors"] = job["competitors"][:3]
+                bidders = [{"name": r["bidder_name"] or "", "price": _to_float(r["price_proposal"]),
+                            "is_winner": bool(r["is_winner"]),
+                            "is_sme": bool(r["is_sme"] if "is_sme" in r.keys() else 0)}
+                           for r in results]
+                bidders.sort(key=lambda b: (not b["is_winner"], b["price"] is None, b["price"] or 0))
+                job["bidders"] = bidders
                 groups["won"].append(job)
             elif lsn == "PRELIM":
                 props = [p for p in (_to_float(r["price_proposal"]) for r in results) if p]
@@ -471,6 +478,13 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0) -> str:
         ".meta{font-size:13px;color:#888;margin:3px 0}"
         ".dl{font-size:13px;color:#d9534f;margin:3px 0}"
         ".win{font-size:14px;font-weight:600;color:#1a7f37;margin:3px 0}"
+        ".clickable{cursor:pointer}"
+        ".more{font-size:13px;font-weight:600;color:#1d72b4;margin:8px 0 2px;user-select:none}"
+        ".detail{display:none;margin-top:6px;border-top:1px solid #eee;padding-top:6px}"
+        ".brow{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:4px 0;"
+        "border-bottom:1px solid #f2f2f2}"
+        ".brow .bn{color:#333;flex:1}.brow .bp{color:#666;white-space:nowrap;font-variant-numeric:tabular-nums}"
+        ".bwin{font-weight:700}.bwin .bn{color:#1a7f37}.bwin .bp{color:#1a7f37}"
         ".dots{font-size:12px;color:#999;margin:4px 0}"
         ".badge{font-size:11px;padding:2px 8px;border-radius:10px;color:#fff;margin-left:6px}"
         ".bd{background:#1d72b4}.bw{background:#1a7f37}.bp{background:#7a5cc6}.bs{background:#c2410c}"
@@ -520,12 +534,22 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0) -> str:
             if j["winner"]:
                 disc = f" (ลด {j['winner_disc']:.0f}%)" if j["winner_disc"] is not None else ""
                 L.append(f"<div class=\"win\">🏆 {_h.escape(j['winner'])} · {_baht(j['winner_price'])}{disc}</div>")
-                if j["competitors"]:
-                    comp = " · ".join(f"{_h.escape((c['name'] or '')[:18])} {_baht(c['price'])}" for c in j["competitors"])
-                    L.append(f"<div class=\"meta\">👥 {comp}</div>")
+            if j["bidders"]:
+                nb = len(j["bidders"])
+                L.append(f"<div class=\"more\" data-n=\"{nb}\">▾ ดูผู้ยื่นทั้งหมด ({nb} ราย)</div>")
+                rows = []
+                for i, b in enumerate(j["bidders"], 1):
+                    wmark = "🏆 " if b["is_winner"] else ""
+                    sme = " 🏷SME" if b["is_sme"] else ""
+                    rows.append(
+                        f"<div class=\"brow{' bwin' if b['is_winner'] else ''}\">"
+                        f"<span class=\"bn\">{i}. {wmark}{_h.escape(b['name'] or '-')}{sme}</span>"
+                        f"<span class=\"bp\">{_baht(b['price'])}</span></div>")
+                L.append("<div class=\"detail\">" + "".join(rows) + "</div>")
         else:
             L.append("<div class=\"dots\">●━━○━━○<span class=\"badge bp\">รับฟังคำประชาวิจารณ์</span></div>")
-        return "<div class=\"job\">" + "".join(L) + "</div>"
+        cls = "job clickable" if (kind == "won" and j["bidders"]) else "job"
+        return f"<div class=\"{cls}\">" + "".join(L) + "</div>"
 
     for key, label in (("bidding", "🔵 ประกาศวันยื่นซอง"), ("prelim", "📊 สรุปราคาเบื้องต้น"),
                        ("pre", "🟣 รับฟังคำประชาวิจารณ์"), ("won", "🏆 ประกาศผู้ชนะทางการ")):
@@ -536,16 +560,22 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0) -> str:
     if exp_str:
         body.append(f"<div class=\"exp\">🔗 ลิงก์นี้ใช้ได้ถึง {exp_str}</div>")
     body.append(
-        "<script>(function(){var q=document.getElementById('q');"
-        "if(!q)return;var nh=document.getElementById('nohit');"
-        "q.addEventListener('input',function(){"
+        "<script>(function(){"
+        "var q=document.getElementById('q'),nh=document.getElementById('nohit');"
+        "if(q){q.addEventListener('input',function(){"
         "var s=q.value.trim().toLowerCase(),tot=0;"
         "document.querySelectorAll('.gw').forEach(function(g){var v=0;"
         "g.querySelectorAll('.job').forEach(function(c){"
         "var on=!s||c.textContent.toLowerCase().indexOf(s)>=0;"
         "c.style.display=on?'':'none';if(on)v++;});"
         "g.style.display=v?'':'none';tot+=v;});"
-        "if(nh)nh.style.display=tot?'none':'block';});})();</script>")
+        "if(nh)nh.style.display=tot?'none':'block';});}"
+        "document.querySelectorAll('.clickable').forEach(function(card){"
+        "card.addEventListener('click',function(){"
+        "var d=card.querySelector('.detail'),m=card.querySelector('.more');if(!d)return;"
+        "var open=d.style.display==='block';d.style.display=open?'none':'block';"
+        "if(m)m.textContent=(open?'\\u25be ดูผู้ยื่นทั้งหมด':'\\u25b4 ซ่อนผู้ยื่น')+' ('+m.dataset.n+' ราย)';"
+        "});});})();</script>")
     return head + "".join(body) + foot
 
 

@@ -756,3 +756,17 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 
 ### หมายเหตุ deploy debt
 - scp จาก Windows = CRLF → VPS hash ≠ git LF hash เสมอ (content เท่ากัน). เช็ค divergence ต้อง `tr -d '\r'` ก่อน sha256 ไม่งั้น false-positive
+
+## งานที่ N+149: Portal — การ์ดผู้ชนะกดได้ → กางผู้ยื่นทุกราย (2026-06-20)
+
+### สถานะ: ✅ เสร็จ (deploy VPS scp + restart)
+
+### สิ่งที่ทำ
+- **data** (`_portal_jobs`): won job เพิ่ม `job["bidders"]` = ผู้ยื่นทุกราย (เพิ่ม `is_sme` ใน query bid_results) sort ผู้ชนะก่อน→ราคาเสนอ asc
+- **view** (`_card` won): การ์ด `job clickable` + `▾ ดูผู้ยื่นทั้งหมด (N ราย)` toggle → `.detail` ตารางผู้ยื่น (ลำดับ/🏆ผู้ชนะ/🏷SME/ราคาเสนอ). JS เพิ่ม handler `.clickable` (guard `if(q)` รอบ search เดิม, clickable รันเสมอ)
+- เอาบรรทัดสรุป competitors (👥 3 ราย) ออก — แทนด้วย detail เต็ม
+
+### Verify
+- test_portal_page (+clickable/detail/SME assert) + test_portal_jobs (+bidders sort assert) → PASS
+- **node --check** script ที่ render → JS syntax OK (กัน brace เพี้ยน — เคยมี stray `}` ระหว่างทาง)
+- render จริง: 3 ราย ผู้ชนะขึ้นก่อน + SME + ราคาเรียง ✓

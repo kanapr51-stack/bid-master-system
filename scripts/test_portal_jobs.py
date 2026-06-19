@@ -54,5 +54,9 @@ w = g["won"][0]
 assert w["winner"] == "หจก.X" and w["winner_price"] == 738000.0, w
 assert w["winner_disc"] == 26.2, w
 assert w["competitors"] and w["competitors"][0]["name"] == "หจก.Y", w
+# bidders: ครบทุกราย, ผู้ชนะมาก่อน
+assert len(w["bidders"]) == 2, w["bidders"]
+assert w["bidders"][0]["is_winner"] and w["bidders"][0]["name"] == "หจก.X", w["bidders"]
+assert not w["bidders"][1]["is_winner"], w["bidders"]
 assert api._portal_jobs("NOPE") is None
 print("OK test_portal_jobs")

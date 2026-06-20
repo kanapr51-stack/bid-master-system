@@ -308,7 +308,23 @@ def init_schema():
     _migrate_v125()
     _migrate_v126()
     _migrate_v127()
+    _migrate_v128()
     print(f"Schema v1.13 ready: {DB_PATH}")
+
+
+def _migrate_v128():
+    """job_notes — ไทม์ไลน์งานที่ user สร้างเอง (entry_date + note) ต่อ (customer, project). (2026-06-20)"""
+    with get_connection() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS job_notes (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                customer_id  INTEGER NOT NULL,
+                project_id   TEXT NOT NULL,
+                entry_date   TEXT NOT NULL,
+                note         TEXT NOT NULL,
+                created_at   TEXT NOT NULL,
+                updated_at   TEXT
+            )""")
 
 
 def _migrate_v127():

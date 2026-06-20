@@ -998,6 +998,21 @@ async def portal_timeline_get(t: str = ""):
     return HTMLResponse(portal_views.render_timeline_page(notes, t, v[2]))
 
 
+@app.get("/portal/star_toggle")
+async def portal_star_toggle_get(t: str = "", pid: str = "", back: str = "board"):
+    v = follow_token.verify_token(t)
+    if not v:
+        return HTMLResponse(_follow_page_html(t, "invalid", {}, "", 0))
+    with get_conn() as conn:
+        cust = conn.execute("SELECT id FROM customers WHERE line_user_id=?", (v[0],)).fetchone()
+        cid = cust["id"] if cust else None
+        portal_views.toggle_star(conn, cid, pid)
+    from urllib.parse import quote
+    if back == "job":
+        return RedirectResponse(f"/portal/job?t={quote(t)}&pid={quote(pid)}", status_code=303)
+    return RedirectResponse(f"/portal?t={quote(t)}", status_code=303)
+
+
 @app.get("/portal/job")
 async def portal_job_get(t: str = "", pid: str = ""):
     v = follow_token.verify_token(t)
@@ -1009,7 +1024,8 @@ async def portal_job_get(t: str = "", pid: str = ""):
         data = portal_views.job_detail(conn, pid)
         notes = portal_views.list_job_notes(conn, cid, pid) if cid else []
         overview = portal_views.get_job_overview(conn, cid, pid) if cid else ""
-    return HTMLResponse(portal_views.render_job_page(data, t, v[2], notes, overview))
+        starred = pid in portal_views.starred_project_ids(conn, cid)
+    return HTMLResponse(portal_views.render_job_page(data, t, v[2], notes, overview, starred))
 
 
 @app.get("/portal/company")

@@ -83,3 +83,26 @@ with _db.get_connection() as _c:
 bh0 = asyncio.run(api.portal_company_get(t=tok, tin="T1", from_="69010000001")).body.decode("utf-8")
 assert "⚔️" not in bh0, "ไม่ตั้ง company_tin ต้องไม่โชว์ h2h"
 print("OK portal_company_h2h")
+
+# --- /portal/star_toggle: toggle ⭐ ที่สนใจ + redirect กลับ board/job ---
+r1 = asyncio.run(api.portal_star_toggle_get(t=tok, pid="69010000001", back="board"))
+assert r1.status_code == 303 and r1.headers["location"] == f"/portal?t={tok}", r1.headers
+with _db.get_connection() as _c:
+    n = _c.execute("SELECT COUNT(*) FROM job_stars WHERE project_id='69010000001'").fetchone()[0]
+assert n == 1, "toggle ครั้งแรกต้อง insert"
+# หน้า job ต้องโชว์ ⭐ เต็มแล้ว
+bj = asyncio.run(api.portal_job_get(t=tok, pid="69010000001")).body.decode("utf-8")
+assert "⭐" in bj, "หลังติดดาวต้องโชว์ ⭐ ในหน้า job"
+# toggle อีกครั้ง back=job → ถอดดาว + redirect ไปหน้า job
+r2 = asyncio.run(api.portal_star_toggle_get(t=tok, pid="69010000001", back="job"))
+assert r2.status_code == 303 and r2.headers["location"] == f"/portal/job?t={tok}&pid=69010000001", r2.headers
+with _db.get_connection() as _c:
+    n2 = _c.execute("SELECT COUNT(*) FROM job_stars WHERE project_id='69010000001'").fetchone()[0]
+assert n2 == 0, "toggle ครั้งสองต้องลบ"
+# back ที่ไม่รู้จัก → fallback ไป board (กัน open-redirect)
+r3 = asyncio.run(api.portal_star_toggle_get(t=tok, pid="69010000001", back="evil"))
+assert r3.headers["location"] == f"/portal?t={tok}", "back ไม่รู้จักต้อง fallback board"
+# token ผิด → ไม่ toggle อะไร
+rbad = asyncio.run(api.portal_star_toggle_get(t="BAD", pid="69010000001", back="board"))
+assert "ลิงก์ไม่ถูกต้อง" in rbad.body.decode("utf-8") or "ใช้ไม่ได้" in rbad.body.decode("utf-8")
+print("OK portal_star_toggle")

@@ -473,10 +473,10 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0, token: str = "") -> str:
         "border:1px solid #ddd;border-radius:12px;margin:0 0 6px;outline:none}"
         ".search:focus{border-color:#1d72b4}"
         ".filters{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 12px}"
-        ".fchip{font-size:13px;padding:6px 11px;border-radius:14px;background:#eef0f3;color:#999;"
-        "cursor:pointer;user-select:none;border:1px solid transparent;white-space:nowrap}"
+        ".fchip{font:inherit;font-size:13px;padding:6px 11px;border-radius:14px;background:#eef0f3;"
+        "color:#999;cursor:pointer;user-select:none;border:1px solid transparent;white-space:nowrap;"
+        "-webkit-appearance:none;appearance:none}"
         ".fchip.on{background:#fff;color:#1d72b4;border-color:#1d72b4;font-weight:600}"
-        ".fchip input{display:none}"
         ".nohit{font-size:14px;color:#999;margin:14px 0;display:none}"
         ".grp{font-size:14px;font-weight:700;color:#555;margin:16px 0 8px}"
         ".job{background:#fff;border-radius:14px;padding:14px 16px;margin:8px 0;box-shadow:0 2px 10px rgba(0,0,0,.06)}"
@@ -506,15 +506,15 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0, token: str = "") -> str:
     body.append(
         "<input id=\"q\" class=\"search\" type=\"search\" autocomplete=\"off\" "
         "placeholder=\"🔍 ค้นหางาน (ชื่อ / ID / พื้นที่)\">")
-    # ชิป filter ติ๊กเลือกประเภทงานที่อยากดู (เฉพาะประเภทที่มีงาน) — default ติ๊กครบ
+    # ชิปเลือกประเภทงานที่อยากดู (single-select แบบแท็บ) — "ทั้งหมด" default, กดประเภท=ดูอันเดียว
     chips = []
     for key, clabel in (("bidding", "🔵 ยื่นซอง"), ("prelim", "📊 สรุปราคา"),
                         ("pre", "🟣 ประชาวิจารณ์"), ("won", "🏆 ผู้ชนะ")):
         if groups.get(key):
-            chips.append(f"<label class=\"fchip on\"><input type=\"checkbox\" class=\"fck\" "
-                         f"data-key=\"{key}\" checked>{clabel}</label>")
+            chips.append(f"<button type=\"button\" class=\"fchip\" data-key=\"{key}\">{clabel}</button>")
     if len(chips) > 1:
-        body.append("<div class=\"filters\">" + "".join(chips) + "</div>")
+        allchip = "<button type=\"button\" class=\"fchip on\" data-key=\"all\">ทั้งหมด</button>"
+        body.append("<div class=\"filters\">" + allchip + "".join(chips) + "</div>")
     body.append("<div id=\"nohit\" class=\"nohit\">ไม่พบงานที่ตรงกับคำค้น</div>")
 
     def _baht(x):
@@ -565,21 +565,21 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0, token: str = "") -> str:
     body.append(
         "<script>(function(){"
         "var q=document.getElementById('q'),nh=document.getElementById('nohit');"
-        "var cks=Array.prototype.slice.call(document.querySelectorAll('.fck'));"
+        "var chips=Array.prototype.slice.call(document.querySelectorAll('.fchip')),sel='all';"
         "function apply(){"
-        "var s=q?q.value.trim().toLowerCase():'',tot=0,on={};"
-        "cks.forEach(function(c){on[c.getAttribute('data-key')]=c.checked;});"
+        "var s=q?q.value.trim().toLowerCase():'',tot=0;"
         "document.querySelectorAll('.gw').forEach(function(g){"
         "var k=g.getAttribute('data-key'),v=0;"
         "g.querySelectorAll('.job').forEach(function(c){"
         "var hit=!s||c.textContent.toLowerCase().indexOf(s)>=0;"
         "c.style.display=hit?'':'none';if(hit)v++;});"
-        "var show=on[k]!==false&&v>0;"
+        "var show=(sel==='all'||sel===k)&&v>0;"
         "g.style.display=show?'':'none';if(show)tot+=v;});"
         "if(nh)nh.style.display=tot?'none':'block';}"
         "if(q)q.addEventListener('input',apply);"
-        "cks.forEach(function(c){c.addEventListener('change',function(){"
-        "var l=c.parentNode;if(l)l.classList.toggle('on',c.checked);apply();});});"
+        "chips.forEach(function(c){c.addEventListener('click',function(){"
+        "sel=c.getAttribute('data-key');"
+        "chips.forEach(function(x){x.classList.toggle('on',x===c);});apply();});});"
         "apply();})();</script>")
     return head + "".join(body) + foot
 

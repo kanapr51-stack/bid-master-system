@@ -997,3 +997,4 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 ### Verify
 - py compile + **node --check JS ผ่าน** + render local (chips/data-key/fck ครบ)
 - deploy → hash==local → restart active → render prod: filters row+2chips+data-key+apply ผ่าน
+- **แก้ตาม feedback กัญจน์:** เปลี่ยนจาก multi-toggle (ติ๊กออก) → **single-select แบบแท็บ** (ปุ่ม "ทั้งหมด" default + กดประเภท=ดูอันเดียว). button data-key, JS `sel` state. node --check ผ่าน, deploy hash==local active

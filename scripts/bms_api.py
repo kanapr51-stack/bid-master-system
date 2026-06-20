@@ -969,7 +969,8 @@ async def portal_job_get(t: str = "", pid: str = ""):
         cid = cust["id"] if cust else None
         data = portal_views.job_detail(conn, pid)
         notes = portal_views.list_job_notes(conn, cid, pid) if cid else []
-    return HTMLResponse(portal_views.render_job_page(data, t, v[2], notes))
+        overview = portal_views.get_job_overview(conn, cid, pid) if cid else ""
+    return HTMLResponse(portal_views.render_job_page(data, t, v[2], notes, overview))
 
 
 @app.get("/portal/company")
@@ -1002,6 +1003,8 @@ async def portal_job_note_post(request: Request):
                 portal_views.edit_job_note(conn, cid, g("note_id"), g("entry_date"), g("note"))
             elif action == "delete":
                 portal_views.delete_job_note(conn, cid, g("note_id"))
+            elif action == "save_overview":
+                portal_views.save_job_overview(conn, cid, pid, g("note"))
     return RedirectResponse(f"/portal/job?t={quote(t)}&pid={quote(pid)}", status_code=303)
 
 

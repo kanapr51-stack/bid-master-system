@@ -309,7 +309,22 @@ def init_schema():
     _migrate_v126()
     _migrate_v127()
     _migrate_v128()
+    _migrate_v129()
     print(f"Schema v1.13 ready: {DB_PATH}")
+
+
+def _migrate_v129():
+    """job_overview — โน้ตภาพรวม free-form 1 อันต่อ (customer, project) แยกจากไทม์ไลน์. (2026-06-20)"""
+    with get_connection() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS job_overview (
+                customer_id  INTEGER NOT NULL,
+                project_id   TEXT NOT NULL,
+                note         TEXT NOT NULL,
+                created_at   TEXT NOT NULL,
+                updated_at   TEXT,
+                PRIMARY KEY (customer_id, project_id)
+            )""")
 
 
 def _migrate_v128():

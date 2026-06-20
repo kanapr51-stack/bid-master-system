@@ -58,3 +58,14 @@ asyncio.run(_post(urlencode({"t": tok, "pid": "69010000001", "action": "delete",
 body2 = asyncio.run(api.portal_job_get(t=tok, pid="69010000001")).body.decode("utf-8")
 assert "นัดเซ็นสัญญา" not in body2, "ลบแล้วยังอยู่"
 print("OK portal_job_note_post")
+
+# --- POST save_overview → GET แสดงในช่องโน้ตภาพรวม ---
+asyncio.run(_post(urlencode({"t": tok, "pid": "69010000001", "action": "save_overview",
+                             "note": "ภาพรวม__คนติดต่อโยธา__"})))
+bov = asyncio.run(api.portal_job_get(t=tok, pid="69010000001")).body.decode("utf-8")
+assert "ภาพรวม__คนติดต่อโยธา__" in bov, "โน้ตภาพรวมไม่ขึ้น"
+# ว่าง = ลบ
+asyncio.run(_post(urlencode({"t": tok, "pid": "69010000001", "action": "save_overview", "note": "  "})))
+bov2 = asyncio.run(api.portal_job_get(t=tok, pid="69010000001")).body.decode("utf-8")
+assert "ภาพรวม__คนติดต่อโยธา__" not in bov2, "ลบโน้ตภาพรวมแล้วยังอยู่"
+print("OK portal_job_overview_post")

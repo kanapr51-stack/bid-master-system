@@ -9,7 +9,11 @@ import Sebastian_Customer_DB as db
 db.init_schema()
 with db.get_connection() as c:
     cols = [r[1] for r in c.execute("PRAGMA table_info(job_notes)")]
+    ovcols = [r[1] for r in c.execute("PRAGMA table_info(job_overview)")]
 assert cols, "ตาราง job_notes ไม่ถูกสร้าง"
 for need in ["id", "customer_id", "project_id", "entry_date", "note", "created_at", "updated_at"]:
     assert need in cols, f"ขาดคอลัมน์ {need}: {cols}"
+assert ovcols, "ตาราง job_overview ไม่ถูกสร้าง"
+for need in ["customer_id", "project_id", "note", "created_at", "updated_at"]:
+    assert need in ovcols, f"job_overview ขาดคอลัมน์ {need}: {ovcols}"
 print("OK test_job_notes_schema")

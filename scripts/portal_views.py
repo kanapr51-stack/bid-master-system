@@ -182,6 +182,11 @@ _CSS = (
     ".yhead{font-size:14px;font-weight:700;color:#333;margin:14px 0 4px}"
     ".jrow{display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:6px 0;border-bottom:1px solid #f2f2f2}"
     ".jrow .jn{flex:1;color:#1d72b4;text-decoration:none}.jrow .jp{white-space:nowrap;text-align:right;color:#666}"
+    ".ovf{margin:8px 0}"
+    ".ovf textarea{width:100%;box-sizing:border-box;font-size:14px;padding:9px;border:1px solid #ddd;"
+    "border-radius:8px;font-family:inherit;resize:vertical}"
+    ".ovf button{margin-top:6px;font-size:14px;padding:8px 14px;border:0;border-radius:8px;"
+    "background:#1db446;color:#fff}"
     ".nadd{display:flex;gap:6px;margin:8px 0;flex-wrap:wrap}"
     ".nadd input[type=text]{flex:1;min-width:120px}"
     ".nadd input,.nedit input,.nadd button,.nedit button,.ndel button{font-size:14px;padding:7px 9px;border:1px solid #ddd;border-radius:8px}"
@@ -246,7 +251,20 @@ def _render_timeline(pid, tok, notes):
     return "".join(out)
 
 
-def render_job_page(data, token, exp, notes=None):
+def _render_overview(pid, tok, overview):
+    pe = _h.escape(str(pid))
+    return (
+        "<div class=\"bidhead\">📝 โน้ตภาพรวม</div>"
+        "<form class=\"ovf\" method=\"post\" action=\"/portal/job/note\">"
+        f"<input type=\"hidden\" name=\"t\" value=\"{tok}\">"
+        f"<input type=\"hidden\" name=\"pid\" value=\"{pe}\">"
+        "<input type=\"hidden\" name=\"action\" value=\"save_overview\">"
+        f"<textarea name=\"note\" rows=\"4\" placeholder=\"จดภาพรวมงานนี้ เช่น คนติดต่อ งบ เงื่อนไข จุดเด่น...\">"
+        f"{_h.escape(overview or '')}</textarea>"
+        "<button type=\"submit\">💾 บันทึกโน้ต</button></form>")
+
+
+def render_job_page(data, token, exp, notes=None, overview=""):
     tok = _h.escape(token)
     head = _HEAD("รายละเอียดงาน")
     back = f"<a class=\"back\" href=\"/portal?t={tok}\">← งานที่ติดตาม</a>"
@@ -285,6 +303,7 @@ def render_job_page(data, token, exp, notes=None):
                 nmhtml = f"<span class=\"bn\">{i}. {wm}{nm}{sme}</span>"
             b.append(f"<div class=\"{cls}\">{nmhtml}"
                      f"<span class=\"bp\">{_baht(bid['price'])}<br><small>{disc}</small></span></div>")
+    b.append(_render_overview(j["project_id"], tok, overview or ""))
     b.append(_render_timeline(j["project_id"], tok, notes or []))
     return head + "".join(b) + _FOOT
 
@@ -398,3 +417,32 @@ def delete_job_note(conn, customer_id, note_id):
     except (TypeError, ValueError):
         return
     conn.execute("DELETE FROM job_notes WHERE id=? AND customer_id=?", (note_id, customer_id))
+
+
+def get_job_overview(conn, customer_id, pid):
+    """โน้ตภาพรวม free-form ของ user ต่องาน. คืน '' ถ้าไม่มี."""
+    if not customer_id:
+        return ""
+    r = conn.execute(
+        "SELECT note FROM job_overview WHERE customer_id=? AND project_id=?",
+        (customer_id, pid)).fetchone()
+    return (r["note"] if r else "") or ""
+
+
+def save_job_overview(conn, customer_id, pid, note):
+    """upsert โน้ตภาพรวม (1 อันต่อ customer/project). note ว่าง = ลบ."""
+    if not customer_id:
+        return
+    note = (note or "").strip()
+    if not note:
+        conn.execute("DELETE FROM job_overview WHERE customer_id=? AND project_id=?",
+                     (customer_id, pid))
+        return
+    now = _now_th()
+    cur = conn.execute(
+        "UPDATE job_overview SET note=?, updated_at=? WHERE customer_id=? AND project_id=?",
+        (note, now, customer_id, pid))
+    if cur.rowcount == 0:
+        conn.execute(
+            "INSERT INTO job_overview (customer_id, project_id, note, created_at, updated_at) "
+            "VALUES (?,?,?,?,?)", (customer_id, pid, note, now, now))

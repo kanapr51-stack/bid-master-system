@@ -109,4 +109,14 @@ assert "ยังไม่มีรายการ" in ht0, ht0
 # ส่วนผู้ยื่นเดิมยังอยู่
 assert "ผู้ยื่นทั้งหมด" in ht, ht
 print("OK render_job_page_timeline")
+
+# --- render_job_page: โน้ตภาพรวม (free-form textarea) ---
+hov = pv.render_job_page(d, "TOK", 0, [], "งบ 1.5 ล้าน <ติดต่อโยธา>")
+assert "📝 โน้ตภาพรวม" in hov, hov
+assert "name=\"action\" value=\"save_overview\"" in hov, hov
+assert "<textarea" in hov and "งบ 1.5 ล้าน &lt;ติดต่อโยธา&gt;" in hov, "ต้อง prefilled + escape"
+# ไม่มีโน้ตภาพรวม → textarea ว่าง (ยังมี section)
+hov0 = pv.render_job_page(d, "TOK", 0, [])
+assert "📝 โน้ตภาพรวม" in hov0 and "<textarea" in hov0, hov0
+print("OK render_job_page_overview")
 print("OK test_portal_views")

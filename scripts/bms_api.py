@@ -464,10 +464,11 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0, token: str = "") -> str:
     head = (
         "<!doctype html><html lang=\"th\"><head><meta charset=\"utf-8\">"
         "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
-        "<title>งานที่ติดตาม</title><style>"
+        "<title>BMS Bid Board</title><style>"
         "body{font-family:-apple-system,'Segoe UI',sans-serif;margin:0;padding:18px;background:#f5f6f8;color:#222}"
         ".wrap{max-width:480px;margin:0 auto}"
-        ".h{font-size:19px;font-weight:700;margin:4px 0 14px}"
+        ".h{font-size:20px;font-weight:800;margin:4px 0 2px}"
+        ".sub{font-size:14px;font-weight:600;color:#777;margin:0 0 14px}"
         ".search{width:100%;box-sizing:border-box;padding:11px 14px;font-size:15px;"
         "border:1px solid #ddd;border-radius:12px;margin:0 0 6px;outline:none}"
         ".search:focus{border-color:#1d72b4}"
@@ -491,7 +492,8 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0, token: str = "") -> str:
     )
     foot = "</div></body></html>"
     n = sum(len(v) for v in groups.values())
-    body = [f"<div class=\"h\">🗂 งานที่คุณติดตาม ({n})</div>"]
+    body = ["<div class=\"h\">🗂 BMS Bid Board</div>",
+            f"<div class=\"sub\">งานที่คุณติดตาม ({n})</div>"]
     if n == 0:
         body.append("<div class=\"msg\">ยังไม่มีงานที่ติดตาม — กดดาว ⭐ ในข้อความแจ้งเตือนเพื่อเริ่มติดตามครับ</div>")
         return head + "".join(body) + foot
@@ -1147,8 +1149,8 @@ async def line_webhook(
                     "\U0001f4cd กรุณาพิมพ์จังหวัดที่ต้องการติดตามครับ\n\nถ้าหลายจังหวัด คั่นด้วยจุลภาค\nเช่น: นครพนม, บึงกาฬ",
                 )
 
-            elif text_lower in ("งานของฉัน", "งานที่ติดตาม", "portal", "พอร์ทัล", "ติดตาม"):
-                await reply_message(reply_token, "🗂 ดูงานที่ติดตามทั้งหมด:\n" + _portal_link(user_id))
+            elif text_lower in ("งานของฉัน", "งานที่ติดตาม", "portal", "พอร์ทัล", "ติดตาม", "bid board", "board"):
+                await reply_message(reply_token, "🗂 เปิด BMS Bid Board — งานที่ติดตามทั้งหมด:\n" + _portal_link(user_id))
 
             else:
                 await reply_message(

@@ -971,3 +971,13 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 ### Followup (ค้าง)
 - **🐛 root-cause (defer):** ซ่อม CGD ingestion column-misalignment → winner_tin ถูก → re-sync → กลับไป join ด้วย tin (key ที่ถูก) ดู memory [[project_winner_tin_corruption]]
 - name-join miss eGP typo (กิจการร่่วมค้า ่ ซ้ำ / ดีเวลอเมนท์) — ยอมรับได้ตอนนี้
+
+## งานที่ N+158: ตั้งชื่อเว็บ portal = "BMS Bid Board" (2026-06-20)
+
+### สถานะ: ✅ LIVE
+
+### สิ่งที่ทำ
+- brainstorm ชื่อกับกัญจน์ → เลือก **BMS Bid Board** (กระดานงานประมูลที่ติดตาม)
+- `_portal_page_html`: `<title>` + หัวเว็บ "🗂 BMS Bid Board" + sub "งานที่คุณติดตาม (N)" (เพิ่ม `.sub` CSS)
+- LINE reply พิมพ์ "bid board"/"board" ก็เปิดได้ + ข้อความ "เปิด BMS Bid Board — ..."
+- deploy bms_api.py → hash==local → restart active → render verify title+header ผ่าน

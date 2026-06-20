@@ -696,6 +696,29 @@ def save_job_overview(conn, customer_id, pid, note):
             "VALUES (?,?,?,?,?)", (customer_id, pid, note, now, now))
 
 
+def toggle_star(conn, customer_id, pid):
+    """สลับ ⭐ 'ที่สนใจ' (ชั้นที่ 2, แยกจาก followed_jobs.starred_at) ของ (customer, project).
+    คืนสถานะใหม่ (True=ติดดาวแล้ว). no-op คืน False ถ้าไม่มี customer."""
+    if not customer_id:
+        return False
+    row = conn.execute(
+        "SELECT 1 FROM job_stars WHERE customer_id=? AND project_id=?", (customer_id, pid)).fetchone()
+    if row:
+        conn.execute("DELETE FROM job_stars WHERE customer_id=? AND project_id=?", (customer_id, pid))
+        return False
+    conn.execute("INSERT INTO job_stars (customer_id, project_id, created_at) VALUES (?,?,?)",
+                 (customer_id, pid, _now_th()))
+    return True
+
+
+def starred_project_ids(conn, customer_id):
+    """set ของ project_id ที่ user ติดดาว 'ที่สนใจ' ไว้. คืน set() ถ้าไม่มี customer."""
+    if not customer_id:
+        return set()
+    rows = conn.execute("SELECT project_id FROM job_stars WHERE customer_id=?", (customer_id,)).fetchall()
+    return {r["project_id"] for r in rows}
+
+
 def head_to_head(conn, our_tin, competitor_tin):
     """เทียบ 'เรา' (our_tin) กับคู่แข่ง (competitor_tin) เฉพาะงานที่ยื่นด้วยกัน.
     คืน {our_name, shared, our_wins, their_wins, other, jobs:[{project_id,name,our_price,

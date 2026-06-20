@@ -455,6 +455,10 @@ def _portal_jobs(user_id: str):
                 groups["bidding"].append(job)
             else:
                 groups["pre"].append(job)
+        starred = portal_views.starred_project_ids(conn, cid)
+        for g in groups.values():
+            for job in g:
+                job["starred"] = job["project_id"] in starred
         return groups
 
 
@@ -478,10 +482,14 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0, token: str = "") -> str:
         ".fchip{font:inherit;font-size:13px;padding:6px 11px;border-radius:14px;background:#eef0f3;"
         "color:#999;cursor:pointer;user-select:none;border:1px solid transparent;white-space:nowrap;"
         "-webkit-appearance:none;appearance:none}"
-        ".fchip.on{background:#fff;color:#1d72b4;border-color:#1d72b4;font-weight:600}"
+        ".stagechip{font:inherit;font-size:13px;padding:6px 11px;border-radius:14px;background:#eef0f3;"
+        "color:#999;cursor:pointer;user-select:none;border:1px solid transparent;white-space:nowrap;"
+        "-webkit-appearance:none;appearance:none}"
+        ".fchip.on,.stagechip.on{background:#fff;color:#1d72b4;border-color:#1d72b4;font-weight:600}"
         ".nohit{font-size:14px;color:#999;margin:14px 0;display:none}"
         ".grp{font-size:14px;font-weight:700;color:#555;margin:16px 0 8px}"
-        ".job{background:#fff;border-radius:14px;padding:14px 16px;margin:8px 0;box-shadow:0 2px 10px rgba(0,0,0,.06)}"
+        ".job{position:relative;background:#fff;border-radius:14px;padding:14px 16px;margin:8px 0;box-shadow:0 2px 10px rgba(0,0,0,.06)}"
+        ".star{position:absolute;top:10px;right:12px;font-size:18px;text-decoration:none;line-height:1;z-index:1}"
         ".jn{font-size:15px;font-weight:600;margin:0 0 2px}"
         ".jid{font-size:12px;color:#aaa;margin:0 0 4px}"
         ".meta{font-size:13px;color:#888;margin:3px 0}"
@@ -514,10 +522,14 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0, token: str = "") -> str:
     for key, clabel in (("bidding", "🔵 ยื่นซอง"), ("prelim", "📊 สรุปราคา"),
                         ("pre", "🟣 ประชาวิจารณ์"), ("won", "🏆 ผู้ชนะ")):
         if groups.get(key):
-            chips.append(f"<button type=\"button\" class=\"fchip\" data-key=\"{key}\">{clabel}</button>")
+            chips.append(f"<button type=\"button\" class=\"stagechip\" data-key=\"{key}\">{clabel}</button>")
+    filter_html = ""
     if len(chips) > 1:
-        allchip = "<button type=\"button\" class=\"fchip on\" data-key=\"all\">ทั้งหมด</button>"
-        body.append("<div class=\"filters\">" + allchip + "".join(chips) + "</div>")
+        allchip = "<button type=\"button\" class=\"stagechip on\" data-key=\"all\">ทั้งหมด</button>"
+        filter_html += allchip + "".join(chips)
+    # ⭐ ที่สนใจ — toggle อิสระ ไม่รวมกับ single-select stage ด้านบน (คนละชั้นกับ ⭐ ติดตามเดิม)
+    filter_html += "<button type=\"button\" id=\"starchip\" class=\"fchip\">⭐ ที่สนใจ</button>"
+    body.append("<div class=\"filters\">" + filter_html + "</div>")
     body.append("<div id=\"nohit\" class=\"nohit\">ไม่พบงานที่ตรงกับคำค้น</div>")
 
     def _baht(x):
@@ -554,8 +566,14 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0, token: str = "") -> str:
             L.append("<div class=\"dots\">●━━○━━○<span class=\"badge bp\">รับฟังคำประชาวิจารณ์</span></div>")
         if kind != "won":
             L.append("<div class=\"more\">ดูรายละเอียด →</div>")
-        href = f"/portal/job?t={_h.escape(token)}&pid={_h.escape(str(j['project_id']))}"
-        return f"<a class=\"job joblink\" href=\"{href}\">" + "".join(L) + "</a>"
+        pid_esc = _h.escape(str(j["project_id"]))
+        href = f"/portal/job?t={_h.escape(token)}&pid={pid_esc}"
+        star_href = f"/portal/star_toggle?t={_h.escape(token)}&pid={pid_esc}&back=board"
+        star_icon = "⭐" if j.get("starred") else "☆"
+        star_link = f"<a class=\"star\" href=\"{star_href}\">{star_icon}</a>"
+        joblink = f"<a class=\"joblink\" href=\"{href}\">" + "".join(L) + "</a>"
+        starred_attr = "1" if j.get("starred") else "0"
+        return f"<div class=\"job\" data-starred=\"{starred_attr}\">{star_link}{joblink}</div>"
 
     for key, label in (("bidding", "🔵 ประกาศวันยื่นซอง"), ("prelim", "📊 สรุปราคาเบื้องต้น"),
                        ("pre", "🟣 รับฟังคำประชาวิจารณ์"), ("won", "🏆 ประกาศผู้ชนะทางการ")):
@@ -568,13 +586,14 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0, token: str = "") -> str:
     body.append(
         "<script>(function(){"
         "var q=document.getElementById('q'),nh=document.getElementById('nohit');"
-        "var chips=Array.prototype.slice.call(document.querySelectorAll('.fchip')),sel='all';"
+        "var chips=Array.prototype.slice.call(document.querySelectorAll('.stagechip')),sel='all';"
+        "var starchip=document.getElementById('starchip'),starOnly=false;"
         "function apply(){"
         "var s=q?q.value.trim().toLowerCase():'',tot=0;"
         "document.querySelectorAll('.gw').forEach(function(g){"
         "var k=g.getAttribute('data-key'),v=0;"
         "g.querySelectorAll('.job').forEach(function(c){"
-        "var hit=!s||c.textContent.toLowerCase().indexOf(s)>=0;"
+        "var hit=(!s||c.textContent.toLowerCase().indexOf(s)>=0)&&(!starOnly||c.getAttribute('data-starred')==='1');"
         "c.style.display=hit?'':'none';if(hit)v++;});"
         "var show=(sel==='all'||sel===k)&&v>0;"
         "g.style.display=show?'':'none';if(show)tot+=v;});"
@@ -583,6 +602,8 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0, token: str = "") -> str:
         "chips.forEach(function(c){c.addEventListener('click',function(){"
         "sel=c.getAttribute('data-key');"
         "chips.forEach(function(x){x.classList.toggle('on',x===c);});apply();});});"
+        "if(starchip)starchip.addEventListener('click',function(){"
+        "starOnly=!starOnly;starchip.classList.toggle('on',starOnly);apply();});"
         "apply();})();</script>")
     return head + "".join(body) + foot
 

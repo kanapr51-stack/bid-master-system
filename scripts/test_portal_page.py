@@ -54,3 +54,14 @@ assert "querySelectorAll('.gw')" in h, "ไม่มี JS filter"
 h0 = api._portal_page_html({"won": [], "bidding": [], "pre": []}, 0, "TOK")
 assert "ยังไม่มีงานที่ติดตาม" in h0 and "class=\"search\"" not in h0, h0
 print("OK test_portal_page")
+
+# --- ⭐ ที่สนใจ: ปุ่มดาวบนการ์ด + ชิป filter อิสระ ---
+groups2 = dict(groups)
+groups2["bidding"] = [dict(groups["bidding"][0], starred=True)]
+groups2["pre"] = [dict(groups["pre"][0], starred=False)]
+h2 = api._portal_page_html(groups2, 2000000000, "TOK")
+assert "id=\"starchip\"" in h2 and "⭐ ที่สนใจ" in h2, "ต้องมีชิป filter ดาว"
+assert "data-starred=\"1\"" in h2 and "data-starred=\"0\"" in h2, h2
+assert "/portal/star_toggle?t=TOK&pid=PD&back=board" in h2, "ต้องมีลิงก์ toggle จากการ์ด"
+assert "class=\"stagechip\"" in h2, "ชิป stage เดิมต้องมี class แยกจากดาว"
+print("OK test_portal_page_star")

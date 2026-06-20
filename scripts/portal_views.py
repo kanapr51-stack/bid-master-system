@@ -3,6 +3,40 @@ Query bms_customers.db (bid_results + projects_seen) — รับ conn จา�
 Render มือถือ-first, กราฟ inline CSS bar (ไม่พึ่ง chart lib)."""
 import html as _h
 import sqlite3
+from datetime import datetime, timezone, timedelta
+
+TZ_TH = timezone(timedelta(hours=7))
+_TH_MONTHS = ["", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+              "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."]
+
+
+def _fmt_date_th(s):
+    """'YYYY-MM-DD' → 'D ด. พ.ศ.'. parse ไม่ได้ → คืนค่าเดิม."""
+    if not s:
+        return ""
+    try:
+        d = datetime.fromisoformat(str(s)[:10]).date()
+    except (ValueError, TypeError):
+        return s
+    return f"{d.day} {_TH_MONTHS[d.month]} {d.year + 543}"
+
+
+def _countdown_th(s):
+    """'YYYY-MM-DD' → นับถอยหลังถึงวันยื่นซอง (tz ไทย). parse ไม่ได้ → ''."""
+    if not s:
+        return ""
+    try:
+        d = datetime.fromisoformat(str(s)[:10]).date()
+    except (ValueError, TypeError):
+        return ""
+    days = (d - datetime.now(TZ_TH).date()).days
+    if days < 0:
+        return "เลยกำหนดแล้ว"
+    if days == 0:
+        return "วันนี้วันสุดท้าย!"
+    if days == 1:
+        return "พรุ่งนี้วันสุดท้าย"
+    return f"เหลืออีก {days} วัน"
 
 
 def _to_float(v):
@@ -35,19 +69,30 @@ def job_detail(conn, pid):
     if not rows and not ps:
         return None
     budget = (ps["budget"] if ps else 0) or 0
-    loc = ""
+    loc, deadline = "", None
     try:
         l = conn.execute(
-            "SELECT moi_name, province_name FROM project_locations WHERE project_id=?",
+            "SELECT moi_name, province_name, deadline FROM project_locations WHERE project_id=?",
             (pid,)).fetchone()
         if l:
             moi = (l["moi_name"] or "") if "moi_name" in l.keys() else ""
             prov = (l["province_name"] or "") if "province_name" in l.keys() else ""
             loc = ((f"ต.{moi} " if moi else "") + (f"จ.{prov}" if prov else "")).strip()
+            deadline = (l["deadline"] if "deadline" in l.keys() else None) or None
     except sqlite3.OperationalError:
-        loc = ""
+        loc, deadline = "", None
     if not loc and ps and ps["province"]:
         loc = f"จ.{ps['province']}"
+    pred_lo = pred_hi = None
+    try:
+        pr = conn.execute(
+            "SELECT area_price_lo, area_price_hi FROM price_predictions WHERE project_id=?",
+            (pid,)).fetchone()
+        if pr:
+            pred_lo = _to_float(pr["area_price_lo"])
+            pred_hi = _to_float(pr["area_price_hi"])
+    except sqlite3.OperationalError:
+        pred_lo = pred_hi = None
     bidders = []
     for r in rows:
         price = _to_float(r["price_proposal"])
@@ -59,7 +104,8 @@ def job_detail(conn, pid):
             "discount": _discount(price, budget)})
     bidders.sort(key=lambda b: (not b["is_winner"], b["price"] is None, b["price"] or 0))
     return {"job": {"project_id": pid, "name": (ps["project_name"] if ps else "") or pid,
-                    "location": loc, "budget": budget}, "bidders": bidders}
+                    "location": loc, "budget": budget, "deadline": deadline,
+                    "pred_lo": pred_lo, "pred_hi": pred_hi}, "bidders": bidders}
 
 
 def company_profile(conn, tin):
@@ -113,6 +159,8 @@ _CSS = (
     ".h{font-size:18px;font-weight:700;margin:2px 0 4px}"
     ".jid{font-size:12px;color:#aaa;margin:0 0 6px}"
     ".meta{font-size:13px;color:#777;margin:3px 0}"
+    ".dl{font-size:13px;color:#d9534f;margin:3px 0}"
+    ".cd{font-size:13px;font-weight:600;color:#1d72b4;margin:3px 0}"
     ".msg{font-size:15px;color:#555;margin:14px 0}"
     ".bidhead{font-size:14px;font-weight:700;color:#555;margin:16px 0 6px}"
     ".brow{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:8px 0;border-bottom:1px solid #eee}"
@@ -163,6 +211,17 @@ def render_job_page(data, token, exp):
         b.append(f"<div class=\"meta\">📍 {_h.escape(j['location'])}</div>")
     if j["budget"]:
         b.append(f"<div class=\"meta\">💰 ราคากลาง {_baht(j['budget'])} บาท</div>")
+    if j.get("deadline"):
+        b.append(f"<div class=\"dl\">⏰ ยื่นซอง {_h.escape(_fmt_date_th(j['deadline']))}</div>")
+        cd = _countdown_th(j["deadline"])
+        if cd:
+            b.append(f"<div class=\"cd\">⏳ {cd}</div>")
+    if j.get("pred_lo") and j.get("pred_hi"):
+        b.append(f"<div class=\"meta\">💵 คาดราคา {_baht(j['pred_lo'])}–{_baht(j['pred_hi'])} บาท</div>")
+    if not data["bidders"]:
+        b.append("<div class=\"bidhead\">ยังไม่มีผู้ยื่น</div>")
+        b.append("<div class=\"msg\">งานนี้ยังไม่มีข้อมูลผู้ยื่น — รอประมูล/ประกาศผล</div>")
+        return head + "".join(b) + _FOOT
     b.append(f"<div class=\"bidhead\">ผู้ยื่นทั้งหมด ({len(data['bidders'])} ราย)</div>")
     for i, bid in enumerate(data["bidders"], 1):
         wm = "🏆 " if bid["is_winner"] else ""

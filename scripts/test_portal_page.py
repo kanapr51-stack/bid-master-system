@@ -35,10 +35,13 @@ assert "679,000" in h, h
 assert "สรุปราคาเบื้องต้น" in h and "ราคาต่ำสุดที่เสนอ 738,000 บาท (3 ราย)" in h, h
 assert "ประกาศผู้ชนะทางการ" in h and "ประกาศผล</span>" not in h, h
 assert "หจก.X" in h and "738,000" in h and "ลด 26%" in h, h
-# won card = ลิงก์ไปหน้า detail (ไม่ใช่ expand inline)
+# ทุกกลุ่มเป็นลิงก์ไปหน้า detail (won + bidding + prelim + pre)
 assert "/portal/job?t=TOK&pid=PW" in h, "การ์ด won ต้องลิงก์ไป detail"
-assert "ดูผู้ยื่นทั้งหมด" in h and "querySelectorAll('.clickable')" not in h, h
-assert "class=\"detail\"" not in h, "ต้องไม่มี expand inline แล้ว"
+assert "/portal/job?t=TOK&pid=PD" in h, "การ์ด bidding ต้องลิงก์ไป detail"
+assert "/portal/job?t=TOK&pid=PP" in h, "การ์ด prelim ต้องลิงก์ไป detail"
+assert "/portal/job?t=TOK&pid=PB" in h, "การ์ด pre ต้องลิงก์ไป detail"
+assert "ดูผู้ยื่นทั้งหมด" in h and "ดูรายละเอียด" in h, h
+assert "querySelectorAll('.clickable')" not in h and "class=\"detail\"" not in h, h
 # req5: pre label เปลี่ยน
 assert "รับฟังคำประชาวิจารณ์" in h and "รับฟังความเห็น" not in h, h
 # escape ยังทำงาน (ชื่องาน escape — script injection ในชื่อต้องไม่หลุด)

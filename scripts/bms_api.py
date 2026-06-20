@@ -533,10 +533,10 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0, token: str = "") -> str:
             L.append("<div class=\"more\">ดูผู้ยื่นทั้งหมด →</div>")
         else:
             L.append("<div class=\"dots\">●━━○━━○<span class=\"badge bp\">รับฟังคำประชาวิจารณ์</span></div>")
-        if kind == "won":
-            href = f"/portal/job?t={_h.escape(token)}&pid={_h.escape(str(j['project_id']))}"
-            return f"<a class=\"job joblink\" href=\"{href}\">" + "".join(L) + "</a>"
-        return "<div class=\"job\">" + "".join(L) + "</div>"
+        if kind != "won":
+            L.append("<div class=\"more\">ดูรายละเอียด →</div>")
+        href = f"/portal/job?t={_h.escape(token)}&pid={_h.escape(str(j['project_id']))}"
+        return f"<a class=\"job joblink\" href=\"{href}\">" + "".join(L) + "</a>"
 
     for key, label in (("bidding", "🔵 ประกาศวันยื่นซอง"), ("prelim", "📊 สรุปราคาเบื้องต้น"),
                        ("pre", "🟣 รับฟังคำประชาวิจารณ์"), ("won", "🏆 ประกาศผู้ชนะทางการ")):

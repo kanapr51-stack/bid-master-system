@@ -16,4 +16,7 @@ for need in ["id", "customer_id", "project_id", "entry_date", "note", "created_a
 assert ovcols, "ตาราง job_overview ไม่ถูกสร้าง"
 for need in ["customer_id", "project_id", "note", "created_at", "updated_at"]:
     assert need in ovcols, f"job_overview ขาดคอลัมน์ {need}: {ovcols}"
+with db.get_connection() as c:
+    custcols = [r[1] for r in c.execute("PRAGMA table_info(customers)")]
+assert "company_tin" in custcols, f"customers ขาด company_tin: {custcols}"
 print("OK test_job_notes_schema")

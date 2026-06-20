@@ -310,7 +310,17 @@ def init_schema():
     _migrate_v127()
     _migrate_v128()
     _migrate_v129()
+    _migrate_v130()
     print(f"Schema v1.13 ready: {DB_PATH}")
+
+
+def _migrate_v130():
+    """customers +company_tin — บริษัทของ tenant (ใช้ทำมุมเทียบ head-to-head). NULL = ยังไม่ตั้ง. (2026-06-20)"""
+    with get_connection() as conn:
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN company_tin TEXT")
+        except sqlite3.OperationalError:
+            pass  # already exists
 
 
 def _migrate_v129():

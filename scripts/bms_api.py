@@ -980,7 +980,10 @@ async def portal_company_get(t: str = "", tin: str = "", from_: str = Query("", 
         return HTMLResponse(_follow_page_html(t, "invalid", {}, "", 0))
     with get_conn() as conn:
         data = portal_views.company_profile(conn, tin)
-    return HTMLResponse(portal_views.render_company_page(data, t, from_, v[2]))
+        cust = conn.execute("SELECT company_tin FROM customers WHERE line_user_id=?", (v[0],)).fetchone()
+        our_tin = (cust["company_tin"] if cust and "company_tin" in cust.keys() else None) or None
+        h2h = portal_views.head_to_head(conn, our_tin, tin) if our_tin else None
+    return HTMLResponse(portal_views.render_company_page(data, t, from_, v[2], h2h))
 
 
 @app.post("/portal/job/note")

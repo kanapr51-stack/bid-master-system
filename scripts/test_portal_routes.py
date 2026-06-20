@@ -69,3 +69,17 @@ asyncio.run(_post(urlencode({"t": tok, "pid": "69010000001", "action": "save_ove
 bov2 = asyncio.run(api.portal_job_get(t=tok, pid="69010000001")).body.decode("utf-8")
 assert "ภาพรวม__คนติดต่อโยธา__" not in bov2, "ลบโน้ตภาพรวมแล้วยังอยู่"
 print("OK portal_job_overview_post")
+
+# --- head-to-head ในหน้า company (resolve company_tin ของ viewer) ---
+with _db.get_connection() as _c:
+    _c.execute("INSERT INTO bid_results (project_id,bidder_name,bidder_tin,price_proposal,price_agree,is_winner,is_sme,fetched_at) "
+               "VALUES ('69010000001','หจก.บีของเรา','TB','850000','',0,0,'t')")
+    _c.execute("UPDATE customers SET company_tin='TB' WHERE line_user_id='U'")
+bh = asyncio.run(api.portal_company_get(t=tok, tin="T1", from_="69010000001")).body.decode("utf-8")
+assert "⚔️ เทียบกับ หจก.บีของเรา" in bh and "เจอกัน" in bh, bh[:500]
+# viewer ไม่ตั้ง company_tin → ไม่มี section
+with _db.get_connection() as _c:
+    _c.execute("UPDATE customers SET company_tin=NULL WHERE line_user_id='U'")
+bh0 = asyncio.run(api.portal_company_get(t=tok, tin="T1", from_="69010000001")).body.decode("utf-8")
+assert "⚔️" not in bh0, "ไม่ตั้ง company_tin ต้องไม่โชว์ h2h"
+print("OK portal_company_h2h")

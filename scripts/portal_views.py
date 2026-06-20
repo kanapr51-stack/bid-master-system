@@ -315,7 +315,26 @@ def _bar(lab, value, maxv, color, val_txt):
             f"<span class=\"val\">{val_txt}</span></div>")
 
 
-def render_company_page(data, token, from_pid, exp):
+def _render_h2h(h2h):
+    """section ⚔️ เทียบกับเรา (head-to-head)."""
+    win_pct = round(h2h["our_wins"] / h2h["shared"] * 100) if h2h["shared"] else 0
+    out = [f"<div class=\"chart\"><div class=\"ct\">⚔️ เทียบกับ {_h.escape(h2h['our_name'])}</div>",
+           "<div class=\"stats\">"
+           f"<div class=\"stat\"><b>{h2h['shared']}</b><span>เจอกัน</span></div>"
+           f"<div class=\"stat\"><b>{h2h['our_wins']}</b><span>เราชนะ</span></div>"
+           f"<div class=\"stat\"><b>{h2h['their_wins']}</b><span>เขาชนะ</span></div>"
+           f"<div class=\"stat\"><b>{win_pct}%</b><span>เราชนะ%</span></div>"
+           "</div>"]
+    for j in h2h["jobs"][:10]:
+        mark = {"us": "🟢 เราชนะ", "them": "🔴 เขาชนะ", "other": "⚪ รายอื่นชนะ"}[j["winner_side"]]
+        out.append(
+            f"<div class=\"jrow\"><span class=\"jn\">{_h.escape(j['name'])}</span></div>"
+            f"<div class=\"meta\">{mark} · เรา {_baht(j['our_price'])} / เขา {_baht(j['their_price'])}</div>")
+    out.append("</div>")
+    return "".join(out)
+
+
+def render_company_page(data, token, from_pid, exp, h2h=None):
     tok = _h.escape(token)
     head = _HEAD("ประวัติบริษัท")
     if from_pid:
@@ -334,6 +353,9 @@ def render_company_page(data, token, from_pid, exp):
              f"<div class=\"stat\"><b>{data['win_rate']:.0f}%</b><span>win-rate</span></div>"
              f"<div class=\"stat\"><b>{len(data['provinces'])}</b><span>จังหวัด</span></div>"
              "</div>")
+    # ⚔️ เทียบกับเรา (head-to-head) — โชว์เฉพาะมี company_tin + เจอกัน
+    if h2h:
+        b.append(_render_h2h(h2h))
     # chart 1: ยื่น/ชนะ รายปี
     maxb = max([g["bids"] for g in data["by_year"]] or [1])
     rows1 = []
@@ -446,3 +468,40 @@ def save_job_overview(conn, customer_id, pid, note):
         conn.execute(
             "INSERT INTO job_overview (customer_id, project_id, note, created_at, updated_at) "
             "VALUES (?,?,?,?,?)", (customer_id, pid, note, now, now))
+
+
+def head_to_head(conn, our_tin, competitor_tin):
+    """เทียบ 'เรา' (our_tin) กับคู่แข่ง (competitor_tin) เฉพาะงานที่ยื่นด้วยกัน.
+    คืน {our_name, shared, our_wins, their_wins, other, jobs:[{project_id,name,our_price,
+    their_price,winner_side}]} | None (ไม่มี tin / tin เดียวกัน / ไม่มีงานเจอกัน)."""
+    if not our_tin or not competitor_tin or our_tin == competitor_tin:
+        return None
+    rows = conn.execute(
+        "SELECT br.project_id, br.bidder_tin, br.bidder_name, br.price_proposal, br.is_winner, "
+        "ps.project_name "
+        "FROM bid_results br LEFT JOIN projects_seen ps ON ps.project_id = br.project_id "
+        "WHERE br.bidder_tin IN (?, ?)", (our_tin, competitor_tin)).fetchall()
+    our_name = next((r["bidder_name"] for r in rows if r["bidder_tin"] == our_tin and r["bidder_name"]), "")
+    byproj = {}
+    for r in rows:
+        p = byproj.setdefault(r["project_id"], {"name": r["project_name"] or r["project_id"],
+                                                "us": None, "them": None})
+        side = "us" if r["bidder_tin"] == our_tin else "them"
+        p[side] = {"price": _to_float(r["price_proposal"]), "is_winner": bool(r["is_winner"])}
+    shared = [(pid, v) for pid, v in byproj.items() if v["us"] and v["them"]]
+    if not shared:
+        return None
+    jobs = []
+    our_wins = their_wins = other = 0
+    for pid, v in shared:
+        if v["us"]["is_winner"]:
+            wside = "us"; our_wins += 1
+        elif v["them"]["is_winner"]:
+            wside = "them"; their_wins += 1
+        else:
+            wside = "other"; other += 1
+        jobs.append({"project_id": pid, "name": v["name"], "our_price": v["us"]["price"],
+                     "their_price": v["them"]["price"], "winner_side": wside})
+    jobs.sort(key=lambda j: j["project_id"], reverse=True)
+    return {"our_name": our_name or "บริษัทเรา", "shared": len(shared), "our_wins": our_wins,
+            "their_wins": their_wins, "other": other, "jobs": jobs}

@@ -119,4 +119,25 @@ assert "<textarea" in hov and "งบ 1.5 ล้าน &lt;ติดต่อโ
 hov0 = pv.render_job_page(d, "TOK", 0, [])
 assert "📝 โน้ตภาพรวม" in hov0 and "<textarea" in hov0, hov0
 print("OK render_job_page_overview")
+
+# --- head_to_head (เทียบเรา vs คู่แข่ง เฉพาะงานที่ยื่นด้วยกัน) ---
+c = _seed()   # 69010000001: T1(ชนะ 900k) + T2(800k) ยื่นด้วยกัน
+h = pv.head_to_head(c, "T1", "T2")
+assert h["shared"] == 1 and h["our_wins"] == 1 and h["their_wins"] == 0, h
+assert h["jobs"][0]["winner_side"] == "us", h
+assert h["jobs"][0]["our_price"] == 900000.0 and h["jobs"][0]["their_price"] == 800000.0, h
+assert h["our_name"] == "หจก.เอ", h
+assert pv.head_to_head(c, "T1", "T1") is None, "tin เดียวกันต้อง None"
+assert pv.head_to_head(c, None, "T2") is None
+assert pv.head_to_head(c, "T1", "TZZZ") is None, "ไม่เจอกันต้อง None"
+print("OK head_to_head")
+
+# render company page + h2h section
+p = pv.company_profile(c, "T2")
+hc = pv.render_company_page(p, "TOK", "69010000001", 0, h)
+assert "⚔️ เทียบกับ หจก.เอ" in hc and "เจอกัน" in hc, hc
+assert "🟢 เราชนะ" in hc, hc
+hc0 = pv.render_company_page(p, "TOK", "69010000001", 0, None)
+assert "⚔️" not in hc0, "ไม่มี h2h ต้องไม่โชว์ section"
+print("OK render_company_h2h")
 print("OK test_portal_views")

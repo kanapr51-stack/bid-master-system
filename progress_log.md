@@ -798,4 +798,23 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 ### Followup
 - Phase 2: (1) เพิ่ม map customers→บริษัท tenant (มุมเทียบ "เรา") (2) parse อำเภอ/ตำบลจากชื่องาน (ส่วนลดแยกพื้นที่)
 - cleanup เล็ก (ไม่บล็อก): `agree` field ใน job_detail ไม่ถูกใช้, `_baht` ซ้ำ bms_api/portal_views
-- การ์ดกลุ่มอื่น (bidding/prelim) ยังไม่ลิงก์ — กัญจน์บอกเฉพาะ won ก่อน
+- ~~การ์ดกลุ่มอื่น (bidding/prelim) ยังไม่ลิงก์~~ → ทำใน N+151
+
+## งานที่ N+151: Portal Polish A — ทุกกลุ่มการ์ดลิงก์ detail + detail ปรับตาม stage (2026-06-20)
+
+### สถานะ: ✅ เสร็จ + LIVE
+
+### สิ่งที่ทำ
+- `_card` (bms_api): bidding/prelim/pre เป็นลิงก์ `/portal/job` ด้วย (เดิมเฉพาะ won) + hint "ดูรายละเอียด →"
+- `job_detail` (portal_views): คืน `deadline` (project_locations) + `pred_lo/pred_hi` (price_predictions) — ทั้งคู่ try/except OperationalError กัน dev DB ไม่มี column/table
+- `render_job_page`: โชว์ ⏰ยื่นซอง + ⏳countdown + 💵คาดราคา ตามที่มี; งานไม่มีผู้ยื่น → "ยังไม่มีผู้ยื่น" แทนตารางว่าง
+- เพิ่ม `_fmt_date_th`/`_countdown_th` + TZ_TH ใน portal_views (dup เล็กกัน import bms_api)
+
+### Verify
+- 4 test suites PASS (เพิ่มเคส `render_job_page_bidding` + ทุกกลุ่มลิงก์ใน test_portal_page) + compile OK
+- deploy scp 2 ไฟล์ → hash ตรง HEAD (bms_api 5739e59, portal_views 82f49ad), active, import OK
+- e2e จริง: งาน 68109435680 (deadline ผ่านแล้ว, 0 ผู้ยื่น) → "ยังไม่มีผู้ยื่น" + ยื่นซอง + countdown ✓; search filter ยังทำงาน
+- commit bc7da7f · backup `.bak_20260620_133443`
+
+### Followup
+- Polish B (โน้ตต่องาน write path) ยังไม่ทำ — ก้อนแยก (ตารางใหม่ + POST + auth)

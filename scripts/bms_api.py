@@ -472,6 +472,11 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0, token: str = "") -> str:
         ".search{width:100%;box-sizing:border-box;padding:11px 14px;font-size:15px;"
         "border:1px solid #ddd;border-radius:12px;margin:0 0 6px;outline:none}"
         ".search:focus{border-color:#1d72b4}"
+        ".filters{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 12px}"
+        ".fchip{font-size:13px;padding:6px 11px;border-radius:14px;background:#eef0f3;color:#999;"
+        "cursor:pointer;user-select:none;border:1px solid transparent;white-space:nowrap}"
+        ".fchip.on{background:#fff;color:#1d72b4;border-color:#1d72b4;font-weight:600}"
+        ".fchip input{display:none}"
         ".nohit{font-size:14px;color:#999;margin:14px 0;display:none}"
         ".grp{font-size:14px;font-weight:700;color:#555;margin:16px 0 8px}"
         ".job{background:#fff;border-radius:14px;padding:14px 16px;margin:8px 0;box-shadow:0 2px 10px rgba(0,0,0,.06)}"
@@ -501,6 +506,15 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0, token: str = "") -> str:
     body.append(
         "<input id=\"q\" class=\"search\" type=\"search\" autocomplete=\"off\" "
         "placeholder=\"🔍 ค้นหางาน (ชื่อ / ID / พื้นที่)\">")
+    # ชิป filter ติ๊กเลือกประเภทงานที่อยากดู (เฉพาะประเภทที่มีงาน) — default ติ๊กครบ
+    chips = []
+    for key, clabel in (("bidding", "🔵 ยื่นซอง"), ("prelim", "📊 สรุปราคา"),
+                        ("pre", "🟣 ประชาวิจารณ์"), ("won", "🏆 ผู้ชนะ")):
+        if groups.get(key):
+            chips.append(f"<label class=\"fchip on\"><input type=\"checkbox\" class=\"fck\" "
+                         f"data-key=\"{key}\" checked>{clabel}</label>")
+    if len(chips) > 1:
+        body.append("<div class=\"filters\">" + "".join(chips) + "</div>")
     body.append("<div id=\"nohit\" class=\"nohit\">ไม่พบงานที่ตรงกับคำค้น</div>")
 
     def _baht(x):
@@ -544,21 +558,29 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0, token: str = "") -> str:
                        ("pre", "🟣 รับฟังคำประชาวิจารณ์"), ("won", "🏆 ประกาศผู้ชนะทางการ")):
         if groups.get(key):
             cards = "".join(_card(j, key) for j in groups[key])
-            body.append(f"<div class=\"gw\"><div class=\"grp\">{label} ({len(groups[key])})</div>{cards}</div>")
+            body.append(f"<div class=\"gw\" data-key=\"{key}\"><div class=\"grp\">{label} ({len(groups[key])})</div>{cards}</div>")
     exp_str = _fmt_exp_th(exp_epoch)
     if exp_str:
         body.append(f"<div class=\"exp\">🔗 ลิงก์นี้ใช้ได้ถึง {exp_str}</div>")
     body.append(
         "<script>(function(){"
         "var q=document.getElementById('q'),nh=document.getElementById('nohit');"
-        "if(q){q.addEventListener('input',function(){"
-        "var s=q.value.trim().toLowerCase(),tot=0;"
-        "document.querySelectorAll('.gw').forEach(function(g){var v=0;"
+        "var cks=Array.prototype.slice.call(document.querySelectorAll('.fck'));"
+        "function apply(){"
+        "var s=q?q.value.trim().toLowerCase():'',tot=0,on={};"
+        "cks.forEach(function(c){on[c.getAttribute('data-key')]=c.checked;});"
+        "document.querySelectorAll('.gw').forEach(function(g){"
+        "var k=g.getAttribute('data-key'),v=0;"
         "g.querySelectorAll('.job').forEach(function(c){"
-        "var on=!s||c.textContent.toLowerCase().indexOf(s)>=0;"
-        "c.style.display=on?'':'none';if(on)v++;});"
-        "g.style.display=v?'':'none';tot+=v;});"
-        "if(nh)nh.style.display=tot?'none':'block';});}})();</script>")
+        "var hit=!s||c.textContent.toLowerCase().indexOf(s)>=0;"
+        "c.style.display=hit?'':'none';if(hit)v++;});"
+        "var show=on[k]!==false&&v>0;"
+        "g.style.display=show?'':'none';if(show)tot+=v;});"
+        "if(nh)nh.style.display=tot?'none':'block';}"
+        "if(q)q.addEventListener('input',apply);"
+        "cks.forEach(function(c){c.addEventListener('change',function(){"
+        "var l=c.parentNode;if(l)l.classList.toggle('on',c.checked);apply();});});"
+        "apply();})();</script>")
     return head + "".join(body) + foot
 
 

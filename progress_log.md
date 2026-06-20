@@ -981,3 +981,19 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 - `_portal_page_html`: `<title>` + หัวเว็บ "🗂 BMS Bid Board" + sub "งานที่คุณติดตาม (N)" (เพิ่ม `.sub` CSS)
 - LINE reply พิมพ์ "bid board"/"board" ก็เปิดได้ + ข้อความ "เปิด BMS Bid Board — ..."
 - deploy bms_api.py → hash==local → restart active → render verify title+header ผ่าน
+
+## งานที่ N+159: Bid Board — ชิป filter ติ๊กเลือกประเภทงาน (2026-06-20)
+
+### สถานะ: ✅ LIVE
+
+### บริบท
+กัญจน์อยากติ๊กเลือกว่าจะดูประเภทไหน "ในตอนนี้" (transient) — 4 ประเภทตรงกับ groups เดิม (bidding/prelim/pre/won)
+
+### สิ่งที่ทำ (`_portal_page_html`)
+- ชิป checkbox 4 อัน (🔵ยื่นซอง/📊สรุปราคา/🟣ประชาวิจารณ์/🏆ผู้ชนะ) ใต้ search — เฉพาะประเภทที่มีงาน, แสดงเมื่อ ≥2 ประเภท, default ติ๊กครบ
+- `.gw` เพิ่ม `data-key`; JS รวม search+checkbox เป็น `apply()` เดียว (กลุ่มโชว์เมื่อ ติ๊ก && มีงาน match คำค้น) — client-side ไม่ reload, ไม่จำข้ามรอบ (YAGNI)
+- CSS `.filters/.fchip(.on)` pill toggle
+
+### Verify
+- py compile + **node --check JS ผ่าน** + render local (chips/data-key/fck ครบ)
+- deploy → hash==local → restart active → render prod: filters row+2chips+data-key+apply ผ่าน

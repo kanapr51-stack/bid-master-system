@@ -941,7 +941,7 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 
 ## งานที่ N+157: Portal company — ผลงานที่ชนะทุกวิธีจัดซื้อ (proc_type) + filter (2026-06-20)
 
-### สถานะ: ✅ code+test เสร็จ · ⏸ รอ deploy + verify VPS
+### สถานะ: ✅ LIVE (deploy + e2e prod verified 2026-06-20)
 
 ### บริบท (กัญจน์ขอ 4 ข้อ)
 1. แยกสถิติประมูล vs เจาะจง (จำนวน+มูลค่า) · 2. งานมูลค่าสูงสุด · 3. สูงสุดประมูล vs วิธีอื่น · 4. filter proc_type
@@ -962,7 +962,12 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 - **real-data (winner_history 617K):** หจก.ยศประทาน=282(ประมูล44/เจาะจง238/💎9.05M), ภูริพัฒน์ซัพพลาย=17, ภูริพัฒน์กรุ๊ป=11 (แยกถูก). ทั้งชื่อย่อ/เต็ม match ตรงกัน
 - Sophia skip: เป็น query/render logic, product DB local ว่าง (Sophia ไม่มีอะไรตรวจ) — sanity จริงคือ real-data ข้างบน
 
+### Deploy + verify VPS (✅ เสร็จ)
+- scp 2 ไฟล์ → /opt/bms/app/scripts → hash==local (LF-norm) → restart bms-api active + import OK
+- `cgd_winners` บน VPS = 617,357 rows (นครพนม 390K+บึงกาฬ 227K), winner name ครบ
+- **name-join match: ผู้ชนะ e-bidding 460/467 = 98.5%** (miss = นอก 2 จว./eGP สะกดเพี้ยน); ผู้ยื่นทั้งหมด 65%
+- e2e prod: หจก.สกลนครประกิตก่อสร้าง → 281 งาน ฿82.3M (ประมูล 19/เจาะจง 262), section 🏆+chips ครบ
+
 ### Followup (ค้าง)
-- **deploy:** scp `bms_api.py`+`portal_views.py` → VPS → restart bms-api
-- **⚠️ verify VPS:** (1) `cgd_winners` มี data ไหม (local 0 rows — ต้อง push จากเครื่องบ้าน `cgd_sync_to_vps.py --push`?) (2) eGP `bid_results.bidder_name` ↔ CGD `winner` match rate จริง (normalize bridge หจก./ห้างฯ แล้ว แต่ดูสะกดอื่น)
-- **🐛 root-cause (defer):** ซ่อม CGD ingestion column-misalignment → winner_tin ถูก → re-sync → กลับไป join ด้วย tin (key ที่ถูก)
+- **🐛 root-cause (defer):** ซ่อม CGD ingestion column-misalignment → winner_tin ถูก → re-sync → กลับไป join ด้วย tin (key ที่ถูก) ดู memory [[project_winner_tin_corruption]]
+- name-join miss eGP typo (กิจการร่่วมค้า ่ ซ้ำ / ดีเวลอเมนท์) — ยอมรับได้ตอนนี้

@@ -108,6 +108,94 @@ def job_detail(conn, pid):
                     "pred_lo": pred_lo, "pred_hi": pred_hi}, "bidders": bidders}
 
 
+# proc_type → กลุ่ม. _PROC_BID mirror cgd_intel.COMPETITIVE_SET (source of truth ของ "แข่งราคาจริง")
+_PROC_BID = frozenset((
+    "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+    "ประกวดราคาด้วยวิธีการทางอิเล็กทรอนิกส์",
+    "สอบราคา",
+    "คัดเลือก",
+))
+
+
+def _proc_group(pt):
+    """'bid' (ประมูล/แข่งขัน) | 'specific' (เฉพาะเจาะจง) | 'other' (พิเศษ/อื่นๆ)."""
+    pt = pt or ""
+    if pt in _PROC_BID:
+        return "bid"
+    if "เฉพาะเจาะจง" in pt or "ตกลงราคา" in pt:
+        return "specific"
+    return "other"
+
+
+# legal-entity prefixes ตัดทิ้งก่อนเทียบชื่อ (eGP ย่อ 'หจก.' / CGD เต็ม 'ห้างหุ้นส่วนจำกัด')
+_LEGAL_TOKENS = ("ห้างหุ้นส่วนจำกัด", "ห้างหุ้นส่วนสามัญ", "หจก.", "หจก", "บริษัท",
+                 "บจก.", "บจก", "จำกัด", "(มหาชน)", "มหาชน", "นางสาว", "นาง", "นาย",
+                 "กิจการร่วมค้า")
+
+
+def _norm_name(s):
+    """ตัด prefix นิติบุคคล + ช่องว่าง/จุด เหลือแกนชื่อ — สำหรับเทียบ exact. คืน '' ถ้าไม่เหลือ."""
+    s = s or ""
+    for tok in _LEGAL_TOKENS:
+        s = s.replace(tok, "")
+    return s.replace(" ", "").replace(".", "").replace("\t", "").replace("\n", "").strip()
+
+
+def _prefilter_key(name):
+    """คำยาวสุดของชื่อ (หลังตัด prefix) — ใช้เป็น LIKE prefilter ที่ยังคงอยู่ในค่าจริง (มี space)."""
+    s = name or ""
+    for tok in _LEGAL_TOKENS:
+        s = s.replace(tok, "")
+    words = [w for w in s.replace(".", " ").split() if w]
+    return max(words, key=len) if words else ""
+
+
+def won_portfolio(conn, name, proc="all"):
+    """ผลงานที่ชนะของบริษัท (cgd_winners — ทุกวิธีจัดซื้อ, winner-only).
+    join ด้วย 'ชื่อ' (winner) — winner_tin ใน source เพี้ยน ~99% (ดู progress_log N+157).
+    match แบบ normalized exact (ตัด prefix นิติบุคคล) + LIKE prefilter ด้วยคำยาวสุด.
+    stats เต็มเสมอ; proc กรองเฉพาะ job list. คืน None ถ้าไม่มีตาราง/ชื่อสั้นเกิน/ไม่เจองาน."""
+    core = _norm_name(name)
+    key = _prefilter_key(name)
+    if not core or not key:
+        return None
+    try:
+        cand = conn.execute(
+            "SELECT project_id, project_name, winner, win_price, budget, proc_type "
+            "FROM cgd_winners WHERE winner LIKE ?", (f"%{key}%",)).fetchall()
+    except sqlite3.OperationalError:
+        return None
+    rows = [r for r in cand if _norm_name(r["winner"]) == core]   # normalized exact (กัน substring ผิด)
+    if not rows:
+        return None
+    groups = {k: {"count": 0, "value": 0.0} for k in ("bid", "specific", "other")}
+    jobs = []
+    for r in rows:
+        price = _to_float(r["win_price"]) or 0.0
+        g = _proc_group(r["proc_type"])
+        groups[g]["count"] += 1
+        groups[g]["value"] += price
+        jobs.append({"pid": r["project_id"], "name": r["project_name"] or r["project_id"],
+                     "price": price, "proc_type": r["proc_type"] or "", "group": g,
+                     "discount": _discount(price, _to_float(r["budget"]) or 0)})
+    total = {"count": len(jobs), "value": sum(j["price"] for j in jobs)}
+
+    def _top(pool):
+        pool = [j for j in pool if j["price"] > 0]
+        if not pool:
+            return None
+        j = max(pool, key=lambda x: x["price"])
+        return {"pid": j["pid"], "name": j["name"], "price": j["price"], "group": j["group"]}
+
+    proc = proc if proc in ("bid", "specific", "other") else "all"
+    shown = jobs if proc == "all" else [j for j in jobs if j["group"] == proc]
+    shown.sort(key=lambda j: j["price"], reverse=True)
+    return {"total": total, "groups": groups, "top_overall": _top(jobs),
+            "top_bid": _top([j for j in jobs if j["group"] == "bid"]),
+            "top_nonbid": _top([j for j in jobs if j["group"] != "bid"]),
+            "proc": proc, "jobs": shown}
+
+
 def company_profile(conn, tin):
     rows = conn.execute(
         "SELECT br.project_id, br.bidder_name, br.price_proposal, br.is_winner, br.is_sme, "
@@ -196,6 +284,9 @@ _CSS = (
     ".rstation::before{content:'';position:absolute;left:-9px;top:8px;width:13px;height:13px;border-radius:50%;background:#1d72b4;border:2px solid #fff}"
     ".rdate{font-size:13px;font-weight:700;color:#1d72b4;margin:0 0 4px}"
     ".nedit{display:inline-flex;gap:4px;flex-wrap:wrap}.ndel{display:inline}"
+    ".chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}"
+    ".chip{font-size:12px;padding:5px 10px;border-radius:14px;background:#eef0f3;color:#555;text-decoration:none;white-space:nowrap}"
+    ".chip.on{background:#1d72b4;color:#fff}"
 )
 
 
@@ -334,7 +425,44 @@ def _render_h2h(h2h):
     return "".join(out)
 
 
-def render_company_page(data, token, from_pid, exp, h2h=None):
+_PROC_LABELS = {"all": "ทั้งหมด", "bid": "ประมูล", "specific": "เจาะจง", "other": "วิธีอื่น"}
+
+
+def _render_won(wp, tin, tok, from_pid):
+    """section 🏆 ผลงานที่ชนะ (ทุกวิธีจัดซื้อ) — stat ประมูล/เจาะจง + มูลค่าสูงสุด + filter proc."""
+    g = wp["groups"]
+    out = ["<div class=\"chart\"><div class=\"ct\">🏆 ผลงานที่ชนะ (ทุกวิธีจัดซื้อ)</div>",
+           "<div class=\"stats\">"
+           f"<div class=\"stat\"><b>{g['bid']['count']}</b><span>ประมูล {_baht(g['bid']['value'])}</span></div>"
+           f"<div class=\"stat\"><b>{g['specific']['count']}</b><span>เจาะจง {_baht(g['specific']['value'])}</span></div>"
+           f"<div class=\"stat\"><b>{wp['total']['count']}</b><span>รวม {_baht(wp['total']['value'])}</span></div>"
+           "</div>"]
+    if wp["top_overall"]:
+        t = wp["top_overall"]
+        out.append(f"<div class=\"meta\">💎 มูลค่าสูงสุด: {_h.escape(t['name'])} — {_baht(t['price'])} บาท</div>")
+    if wp["top_bid"]:
+        out.append(f"<div class=\"meta\">🥇 สูงสุด (ประมูล): {_h.escape(wp['top_bid']['name'])} — {_baht(wp['top_bid']['price'])}</div>")
+    if wp["top_nonbid"]:
+        out.append(f"<div class=\"meta\">🥈 สูงสุด (วิธีอื่น): {_h.escape(wp['top_nonbid']['name'])} — {_baht(wp['top_nonbid']['price'])}</div>")
+    frag = f"&from={_h.escape(str(from_pid))}" if from_pid else ""
+    chips = []
+    for key in ("all", "bid", "specific", "other"):
+        cnt = wp["total"]["count"] if key == "all" else g[key]["count"]
+        cls = "chip on" if wp["proc"] == key else "chip"
+        chips.append(f"<a class=\"{cls}\" href=\"/portal/company?t={tok}&tin={_h.escape(tin)}"
+                     f"&proc={key}{frag}\">{_PROC_LABELS[key]} {cnt}</a>")
+    out.append("<div class=\"chips\">" + "".join(chips) + "</div>")
+    if not wp["jobs"]:
+        out.append("<div class=\"msg\">ไม่มีงานในกลุ่มนี้</div>")
+    for j in wp["jobs"][:50]:
+        disc = f"ส่วนลด {j['discount']:.1f}%" if j["discount"] is not None else "—"
+        out.append(f"<div class=\"jrow\"><span class=\"jn\">{_h.escape(j['name'])}</span>"
+                   f"<span class=\"jp\">{_baht(j['price'])}<br><small>{disc}</small></span></div>")
+    out.append("</div>")
+    return "".join(out)
+
+
+def render_company_page(data, token, from_pid, exp, h2h=None, won=None):
     tok = _h.escape(token)
     head = _HEAD("ประวัติบริษัท")
     if from_pid:
@@ -356,6 +484,9 @@ def render_company_page(data, token, from_pid, exp, h2h=None):
     # ⚔️ เทียบกับเรา (head-to-head) — โชว์เฉพาะมี company_tin + เจอกัน
     if h2h:
         b.append(_render_h2h(h2h))
+    # 🏆 ผลงานที่ชนะทุกวิธีจัดซื้อ (cgd_winners) — โชว์เฉพาะมีข้อมูล
+    if won:
+        b.append(_render_won(won, data["tin"], tok, from_pid))
     # chart 1: ยื่น/ชนะ รายปี
     maxb = max([g["bids"] for g in data["by_year"]] or [1])
     rows1 = []

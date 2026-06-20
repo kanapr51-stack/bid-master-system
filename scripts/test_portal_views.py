@@ -140,4 +140,58 @@ assert "🟢 เราชนะ" in hc, hc
 hc0 = pv.render_company_page(p, "TOK", "69010000001", 0, None)
 assert "⚔️" not in hc0, "ไม่มี h2h ต้องไม่โชว์ section"
 print("OK render_company_h2h")
+
+# --- won_portfolio (ผลงานที่ชนะ ทุกวิธีจัดซื้อ จาก cgd_winners — join ด้วยชื่อ) ---
+# CGD เก็บชื่อเต็ม 'ห้างหุ้นส่วนจำกัด เอ' / eGP ย่อ 'หจก.เอ' → normalized exact ต้อง match
+_W = "ห้างหุ้นส่วนจำกัด เอ"
+def _seed_won():
+    c = _seed()
+    c.execute("CREATE TABLE cgd_winners(project_id TEXT, project_name TEXT, winner TEXT, "
+              "winner_tin TEXT, budget REAL, win_price REAL, proc_type TEXT)")
+    def ins(pid, nm, w, b, wp, pt):
+        c.execute("INSERT INTO cgd_winners VALUES (?,?,?,?,?,?,?)", (pid, nm, w, "เพี้ยน", b, wp, pt))
+    ins('69020000001', 'ถนน e-bidding', _W, 1000000, 900000, 'ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)')
+    ins('69020000002', 'อาคารเฉพาะเจาะจง', _W, 2000000, 2000000, 'เฉพาะเจาะจง')
+    ins('68020000003', 'ซ่อมสอบราคา', _W, 600000, 500000, 'สอบราคา')
+    ins('69020000004', 'งานพิเศษ', _W, 300000, 300000, 'พิเศษ')
+    ins('69020000009', 'งานบริษัทอื่น', 'ห้างหุ้นส่วนจำกัด เอบีซี', 9000000, 9000000, 'เฉพาะเจาะจง')
+    return c
+
+c = _seed_won()
+w = pv.won_portfolio(c, "หจก.เอ")                                     # eGP ย่อ → ต้อง match _W
+assert w["total"]["count"] == 4 and w["total"]["value"] == 3700000, w["total"]   # ไม่นับ 'เอบีซี'
+assert w["groups"]["bid"]["count"] == 2 and w["groups"]["bid"]["value"] == 1400000, w["groups"]
+assert w["groups"]["specific"]["count"] == 1 and w["groups"]["specific"]["value"] == 2000000, w["groups"]
+assert w["groups"]["other"]["count"] == 1, w["groups"]                # 'พิเศษ' → other
+assert w["top_overall"]["price"] == 2000000 and "เฉพาะเจาะจง" in w["top_overall"]["name"], w["top_overall"]
+assert w["top_bid"]["price"] == 900000, w["top_bid"]                  # สูงสุดของประมูล
+assert w["top_nonbid"]["price"] == 2000000, w["top_nonbid"]           # สูงสุดของวิธีอื่น (specific+other)
+assert [j["price"] for j in w["jobs"]] == [2000000, 900000, 500000, 300000], w["jobs"]   # เรียงมาก→น้อย
+# normalized exact: 'เอบีซี' ต้องไม่ปนเข้า 'เอ' (กัน substring ผิด)
+wabc = pv.won_portfolio(c, "ห้างหุ้นส่วนจำกัด เอบีซี")
+assert wabc["total"]["count"] == 1 and wabc["total"]["value"] == 9000000, wabc["total"]
+# filter proc
+wb = pv.won_portfolio(c, "หจก.เอ", "bid")
+assert len(wb["jobs"]) == 2 and all(j["group"] == "bid" for j in wb["jobs"]), wb["jobs"]
+ws = pv.won_portfolio(c, "หจก.เอ", "specific")
+assert len(ws["jobs"]) == 1, ws["jobs"]
+assert wb["groups"]["bid"]["count"] == 2, "stats ต้องเต็มเสมอ ไม่ขึ้นกับ filter"   # filter กรองแค่ job list
+assert pv.won_portfolio(c, "หจก.ไม่มีจริง") is None
+assert pv.won_portfolio(c, "จำกัด") is None                          # ชื่อเหลือแกน '' → None
+# ไม่มีตาราง cgd_winners → None (degrade gracefully)
+assert pv.won_portfolio(_seed(), "หจก.เอ") is None
+print("OK won_portfolio")
+
+# render company page + won section + filter chips
+c = _seed_won()
+p = pv.company_profile(c, "T1")    # T1 ชื่อ 'หจก.เอ' (จาก bid_results)
+w = pv.won_portfolio(c, p["name"])
+hw = pv.render_company_page(p, "TOK", "69010000001", 0, None, w)
+assert "🏆 ผลงานที่ชนะ" in hw, hw
+assert "ประมูล" in hw and "เจาะจง" in hw, hw                          # stat ประมูล vs เจาะจง
+assert "💎" in hw and "อาคารเฉพาะเจาะจง" in hw, "งานมูลค่าสูงสุด"
+assert "proc=bid" in hw and "proc=specific" in hw and "proc=all" in hw, "filter chips"
+hw0 = pv.render_company_page(p, "TOK", "69010000001", 0, None, None)
+assert "🏆 ผลงานที่ชนะ" not in hw0, "ไม่มี won → ไม่โชว์ section"
+print("OK render_company_won")
 print("OK test_portal_views")

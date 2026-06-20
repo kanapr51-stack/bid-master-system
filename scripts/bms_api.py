@@ -974,7 +974,8 @@ async def portal_job_get(t: str = "", pid: str = ""):
 
 
 @app.get("/portal/company")
-async def portal_company_get(t: str = "", tin: str = "", from_: str = Query("", alias="from")):
+async def portal_company_get(t: str = "", tin: str = "", from_: str = Query("", alias="from"),
+                             proc: str = "all"):
     v = follow_token.verify_token(t)
     if not v:
         return HTMLResponse(_follow_page_html(t, "invalid", {}, "", 0))
@@ -983,7 +984,9 @@ async def portal_company_get(t: str = "", tin: str = "", from_: str = Query("", 
         cust = conn.execute("SELECT company_tin FROM customers WHERE line_user_id=?", (v[0],)).fetchone()
         our_tin = (cust["company_tin"] if cust and "company_tin" in cust.keys() else None) or None
         h2h = portal_views.head_to_head(conn, our_tin, tin) if our_tin else None
-    return HTMLResponse(portal_views.render_company_page(data, t, from_, v[2], h2h))
+        # cgd_winners join ด้วยชื่อ (winner_tin source เพี้ยน ~99% — N+157) → ใช้ชื่อจาก profile
+        won = portal_views.won_portfolio(conn, data["name"], proc) if data else None
+    return HTMLResponse(portal_views.render_company_page(data, t, from_, v[2], h2h, won))
 
 
 @app.post("/portal/job/note")

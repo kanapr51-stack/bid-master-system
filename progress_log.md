@@ -846,9 +846,14 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 - ~~reminder/แจ้งเตือนตามวันที่ใน timeline~~ → ทำใน N+153 (shadow)
 - cleanup: `_baht`/date helpers ซ้ำ bms_api↔portal_views (ยอมรับได้ กัน circular import)
 
-## งานที่ N+153: Timeline Reminder — SHADOW (รอ user เปิด live) (2026-06-20)
+## งานที่ N+153: Timeline Reminder — LIVE (07:30, วันนี้+พรุ่งนี้) (2026-06-20)
 
-### สถานะ: ✅ เสร็จ + deploy SHADOW (ยังไม่ส่ง LINE จริง — รอกัญจน์กดเปิด)
+### สถานะ: ✅ LIVE บน VPS (timer enabled, ส่ง LINE จริง)
+
+### อนุมัติ go-live
+กัญจน์: "07:30 โอเค เตือนล่วงหน้า 1 วันด้วย เปิด live เลย" → แก้เตือน **วันนี้+พรุ่งนี้** (ป้าย [วันนี้]/[พรุ่งนี้]) + ExecStart `--live` + enable timer. next run = 2026-06-21 07:30 ไทย.
+- **ของจริงแล้ว!** customer 2 (Ua0d90e8) เพิ่งทดสอบเพิ่มไทม์ไลน์จริง (งาน 69059453079: "โทรหาข้อมูลงาน" 21 มิ.ย. + "โทรหาช่าง" 23 มิ.ย.) → พรุ่งนี้ 07:30 จะได้เตือนจริง = ฟีเจอร์ครบวงจรมีคนใช้
+- token live โหลดได้ (172) · ใช้ send_line_push ตัวเดียวกับ daily-summary (proven prod)
 
 ### บริบท
 ต่อยอด N+152 (job_notes timeline). เตือนเมื่อถึงวันที่ที่ user จดไว้ (entry_date == วันนี้). ทำตอน user หลับ → ทำแบบ **observe-only** กัน LINE เด้งโดยไม่ตั้งใจ (pattern shadow/canary ของโปรเจกต์)
@@ -864,7 +869,7 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 - deploy scp script → shadow-run บน prod: insert today-note → เจอ 1 due user + ข้อความถูก → delete net-zero ✓ (ไม่ส่ง LINE)
 - commit cce97c4
 
-### ▶ Go-live (รอกัญจน์ตัดสิน)
-1. ตั้งเวลาเตือน (default 07:30 — เตือนงานของ"วันนี้"; จะเอา day-before ด้วยไหม?)
-2. `scp deploy/systemd/bms-timeline-reminder.*` → VPS `/etc/systemd/system/` → แก้ ExecStart เติม `--live` → `systemctl enable --now bms-timeline-reminder.timer`
-3. ก่อนเปิด: validate ข้อความ + รอบเวลากับ user จริง
+### Followup
+- ดูผลรอบจริงพรุ่งนี้ 07:30 (journalctl -u bms-timeline-reminder) ว่าส่งถึง customer 2 จริง
+- เผื่ออนาคต: ปุ่ม "เตือนแล้ว/เลื่อน" ในข้อความ · ปรับรอบเวลาต่อ user
+- commit 6bc0e6a (go-live) ต่อจาก cce97c4 (shadow)

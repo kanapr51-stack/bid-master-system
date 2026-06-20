@@ -843,5 +843,28 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 - commits e6b7b1e..7efb5e8 (4) · backup `.bak_20260620_142817`
 
 ### Followup
-- ยังไม่มี reminder/แจ้งเตือนตามวันที่ใน timeline (แค่บันทึก+แสดง) — เผื่ออนาคต
+- ~~reminder/แจ้งเตือนตามวันที่ใน timeline~~ → ทำใน N+153 (shadow)
 - cleanup: `_baht`/date helpers ซ้ำ bms_api↔portal_views (ยอมรับได้ กัน circular import)
+
+## งานที่ N+153: Timeline Reminder — SHADOW (รอ user เปิด live) (2026-06-20)
+
+### สถานะ: ✅ เสร็จ + deploy SHADOW (ยังไม่ส่ง LINE จริง — รอกัญจน์กดเปิด)
+
+### บริบท
+ต่อยอด N+152 (job_notes timeline). เตือนเมื่อถึงวันที่ที่ user จดไว้ (entry_date == วันนี้). ทำตอน user หลับ → ทำแบบ **observe-only** กัน LINE เด้งโดยไม่ตั้งใจ (pattern shadow/canary ของโปรเจกต์)
+
+### สิ่งที่ทำ — `scripts/timeline_reminder.py`
+- `find_due_reminders(conn, today)` → job_notes entry_date==วันนี้ ของ customer active, จัดกลุ่มต่อ user (รวมหลายงาน/รายการเป็นข้อความเดียว)
+- `build_reminder_text` → ข้อความ LINE "🚂 ไทม์ไลน์วันนี้..."
+- **SAFE-BY-DEFAULT:** รันเฉยๆ = dry-run (shadow log `data/timeline_reminder_log.ndjson`); ต้อง `--live` ถึง push (ใช้ `Sebastian_LINE_Sender.send_line_push`)
+- systemd unit `bms-timeline-reminder.{service,timer}` (07:30 ไทย) — **สร้างไว้ ยังไม่ enable**, ExecStart shadow (ต้องเติม `--live` เอง)
+
+### Verify
+- test_timeline_reminder PASS (กรอง active+วันนี้ ถูก, group ต่อ user/งาน, build text)
+- deploy scp script → shadow-run บน prod: insert today-note → เจอ 1 due user + ข้อความถูก → delete net-zero ✓ (ไม่ส่ง LINE)
+- commit cce97c4
+
+### ▶ Go-live (รอกัญจน์ตัดสิน)
+1. ตั้งเวลาเตือน (default 07:30 — เตือนงานของ"วันนี้"; จะเอา day-before ด้วยไหม?)
+2. `scp deploy/systemd/bms-timeline-reminder.*` → VPS `/etc/systemd/system/` → แก้ ExecStart เติม `--live` → `systemctl enable --now bms-timeline-reminder.timer`
+3. ก่อนเปิด: validate ข้อความ + รอบเวลากับ user จริง

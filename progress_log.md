@@ -920,3 +920,49 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 - **self-serve picker:** หน้า portal ให้ลูกค้าค้น+เลือกบริษัทตัวเอง (set company_tin) — ตอนนี้ seed มือ เฉพาะกัญจน์
 - ส่วนลดแยกอำเภอ→ตำบล (ยังติด: ต้อง parse location จากชื่องาน)
 - seed company_tin ให้ tenant อื่น (Hong/ณฐมน/Mr.suvit) เมื่อรู้บริษัท
+
+## งานที่ N+156: Backfill บ้าน 12K (residential home-fetch) — เริ่ม (2026-06-20)
+
+### สถานะ: ⏳ กำลังรัน background (เครื่องบ้าน residential)
+
+### บริบท (จาก debug session "ทำไม bid_results น้อย")
+- bid_results = เฉพาะงานแข่งประมูล (e-bidding) ที่ดึง bidder ครบ — มีแค่ 1,075/13,170 (8%) ของ 2 จังหวัดบ้าน
+- เพราะ backfill รันเฉพาะปีล่าสุด + เป็น fetch ทีละงาน rate-limit · eGP ยังเก็บงานเก่าครบ (ดึง 2563 ได้ 12 ราย)
+- กลยุทธ์: ดึงจากเน็ตบ้าน (residential) เลี่ยง WAF VPS (`_backfill_home_fetch.py`, ADR-003)
+
+### สิ่งที่ทำ
+- VPS `select_candidates(นครพนม+บึงกาฬ, fy 2558-2569)` → **12,093 candidates** (seen 1,015 excluded) → scp local
+- รัน `_backfill_home_fetch.py` background (เครื่องบ้าน): 27 done, 12,066 todo · ~9 ชม · resumable (results.json)
+- เสร็จ → scp results → VPS import (record_bid_results) → bid_results ครบทั้งบ้าน
+
+### Followup
+- เมื่อ fetch เสร็จ: scp backfill_results.json → VPS → import → verify count เพิ่ม
+- profile/head-to-head ของทุก customer รวยขึ้น (ของกัญจน์ 28 งานแข่งเก่าจะเข้าครบ)
+
+## งานที่ N+157: Portal company — ผลงานที่ชนะทุกวิธีจัดซื้อ (proc_type) + filter (2026-06-20)
+
+### สถานะ: ✅ code+test เสร็จ · ⏸ รอ deploy + verify VPS
+
+### บริบท (กัญจน์ขอ 4 ข้อ)
+1. แยกสถิติประมูล vs เจาะจง (จำนวน+มูลค่า) · 2. งานมูลค่าสูงสุด · 3. สูงสุดประมูล vs วิธีอื่น · 4. filter proc_type
+
+### 🐛 Foundation bug ที่เจอระหว่างทำ (สำคัญ — followup)
+- `bid_results` = e-bidding เท่านั้น → ไม่มีงานเจาะจง → 4 ข้อทำจาก bid_results ไม่ได้ → ต้องใช้ `cgd_winners` (winner-only ทุกวิธี)
+- **`winner_history.db` column เพี้ยน:** `winner_tin` = วันที่ ("7 มี.ค. 68"), `contract_no` = ราคา. งานประมูล 2 จว. winner_tin สะอาดแค่ **0.9%** (101/10,637). กัญจน์ tin `0483547000471` หาไม่เจอ. source='CGD' ทั้งหมด
+- **แต่ `winner` (ชื่อ) ถูกต้อง** → ยศประทาน 282 งาน, ภูริพัฒน์ แยก 3 บริษัทตามชื่อ
+- **กัญจน์ตัดสิน:** name-join now + ซ่อม winner_tin ทีหลัง
+
+### สิ่งที่ทำ (inline TDD, surgical)
+- `portal_views.won_portfolio(conn, name, proc)`: join `cgd_winners.winner` ด้วย **normalized name** (`_norm_name` ตัด prefix นิติบุคคล+space, `_prefilter_key` คำยาวสุดทำ LIKE prefilter กัน full-scan 617K). bucket `_proc_group` → bid(COMPETITIVE_SET)/specific(เฉพาะเจาะจง)/other. คืน groups{count,value} + top_overall/top_bid/top_nonbid + jobs(filtered by proc)
+- `_render_won`: section 🏆 stat ประมูล/เจาะจง/รวม + 💎 มูลค่าสูงสุด + 🥇🥈 สูงสุดแยกวิธี + filter chips (server-side `?proc=`) + job list. CSS `.chips/.chip`
+- `render_company_page(...,won)` + route `/portal/company?proc=` ส่ง `data["name"]` → won_portfolio
+
+### Verify
+- test_portal_views: +won_portfolio +render_company_won (normalized match, substring-guard เอ vs เอบีซี, proc filter, degrade None) — PASS ทั้ง 11 บล็อก + compile OK
+- **real-data (winner_history 617K):** หจก.ยศประทาน=282(ประมูล44/เจาะจง238/💎9.05M), ภูริพัฒน์ซัพพลาย=17, ภูริพัฒน์กรุ๊ป=11 (แยกถูก). ทั้งชื่อย่อ/เต็ม match ตรงกัน
+- Sophia skip: เป็น query/render logic, product DB local ว่าง (Sophia ไม่มีอะไรตรวจ) — sanity จริงคือ real-data ข้างบน
+
+### Followup (ค้าง)
+- **deploy:** scp `bms_api.py`+`portal_views.py` → VPS → restart bms-api
+- **⚠️ verify VPS:** (1) `cgd_winners` มี data ไหม (local 0 rows — ต้อง push จากเครื่องบ้าน `cgd_sync_to_vps.py --push`?) (2) eGP `bid_results.bidder_name` ↔ CGD `winner` match rate จริง (normalize bridge หจก./ห้างฯ แล้ว แต่ดูสะกดอื่น)
+- **🐛 root-cause (defer):** ซ่อม CGD ingestion column-misalignment → winner_tin ถูก → re-sync → กลับไป join ด้วย tin (key ที่ถูก)

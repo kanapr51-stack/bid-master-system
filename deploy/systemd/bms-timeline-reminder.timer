@@ -1,0 +1,10 @@
+[Unit]
+Description=BMS Timeline Reminder — ทุกวัน 07:30 ไทย (เตือนแผนงานที่จดไว้สำหรับวันนี้)
+
+[Timer]
+OnCalendar=*-*-* 07:30:00 Asia/Bangkok
+Persistent=true
+Unit=bms-timeline-reminder.service
+
+[Install]
+WantedBy=timers.target

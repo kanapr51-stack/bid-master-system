@@ -1,0 +1,16 @@
+[Unit]
+Description=BMS Timeline Reminder — เตือนแผนงานที่ user จดไว้ใน job_notes เมื่อถึงวันที่ (รอบเช้า)
+After=network.target
+
+# SHADOW BY DEFAULT: ExecStart รันแบบ dry-run (แค่ log ไม่ส่ง LINE จริง).
+# จะเปิดส่งจริง → แก้ ExecStart เติม " --live" ต่อท้าย แล้ว daemon-reload + enable timer.
+[Service]
+Type=oneshot
+User=bms
+Group=bms
+WorkingDirectory=/opt/bms/app
+EnvironmentFile=/opt/bms/app/.env
+ExecStart=/opt/bms/venv/bin/python /opt/bms/app/scripts/timeline_reminder.py
+Nice=10
+StandardOutput=journal
+StandardError=journal

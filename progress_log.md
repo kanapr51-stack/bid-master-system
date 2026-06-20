@@ -896,3 +896,27 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 ### โครงโน้ต 2 แบบในหน้า detail
 - 📝 **โน้ตภาพรวม** (job_overview) = free-form 1 อัน แก้ทับ — ภาพรวม/คนติดต่อ/เงื่อนไข
 - 🚂 **ไทม์ไลน์ของฉัน** (job_notes) = หลาย entry มีวันที่ เรียงราง + reminder 07:30
+
+## งานที่ N+155: Portal Phase 2 (part 1) — มุมเทียบเรา (head-to-head) (2026-06-20)
+
+### สถานะ: ✅ เสร็จ + LIVE
+
+### บริบท
+กัญจน์เลือก Phase 2 มุมเทียบเรา. ใช้ **ยศประทานรุ่งฯ (tin 0483547000471) เป็น "เรา" ก่อน (seed)**, self-serve picker (ให้ลูกค้าตั้งบริษัทเอง) ไว้ทำทีหลัง. data รวย: เราเจอ ภูริพัฒน์ 25 งาน, ปฐมโชคชัย 19, ...
+
+### สิ่งที่ทำ (inline TDD)
+- **schema** v130: `customers +company_tin` (บริษัทของ tenant; NULL=ยังไม่ตั้ง). **seed customer 2 (กัญจน์) = 0483547000471**
+- **data** `head_to_head(conn, our_tin, competitor_tin)`: งานที่ยื่นด้วยกัน → shared/our_wins/their_wins/other + ราคาเทียบต่องาน (None ถ้า tin เดียวกัน/ไม่เจอกัน)
+- **render** `render_company_page(...,h2h)`: section "⚔️ เทียบกับ <our_name>" (เจอกัน/เราชนะ/เขาชนะ/% + แถวงาน 🟢เรา/🔴เขา/⚪อื่น + ราคา) โชว์เฉพาะมี h2h
+- **route** company resolve `company_tin` ของ viewer → คำนวณ h2h → ส่ง render
+
+### Verify
+- 7 test suites PASS + compile OK
+- deploy 3 ไฟล์ + init_schema (company_tin) + seed กัญจน์ → hash==HEAD (Sebastian_Customer_DB cf56de3, portal_views 22ab5b8, bms_api 79f0c98), active
+- **e2e prod:** กัญจน์ดู ภูริพัฒน์ → เจอกัน 25 · เราชนะ 8 · เขาชนะ 0 · section ⚔️ + แถวงานครบ
+- commit a9c1b9b
+
+### Followup (Phase 2 ที่เหลือ)
+- **self-serve picker:** หน้า portal ให้ลูกค้าค้น+เลือกบริษัทตัวเอง (set company_tin) — ตอนนี้ seed มือ เฉพาะกัญจน์
+- ส่วนลดแยกอำเภอ→ตำบล (ยังติด: ต้อง parse location จากชื่องาน)
+- seed company_tin ให้ tenant อื่น (Hong/ณฐมน/Mr.suvit) เมื่อรู้บริษัท

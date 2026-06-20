@@ -998,3 +998,24 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 - py compile + **node --check JS ผ่าน** + render local (chips/data-key/fck ครบ)
 - deploy → hash==local → restart active → render prod: filters row+2chips+data-key+apply ผ่าน
 - **แก้ตาม feedback กัญจน์:** เปลี่ยนจาก multi-toggle (ติ๊กออก) → **single-select แบบแท็บ** (ปุ่ม "ทั้งหมด" default + กดประเภท=ดูอันเดียว). button data-key, JS `sel` state. node --check ผ่าน, deploy hash==local active
+
+## งานที่ N+160: ⭐ ที่สนใจ — interest-star layer ใน Bid Board (2026-06-21)
+
+### สถานะ: ✅ เสร็จ (code+test, รอ push/deploy)
+
+### บริบท
+กัญจน์อยากมีดาว "ที่สนใจ" อีกชั้นในงานที่ติดตามอยู่แล้ว เพื่อกรองดูเฉพาะงานที่สนใจที่สุด — คนละความหมายกับ ⭐ เดิม (LINE postback `star:<project_id>` → `followed_jobs.starred_at` = เริ่มติดตาม). ออกแบบผ่าน `superpowers:brainstorming` (spec commit `9921c5a`) + วางแผนผ่าน `superpowers:writing-plans` (plan commit `40364c6`, `docs/superpowers/plans/2026-06-21-portal-interest-star.md`) แล้วรันด้วย Subagent-Driven Development บน worktree `worktree-portal-interest-star` (consent จากกัญจน์) — 6 task, implementer+reviewer subagent ต่อ task
+
+### Fix / ผล
+- Task 1: ตาราง `job_stars(customer_id, project_id, created_at, PK(customer_id,project_id))` ใน `Sebastian_Customer_DB.py` (`_migrate_v131`) — commit `e8200e2`
+- Task 2: `portal_views.toggle_star`/`starred_project_ids` data layer — commit `7e56127`
+- Task 3: ปุ่มดาวหน้า job detail (`render_job_page` param `starred`) — commit `fd7f9e3`
+- Task 4+5: route `/portal/star_toggle?t=&pid=&back=board|job` + wiring `portal_job_get` — commit `92459c7`
+- Task 6: ปุ่มดาว + ชิป filter "⭐ ที่สนใจ" อิสระบน Bid Board listing (`_card` เปลี่ยนจาก `<a class="job joblink">` ห่อทั้งใบ เป็น `<div data-starred>` ครอบ sibling `<a class="star">`+`<a class="joblink">` เลี่ยง nested `<a>`) — commit `d51f2dc`
+- ทุก task ผ่าน task-reviewer (spec ✅ + quality Approved, ไม่มี Critical/Important finding)
+- Sophia sanity audit: **SAFE** — SQL parameterized ครบ, `_h.escape` ครบ, `back` whitelist 2 ค่า (ไม่ open-redirect), customer-scoping ผ่าน token เสมอ, ไม่กระทบ `followed_jobs.starred_at`/LINE postback เดิม
+- Regression เต็ม 5 ไฟล์ทดสอบ (`test_portal_notes/views/page/routes/stars.py`) — ทุกตัว `OK`
+
+### Followup
+- รอกัญจน์สั่ง merge `worktree-portal-interest-star` → main + push/deploy VPS (ไม่ได้ทำใน task นี้ตามแผน)
+- ก่อนรอ merge ต้องทำ final whole-branch code review (most capable model) + `superpowers:finishing-a-development-branch` ต่อ

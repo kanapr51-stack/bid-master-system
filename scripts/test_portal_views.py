@@ -93,4 +93,20 @@ assert "/portal/job?t=TOK&pid=68010000003" in h, "ลิงก์งานใน
 h0 = pv.render_company_page(None, "TOK", "", 0)
 assert "ไม่พบประวัติบริษัทนี้" in h0, h0
 print("OK render_company_page")
+
+# --- render_job_page: ไทม์ไลน์ของฉัน (รางรถไฟ) ---
+c = _seed()
+d = pv.job_detail(c, "69010000001")
+notes = [{"id": 7, "entry_date": "2026-01-21", "note": "โทรหาช่าง <x>"}]
+ht = pv.render_job_page(d, "TOK", 0, notes)
+assert "🚂 ไทม์ไลน์ของฉัน" in ht, ht
+assert "action=\"/portal/job/note\"" in ht and "type=\"date\"" in ht, ht   # ฟอร์มเพิ่ม
+assert "21 ม.ค. 2569" in ht, ht                                            # วันที่ไทยบนราง
+assert "โทรหาช่าง &lt;x&gt;" in ht, "escape โน้ตผิด"
+assert "value=\"7\"" in ht, "ไม่มี note_id ในฟอร์มแก้/ลบ"
+ht0 = pv.render_job_page(d, "TOK", 0, [])
+assert "ยังไม่มีรายการ" in ht0, ht0
+# ส่วนผู้ยื่นเดิมยังอยู่
+assert "ผู้ยื่นทั้งหมด" in ht, ht
+print("OK render_job_page_timeline")
 print("OK test_portal_views")

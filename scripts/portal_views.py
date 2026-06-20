@@ -182,6 +182,15 @@ _CSS = (
     ".yhead{font-size:14px;font-weight:700;color:#333;margin:14px 0 4px}"
     ".jrow{display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:6px 0;border-bottom:1px solid #f2f2f2}"
     ".jrow .jn{flex:1;color:#1d72b4;text-decoration:none}.jrow .jp{white-space:nowrap;text-align:right;color:#666}"
+    ".nadd{display:flex;gap:6px;margin:8px 0;flex-wrap:wrap}"
+    ".nadd input[type=text]{flex:1;min-width:120px}"
+    ".nadd input,.nedit input,.nadd button,.nedit button,.ndel button{font-size:14px;padding:7px 9px;border:1px solid #ddd;border-radius:8px}"
+    ".nadd button{background:#1db446;color:#fff;border:0}"
+    ".rail{border-left:3px solid #1d72b4;margin:10px 0 10px 8px}"
+    ".rstation{position:relative;padding:6px 0 12px 18px}"
+    ".rstation::before{content:'';position:absolute;left:-9px;top:8px;width:13px;height:13px;border-radius:50%;background:#1d72b4;border:2px solid #fff}"
+    ".rdate{font-size:13px;font-weight:700;color:#1d72b4;margin:0 0 4px}"
+    ".nedit{display:inline-flex;gap:4px;flex-wrap:wrap}.ndel{display:inline}"
 )
 
 
@@ -198,7 +207,46 @@ def _baht(x):
     return f"{x:,.0f}" if x else "-"
 
 
-def render_job_page(data, token, exp):
+def _render_timeline(pid, tok, notes):
+    pe = _h.escape(str(pid))
+    out = ["<div class=\"bidhead\">🚂 ไทม์ไลน์ของฉัน</div>",
+           f"<form class=\"nadd\" method=\"post\" action=\"/portal/job/note\">"
+           f"<input type=\"hidden\" name=\"t\" value=\"{tok}\">"
+           f"<input type=\"hidden\" name=\"pid\" value=\"{pe}\">"
+           f"<input type=\"hidden\" name=\"action\" value=\"add\">"
+           f"<input type=\"date\" name=\"entry_date\" required>"
+           f"<input type=\"text\" name=\"note\" placeholder=\"สิ่งที่จะทำ เช่น โทรหาช่าง\" required>"
+           f"<button type=\"submit\">➕ เพิ่ม</button></form>"]
+    if not notes:
+        out.append("<div class=\"msg\">ยังไม่มีรายการ — เพิ่มด้านบนได้เลย</div>")
+        return "".join(out)
+    out.append("<div class=\"rail\">")
+    for nt in notes:
+        nid = _h.escape(str(nt["id"]))
+        dlabel = _h.escape(_fmt_date_th(nt["entry_date"]))
+        dval = _h.escape(str(nt["entry_date"])[:10])
+        txt = _h.escape(nt["note"])
+        out.append(
+            f"<div class=\"rstation\"><div class=\"rdate\">{dlabel}</div>"
+            f"<form class=\"nedit\" method=\"post\" action=\"/portal/job/note\">"
+            f"<input type=\"hidden\" name=\"t\" value=\"{tok}\">"
+            f"<input type=\"hidden\" name=\"pid\" value=\"{pe}\">"
+            f"<input type=\"hidden\" name=\"note_id\" value=\"{nid}\">"
+            f"<input type=\"hidden\" name=\"action\" value=\"edit\">"
+            f"<input type=\"date\" name=\"entry_date\" value=\"{dval}\">"
+            f"<input type=\"text\" name=\"note\" value=\"{txt}\">"
+            f"<button type=\"submit\">💾</button></form>"
+            f"<form class=\"ndel\" method=\"post\" action=\"/portal/job/note\">"
+            f"<input type=\"hidden\" name=\"t\" value=\"{tok}\">"
+            f"<input type=\"hidden\" name=\"pid\" value=\"{pe}\">"
+            f"<input type=\"hidden\" name=\"note_id\" value=\"{nid}\">"
+            f"<input type=\"hidden\" name=\"action\" value=\"delete\">"
+            f"<button type=\"submit\">🗑</button></form></div>")
+    out.append("</div>")
+    return "".join(out)
+
+
+def render_job_page(data, token, exp, notes=None):
     tok = _h.escape(token)
     head = _HEAD("รายละเอียดงาน")
     back = f"<a class=\"back\" href=\"/portal?t={tok}\">← งานที่ติดตาม</a>"
@@ -221,22 +269,23 @@ def render_job_page(data, token, exp):
     if not data["bidders"]:
         b.append("<div class=\"bidhead\">ยังไม่มีผู้ยื่น</div>")
         b.append("<div class=\"msg\">งานนี้ยังไม่มีข้อมูลผู้ยื่น — รอประมูล/ประกาศผล</div>")
-        return head + "".join(b) + _FOOT
-    b.append(f"<div class=\"bidhead\">ผู้ยื่นทั้งหมด ({len(data['bidders'])} ราย)</div>")
-    for i, bid in enumerate(data["bidders"], 1):
-        wm = "🏆 " if bid["is_winner"] else ""
-        sme = " 🏷SME" if bid["is_sme"] else ""
-        nm = _h.escape(bid["name"] or "(ไม่ระบุชื่อ)")
-        disc = f"ส่วนลด {bid['discount']:.1f}%" if bid["discount"] is not None else "—"
-        cls = "brow bwin" if bid["is_winner"] else "brow"
-        if bid["tin"]:
-            link = (f"/portal/company?t={tok}&tin={_h.escape(bid['tin'])}"
-                    f"&from={_h.escape(str(j['project_id']))}")
-            nmhtml = f"<a class=\"bn blink\" href=\"{link}\">{i}. {wm}{nm}{sme}</a>"
-        else:
-            nmhtml = f"<span class=\"bn\">{i}. {wm}{nm}{sme}</span>"
-        b.append(f"<div class=\"{cls}\">{nmhtml}"
-                 f"<span class=\"bp\">{_baht(bid['price'])}<br><small>{disc}</small></span></div>")
+    else:
+        b.append(f"<div class=\"bidhead\">ผู้ยื่นทั้งหมด ({len(data['bidders'])} ราย)</div>")
+        for i, bid in enumerate(data["bidders"], 1):
+            wm = "🏆 " if bid["is_winner"] else ""
+            sme = " 🏷SME" if bid["is_sme"] else ""
+            nm = _h.escape(bid["name"] or "(ไม่ระบุชื่อ)")
+            disc = f"ส่วนลด {bid['discount']:.1f}%" if bid["discount"] is not None else "—"
+            cls = "brow bwin" if bid["is_winner"] else "brow"
+            if bid["tin"]:
+                link = (f"/portal/company?t={tok}&tin={_h.escape(bid['tin'])}"
+                        f"&from={_h.escape(str(j['project_id']))}")
+                nmhtml = f"<a class=\"bn blink\" href=\"{link}\">{i}. {wm}{nm}{sme}</a>"
+            else:
+                nmhtml = f"<span class=\"bn\">{i}. {wm}{nm}{sme}</span>"
+            b.append(f"<div class=\"{cls}\">{nmhtml}"
+                     f"<span class=\"bp\">{_baht(bid['price'])}<br><small>{disc}</small></span></div>")
+    b.append(_render_timeline(j["project_id"], tok, notes or []))
     return head + "".join(b) + _FOOT
 
 

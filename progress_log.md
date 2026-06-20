@@ -873,3 +873,26 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 - ดูผลรอบจริงพรุ่งนี้ 07:30 (journalctl -u bms-timeline-reminder) ว่าส่งถึง customer 2 จริง
 - เผื่ออนาคต: ปุ่ม "เตือนแล้ว/เลื่อน" ในข้อความ · ปรับรอบเวลาต่อ user
 - commit 6bc0e6a (go-live) ต่อจาก cce97c4 (shadow)
+
+## งานที่ N+154: Portal — โน้ตภาพรวม (job_overview) แยกจากไทม์ไลน์ (2026-06-20)
+
+### สถานะ: ✅ เสร็จ + LIVE
+
+### บริบท
+กัญจน์: "อยากมีโน้ตอีกอันจดภาพรวม ไม่ใช่ไทม์ไลน์" → free-form note 1 อันต่องาน (ไม่มีวันที่) แยกจากไทม์ไลน์ (job_notes ที่มี entry_date)
+
+### สิ่งที่ทำ (inline TDD — เล็กกว่า Polish B)
+- **schema** `_migrate_v129()`: `job_overview(customer_id, project_id, note, created_at, updated_at, PK(customer,project))` — 1 โน้ต/งาน/คน
+- **data** (`portal_views`): `get_job_overview` (คืน '' default) + `save_job_overview` (upsert UPDATE→INSERT, note ว่าง=ลบ, ต่อ customer)
+- **render** `render_job_page(...,overview="")`: `_render_overview` section "📝 โน้ตภาพรวม" (textarea prefilled + 💾) วางเหนือไทม์ไลน์ + CSS `.ovf`
+- **route**: GET fetch overview; POST action `save_overview` (reuse `/portal/job/note`)
+
+### Verify
+- 7 test suites PASS (เพิ่ม overview ใน schema/notes/views/routes test) + compile OK
+- deploy 3 ไฟล์ + init_schema สร้าง job_overview → hash==HEAD (Sebastian_Customer_DB 5e4c53b, portal_views 8c25195, bms_api f0b0530), active
+- e2e prod: save→read "ภาพรวมทดสอบ"→empty=delete net-zero ✓
+- commit 04cdbf9 · backup `.bak_<ts>`
+
+### โครงโน้ต 2 แบบในหน้า detail
+- 📝 **โน้ตภาพรวม** (job_overview) = free-form 1 อัน แก้ทับ — ภาพรวม/คนติดต่อ/เงื่อนไข
+- 🚂 **ไทม์ไลน์ของฉัน** (job_notes) = หลาย entry มีวันที่ เรียงราง + reminder 07:30

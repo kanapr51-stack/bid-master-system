@@ -295,3 +295,57 @@ def render_company_page(data, token, from_pid, exp):
                      f"<span class=\"jp\">{_baht(j['price'])}<br><small>{disc}</small></span></div>")
         b.append("</div>")
     return head + "".join(b) + _FOOT
+
+
+def _valid_date(s):
+    try:
+        datetime.strptime(str(s)[:10], "%Y-%m-%d")
+        return True
+    except (ValueError, TypeError):
+        return False
+
+
+def _now_th():
+    return datetime.now(TZ_TH).isoformat(timespec="seconds")
+
+
+def list_job_notes(conn, customer_id, pid):
+    if not customer_id:
+        return []
+    rows = conn.execute(
+        "SELECT id, entry_date, note FROM job_notes WHERE customer_id=? AND project_id=? "
+        "ORDER BY entry_date ASC, id ASC", (customer_id, pid)).fetchall()
+    return [{"id": r["id"], "entry_date": r["entry_date"], "note": r["note"]} for r in rows]
+
+
+def add_job_note(conn, customer_id, pid, entry_date, note):
+    note = (note or "").strip()
+    if not customer_id or not note or not _valid_date(entry_date):
+        return
+    now = _now_th()
+    conn.execute(
+        "INSERT INTO job_notes (customer_id, project_id, entry_date, note, created_at, updated_at) "
+        "VALUES (?,?,?,?,?,?)", (customer_id, pid, str(entry_date)[:10], note, now, now))
+
+
+def edit_job_note(conn, customer_id, note_id, entry_date, note):
+    note = (note or "").strip()
+    if not customer_id or not note or not _valid_date(entry_date):
+        return
+    try:
+        note_id = int(note_id)
+    except (TypeError, ValueError):
+        return
+    conn.execute(
+        "UPDATE job_notes SET entry_date=?, note=?, updated_at=? WHERE id=? AND customer_id=?",
+        (str(entry_date)[:10], note, _now_th(), note_id, customer_id))
+
+
+def delete_job_note(conn, customer_id, note_id):
+    if not customer_id:
+        return
+    try:
+        note_id = int(note_id)
+    except (TypeError, ValueError):
+        return
+    conn.execute("DELETE FROM job_notes WHERE id=? AND customer_id=?", (note_id, customer_id))

@@ -31,3 +31,30 @@ assert "หจก.เอ" in bodyc and "ยื่น" in bodyc, bodyc[:400]
 rbad = asyncio.run(api.portal_job_get(t="BAD", pid="69010000001"))
 assert "ลิงก์ไม่ถูกต้อง" in rbad.body.decode("utf-8") or "ใช้ไม่ได้" in rbad.body.decode("utf-8")
 print("OK test_portal_routes")
+
+# --- POST /portal/job/note: add + list + delete ---
+from starlette.requests import Request as _Req
+
+
+async def _post(body):
+    async def receive():
+        return {"type": "http.request", "body": body.encode("utf-8"), "more_body": False}
+    req = _Req({"type": "http", "method": "POST", "headers": []}, receive)
+    return await api.portal_job_note_post(req)
+
+from urllib.parse import urlencode
+# หมายเหตุ: ใช้ "นัดเซ็นสัญญา" ไม่ใช่ "โทรหาช่าง" — "โทรหาช่าง" ชนกับ placeholder ของฟอร์ม
+# เพิ่ม note ใน _render_timeline (portal_views.py) ทำให้ "in body" เป็น true ตลอดแม้ลบ note แล้ว
+r1 = asyncio.run(_post(urlencode({"t": tok, "pid": "69010000001", "action": "add",
+                                  "entry_date": "2026-01-21", "note": "นัดเซ็นสัญญา"})))
+assert r1.status_code == 303, r1.status_code
+body = asyncio.run(api.portal_job_get(t=tok, pid="69010000001")).body.decode("utf-8")
+assert "นัดเซ็นสัญญา" in body and "21 ม.ค. 2569" in body, body[:400]
+# delete: หา note_id จาก DB
+import Sebastian_Customer_DB as _db
+with _db.get_connection() as _c:
+    nid = _c.execute("SELECT id FROM job_notes WHERE note='นัดเซ็นสัญญา'").fetchone()[0]
+asyncio.run(_post(urlencode({"t": tok, "pid": "69010000001", "action": "delete", "note_id": str(nid)})))
+body2 = asyncio.run(api.portal_job_get(t=tok, pid="69010000001")).body.decode("utf-8")
+assert "นัดเซ็นสัญญา" not in body2, "ลบแล้วยังอยู่"
+print("OK portal_job_note_post")

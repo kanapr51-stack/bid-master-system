@@ -19,7 +19,7 @@ from pathlib import Path
 
 import httpx
 from fastapi import FastAPI, Request, Header, HTTPException, Query
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 
 sys.path.insert(0, str(Path(__file__).parent))
 import follow_token  # noqa: E402
@@ -965,8 +965,11 @@ async def portal_job_get(t: str = "", pid: str = ""):
     if not v:
         return HTMLResponse(_follow_page_html(t, "invalid", {}, "", 0))
     with get_conn() as conn:
+        cust = conn.execute("SELECT id FROM customers WHERE line_user_id=?", (v[0],)).fetchone()
+        cid = cust["id"] if cust else None
         data = portal_views.job_detail(conn, pid)
-    return HTMLResponse(portal_views.render_job_page(data, t, v[2]))
+        notes = portal_views.list_job_notes(conn, cid, pid) if cid else []
+    return HTMLResponse(portal_views.render_job_page(data, t, v[2], notes))
 
 
 @app.get("/portal/company")
@@ -977,6 +980,29 @@ async def portal_company_get(t: str = "", tin: str = "", from_: str = Query("", 
     with get_conn() as conn:
         data = portal_views.company_profile(conn, tin)
     return HTMLResponse(portal_views.render_company_page(data, t, from_, v[2]))
+
+
+@app.post("/portal/job/note")
+async def portal_job_note_post(request: Request):
+    from urllib.parse import parse_qs, quote
+    form = parse_qs((await request.body()).decode("utf-8"))
+    g = lambda k: (form.get(k) or [""])[0]
+    t = g("t")
+    v = follow_token.verify_token(t)
+    if not v:
+        return HTMLResponse(_follow_page_html(t, "invalid", {}, "", 0))
+    pid, action = g("pid"), g("action")
+    with get_conn() as conn:
+        cust = conn.execute("SELECT id FROM customers WHERE line_user_id=?", (v[0],)).fetchone()
+        cid = cust["id"] if cust else None
+        if cid:
+            if action == "add":
+                portal_views.add_job_note(conn, cid, pid, g("entry_date"), g("note"))
+            elif action == "edit":
+                portal_views.edit_job_note(conn, cid, g("note_id"), g("entry_date"), g("note"))
+            elif action == "delete":
+                portal_views.delete_job_note(conn, cid, g("note_id"))
+    return RedirectResponse(f"/portal/job?t={quote(t)}&pid={quote(pid)}", status_code=303)
 
 
 @app.post("/webhook/line")

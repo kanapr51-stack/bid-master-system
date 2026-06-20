@@ -203,4 +203,15 @@ assert "<details class=\"wonlist\" open>" in hwb, "filter → details เปิ�
 hw0 = pv.render_company_page(p, "TOK", "69010000001", 0, None, None)
 assert "🏆 ผลงานที่ชนะ" not in hw0, "ไม่มี won → ไม่โชว์ section"
 print("OK render_company_won")
+
+# --- render_job_page: ปุ่มดาว "ที่สนใจ" (ชั้นที่ 2, แยกจาก ⭐ ติดตามเดิม) ---
+c = _seed()
+d = pv.job_detail(c, "69010000001")
+h_on = pv.render_job_page(d, "TOK", 0, [], "", True)
+assert "⭐" in h_on, "ติดดาวแล้วต้องโชว์ ⭐ เต็ม"
+assert "/portal/star_toggle?t=TOK&pid=69010000001&back=job" in h_on, h_on
+h_off = pv.render_job_page(d, "TOK", 0, [], "", False)
+assert "☆" in h_off and "star_toggle" in h_off, "ไม่ติดดาวต้องโชว์ ☆ ว่าง"
+print("OK render_job_page_star")
+
 print("OK test_portal_views")

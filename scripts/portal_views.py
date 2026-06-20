@@ -297,6 +297,7 @@ _CSS = (
     ".rstation.past::before{background:#d9534f}"
     ".rdate.past{color:#d9534f}"
     ".pastlist summary{color:#d9534f}"
+    ".star{font-size:20px;text-decoration:none;margin-left:8px;vertical-align:middle}"
 )
 
 
@@ -365,15 +366,18 @@ def _render_overview(pid, tok, overview):
         "<button type=\"submit\">💾 บันทึกโน้ต</button></form>")
 
 
-def render_job_page(data, token, exp, notes=None, overview=""):
+def render_job_page(data, token, exp, notes=None, overview="", starred=False):
     tok = _h.escape(token)
     head = _HEAD("รายละเอียดงาน")
     back = f"<a class=\"back\" href=\"/portal?t={tok}\">← งานที่ติดตาม</a>"
     if not data:
         return head + back + "<div class=\"msg\">ไม่พบรายละเอียดงานนี้</div>" + _FOOT
     j = data["job"]
-    b = [back, f"<div class=\"h\">🏗️ {_h.escape(j['name'])}</div>",
-         f"<div class=\"jid\">🆔 {_h.escape(str(j['project_id']))}</div>"]
+    pid_esc = _h.escape(str(j["project_id"]))
+    star_href = f"/portal/star_toggle?t={tok}&pid={pid_esc}&back=job"
+    star_icon = "⭐" if starred else "☆"
+    b = [back, f"<div class=\"h\">🏗️ {_h.escape(j['name'])}<a class=\"star\" href=\"{star_href}\">{star_icon}</a></div>",
+         f"<div class=\"jid\">🆔 {pid_esc}</div>"]
     if j["location"]:
         b.append(f"<div class=\"meta\">📍 {_h.escape(j['location'])}</div>")
     if j["budget"]:

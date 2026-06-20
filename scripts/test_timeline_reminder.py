@@ -19,28 +19,33 @@ def _conn():
     def add(cid, pid, d, note):
         c.execute("INSERT INTO job_notes (customer_id,project_id,entry_date,note,created_at) "
                   "VALUES (?,?,?,?,?)", (cid, pid, d, note, "t"))
-    add(1, "PA", "2026-01-21", "โทรหาช่าง")
-    add(1, "PA", "2026-01-21", "เช็คแบบ")          # งานเดียวกัน 2 รายการ
-    add(1, "PB", "2026-01-21", "ดูหน้างาน")        # อีกงานวันเดียวกัน
-    add(1, "PA", "2026-01-22", "พรุ่งนี้")          # คนละวัน — ไม่เข้า
+    add(1, "PA", "2026-01-21", "โทรหาช่าง")          # วันนี้
+    add(1, "PA", "2026-01-21", "เช็คแบบ")            # วันนี้ งานเดียวกัน
+    add(1, "PB", "2026-01-22", "ดูหน้างาน")          # พรุ่งนี้ อีกงาน
+    add(1, "PA", "2026-01-25", "อีกหลายวัน")          # นอกช่วง — ไม่เข้า
     add(2, "PA", "2026-01-21", "ของคนสอง")
-    add(3, "PA", "2026-01-21", "ของคนปิด")          # inactive — ไม่เข้า
+    add(3, "PA", "2026-01-21", "ของคนปิด")            # inactive — ไม่เข้า
     return c
 
 
 c = _conn()
-groups = tr.find_due_reminders(c, "2026-01-21")
+# เตือนวันนี้ (21) + พรุ่งนี้ (22)
+groups = tr.find_due_reminders(c, "2026-01-21", "2026-01-22")
 byu = {g["line_user_id"]: g for g in groups}
-assert set(byu) == {"U1", "U2"}, "ต้องมีแค่ active + วันนี้"          # U3 inactive ตัดออก
+assert set(byu) == {"U1", "U2"}, "ต้องมีแค่ active"                   # U3 inactive ตัดออก
 u1 = byu["U1"]
-assert len(u1["jobs"]) == 2, u1["jobs"]                               # PA + PB
+assert len(u1["jobs"]) == 2, u1["jobs"]                               # PA(วันนี้) + PB(พรุ่งนี้)
 pa = next(j for j in u1["jobs"] if j["project_id"] == "PA")
-assert pa["project_name"] == "งานถนน A" and len(pa["items"]) == 2, pa  # 2 รายการในงานเดียว
-assert "พรุ่งนี้" not in str(u1), "วันอื่นต้องไม่หลุดเข้ามา"
-# build text
+assert len(pa["items"]) == 2 and all(it["when"] == "วันนี้" for it in pa["items"]), pa
+pb = next(j for j in u1["jobs"] if j["project_id"] == "PB")
+assert pb["items"][0]["when"] == "พรุ่งนี้", pb
+assert "อีกหลายวัน" not in str(u1), "วันนอกช่วงต้องไม่หลุดเข้ามา"
+# build text — มีป้าย [วันนี้]/[พรุ่งนี้]
 txt = tr.build_reminder_text(u1)
-assert "ไทม์ไลน์วันนี้" in txt and "21 ม.ค. 2569" in txt, txt
-assert "งานถนน A" in txt and "โทรหาช่าง" in txt and "ดูหน้างาน" in txt, txt
-# วันที่ไม่มีใครจด → []
-assert tr.find_due_reminders(c, "2030-01-01") == []
+assert "เตือนไทม์ไลน์งาน" in txt and "21 ม.ค. 2569" in txt, txt
+assert "[วันนี้] โทรหาช่าง" in txt and "[พรุ่งนี้] ดูหน้างาน" in txt, txt
+# เตือนเฉพาะวันนี้ (ไม่ส่ง tomorrow) → PB ไม่เข้า
+g1 = tr.find_due_reminders(c, "2026-01-21")
+assert all(j["project_id"] != "PB" for g in g1 for j in g["jobs"]), "single-date ต้องไม่มีพรุ่งนี้"
+assert tr.find_due_reminders(c, "2030-01-01", "2030-01-02") == []
 print("OK test_timeline_reminder")

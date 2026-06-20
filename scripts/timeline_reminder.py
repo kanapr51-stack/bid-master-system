@@ -32,18 +32,21 @@ def _fmt_date_th(s):
     return f"{d.day} {_TH_MONTHS[d.month]} {d.year + 543}"
 
 
-def find_due_reminders(conn, today):
-    """job_notes ที่ entry_date == today (str 'YYYY-MM-DD') ของ customer active.
-    คืน list ต่อ user: {line_user_id, display_name, today, jobs:[{project_id, project_name, items:[note]}]}."""
+def find_due_reminders(conn, today, tomorrow=None):
+    """job_notes ที่ entry_date == today (และ tomorrow ถ้าระบุ) ของ customer active.
+    คืน list ต่อ user: {line_user_id, display_name, today, jobs:[{project_id, project_name,
+    items:[{note, entry_date, when}]}]} — when = 'วันนี้' | 'พรุ่งนี้'."""
+    dates = [today] + ([tomorrow] if tomorrow else [])
+    ph = ",".join("?" * len(dates))
     rows = conn.execute(
         "SELECT jn.customer_id, c.line_user_id, c.display_name, jn.project_id, jn.note, "
-        "ps.project_name "
+        "jn.entry_date, ps.project_name "
         "FROM job_notes jn "
         "JOIN customers c ON c.id = jn.customer_id AND c.active = 1 "
         "LEFT JOIN projects_seen ps ON ps.project_id = jn.project_id "
-        "WHERE jn.entry_date = ? "
-        "ORDER BY jn.customer_id, jn.project_id, jn.id",
-        (today,)).fetchall()
+        f"WHERE jn.entry_date IN ({ph}) "
+        "ORDER BY jn.customer_id, jn.project_id, jn.entry_date, jn.id",
+        (*dates,)).fetchall()
     users = {}
     for r in rows:
         uid = r["line_user_id"]
@@ -52,7 +55,8 @@ def find_due_reminders(conn, today):
         pid = r["project_id"]
         job = u["jobs"].setdefault(pid, {"project_id": pid,
                                          "project_name": r["project_name"] or pid, "items": []})
-        job["items"].append(r["note"])
+        when = "วันนี้" if r["entry_date"] == today else "พรุ่งนี้"
+        job["items"].append({"note": r["note"], "entry_date": r["entry_date"], "when": when})
     out = []
     for u in users.values():
         u["jobs"] = list(u["jobs"].values())
@@ -61,12 +65,12 @@ def find_due_reminders(conn, today):
 
 
 def build_reminder_text(group):
-    """ข้อความเตือน LINE ต่อ user (รวมทุกงาน/รายการของวันนี้)."""
-    lines = [f"🚂 ไทม์ไลน์วันนี้ ({_fmt_date_th(group['today'])})", ""]
+    """ข้อความเตือน LINE ต่อ user (รวมทุกงาน/รายการ วันนี้+พรุ่งนี้ ติดป้ายกำกับ)."""
+    lines = [f"🚂 เตือนไทม์ไลน์งาน ({_fmt_date_th(group['today'])})", ""]
     for job in group["jobs"]:
         lines.append(f"📋 {job['project_name']}")
-        for note in job["items"]:
-            lines.append(f"  • {note}")
+        for it in job["items"]:
+            lines.append(f"  • [{it['when']}] {it['note']}")
         lines.append("")
     lines.append("— จากแผนงานที่คุณจดไว้ในไทม์ไลน์")
     return "\n".join(lines).strip()
@@ -86,10 +90,11 @@ def main():
     ap.add_argument("--date", default=None, help="override วันที่ 'YYYY-MM-DD' (test)")
     args = ap.parse_args()
     today = args.date or datetime.now(TZ_TH).date().isoformat()
+    tomorrow = (datetime.fromisoformat(today).date() + timedelta(days=1)).isoformat()
     with get_connection() as conn:
-        groups = find_due_reminders(conn, today)
+        groups = find_due_reminders(conn, today, tomorrow)
     mode = "LIVE" if args.live else "SHADOW"
-    print(f"[timeline_reminder] {mode} date={today} due_users={len(groups)}")
+    print(f"[timeline_reminder] {mode} today={today} tomorrow={tomorrow} due_users={len(groups)}")
     if not groups:
         return
     token = None

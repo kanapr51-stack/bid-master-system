@@ -292,6 +292,11 @@ _CSS = (
     ".wonlist summary::-webkit-details-marker{display:none}"
     ".wonlist summary::before{content:'▸ ';font-size:11px}"
     ".wonlist[open] summary::before{content:'▾ '}"
+    ".rstation.today::before{background:#f7941d}"
+    ".rdate.today{color:#f7941d}"
+    ".rstation.past::before{background:#d9534f}"
+    ".rdate.past{color:#d9534f}"
+    ".pastlist summary{color:#d9534f}"
 )
 
 
@@ -401,6 +406,75 @@ def render_job_page(data, token, exp, notes=None, overview=""):
                      f"<span class=\"bp\">{_baht(bid['price'])}<br><small>{disc}</small></span></div>")
     b.append(_render_overview(j["project_id"], tok, overview or ""))
     b.append(_render_timeline(j["project_id"], tok, notes or []))
+    return head + "".join(b) + _FOOT
+
+
+def _render_today_card(today_items, tomorrow_items, today_label):
+    if today_items:
+        line = " · ".join(f"{_h.escape(it['project_name'])} — {_h.escape(it['note'])}" for it in today_items)
+        today_line = f"วันนี้: {line}"
+    else:
+        today_line = "วันนี้: ⚪ ไม่มีรายการ"
+    if tomorrow_items:
+        it = tomorrow_items[0]
+        tom_line = f"🔔 พรุ่งนี้: {_h.escape(it['project_name'])} — {_h.escape(it['note'])}"
+    else:
+        tom_line = "🔔 พรุ่งนี้: ⚪ ไม่มีรายการ"
+    return (f"<div class=\"card\"><div class=\"rdate\">📅 {_h.escape(today_label)}</div>"
+            f"<div class=\"meta\">{today_line}</div>"
+            f"<div class=\"meta\">{tom_line}</div></div>")
+
+
+def render_timeline_page(notes, token, exp):
+    """หน้า /portal/timeline — รวม job_notes ทุกงานเป็นรางเดียว. read+navigate เท่านั้น (แก้โน้ตที่หน้างานเดิม)."""
+    tok = _h.escape(token)
+    head = _HEAD("ไทม์ไลน์รวมทุกงาน")
+    b = [f"<a class=\"back\" href=\"/portal?t={tok}\">← Bid Board</a>",
+         "<div class=\"h\">🚂 ไทม์ไลน์รวมทุกงาน</div>"]
+    if not notes:
+        b.append("<div class=\"msg\">ยังไม่มีรายการในไทม์ไลน์ — เพิ่มได้จากหน้างานแต่ละงาน</div>")
+        return head + "".join(b) + _FOOT
+
+    today = datetime.now(TZ_TH).date()
+    tomorrow = today + timedelta(days=1)
+
+    def _d(n):
+        try:
+            return datetime.fromisoformat(str(n["entry_date"])[:10]).date()
+        except (ValueError, TypeError):
+            return today
+
+    past = sorted((n for n in notes if _d(n) < today), key=_d, reverse=True)
+    upcoming = sorted((n for n in notes if _d(n) >= today), key=_d)
+    today_items = [n for n in upcoming if _d(n) == today]
+    tomorrow_items = [n for n in upcoming if _d(n) == tomorrow]
+    today_label = f"วันนี้ {_fmt_date_th(today.isoformat())}"
+
+    def _station(n, dcls, dlabel):
+        link = f"/portal/job?t={tok}&pid={_h.escape(str(n['project_id']))}"
+        rcls = f"rstation {dcls}".strip()
+        dcls_full = f"rdate {dcls}".strip()
+        return (f"<div class=\"{rcls}\"><div class=\"{dcls_full}\">{_h.escape(dlabel)}</div>"
+                f"<div class=\"meta\"><a class=\"blink\" href=\"{link}\">{_h.escape(n['project_name'])}</a>"
+                f" — {_h.escape(n['note'])}</div></div>")
+
+    b.append(_render_today_card(today_items, tomorrow_items, today_label))
+    b.append("<div class=\"rail\">")
+    for n in upcoming:
+        d = _d(n)
+        if d == today:
+            dcls, dlabel = "today", today_label
+        elif d == tomorrow:
+            dcls, dlabel = "", f"พรุ่งนี้ {_fmt_date_th(n['entry_date'])}"
+        else:
+            dcls, dlabel = "", _fmt_date_th(n["entry_date"])
+        b.append(_station(n, dcls, dlabel))
+    b.append("</div>")
+    if past:
+        b.append(f"<details class=\"wonlist pastlist\"><summary>🔴 ที่ผ่านมา / เลยกำหนด ({len(past)})</summary>")
+        for n in past:
+            b.append(_station(n, "past", _fmt_date_th(n["entry_date"])))
+        b.append("</details>")
     return head + "".join(b) + _FOOT
 
 
@@ -545,6 +619,19 @@ def list_job_notes(conn, customer_id, pid):
         "SELECT id, entry_date, note FROM job_notes WHERE customer_id=? AND project_id=? "
         "ORDER BY entry_date ASC, id ASC", (customer_id, pid)).fetchall()
     return [{"id": r["id"], "entry_date": r["entry_date"], "note": r["note"]} for r in rows]
+
+
+def all_job_notes(conn, customer_id):
+    """job_notes ทุกงานของ user (join ชื่องาน) — สำหรับหน้า /portal/timeline. คืน [] ถ้าไม่มี customer."""
+    if not customer_id:
+        return []
+    rows = conn.execute(
+        "SELECT jn.id, jn.project_id, jn.entry_date, jn.note, ps.project_name "
+        "FROM job_notes jn LEFT JOIN projects_seen ps ON ps.project_id = jn.project_id "
+        "WHERE jn.customer_id=? ORDER BY jn.entry_date ASC, jn.id ASC", (customer_id,)).fetchall()
+    return [{"id": r["id"], "project_id": r["project_id"],
+             "project_name": r["project_name"] or r["project_id"],
+             "entry_date": r["entry_date"], "note": r["note"]} for r in rows]
 
 
 def add_job_note(conn, customer_id, pid, entry_date, note):

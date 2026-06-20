@@ -469,6 +469,8 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0, token: str = "") -> str:
         ".wrap{max-width:480px;margin:0 auto}"
         ".h{font-size:20px;font-weight:800;margin:4px 0 2px}"
         ".sub{font-size:14px;font-weight:600;color:#777;margin:0 0 14px}"
+        ".tlbtn{display:inline-block;font-size:13px;font-weight:600;color:#1d72b4;background:#eef0f3;"
+        "padding:7px 14px;border-radius:14px;text-decoration:none;margin:2px 0 10px}"
         ".search{width:100%;box-sizing:border-box;padding:11px 14px;font-size:15px;"
         "border:1px solid #ddd;border-radius:12px;margin:0 0 6px;outline:none}"
         ".search:focus{border-color:#1d72b4}"
@@ -498,6 +500,7 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0, token: str = "") -> str:
     foot = "</div></body></html>"
     n = sum(len(v) for v in groups.values())
     body = ["<div class=\"h\">🗂 BMS Bid Board</div>",
+            f"<a class=\"tlbtn\" href=\"/portal/timeline?t={_h.escape(token)}\">🚂 ไทม์ไลน์รวม</a>",
             f"<div class=\"sub\">งานที่คุณติดตาม ({n})</div>"]
     if n == 0:
         body.append("<div class=\"msg\">ยังไม่มีงานที่ติดตาม — กดดาว ⭐ ในข้อความแจ้งเตือนเพื่อเริ่มติดตามครับ</div>")
@@ -981,6 +984,18 @@ async def portal_get(t: str = ""):
     if jobs is None:
         return HTMLResponse(_follow_page_html(t, "no_customer", {}, "", v[2]))
     return HTMLResponse(_portal_page_html(jobs, v[2], t))
+
+
+@app.get("/portal/timeline")
+async def portal_timeline_get(t: str = ""):
+    v = follow_token.verify_token(t)
+    if not v:
+        return HTMLResponse(_follow_page_html(t, "invalid", {}, "", 0))
+    with get_conn() as conn:
+        cust = conn.execute("SELECT id FROM customers WHERE line_user_id=?", (v[0],)).fetchone()
+        cid = cust["id"] if cust else None
+        notes = portal_views.all_job_notes(conn, cid) if cid else []
+    return HTMLResponse(portal_views.render_timeline_page(notes, t, v[2]))
 
 
 @app.get("/portal/job")

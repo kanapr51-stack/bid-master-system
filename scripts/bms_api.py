@@ -458,7 +458,7 @@ def _portal_jobs(user_id: str):
         return groups
 
 
-def _portal_page_html(groups: dict, exp_epoch: int = 0) -> str:
+def _portal_page_html(groups: dict, exp_epoch: int = 0, token: str = "") -> str:
     """HTML มือถือ-first — รายการงานติดตามจัดกลุ่ม stage. read-only."""
     import html as _h
     head = (
@@ -479,13 +479,8 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0) -> str:
         ".meta{font-size:13px;color:#888;margin:3px 0}"
         ".dl{font-size:13px;color:#d9534f;margin:3px 0}"
         ".win{font-size:14px;font-weight:600;color:#1a7f37;margin:3px 0}"
-        ".clickable{cursor:pointer}"
-        ".more{font-size:13px;font-weight:600;color:#1d72b4;margin:8px 0 2px;user-select:none}"
-        ".detail{display:none;margin-top:6px;border-top:1px solid #eee;padding-top:6px}"
-        ".brow{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:4px 0;"
-        "border-bottom:1px solid #f2f2f2}"
-        ".brow .bn{color:#333;flex:1}.brow .bp{color:#666;white-space:nowrap;font-variant-numeric:tabular-nums}"
-        ".bwin{font-weight:700}.bwin .bn{color:#1a7f37}.bwin .bp{color:#1a7f37}"
+        ".joblink{text-decoration:none;color:inherit;display:block}"
+        ".more{font-size:13px;font-weight:600;color:#1d72b4;margin:8px 0 0}"
         ".dots{font-size:12px;color:#999;margin:4px 0}"
         ".badge{font-size:11px;padding:2px 8px;border-radius:10px;color:#fff;margin-left:6px}"
         ".bd{background:#1d72b4}.bw{background:#1a7f37}.bp{background:#7a5cc6}.bs{background:#c2410c}"
@@ -535,22 +530,13 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0) -> str:
             if j["winner"]:
                 disc = f" (ลด {j['winner_disc']:.0f}%)" if j["winner_disc"] is not None else ""
                 L.append(f"<div class=\"win\">🏆 {_h.escape(j['winner'])} · {_baht(j['winner_price'])}{disc}</div>")
-            if j["bidders"]:
-                nb = len(j["bidders"])
-                L.append(f"<div class=\"more\" data-n=\"{nb}\">▾ ดูผู้ยื่นทั้งหมด ({nb} ราย)</div>")
-                rows = []
-                for i, b in enumerate(j["bidders"], 1):
-                    wmark = "🏆 " if b["is_winner"] else ""
-                    sme = " 🏷SME" if b["is_sme"] else ""
-                    rows.append(
-                        f"<div class=\"brow{' bwin' if b['is_winner'] else ''}\">"
-                        f"<span class=\"bn\">{i}. {wmark}{_h.escape(b['name'] or '-')}{sme}</span>"
-                        f"<span class=\"bp\">{_baht(b['price'])}</span></div>")
-                L.append("<div class=\"detail\">" + "".join(rows) + "</div>")
+            L.append("<div class=\"more\">ดูผู้ยื่นทั้งหมด →</div>")
         else:
             L.append("<div class=\"dots\">●━━○━━○<span class=\"badge bp\">รับฟังคำประชาวิจารณ์</span></div>")
-        cls = "job clickable" if (kind == "won" and j["bidders"]) else "job"
-        return f"<div class=\"{cls}\">" + "".join(L) + "</div>"
+        if kind == "won":
+            href = f"/portal/job?t={_h.escape(token)}&pid={_h.escape(str(j['project_id']))}"
+            return f"<a class=\"job joblink\" href=\"{href}\">" + "".join(L) + "</a>"
+        return "<div class=\"job\">" + "".join(L) + "</div>"
 
     for key, label in (("bidding", "🔵 ประกาศวันยื่นซอง"), ("prelim", "📊 สรุปราคาเบื้องต้น"),
                        ("pre", "🟣 รับฟังคำประชาวิจารณ์"), ("won", "🏆 ประกาศผู้ชนะทางการ")):
@@ -570,13 +556,7 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0) -> str:
         "var on=!s||c.textContent.toLowerCase().indexOf(s)>=0;"
         "c.style.display=on?'':'none';if(on)v++;});"
         "g.style.display=v?'':'none';tot+=v;});"
-        "if(nh)nh.style.display=tot?'none':'block';});}"
-        "document.querySelectorAll('.clickable').forEach(function(card){"
-        "card.addEventListener('click',function(){"
-        "var d=card.querySelector('.detail'),m=card.querySelector('.more');if(!d)return;"
-        "var open=d.style.display==='block';d.style.display=open?'none':'block';"
-        "if(m)m.textContent=(open?'\\u25be ดูผู้ยื่นทั้งหมด':'\\u25b4 ซ่อนผู้ยื่น')+' ('+m.dataset.n+' ราย)';"
-        "});});})();</script>")
+        "if(nh)nh.style.display=tot?'none':'block';});}})();</script>")
     return head + "".join(body) + foot
 
 
@@ -976,7 +956,7 @@ async def portal_get(t: str = ""):
     jobs = _portal_jobs(v[0])
     if jobs is None:
         return HTMLResponse(_follow_page_html(t, "no_customer", {}, "", v[2]))
-    return HTMLResponse(_portal_page_html(jobs, v[2]))
+    return HTMLResponse(_portal_page_html(jobs, v[2], t))
 
 
 @app.get("/portal/job")

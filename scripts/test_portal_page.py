@@ -25,7 +25,7 @@ groups = {
                           {"name": "หจก.Y", "price": 752000.0, "is_winner": False, "is_sme": True}])],
     "pre": [_job(project_id="PB", name="<script>x</script>")],
 }
-h = api._portal_page_html(groups, 2000000000)
+h = api._portal_page_html(groups, 2000000000, "TOK")
 assert "งานที่คุณติดตาม (4)" in h, h
 # req3 + req4: bidding label เปลี่ยน + วันที่ไทย + countdown
 assert "ประกาศวันยื่นซอง" in h and "กำลังประมูล" not in h, h
@@ -34,11 +34,11 @@ assert "679,000" in h, h
 # req2: prelim แยกจาก won ทางการ
 assert "สรุปราคาเบื้องต้น" in h and "ราคาต่ำสุดที่เสนอ 738,000 บาท (3 ราย)" in h, h
 assert "ประกาศผู้ชนะทางการ" in h and "ประกาศผล</span>" not in h, h
-assert "หจก.X" in h and "738,000" in h and "ลด 26%" in h and "หจก.Y" in h, h
-# กดดูผู้ยื่นทั้งหมด: card clickable + detail table + SME + ผู้ชนะ
-assert "job clickable" in h and "ดูผู้ยื่นทั้งหมด (2 ราย)" in h, h
-assert "class=\"detail\"" in h and "🏷SME" in h and "752,000" in h, h
-assert "querySelectorAll('.clickable')" in h, "ไม่มี JS toggle"
+assert "หจก.X" in h and "738,000" in h and "ลด 26%" in h, h
+# won card = ลิงก์ไปหน้า detail (ไม่ใช่ expand inline)
+assert "/portal/job?t=TOK&pid=PW" in h, "การ์ด won ต้องลิงก์ไป detail"
+assert "ดูผู้ยื่นทั้งหมด" in h and "querySelectorAll('.clickable')" not in h, h
+assert "class=\"detail\"" not in h, "ต้องไม่มี expand inline แล้ว"
 # req5: pre label เปลี่ยน
 assert "รับฟังคำประชาวิจารณ์" in h and "รับฟังความเห็น" not in h, h
 # escape ยังทำงาน (ชื่องาน escape — script injection ในชื่อต้องไม่หลุด)
@@ -48,6 +48,6 @@ assert "class=\"search\"" in h and "ค้นหางาน" in h, "ไม่�
 assert "🆔 PD" in h and "🆔 PW" in h, "ไม่มี ID ใต้ชื่อ"
 assert "querySelectorAll('.gw')" in h, "ไม่มี JS filter"
 # หน้าว่าง: ไม่มีแถบค้นหา
-h0 = api._portal_page_html({"won": [], "bidding": [], "pre": []}, 0)
+h0 = api._portal_page_html({"won": [], "bidding": [], "pre": []}, 0, "TOK")
 assert "ยังไม่มีงานที่ติดตาม" in h0 and "class=\"search\"" not in h0, h0
 print("OK test_portal_page")

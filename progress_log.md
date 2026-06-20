@@ -770,3 +770,32 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 - test_portal_page (+clickable/detail/SME assert) + test_portal_jobs (+bidders sort assert) → PASS
 - **node --check** script ที่ render → JS syntax OK (กัน brace เพี้ยน — เคยมี stray `}` ระหว่างทาง)
 - render จริง: 3 ราย ผู้ชนะขึ้นก่อน + SME + ราคาเรียง ✓
+
+## งานที่ N+150: Portal Phase 2b/1 — หน้า detail งาน + ประวัติบริษัท (2026-06-20)
+
+### สถานะ: ✅ เสร็จ + LIVE (subagent-driven 6 tasks + final review + deploy)
+
+### บริบท
+กัญจน์ขอ: กดการ์ดผู้ชนะ → เด้งหน้าแยก (ย้อนกลับได้) เห็นผู้ยื่นทุกราย + ส่วนลดจากราคากลาง + กดบริษัทดูประวัติ (อัปเดตตามงานที่ประมูล). ทำ **Phase 1** (Phase 2 = มุมเทียบ multi-tenant + ส่วนลดแยกอำเภอ/ตำบล → defer เพราะติด data: customers ไม่เก็บบริษัท tenant + งานใน bid_results มีพิกัดแค่ 7/1084). spec+plan: `docs/superpowers/{specs,plans}/2026-06-20-portal-job-company-detail*`
+
+### สิ่งที่ทำ — โมดูลใหม่ `scripts/portal_views.py` (data+render แยกจาก bms_api)
+- `job_detail(conn,pid)` → ผู้ยื่นทุกราย sort ผู้ชนะก่อน→ราคา + ส่วนลด `(1-price/budget)*100` (budget>0)
+- `company_profile(conn,tin)` → สถิติ (ยื่น/ชนะ/win-rate/จังหวัด) + discount histogram (bucket 5%) + by_year (ปีจาก project_id[:2], ใหม่→เก่า)
+- `render_job_page` / `render_company_page` → HTML มือถือ + **กราฟ inline CSS bar** (ไม่พึ่ง chart lib) + escape ครบ
+- `bms_api`: 2 route `/portal/job` + `/portal/company` (verify token เดิม) + การ์ด won เปลี่ยนจาก expand inline (N+149) เป็น **ลิงก์** ไป `/portal/job` (ลบ `.clickable/.detail` JS+CSS, `_portal_page_html` รับ `token`)
+
+### Process: subagent-driven (skill)
+- 6 code tasks × (implementer haiku/sonnet + task reviewer sonnet) ทุก task spec✅ quality approved
+- **final whole-branch review (opus): READY** — URL↔route ตรง 6 เส้น (กับดัก `from`/`from_`), token ทุก route, escape ครบ, ไม่มี circular import
+- ledger: `.superpowers/sdd/progress.md`
+
+### Verify
+- 4 test suites PASS (portal_views/routes/page/jobs) + compile OK
+- deploy VPS scp 2 ไฟล์ → content==HEAD `a3ee218`, active, import OK
+- **e2e real-data:** งาน 68089533088 (ราคากลาง 981,714) ผู้ชนะส่วนลด 16.2% ✓ · company page stat+กราฟ+timeline ✓ · งาน budget=0 → ส่วนลด "—" graceful ✓
+- commits 74ce63f..067f1bb (6) + deploy
+
+### Followup
+- Phase 2: (1) เพิ่ม map customers→บริษัท tenant (มุมเทียบ "เรา") (2) parse อำเภอ/ตำบลจากชื่องาน (ส่วนลดแยกพื้นที่)
+- cleanup เล็ก (ไม่บล็อก): `agree` field ใน job_detail ไม่ถูกใช้, `_baht` ซ้ำ bms_api/portal_views
+- การ์ดกลุ่มอื่น (bidding/prelim) ยังไม่ลิงก์ — กัญจน์บอกเฉพาะ won ก่อน

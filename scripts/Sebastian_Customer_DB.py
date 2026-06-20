@@ -311,7 +311,20 @@ def init_schema():
     _migrate_v128()
     _migrate_v129()
     _migrate_v130()
-    print(f"Schema v1.13 ready: {DB_PATH}")
+    _migrate_v131()
+    print(f"Schema v1.14 ready: {DB_PATH}")
+
+
+def _migrate_v131():
+    """job_stars — ดาว 'ที่สนใจ' ชั้นที่สอง แยกจาก followed_jobs.starred_at (⭐ เดิม=เริ่มติดตาม). (2026-06-21)"""
+    with get_connection() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS job_stars (
+                customer_id INTEGER NOT NULL,
+                project_id  TEXT NOT NULL,
+                created_at  TEXT NOT NULL,
+                PRIMARY KEY (customer_id, project_id)
+            )""")
 
 
 def _migrate_v130():

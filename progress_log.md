@@ -817,4 +817,31 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 - commit bc7da7f · backup `.bak_20260620_133443`
 
 ### Followup
-- Polish B (โน้ตต่องาน write path) ยังไม่ทำ — ก้อนแยก (ตารางใหม่ + POST + auth)
+- ~~Polish B (โน้ตต่องาน write path)~~ → ทำใน N+152
+
+## งานที่ N+152: Portal Polish B — ไทม์ไลน์งานสร้างเอง (รางรถไฟ) + โน้ต CRUD (2026-06-20)
+
+### สถานะ: ✅ เสร็จ + LIVE (subagent-driven 4 code tasks + final review opus + deploy)
+
+### บริบท
+กัญจน์ขอ: ในหน้า `/portal/job` ให้ user สร้างแผนงานเอง — จดวันที่ + สิ่งที่จะทำ (เช่น "21 ม.ค. โทรหาช่าง") เรียงเป็นรางรถไฟ เพิ่ม/แก้/ลบได้. **ไม่ใช่** timeline อัตโนมัติจากระบบ — user สร้างเองล้วน. spec/plan: `docs/superpowers/{specs,plans}/2026-06-20-portal-job-timeline-notes*`
+
+### สิ่งที่ทำ
+- **schema** (`Sebastian_Customer_DB`): `_migrate_v128()` สร้าง `job_notes(id,customer_id,project_id,entry_date,note,created_at,updated_at)` — เรียกใน init_schema
+- **data** (`portal_views`): `list/add/edit/delete_job_note` + `_valid_date` — ownership `WHERE id=? AND customer_id=?`, validate note/date, parameterized SQL
+- **render** (`render_job_page(...,notes=None)`): section "🚂 ไทม์ไลน์ของฉัน" — ฟอร์มเพิ่ม (`<input type=date>`+text) + ราง (`.rail`/`.rstation` CSS จุด+เส้น) แต่ละ entry แก้/ลบได้. ไม่มี JS. เลิก early-return ตอน bidders ว่าง (timeline ขึ้นทุกกรณี)
+- **routes** (`bms_api`): GET `/portal/job` resolve customer + notes; POST `/portal/job/note` (add/edit/delete → 303 redirect). customer derive จาก token ไม่เชื่อ client
+
+### Process: subagent-driven
+- 4 code tasks × (impl haiku/sonnet + review sonnet) ทุก task spec✅ approved
+- **final review opus: READY** — form field names ↔ POST handler ตรงเป๊ะ, security ครบ (auth/ownership/escape/parameterized/no-JS), migration idempotent
+
+### Verify
+- 6 test suites PASS + compile OK
+- deploy 3 ไฟล์ → init_schema สร้าง job_notes (7 cols) → hash==HEAD (Sebastian_Customer_DB 96f323a, portal_views 54125b3, bms_api 94741b3), active
+- **e2e prod จริง:** GET render timeline+add form ✓ · write→ownership(foreign delete กันได้)→cleanup net-zero ✓ (ใช้ sentinel pid ไม่แตะงานจริง)
+- commits e6b7b1e..7efb5e8 (4) · backup `.bak_20260620_142817`
+
+### Followup
+- ยังไม่มี reminder/แจ้งเตือนตามวันที่ใน timeline (แค่บันทึก+แสดง) — เผื่ออนาคต
+- cleanup: `_baht`/date helpers ซ้ำ bms_api↔portal_views (ยอมรับได้ กัน circular import)

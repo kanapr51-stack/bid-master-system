@@ -191,6 +191,15 @@ assert "🏆 ผลงานที่ชนะ" in hw, hw
 assert "ประมูล" in hw and "เจาะจง" in hw, hw                          # stat ประมูล vs เจาะจง
 assert "💎" in hw and "อาคารเฉพาะเจาะจง" in hw, "งานมูลค่าสูงสุด"
 assert "proc=bid" in hw and "proc=specific" in hw and "proc=all" in hw, "filter chips"
+# ลำดับ: 🏆 ต้องอยู่หลังกราฟ ยื่น–ชนะ + ส่วนลด
+assert hw.index("🏆 ผลงานที่ชนะ") > hw.index("💸 ส่วนลดที่ชอบเสนอ") > hw.index("📊 ยื่น–ชนะ รายปี"), "ลำดับผิด"
+# รายชื่องานซ่อนใน <details> (proc=all → ปิด) — 'ซ่อมสอบราคา' อยู่ในลิสต์เท่านั้น
+assert "<details class=\"wonlist\">" in hw and "ดูรายชื่องาน" in hw, "ต้องมี details (ปิด)"
+assert hw.index("ซ่อมสอบราคา") > hw.index("<details"), "ชื่องานต้องอยู่ใน details"
+# filter อยู่ (proc != all) → details เปิดอัตโนมัติ
+wb = pv.won_portfolio(c, p["name"], "bid")
+hwb = pv.render_company_page(p, "TOK", "69010000001", 0, None, wb)
+assert "<details class=\"wonlist\" open>" in hwb, "filter → details เปิด"
 hw0 = pv.render_company_page(p, "TOK", "69010000001", 0, None, None)
 assert "🏆 ผลงานที่ชนะ" not in hw0, "ไม่มี won → ไม่โชว์ section"
 print("OK render_company_won")

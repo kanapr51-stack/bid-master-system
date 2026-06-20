@@ -287,6 +287,11 @@ _CSS = (
     ".chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}"
     ".chip{font-size:12px;padding:5px 10px;border-radius:14px;background:#eef0f3;color:#555;text-decoration:none;white-space:nowrap}"
     ".chip.on{background:#1d72b4;color:#fff}"
+    ".wonlist{margin-top:6px}"
+    ".wonlist summary{cursor:pointer;font-size:13px;font-weight:700;color:#1d72b4;padding:6px 0;list-style:none}"
+    ".wonlist summary::-webkit-details-marker{display:none}"
+    ".wonlist summary::before{content:'▸ ';font-size:11px}"
+    ".wonlist[open] summary::before{content:'▾ '}"
 )
 
 
@@ -452,13 +457,16 @@ def _render_won(wp, tin, tok, from_pid):
         chips.append(f"<a class=\"{cls}\" href=\"/portal/company?t={tok}&tin={_h.escape(tin)}"
                      f"&proc={key}{frag}\">{_PROC_LABELS[key]} {cnt}</a>")
     out.append("<div class=\"chips\">" + "".join(chips) + "</div>")
+    # รายชื่องานซ่อนใน <details> — เปิดเองเมื่อ filter อยู่ (proc != all)
+    op = " open" if wp["proc"] != "all" else ""
+    out.append(f"<details class=\"wonlist\"{op}><summary>📋 ดูรายชื่องาน ({len(wp['jobs'])})</summary>")
     if not wp["jobs"]:
         out.append("<div class=\"msg\">ไม่มีงานในกลุ่มนี้</div>")
     for j in wp["jobs"][:50]:
         disc = f"ส่วนลด {j['discount']:.1f}%" if j["discount"] is not None else "—"
         out.append(f"<div class=\"jrow\"><span class=\"jn\">{_h.escape(j['name'])}</span>"
                    f"<span class=\"jp\">{_baht(j['price'])}<br><small>{disc}</small></span></div>")
-    out.append("</div>")
+    out.append("</details></div>")
     return "".join(out)
 
 
@@ -484,9 +492,6 @@ def render_company_page(data, token, from_pid, exp, h2h=None, won=None):
     # ⚔️ เทียบกับเรา (head-to-head) — โชว์เฉพาะมี company_tin + เจอกัน
     if h2h:
         b.append(_render_h2h(h2h))
-    # 🏆 ผลงานที่ชนะทุกวิธีจัดซื้อ (cgd_winners) — โชว์เฉพาะมีข้อมูล
-    if won:
-        b.append(_render_won(won, data["tin"], tok, from_pid))
     # chart 1: ยื่น/ชนะ รายปี
     maxb = max([g["bids"] for g in data["by_year"]] or [1])
     rows1 = []
@@ -503,6 +508,9 @@ def render_company_page(data, token, from_pid, exp, h2h=None, won=None):
         rows2.append(_bar(lab, x["count"], maxh, "#c2410c", str(x["count"])))
     avg = f" (เฉลี่ย {data['discount_avg']:.1f}%)" if data["discount_avg"] is not None else ""
     b.append(f"<div class=\"chart\"><div class=\"ct\">💸 ส่วนลดที่ชอบเสนอ{avg}</div>" + "".join(rows2) + "</div>")
+    # 🏆 ผลงานที่ชนะทุกวิธีจัดซื้อ (cgd_winners) — หลังกราฟ, โชว์เฉพาะมีข้อมูล
+    if won:
+        b.append(_render_won(won, data["tin"], tok, from_pid))
     # timeline แยกรายปี
     for g in data["by_year"]:
         ylab = f"ปี {g['year']}" if g["year"] else "ไม่ทราบปี"

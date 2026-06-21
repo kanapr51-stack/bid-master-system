@@ -345,6 +345,16 @@ def build_follow_link(line_user_id: str, project_id: str) -> str:
         return ""
 
 
+def build_job_link(line_user_id: str, project_id: str) -> str:
+    """ลิงก์ไปหน้า job detail บน Bid Board (signed token, ต่อคน-ต่องาน). คืน '' ถ้า make_token พลาด (ห้ามทำ D0 พัง)."""
+    try:
+        return PUBLIC_BASE_URL.rstrip("/") + "/portal/job?t=" + \
+            follow_token.make_token(line_user_id, project_id) + "&pid=" + project_id
+    except Exception as e:
+        print(f"[build_job_link] follow_token error (ส่งต่อไม่มีลิงก์): {e}", file=sys.stderr)
+        return ""
+
+
 def send_line_push(token: str, line_user_id: str, text: str, quick_reply=None) -> tuple[bool, str, str]:
     """
     Returns (success, error_type, error_msg).

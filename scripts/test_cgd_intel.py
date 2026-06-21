@@ -1,6 +1,7 @@
 """test_cgd_intel.py — competitor-profile intel + location disambiguation (resolve→select→lines)."""
-import sys, sqlite3, csv; from pathlib import Path
+import os, sys, sqlite3, csv; from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent)); sys.stdout.reconfigure(encoding="utf-8")
+os.environ.setdefault("BMS_FOLLOW_SECRET", "test-secret-cgd-intel")
 import cgd_intel as ci
 
 _GEO = Path(__file__).parent.parent / "data" / "thai_geo_raw.csv"
@@ -366,23 +367,33 @@ def test_wiring_format_notification():
     orig_ctx = _ci.intel_context
     _ci.intel_context = lambda *a, **k: {"lines": ["💡 TEST INTEL", "🏘 ในตำบล"], "prediction": None}
     txt = ls.format_notification("P1", province="นครพนม", project_name="ก่อสร้างถนน",
-                                 source_stage="followed_bid_open")
-    assert "💡 TEST INTEL" in txt and "🔑 P1" in txt and "━" in txt, txt
+                                 source_stage="followed_bid_open", line_user_id="Uabc")
+    # บล็อกวิเคราะห์เต็มย้ายไปหน้า Bid Board แล้ว — ไม่ฝัง text ในข้อความอีก
+    assert "💡 TEST INTEL" not in txt and "━" not in txt, txt
+    assert "🔑 P1" in txt, txt
+    assert "ดูวิเคราะห์ราคา+คู่แข่งบน Bid Board" in txt, txt
+    assert "/portal/job?t=" in txt and "pid=P1" in txt, txt
+    # ไม่มี line_user_id → ไม่มีลิงก์ (ไม่ error)
+    txt_nouser = ls.format_notification("P1", province="นครพนม", project_name="ก่อสร้างถนน",
+                                        source_stage="followed_bid_open")
+    assert "Bid Board" not in txt_nouser, txt_nouser
     _ci.intel_context = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom"))
     txt2 = ls.format_notification("P1", province="นครพนม", project_name="ก่อสร้างถนน",
-                                  source_stage="followed_bid_open")
-    assert "🔑 P1" in txt2 and "💡" not in txt2, txt2
+                                  source_stage="followed_bid_open", line_user_id="Uabc")
+    assert "🔑 P1" in txt2 and "💡" not in txt2 and "Bid Board" not in txt2, txt2
     _ci.intel_context = lambda *a, **k: {"lines": ["💡 SHOULD NOT APPEAR"], "prediction": None}
     txt3 = ls.format_notification("P2", province="นครพนม", project_name="ก่อสร้างถนน",
-                                  announce_type="B0", source_stage="province_tor_review")
-    assert "💡" not in txt3, txt3   # non-D0 (B0) → ไม่มี intel
-    # D0 ที่ยังไม่ได้ติดตาม (เจอใหม่) → ต้องมี intel + หัวข้อ "พบงานเปิดกำหนดวันยื่นซอง"
+                                  announce_type="B0", source_stage="province_tor_review", line_user_id="Uabc")
+    assert "💡" not in txt3 and "Bid Board" not in txt3, txt3   # non-D0 (B0) → ไม่มี intel/link เลย
+    # D0 ที่ยังไม่ได้ติดตาม (เจอใหม่) → ต้องมีลิงก์ + หัวข้อ "พบงานเปิดกำหนดวันยื่นซอง"
     _ci.intel_context = lambda *a, **k: {"lines": ["💡 NEW D0 INTEL"], "prediction": None}
     txt4 = ls.format_notification("P3", province="นครพนม", project_name="ก่อสร้างถนน",
-                                  announce_type="D0", source_stage="province_qualified")
-    assert "💡 NEW D0 INTEL" in txt4 and "พบงานเปิดกำหนดวันยื่นซอง" in txt4, txt4
+                                  announce_type="D0", source_stage="province_qualified", line_user_id="Uabc")
+    assert "💡 NEW D0 INTEL" not in txt4, txt4
+    assert "Bid Board" in txt4 and "pid=P3" in txt4, txt4
+    assert "พบงานเปิดกำหนดวันยื่นซอง" in txt4, txt4
     _ci.intel_context = orig_ctx
-    print("✅ wiring format_notification (D0 ทุก stage)")
+    print("✅ wiring format_notification (D0 ทุก stage, ลิงก์ Bid Board แทน intel inline)")
 
 
 if __name__ == "__main__":

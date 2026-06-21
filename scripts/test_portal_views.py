@@ -214,4 +214,53 @@ h_off = pv.render_job_page(d, "TOK", 0, [], "", False)
 assert "☆" in h_off and "star_toggle" in h_off, "ไม่ติดดาวต้องโชว์ ☆ ว่าง"
 print("OK render_job_page_star")
 
+# --- job_detail: intel_lines (cgd_intel wiring — value-add, must degrade gracefully) ---
+import cgd_intel
+_orig_intel_context = cgd_intel.intel_context
+
+cgd_intel.intel_context = lambda *a, **k: {"lines": ["💡 ราคาอ้างอิง ทดสอบ", "🏆 คู่แข่งหลัก ทดสอบ"]}
+try:
+    c = _seed()
+    d = pv.job_detail(c, "69010000001")
+    assert d["intel_lines"] == ["💡 ราคาอ้างอิง ทดสอบ", "🏆 คู่แข่งหลัก ทดสอบ"], d["intel_lines"]
+finally:
+    cgd_intel.intel_context = _orig_intel_context
+print("OK job_detail_intel_lines_present")
+
+cgd_intel.intel_context = lambda *a, **k: None
+try:
+    c = _seed()
+    d = pv.job_detail(c, "69010000001")
+    assert d["intel_lines"] is None, d["intel_lines"]
+finally:
+    cgd_intel.intel_context = _orig_intel_context
+print("OK job_detail_intel_lines_none")
+
+def _raise_intel(*a, **k):
+    raise RuntimeError("boom")
+cgd_intel.intel_context = _raise_intel
+try:
+    c = _seed()
+    d = pv.job_detail(c, "69010000001")
+    assert d["intel_lines"] is None, d["intel_lines"]
+finally:
+    cgd_intel.intel_context = _orig_intel_context
+print("OK job_detail_intel_lines_error_safe")
+
+# dept_name (when the column exists) must reach cgd_intel.intel_context as the 3rd positional arg
+captured = {}
+def _capture_intel(province, project_name, dept_name, project_id, budget, conn=None):
+    captured["dept_name"] = dept_name
+    return None
+cgd_intel.intel_context = _capture_intel
+try:
+    c = _seed()
+    c.execute("ALTER TABLE projects_seen ADD COLUMN dept_name TEXT")
+    c.execute("UPDATE projects_seen SET dept_name='อบต.ทดสอบ' WHERE project_id='69010000001'")
+    pv.job_detail(c, "69010000001")
+finally:
+    cgd_intel.intel_context = _orig_intel_context
+assert captured["dept_name"] == "อบต.ทดสอบ", captured
+print("OK job_detail_dept_name_passthrough")
+
 print("OK test_portal_views")

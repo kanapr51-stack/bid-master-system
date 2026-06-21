@@ -69,6 +69,24 @@ def job_detail(conn, pid):
     if not rows and not ps:
         return None
     budget = (ps["budget"] if ps else 0) or 0
+    dept_name = ""
+    try:
+        dn = conn.execute(
+            "SELECT dept_name FROM projects_seen WHERE project_id=?", (pid,)).fetchone()
+        if dn and "dept_name" in dn.keys():
+            dept_name = dn["dept_name"] or ""
+    except sqlite3.OperationalError:
+        dept_name = ""
+    intel_lines = None
+    try:
+        import cgd_intel
+        intel_ctx = cgd_intel.intel_context(
+            (ps["province"] if ps else "") or "", (ps["project_name"] if ps else "") or "",
+            dept_name, pid, budget, conn)
+        if intel_ctx:
+            intel_lines = intel_ctx["lines"]
+    except Exception:
+        intel_lines = None
     loc, deadline = "", None
     try:
         l = conn.execute(
@@ -105,7 +123,8 @@ def job_detail(conn, pid):
     bidders.sort(key=lambda b: (not b["is_winner"], b["price"] is None, b["price"] or 0))
     return {"job": {"project_id": pid, "name": (ps["project_name"] if ps else "") or pid,
                     "location": loc, "budget": budget, "deadline": deadline,
-                    "pred_lo": pred_lo, "pred_hi": pred_hi}, "bidders": bidders}
+                    "pred_lo": pred_lo, "pred_hi": pred_hi}, "bidders": bidders,
+            "intel_lines": intel_lines}
 
 
 # proc_type → กลุ่ม. _PROC_BID mirror cgd_intel.COMPETITIVE_SET (source of truth ของ "แข่งราคาจริง")

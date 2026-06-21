@@ -69,6 +69,24 @@ def job_detail(conn, pid):
     if not rows and not ps:
         return None
     budget = (ps["budget"] if ps else 0) or 0
+    dept_name = ""
+    try:
+        dn = conn.execute(
+            "SELECT dept_name FROM projects_seen WHERE project_id=?", (pid,)).fetchone()
+        if dn and "dept_name" in dn.keys():
+            dept_name = dn["dept_name"] or ""
+    except sqlite3.OperationalError:
+        dept_name = ""
+    intel_lines = None
+    try:
+        import cgd_intel
+        intel_ctx = cgd_intel.intel_context(
+            (ps["province"] if ps else "") or "", (ps["project_name"] if ps else "") or "",
+            dept_name, pid, budget, conn)
+        if intel_ctx:
+            intel_lines = intel_ctx["lines"]
+    except Exception:
+        intel_lines = None
     loc, deadline = "", None
     try:
         l = conn.execute(
@@ -105,7 +123,8 @@ def job_detail(conn, pid):
     bidders.sort(key=lambda b: (not b["is_winner"], b["price"] is None, b["price"] or 0))
     return {"job": {"project_id": pid, "name": (ps["project_name"] if ps else "") or pid,
                     "location": loc, "budget": budget, "deadline": deadline,
-                    "pred_lo": pred_lo, "pred_hi": pred_hi}, "bidders": bidders}
+                    "pred_lo": pred_lo, "pred_hi": pred_hi}, "bidders": bidders,
+            "intel_lines": intel_lines}
 
 
 # proc_type → กลุ่ม. _PROC_BID mirror cgd_intel.COMPETITIVE_SET (source of truth ของ "แข่งราคาจริง")
@@ -389,6 +408,10 @@ def render_job_page(data, token, exp, notes=None, overview="", starred=False):
             b.append(f"<div class=\"cd\">⏳ {cd}</div>")
     if j.get("pred_lo") and j.get("pred_hi"):
         b.append(f"<div class=\"meta\">💵 คาดราคา {_baht(j['pred_lo'])}–{_baht(j['pred_hi'])} บาท</div>")
+    if data.get("intel_lines"):
+        b.append("<div class=\"bidhead\">📊 วิเคราะห์ราคา & คู่แข่งในพื้นที่</div>")
+        for line in data["intel_lines"]:
+            b.append(f"<div class=\"meta\">{_h.escape(line)}</div>")
     if not data["bidders"]:
         b.append("<div class=\"bidhead\">ยังไม่มีผู้ยื่น</div>")
         b.append("<div class=\"msg\">งานนี้ยังไม่มีข้อมูลผู้ยื่น — รอประมูล/ประกาศผล</div>")

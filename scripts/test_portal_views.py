@@ -307,4 +307,49 @@ assert "1 ราย" in html_wt and "4 ราย" in html_wt, html_wt    # ladde
 assert "100%" in html_wt, html_wt                            # N=1 = 100% เสมอ
 print("OK render_job_page_winrate_table_full_ladder")
 
+# --- area_portfolio + render_company_page area section (N+161 highlight area-of-origin jobs) ---
+def _area_conn():
+    c = sqlite3.connect(":memory:")
+    c.row_factory = sqlite3.Row
+    c.execute("""CREATE TABLE cgd_winners (project_id TEXT PRIMARY KEY, project_name TEXT,
+        winner TEXT, win_price INTEGER, budget INTEGER)""")
+    c.executemany("INSERT INTO cgd_winners VALUES (?,?,?,?,?)", [
+        ("R1", "ถนน ต.โพนทอง", "หจก.A", 900000, 1000000),
+        ("R2", "ถนน ต.โพนทอง", "หจก.A", 850000, 1000000),
+        ("R3", "ถนน อ.อื่น", "หจก.A", 700000, 1000000),     # นอก area_ids → ไม่ติด
+        ("R4", "ถนน ต.โพนทอง", "หจก.B", 600000, 1000000)])  # คนละบริษัท → ไม่ติด
+    c.commit()
+    return c
+
+
+def test_area_portfolio_exact_match_only():
+    c = _area_conn()
+    # R3 ไม่ส่งมาใน id list เลย (อยู่นอก scope query ที่สร้าง ids ชุดนี้) — R4 ส่งมาแต่ winner คนละบริษัท → ตัด
+    out = pv.area_portfolio(c, "หจก.A", ["R1", "R2", "R4"])
+    assert out is not None and len(out["jobs"]) == 2, out
+    ids = {j["project_id"] for j in out["jobs"]}
+    assert ids == {"R1", "R2"}, ids
+    assert pv.area_portfolio(c, "หจก.A", []) is None, "ว่าง → None"
+    assert pv.area_portfolio(c, "หจก.ไม่มี", ["R1"]) is None, "ไม่เจอ → None"
+    print("OK area_portfolio_exact_match_only")
+
+
+def test_render_company_page_area_section_above_timeline():
+    data = {"name": "หจก.A", "tin": "111", "is_sme": False, "total_bids": 2, "wins": 2,
+            "win_rate": 100.0, "provinces": ["นครพนม"],
+            "discount_hist": [{"lo": 0, "hi": 5, "count": 0}],
+            "discount_avg": 12.0, "by_year": [{"year": 2568, "bids": 2, "wins": 2, "jobs": []}]}
+    area = {"label_count": 2, "jobs": [{"project_id": "R1", "name": "ถนน ต.โพนทอง",
+                                        "price": 900000, "discount": 10.0, "is_winner": True}]}
+    html = pv.render_company_page(data, "tok", "", 0, area=area, area_label="🏘 ในตำบลโพนทอง")
+    assert "📍 ผลงานในพื้นที่นี้" in html, html
+    pos_area = html.index("📍 ผลงานในพื้นที่นี้")
+    pos_timeline = html.index('class="yhead"')   # timeline แยกรายปี (ไม่ใช่ "ปี 2568" ที่ขึ้นก่อนใน chart 1 แล้ว)
+    assert pos_area < pos_timeline, "area section ต้องอยู่ก่อน timeline แยกรายปี"
+    print("OK render_company_page_area_section_above_timeline")
+
+
+test_area_portfolio_exact_match_only()
+test_render_company_page_area_section_above_timeline()
+
 print("OK test_portal_views")

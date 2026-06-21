@@ -264,6 +264,28 @@ def company_profile(conn, tin):
             "discount_avg": disc_avg, "by_year": by_year}
 
 
+def area_portfolio(conn, name, project_ids):
+    """ผลงานของ name เฉพาะใน project_ids (exact match — id มาจาก cgd_intel scope query เดิม,
+    ไม่ใช่ fuzzy area parsing ใหม่ — bid_results มีพิกัดน้อยเกิน ~7/1084, deferred ใน spec 2026-06-20 §11).
+    None ถ้า project_ids ว่าง หรือไม่เจองานของ name ใน id ชุดนั้น."""
+    ids = [p for p in (project_ids or []) if p]
+    if not ids:
+        return None
+    placeholders = ",".join("?" for _ in ids)
+    rows = conn.execute(
+        f"SELECT project_id, project_name, win_price, budget FROM cgd_winners "
+        f"WHERE project_id IN ({placeholders}) AND winner=?", (*ids, name)).fetchall()
+    if not rows:
+        return None
+    jobs = []
+    for r in rows:
+        price = _to_float(r["win_price"])
+        jobs.append({"project_id": r["project_id"], "name": r["project_name"] or r["project_id"],
+                    "price": price, "discount": _discount(price, _to_float(r["budget"]) or 0),
+                    "is_winner": True})
+    return {"label_count": len(jobs), "jobs": jobs}
+
+
 _CSS = (
     "body{font-family:-apple-system,'Segoe UI',sans-serif;margin:0;padding:18px;background:#f5f6f8;color:#222}"
     ".wrap{max-width:480px;margin:0 auto}"
@@ -630,7 +652,7 @@ def _render_won(wp, tin, tok, from_pid):
     return "".join(out)
 
 
-def render_company_page(data, token, from_pid, exp, h2h=None, won=None):
+def render_company_page(data, token, from_pid, exp, h2h=None, won=None, area=None, area_label=""):
     tok = _h.escape(token)
     head = _HEAD("ประวัติบริษัท")
     if from_pid:
@@ -671,6 +693,16 @@ def render_company_page(data, token, from_pid, exp, h2h=None, won=None):
     # 🏆 ผลงานที่ชนะทุกวิธีจัดซื้อ (cgd_winners) — หลังกราฟ, โชว์เฉพาะมีข้อมูล
     if won:
         b.append(_render_won(won, data["tin"], tok, from_pid))
+    # 📍 ผลงานในพื้นที่นี้ — เฉพาะเมื่อเข้ามาจากลิงก์ scope (area_ids) ก่อน timeline แยกรายปี (decision: ชูพื้นที่นี้ก่อน)
+    if area:
+        b.append(f"<div class=\"chart\"><div class=\"ct\">📍 ผลงานในพื้นที่นี้"
+                 f"{(' — ' + _h.escape(area_label)) if area_label else ''} ({area['label_count']} งาน)</div>")
+        for j in area["jobs"]:
+            disc = f"ส่วนลด {j['discount']:.1f}%" if j["discount"] is not None else "—"
+            link = f"/portal/job?t={tok}&pid={_h.escape(str(j['project_id']))}"
+            b.append(f"<div class=\"jrow\"><a class=\"jn\" href=\"{link}\">✅ {_h.escape(j['name'])}</a>"
+                     f"<span class=\"jp\">{_baht(j['price'])}<br><small>{disc}</small></span></div>")
+        b.append("</div>")
     # timeline แยกรายปี
     for g in data["by_year"]:
         ylab = f"ปี {g['year']}" if g["year"] else "ไม่ทราบปี"

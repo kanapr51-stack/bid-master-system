@@ -277,4 +277,34 @@ h0 = pv.render_job_page(d, "TOK", 0)
 assert "📊 วิเคราะห์ราคา & คู่แข่งในพื้นที่" not in h0, h0
 print("OK render_job_page_intel")
 
+# --- render_job_page: company_tables (N+161 full company list, tin link / notin grey) ---
+data_ct = {"job": {"project_id": "P1", "name": "งานทดสอบ", "location": "", "budget": 0,
+                   "deadline": None, "pred_lo": None, "pred_hi": None},
+           "bidders": [], "intel_lines": ["💡 ราคาอ้างอิง (งานถนน ต.โพนทอง)"],
+           "company_tables": [{"label": "🏘 ในตำบลโพนทอง", "n": 5, "conf_tag": "🟢", "p25": 10.0, "p75": 20.0,
+                               "companies": [
+                                   {"name": "หจก.A", "tin": "111", "games": 3, "median": 12.0,
+                                    "p25": 10.0, "p75": 15.0, "project_ids": ["R1", "R2"]},
+                                   {"name": "หจก.ไม่มีtin", "tin": None, "games": 1, "median": None,
+                                    "p25": None, "p75": None, "project_ids": ["R3"]}]}],
+           "winrate_table": None}
+html_ct = pv.render_job_page(data_ct, "tok", 0)
+assert "หจก.A" in html_ct and "หจก.ไม่มีtin" in html_ct, html_ct
+assert "/portal/company?t=tok&tin=111" in html_ct, html_ct                  # tin resolve ได้ → ลิงก์
+assert "area_ids=R1,R2" in html_ct, html_ct                                  # project_ids ติดไปด้วย
+assert 'class="notin"' in html_ct, "ชื่อ resolve ไม่ได้ต้องเป็น grey ไม่คลิก"
+print("OK render_job_page_company_table_with_tin_link")
+
+# --- render_job_page: winrate_table (N+161 full N=1..max ladder, N=1 hardcoded 100%) ---
+data_wt = {"job": {"project_id": "P1", "name": "งานทดสอบ", "location": "", "budget": 0,
+                   "deadline": None, "pred_lo": None, "pred_hi": None},
+           "bidders": [], "intel_lines": [], "company_tables": [],
+           "winrate_table": {"ns": [1, 2, 3, 4], "rows": [(1400000, [100, 78, 68, 59])],
+                             "n_mean": 3.0, "n_sd": 1.0, "n_auctions": 10, "n_bids": 30,
+                             "ess": 12.0, "k_mid": 3, "budget": 2000000, "conf": None, "price_basis": "ตำบล"}}
+html_wt = pv.render_job_page(data_wt, "tok", 0)
+assert "1 ราย" in html_wt and "4 ราย" in html_wt, html_wt    # ladder เต็ม N=1..4 (ไม่ใช่ 3 จุดเดิม)
+assert "100%" in html_wt, html_wt                            # N=1 = 100% เสมอ
+print("OK render_job_page_winrate_table_full_ladder")
+
 print("OK test_portal_views")

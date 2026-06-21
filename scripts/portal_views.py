@@ -78,6 +78,8 @@ def job_detail(conn, pid):
     except sqlite3.OperationalError:
         dept_name = ""
     intel_lines = None
+    company_tables = None
+    winrate_table = None
     try:
         import cgd_intel
         intel_ctx = cgd_intel.intel_context(
@@ -85,6 +87,8 @@ def job_detail(conn, pid):
             dept_name, pid, budget, conn)
         if intel_ctx:
             intel_lines = intel_ctx["lines"]
+            company_tables = intel_ctx.get("company_tables")
+            winrate_table = intel_ctx.get("winrate_table")
     except Exception:
         intel_lines = None
     loc, deadline = "", None
@@ -124,7 +128,8 @@ def job_detail(conn, pid):
     return {"job": {"project_id": pid, "name": (ps["project_name"] if ps else "") or pid,
                     "location": loc, "budget": budget, "deadline": deadline,
                     "pred_lo": pred_lo, "pred_hi": pred_hi}, "bidders": bidders,
-            "intel_lines": intel_lines}
+            "intel_lines": intel_lines, "company_tables": company_tables,
+            "winrate_table": winrate_table}
 
 
 # proc_type → กลุ่ม. _PROC_BID mirror cgd_intel.COMPETITIVE_SET (source of truth ของ "แข่งราคาจริง")
@@ -317,6 +322,13 @@ _CSS = (
     ".rdate.past{color:#d9534f}"
     ".pastlist summary{color:#d9534f}"
     ".star{font-size:20px;text-decoration:none;margin-left:8px;vertical-align:middle}"
+    ".itbl{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0}"
+    ".itbl th,.itbl td{padding:5px 7px;text-align:right;border-bottom:1px solid #eee;white-space:nowrap}"
+    ".itbl th:first-child,.itbl td:first-child{text-align:left}"
+    ".itbl th{color:#888;font-weight:600;background:#fafbfc}"
+    ".itbl a{color:#1d72b4;text-decoration:none}"
+    ".itbl .notin{color:#999}"
+    ".tblwrap{overflow-x:auto;margin:8px 0;-webkit-overflow-scrolling:touch}"
 )
 
 
@@ -385,6 +397,49 @@ def _render_overview(pid, tok, overview):
         "<button type=\"submit\">💾 บันทึกโน้ต</button></form>")
 
 
+def _render_company_tables(tables, tok):
+    """ตารางบริษัทคู่แข่งแบบเต็ม (ไม่จำกัด 3) ต่อ scope — ชื่อ resolve tin ได้ = ลิงก์ /portal/company, ไม่ได้ = grey."""
+    out = []
+    for blk in tables:
+        if not blk.get("companies"):
+            continue
+        out.append(f"<div class=\"bidhead\">🏢 คู่แข่ง {_h.escape(blk['label'])} "
+                   f"({blk['n']} งาน {blk['conf_tag']})</div>")
+        out.append("<div class=\"tblwrap\"><table class=\"itbl\"><tr><th>บริษัท</th>"
+                   "<th>งาน</th><th>ลด%</th></tr>")
+        for cmp_ in blk["companies"]:
+            nm = _h.escape(cmp_["name"])
+            disc = f"{cmp_['median']:.0f}%" if cmp_.get("median") is not None else "—"
+            if cmp_.get("tin"):
+                ids = ",".join(str(p) for p in (cmp_.get("project_ids") or []))
+                href = (f"/portal/company?t={tok}&tin={_h.escape(cmp_['tin'])}"
+                       f"&area_ids={_h.escape(ids)}&area_label={_h.escape(blk['label'])}")
+                name_html = f"<a href=\"{href}\">{nm}</a>"
+            else:
+                name_html = f"<span class=\"notin\">{nm}</span>"
+            out.append(f"<tr><td>{name_html}</td><td>{cmp_['games']}</td><td>{disc}</td></tr>")
+        out.append("</table></div>")
+    return "".join(out)
+
+
+def _render_winrate_table(wt):
+    """ตารางโอกาสชนะตามจำนวนผู้ยื่น N=1..max เต็ม (เดิม 3 คอลัมน์ mean±SD)."""
+    ns, rows = wt["ns"], wt["rows"]
+    out = [f"<div class=\"bidhead\">💵 โอกาสชนะตามจำนวนผู้ยื่น (งบ {wt['budget']:,.0f})</div>",
+           "<div class=\"tblwrap\"><table class=\"itbl\"><tr><th>ราคายื่น</th>"
+           + "".join(f"<th>{k} ราย</th>" for k in ns) + "</tr>"]
+    for price, ws in rows:
+        out.append(f"<tr><td>{price:,.0f}</td>" + "".join(f"<td>{w}%</td>" for w in ws) + "</tr>")
+    out.append("</table></div>")
+    sd_txt = f" (±{round(wt['n_sd'])})" if len(ns) > 1 else ""
+    out.append(f"<div class=\"meta\">📊 สนามนี้เฉลี่ย {round(wt['n_mean'])} ผู้ยื่น{sd_txt} "
+              f"· จาก {wt['n_auctions']} งาน · {wt['n_bids']} ราย</div>")
+    if wt.get("conf"):
+        emoji, scope_word = wt["conf"]
+        out.append(f"<div class=\"meta\">{emoji} โอกาส% อิง{scope_word} (พื้นที่นี้ข้อมูลบาง)</div>")
+    return "".join(out)
+
+
 def render_job_page(data, token, exp, notes=None, overview="", starred=False):
     tok = _h.escape(token)
     head = _HEAD("รายละเอียดงาน")
@@ -412,6 +467,10 @@ def render_job_page(data, token, exp, notes=None, overview="", starred=False):
         b.append("<div class=\"bidhead\">📊 วิเคราะห์ราคา & คู่แข่งในพื้นที่</div>")
         for line in data["intel_lines"]:
             b.append(f"<div class=\"meta\">{_h.escape(line)}</div>")
+    if data.get("company_tables"):
+        b.append(_render_company_tables(data["company_tables"], tok))
+    if data.get("winrate_table"):
+        b.append(_render_winrate_table(data["winrate_table"]))
     if not data["bidders"]:
         b.append("<div class=\"bidhead\">ยังไม่มีผู้ยื่น</div>")
         b.append("<div class=\"msg\">งานนี้ยังไม่มีข้อมูลผู้ยื่น — รอประมูล/ประกาศผล</div>")

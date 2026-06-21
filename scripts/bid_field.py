@@ -52,7 +52,7 @@ def _weighted_quantile(pairs, q):
 
 
 def _center_stats(auctions) -> dict:
-    """centering math (สกัดจาก _evaluate_winrate): mean/sd จำนวนผู้ยื่น → ns + k_mid.
+    """centering math (สกัดจาก _evaluate_winrate): mean/sd จำนวนผู้ยื่น → ns (1..max จริง) + k_mid.
     auctions = [[(name,disc,is_winner[,fy])]] · auction <2 ผู้ยื่นถูกตัด.
     ว่าง → {n:0, n_mean:0, n_sd:0, ns:[], k_mid:None}."""
     sizes = [len(a) for a in auctions if len(a) >= 2]
@@ -62,13 +62,9 @@ def _center_stats(auctions) -> dict:
     n_mean = sum(sizes) / n
     var = sum((s - n_mean) ** 2 for s in sizes) / (n - 1) if n > 1 else 0.0
     n_sd = math.sqrt(var)
-    raw = [round(n_mean - n_sd), round(n_mean), round(n_mean + n_sd)]
-    ns = []
-    for k in raw:
-        k = max(2, k)
-        if k not in ns:
-            ns.append(k)
-    return {"n": n, "n_mean": n_mean, "n_sd": n_sd, "ns": ns, "k_mid": ns[len(ns) // 2]}
+    ns = [1] + list(range(2, max(sizes) + 1))     # ladder เต็ม N=1..max ที่เคยเกิดจริง (เดิม 3 จุด mean±SD)
+    k_mid = min(max(2, round(n_mean)), max(sizes))
+    return {"n": n, "n_mean": n_mean, "n_sd": n_sd, "ns": ns, "k_mid": k_mid}
 
 
 def _monitor_path() -> str:
@@ -144,7 +140,7 @@ def _evaluate_winrate(auctions, budget, local_auctions=None, targets=(75, 50, 25
         if price in seen_price:
             continue
         seen_price.add(price)
-        rows.append((price, [round(tf ** (k / k_mid) * 100) for k in ns]))
+        rows.append((price, [100 if k == 1 else round(tf ** (k / k_mid) * 100) for k in ns]))
     if len(rows) < 2:
         return {"ok": False, "fail_reason": "PRICE_COLLAPSE", "ess": ess}
     rows.sort()
@@ -329,7 +325,8 @@ def _scope_ids(conn, province, tokens, cf, subdistrict=None, district=None):
 def field_and_winrate(conn, province, tokens, budget, subdistrict=None, district=None,
                       scope_label="", basis="", project_ids=None, cf=None, amphoe=None):
     """orchestrator: อ่าน price-scope auctions → ลองทำตาราง → ผ่อน ladder (อำเภอ→จังหวัด)
-    จน gate ผ่าน. คืน (winrate_lines, field_lines[2B], conf). conf=None(🟢)/('🟡','อำเภอ')/('🟠','จังหวัด').
+    จน gate ผ่าน. คืน (grid|None, field_lines[2B], conf). conf=None(🟢)/('🟡','อำเภอ')/('🟠','จังหวัด').
+    grid = dict จาก _evaluate_winrate (ns/rows/n_mean/n_sd/n_auctions/n_bids/ess/k_mid/budget) — caller render เอง.
     n centering = price-scope auctions (local) เสมอ. 2B (field_lines) อิง price-scope."""
     if project_ids is not None:
         local_auc = _field_auctions(conn, province, tokens, project_ids=project_ids)
@@ -355,6 +352,5 @@ def field_and_winrate(conn, province, tokens, budget, subdistrict=None, district
     if grid and conf is not None:
         _log_center_breadcrumb(local_auc, attempts[1] if len(attempts) > 1 else [],
                                attempts[2] if len(attempts) > 2 else [], grid, conf, basis)
-    wl = winrate_lines(grid, conf, price_basis=basis) if grid else []
     fl = field_lines(analyze_field(local_auc), budget, scope_label)
-    return wl, fl, conf
+    return grid, fl, conf

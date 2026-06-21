@@ -12,20 +12,20 @@ def auc(size, disc=30.0):
 
 
 def test_center_stats_uniform():
-    # 4 งาน ผู้ยื่น 4 เท่ากันหมด → mean=4 sd=0 ns=[4] k_mid=4
+    # 4 งาน ผู้ยื่น 4 เท่ากันหมด → mean=4 sd=0 ns=[1,2,3,4] k_mid=4
     st = bf._center_stats([auc(4) for _ in range(4)])
     assert st["n"] == 4, st
     assert abs(st["n_mean"] - 4.0) < 1e-9, st
-    assert st["ns"] == [4], st
+    assert st["ns"] == [1, 2, 3, 4], st
     assert st["k_mid"] == 4, st
     print("✅ _center_stats uniform")
 
 
 def test_center_stats_spread():
-    # ผู้ยื่น [3,4,5] → mean=4 var=1 sd=1 ns=[3,4,5] k_mid=4
+    # ผู้ยื่น [3,4,5] → mean=4 var=1 sd=1 ns=[1,2,3,4,5] k_mid=4
     st = bf._center_stats([auc(3), auc(4), auc(5)])
     assert abs(st["n_mean"] - 4.0) < 1e-9, st
-    assert st["ns"] == [3, 4, 5], st
+    assert st["ns"] == [1, 2, 3, 4, 5], st
     assert st["k_mid"] == 4, st
     print("✅ _center_stats spread")
 
@@ -103,9 +103,9 @@ def test_field_and_winrate_writes_breadcrumb_on_relax():
         s.record_bid_results(f"L{i}", bids)
     path = os.path.join(os.environ["BMS_DATA_DIR"], "winrate_center_monitor.ndjson")
     with db.get_connection() as conn:
-        wl, fl, conf = bf2.field_and_winrate(conn, "นครพนม", ["ถนน"], 1000000,
-                                             basis="ตำบล", project_ids=["L0", "L1"],
-                                             cf={}, amphoe="นาทม")
+        grid, fl, conf = bf2.field_and_winrate(conn, "นครพนม", ["ถนน"], 1000000,
+                                               basis="ตำบล", project_ids=["L0", "L1"],
+                                               cf={}, amphoe="นาทม")
     assert conf is not None and conf[0] == "🟡", conf        # ยืนยันว่าผ่อนจริง
     assert os.path.exists(path), "ผ่อน → field_and_winrate ต้องเขียน breadcrumb"
     rec = json.loads(open(path, encoding="utf-8").read().strip().splitlines()[-1])

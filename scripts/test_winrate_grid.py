@@ -10,28 +10,31 @@ def auc(*discs):
     return [(f"b{i}", d, i == 0) for i, d in enumerate(discs)]
 
 def test_grid_invert_targets():
-    # n คงที่=4 → ns=[4], k_mid=4. bids กระจายละเอียด (distinct) → 3 quantile แยกราคาได้
+    # n คงที่=4 → ns=[1,2,3,4], k_mid=4 (คอลัมน์สุดท้าย). bids กระจายละเอียด (distinct) → 3 quantile แยกราคาได้
     auctions = [[(f"b{j}", i * 2 + j * 0.5, j == 0) for j in range(4)] for i in range(5)]  # disc 0..9.5
     g = bf.winrate_grid(auctions, 1000000)             # targets default (75,50,25)
     assert g is not None, g
-    assert g["ns"] == [4], g["ns"]
+    assert g["ns"] == [1, 2, 3, 4], g["ns"]
     assert g["n_auctions"] == 5 and g["n_bids"] == 20, g
-    mids = [w[0] for _, w in g["rows"]]                # n const → 1 คอลัมน์ (=k_mid)
+    k_idx = g["ns"].index(g["k_mid"])
+    mids = [w[k_idx] for _, w in g["rows"]]            # คอลัมน์ k_mid = target เป๊ะ
     assert mids == [75, 50, 25], mids                  # คอลัมน์กลาง = target เป๊ะ (by construction)
     prices = [p for p, _ in g["rows"]]
     assert prices[0] < prices[1] < prices[2], prices   # ราคาเรียงขึ้น (75%ดุสุด→25%กำไร) ไม่ยุบ
-    print("✅ invert: คอลัมน์กลาง = 75/50/25 + ราคาไม่ยุบ")
+    print("✅ invert: คอลัมน์ k_mid = 75/50/25 + ราคาไม่ยุบ")
 
 def test_grid_invert_columns():
-    # ขนาดสนาม [2,4,4,4,6] → mean=4 sd≈1.41 → ns=[3,4,5], k_mid=ns[1]=4
+    # ขนาดสนาม [2,4,4,4,6] → mean=4 sd≈1.41 → ns=[1,2,3,4,5,6], k_mid=4
     sizes = [2, 4, 4, 4, 6]
     auctions = [[(f"b{j}", j * 1.7, j == 0) for j in range(s)] for s in sizes]
     g = bf.winrate_grid(auctions, 1000000)
-    assert g["ns"] == [3, 4, 5], g["ns"]
+    assert g["ns"] == [1, 2, 3, 4, 5, 6], g["ns"]
     r0 = g["rows"][0][1]                               # row เป้า 75% (ราคาต่ำสุด)
-    assert r0[1] == 75, r0                             # คอลัมน์กลาง (k=4) = target เป๊ะ
-    assert r0[0] > r0[1] > r0[2], ("k น้อย→win สูง", r0)   # 81 > 75 > 70
-    print("✅ invert columns: mid=target, monotonic by k")
+    k_idx = g["ns"].index(g["k_mid"])
+    assert r0[k_idx] == 75, r0                         # คอลัมน์กลาง (k=4) = target เป๊ะ
+    assert r0[0] == 100, r0                            # N=1 = ชนะแน่นอนเสมอ (ไม่ผ่านสูตร)
+    assert r0[k_idx - 1] > r0[k_idx] > r0[k_idx + 1], ("k น้อย→win สูง", r0)
+    print("✅ invert columns: mid=target, N=1=100%, monotonic by k")
 
 def test_grid_gate():
     base = [[(f"b{j}", j * 2.0, j == 0) for j in range(4)] for _ in range(5)]
@@ -88,12 +91,11 @@ def test_field_and_winrate_endtoend():
             {"receiveNameTh": "หจก.ค", "receiveTin": "3", "priceProposal": "850000"},
             {"receiveNameTh": "หจก.ง", "receiveTin": "4", "priceProposal": "900000"}])
     with db.get_connection() as conn:
-        wl, fl, conf = bf.field_and_winrate(conn, "นครพนม", ["ถนน"], 1000000,
-                                            district="เมือง", scope_label=" (อ.เมือง)", basis="อำเภอ")
+        grid, fl, conf = bf.field_and_winrate(conn, "นครพนม", ["ถนน"], 1000000,
+                                              district="เมือง", scope_label=" (อ.เมือง)", basis="อำเภอ")
     assert conf is None, conf                                # ไม่ผ่อน scope → 🟢 local
-    wtxt = "\n".join(wl)
-    assert "โอกาสชนะตามจำนวนผู้ยื่น" in wtxt, wtxt           # B table โผล่
-    assert "📈 จาก 6 งานที่มีข้อมูลผู้ยื่นครบ · 24 ราย" in wtxt, wtxt  # 6 งาน × 4 ผู้ยื่น = 24
+    assert grid is not None and grid["ns"][0] == 1, grid      # grid dict (ไม่ใช่ text แล้ว)
+    assert grid["n_auctions"] == 6 and grid["n_bids"] == 24, grid  # 6 งาน × 4 ผู้ยื่น = 24
     assert isinstance(fl, list), fl                          # 2B block (อาจ [] ถ้าไม่มี leader) — ไม่ error
     print("✅ field_and_winrate end-to-end (อ่านรอบเดียว → 2 บล็อก)")
 
@@ -130,10 +132,10 @@ def test_gate_fallback_to_old_card():
     import Sebastian_Customer_DB as db
     importlib.reload(db); db.init_schema()
     with db.get_connection() as conn:
-        wl, fl, conf = bf.field_and_winrate(conn, "นครพนม", ["ถนน"], 1000000,
-                                            district="ไม่มี", basis="อำเภอ")
-    assert wl == [] and fl == [] and conf is None, (wl, fl, conf)
-    print("✅ gate: scope บาง → ([],[]) → การ์ดเดิม")
+        grid, fl, conf = bf.field_and_winrate(conn, "นครพนม", ["ถนน"], 1000000,
+                                              district="ไม่มี", basis="อำเภอ")
+    assert grid is None and fl == [] and conf is None, (grid, fl, conf)
+    print("✅ gate: scope บาง → (None,[]) → การ์ดเดิม")
 
 
 def test_ladder_relax_to_amphoe():
@@ -157,13 +159,12 @@ def test_ladder_relax_to_amphoe():
         s.record_bid_results(f"L{i}", bids)
     tambon_ids = ["L0", "L1"]                                # ตำบล = 2 auctions (<5)
     with db.get_connection() as conn:
-        wl, fl, conf = bf.field_and_winrate(conn, "นครพนม", ["ถนน"], 1000000,
-                                            basis="ตำบล", project_ids=tambon_ids,
-                                            cf={}, amphoe="นาทม")
+        grid, fl, conf = bf.field_and_winrate(conn, "นครพนม", ["ถนน"], 1000000,
+                                              basis="ตำบล", project_ids=tambon_ids,
+                                              cf={}, amphoe="นาทม")
     assert conf is not None and conf[0] == "🟡", conf        # ผ่อนไปอำเภอ
-    assert any("โอกาสชนะตามจำนวนผู้ยื่น" in x for x in wl), wl    # ตารางขึ้น (เดิมไม่ขึ้น)
-    assert any("ราคาด้านบนยังอิงตำบล" in x for x in wl), wl       # disclaimer
-    print("✅ ladder: ตำบลบาง → ผ่อนอำเภอ 🟡 + ตารางขึ้น")
+    assert grid is not None, grid                            # grid ขึ้น (เดิมไม่ขึ้น)
+    print("✅ ladder: ตำบลบาง → ผ่อนอำเภอ 🟡 + grid ขึ้น")
 
 
 def test_weighted_quantile():
@@ -225,10 +226,10 @@ def test_eval_local_n_centering():
     big = [[(f"b{j}", j * 1.3, j == 0, 2569) for j in range(8)] for _ in range(5)]     # n=8
     local = [[(f"b{j}", j * 1.3, j == 0, 2569) for j in range(4)] for _ in range(4)]   # n=4, 4 auctions ≥3
     g = bf._evaluate_winrate(big, 1000000, local_auctions=local)
-    assert g["ok"] and g["ns"][len(g["ns"]) // 2] == 4, g["ns"]    # center=4 (local) ไม่ใช่ 8
+    assert g["ok"] and g["k_mid"] == 4, g["ns"]    # center=4 (local) ไม่ใช่ 8
     # local น้อยกว่า MIN_N_AUCTIONS(3) → fallback ใช้ F-scope n
     g2 = bf._evaluate_winrate(big, 1000000, local_auctions=local[:2])
-    assert g2["ns"][len(g2["ns"]) // 2] == 8, g2["ns"]            # center=8 (F-scope) เพราะ local<3
+    assert g2["k_mid"] == 8, g2["ns"]            # center=8 (F-scope) เพราะ local<3
     print("✅ local-n centering + fallback เมื่อ local<MIN_N_AUCTIONS")
 
 

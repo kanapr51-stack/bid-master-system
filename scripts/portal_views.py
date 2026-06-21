@@ -408,6 +408,10 @@ def render_job_page(data, token, exp, notes=None, overview="", starred=False):
             b.append(f"<div class=\"cd\">⏳ {cd}</div>")
     if j.get("pred_lo") and j.get("pred_hi"):
         b.append(f"<div class=\"meta\">💵 คาดราคา {_baht(j['pred_lo'])}–{_baht(j['pred_hi'])} บาท</div>")
+    if data.get("intel_lines"):
+        b.append("<div class=\"bidhead\">📊 วิเคราะห์ราคา & คู่แข่งในพื้นที่</div>")
+        for line in data["intel_lines"]:
+            b.append(f"<div class=\"meta\">{_h.escape(line)}</div>")
     if not data["bidders"]:
         b.append("<div class=\"bidhead\">ยังไม่มีผู้ยื่น</div>")
         b.append("<div class=\"msg\">งานนี้ยังไม่มีข้อมูลผู้ยื่น — รอประมูล/ประกาศผล</div>")

@@ -263,4 +263,18 @@ finally:
 assert captured["dept_name"] == "อบต.ทดสอบ", captured
 print("OK job_detail_dept_name_passthrough")
 
+# --- render_job_page: intel section (📊 วิเคราะห์ราคา & คู่แข่งในพื้นที่) ---
+c = _seed()
+d = pv.job_detail(c, "69010000001")
+d["intel_lines"] = ["💡 ราคาอ้างอิง ทดสอบ", "🏆 คู่แข่งหลัก ทดสอบ"]
+h = pv.render_job_page(d, "TOK", 0)
+assert "📊 วิเคราะห์ราคา & คู่แข่งในพื้นที่" in h, h
+assert "💡 ราคาอ้างอิง ทดสอบ" in h and "🏆 คู่แข่งหลัก ทดสอบ" in h, h
+# ลำดับ: section นี้ต้องอยู่ก่อนรายชื่อผู้ยื่นจริง
+assert h.index("📊 วิเคราะห์ราคา") < h.index("ผู้ยื่นทั้งหมด"), "ลำดับผิด — intel ต้องอยู่ก่อนผู้ยื่นจริง"
+d["intel_lines"] = None
+h0 = pv.render_job_page(d, "TOK", 0)
+assert "📊 วิเคราะห์ราคา & คู่แข่งในพื้นที่" not in h0, h0
+print("OK render_job_page_intel")
+
 print("OK test_portal_views")

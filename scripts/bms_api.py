@@ -282,7 +282,8 @@ def _fmt_exp_th(exp_epoch: int) -> str:
     return f"{dt.day} {months[dt.month]} {dt.year + 543}"
 
 
-def _follow_page_html(token: str, state: str, d: dict, deadline: str, exp_epoch: int) -> str:
+def _follow_page_html(token: str, state: str, d: dict, deadline: str, exp_epoch: int,
+                       project_id: str = "") -> str:
     """HTML มือถือ-first. state: 'active' | 'inactive' | 'no_customer' | 'invalid'."""
     import html as _html
     head = (
@@ -297,9 +298,10 @@ def _follow_page_html(token: str, state: str, d: dict, deadline: str, exp_epoch:
         ".name{font-size:16px;font-weight:600;margin:8px 0}"
         ".meta{font-size:13px;color:#888;margin:4px 0}"
         ".dl{font-size:13px;color:#d9534f;margin:4px 0}"
-        "button{width:100%;padding:16px;font-size:17px;font-weight:700;border:0;border-radius:12px;"
-        "margin-top:20px;color:#fff}"
-        ".follow{background:#1db446}.unfollow{background:#d9534f}"
+        "button,a.intel{display:block;box-sizing:border-box;width:100%;padding:16px;font-size:17px;"
+        "font-weight:700;border:0;border-radius:12px;margin-top:20px;color:#fff;text-align:center;"
+        "text-decoration:none}"
+        ".follow{background:#1db446}.unfollow{background:#d9534f}.intel{background:#3a7bd5}"
         ".exp{font-size:11px;color:#bbb;margin-top:18px;text-align:center}"
         ".msg{font-size:15px;color:#555;margin:12px 0}"
         "</style></head><body><div class=\"card\">"
@@ -322,6 +324,10 @@ def _follow_page_html(token: str, state: str, d: dict, deadline: str, exp_epoch:
     tok = _html.escape(token)
     if state == "active":
         body.insert(0, "<div class=\"h\">✅ งานนี้ติดตามอยู่แล้ว</div>")
+        pid_esc = _html.escape(str(project_id))
+        body.append(
+            f"<a class=\"intel\" href=\"/portal/job?t={tok}&pid={pid_esc}\">"
+            f"🔍 ดูวิเคราะห์ราคา+คู่แข่งบน Bid Board</a>")
         body.append(
             f"<form method=\"post\" action=\"/follow\">"
             f"<input type=\"hidden\" name=\"t\" value=\"{tok}\">"
@@ -972,7 +978,7 @@ async def follow_get(t: str = ""):
     if state == "no_customer":
         return HTMLResponse(_follow_page_html(t, "no_customer", {}, "", exp))
     d = _project_detail(project_id)
-    return HTMLResponse(_follow_page_html(t, state, d, _follow_deadline(project_id), exp))
+    return HTMLResponse(_follow_page_html(t, state, d, _follow_deadline(project_id), exp, project_id))
 
 
 @app.post("/follow")
@@ -993,7 +999,7 @@ async def follow_post(request: Request):
     if state == "no_customer":
         return HTMLResponse(_follow_page_html(t, "no_customer", {}, "", exp))
     d = _project_detail(project_id)
-    return HTMLResponse(_follow_page_html(t, state, d, _follow_deadline(project_id), exp))
+    return HTMLResponse(_follow_page_html(t, state, d, _follow_deadline(project_id), exp, project_id))
 
 
 @app.get("/portal")

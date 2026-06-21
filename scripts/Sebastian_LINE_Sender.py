@@ -234,8 +234,7 @@ def format_notification(project_id: str, province: str = "",
                          deliver_day: int = 0, report_date: str = "",
                          bid_submit_date: str = "", bid_submit_time: str = "",
                          is_backfill: bool = False,
-                         source_stage: str = "api_enriched",
-                         line_user_id: str = "") -> str:
+                         source_stage: str = "api_enriched") -> str:
     """
     v2 Mobile-first format — optimize สำหรับ 3-second decision scan
     ลำดับ: geography → project → money → agency → DEADLINE → timeline → announced
@@ -302,11 +301,7 @@ def format_notification(project_id: str, province: str = "",
                 save_prediction(_pp)
             except Exception:
                 pass
-        # บล็อกวิเคราะห์เต็ม ย้ายไปแสดงใน Bid Board แทน (อ่านง่ายกว่า + ใส่รายละเอียดเชิงลึกได้มากขึ้น)
-        if line_user_id and project_id:
-            link = build_job_link(line_user_id, project_id)
-            if link:
-                lines.append(f"🔍 ดูวิเคราะห์ราคา+คู่แข่งบน Bid Board: {link}")
+        # บล็อกวิเคราะห์เต็มอยู่ใน Bid Board (ดูได้หลังกดติดตามงานนี้ — ลิงก์อยู่หน้า /follow ไม่ใช่ในข้อความนี้)
 
     lines.append(f"\n🔑 {project_id}")
 
@@ -346,16 +341,6 @@ def build_follow_link(line_user_id: str, project_id: str) -> str:
             follow_token.make_token(line_user_id, project_id)
     except Exception as e:
         print(f"[build_follow_link] follow_token error (ส่งต่อไม่มีลิงก์): {e}", file=sys.stderr)
-        return ""
-
-
-def build_job_link(line_user_id: str, project_id: str) -> str:
-    """ลิงก์ไปหน้า job detail บน Bid Board (signed token, ต่อคน-ต่องาน). คืน '' ถ้า make_token พลาด (ห้ามทำ D0 พัง)."""
-    try:
-        return PUBLIC_BASE_URL.rstrip("/") + "/portal/job?t=" + \
-            follow_token.make_token(line_user_id, project_id) + "&pid=" + project_id
-    except Exception as e:
-        print(f"[build_job_link] follow_token error (ส่งต่อไม่มีลิงก์): {e}", file=sys.stderr)
         return ""
 
 
@@ -859,7 +844,6 @@ def main():
         bid_submit_time = bid_submit_time,
         is_backfill     = bool(item.get("is_backfill")),
         source_stage    = item.get("source_stage") or "api_enriched",
-        line_user_id    = item["line_user_id"],
     )
 
     if dry_run:

@@ -34,10 +34,15 @@ assert api._follow_status("Uxxx", "P1") == "no_customer"
 
 # HTML render — 3 สถานะ
 d = api._project_detail("P1")
-h_active = api._follow_page_html("tok", "active", d, "8 มิ.ย. 09:00", 2000000000)
+h_active = api._follow_page_html("tok", "active", d, "8 มิ.ย. 09:00", 2000000000, "P1")
 assert "ยกเลิกการติดตาม" in h_active and "งานทดสอบถนน" in h_active and "ลิงก์นี้ใช้ได้ถึง" in h_active
-h_inactive = api._follow_page_html("tok", "inactive", d, "", 2000000000)
+# active เท่านั้น → มีลิงก์ดูวิเคราะห์ราคาบน Bid Board (ติดตามแล้วถึงเห็น)
+assert "ดูวิเคราะห์ราคา+คู่แข่งบน Bid Board" in h_active
+assert "/portal/job?t=tok&pid=P1" in h_active
+h_inactive = api._follow_page_html("tok", "inactive", d, "", 2000000000, "P1")
 assert "ติดตามงานนี้" in h_inactive and "ยกเลิกการติดตาม" not in h_inactive
+# inactive (ยังไม่ติดตาม) → ไม่มีลิงก์ Bid Board
+assert "Bid Board" not in h_inactive
 h_nocust = api._follow_page_html("tok", "no_customer", {}, "", 2000000000)
 assert "เพิ่มเพื่อน" in h_nocust
 h_invalid = api._follow_page_html("tok", "invalid", {}, "", 0)

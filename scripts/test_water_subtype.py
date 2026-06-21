@@ -60,8 +60,8 @@ def test_build_intel_subtype():
     ctx = ci._build_intel(c, "นครพนม", tk, "", None, 1000000, subtype="water_struct",
                           contested_only=False)
     assert ctx is not None, "struct ควรมี intel"
-    txt = "\n".join(ctx["lines"])
-    assert "หจก.โครง" in txt and "หจก.ดิน" not in txt, txt
+    names = [cmp["name"] for ct in ctx["company_tables"] for cmp in ct["companies"]]
+    assert "หจก.โครง" in names and "หจก.ดิน" not in names, names
     pred = ctx["prediction"]
     assert pred and pred["area_disc_hi"] <= 20, pred   # struct ลดตื้น ไม่ทะลุ 20%
     print("✅ _build_intel subtype (struct อ้างอิง struct อย่างเดียว)")
@@ -88,8 +88,8 @@ def test_intel_context_end_to_end():
     # ผ่าน production entry: intel_context คำนวณ subtype จาก project_name เอง
     ctx = ci.intel_context("นครพนม", "ขุดลอกคลองสาธารณะ ต.โพนทอง", "", "", 1000000, c)
     assert ctx is not None, ctx
-    txt = "\n".join(ctx["lines"])
-    assert "หจก.ดิน" in txt and "หจก.โครง" not in txt, txt   # งานขุดไม่ดึงงานโครงสร้าง
+    names = [cmp["name"] for ct in ctx["company_tables"] for cmp in ct["companies"]]
+    assert "หจก.ดิน" in names and "หจก.โครง" not in names, names   # งานขุดไม่ดึงงานโครงสร้าง
     print("✅ intel_context subtype (end-to-end excavation)")
 
 

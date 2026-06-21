@@ -26,7 +26,7 @@ def test_scope_block_recency():
     """scope ที่มีข้อมูลเก่า-ดุ (2562, 40%) + สด-อนุรักษ์ (2568, 25%) → median เอนของสด (~25)."""
     rows = [{"discount_pct": 40.0, "winner": "หจก.เก่า", "fiscal_year": "2562", "subdistrict": "x", "district": "y"},
             {"discount_pct": 25.0, "winner": "หจก.สด", "fiscal_year": "2568", "subdistrict": "x", "district": "y"}]
-    _l, p25, p75, n, _t, _tm, med = ci._scope_block(rows, "🏘 ทดสอบ", now_year=2569)
+    _l, p25, p75, n, _t, _tm, med, _cos = ci._scope_block(rows, "🏘 ทดสอบ", now_year=2569)
     assert med is not None and med <= 30, f"ของเก่าควรจาง median เอน 25 ไม่ใช่ 32.5; ได้ {med}"
     print(f"✅ _scope_block recency (median={med} เอนของสด)")
 

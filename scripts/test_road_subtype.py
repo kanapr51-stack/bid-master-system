@@ -58,8 +58,8 @@ def test_build_intel_subtype():
     # concrete job → อ้างอิงเฉพาะ concrete (หจก.K) ไม่เอา asphalt (หจก.M)
     ctx = ci._build_intel(c, "นครพนม", tk, "", None, 1000000, subtype="concrete")
     assert ctx is not None, "concrete ควรมี intel"
-    txt = "\n".join(ctx["lines"])
-    assert "หจก.K" in txt and "หจก.M" not in txt, txt
+    names = [cmp["name"] for ct in ctx["company_tables"] for cmp in ct["companies"]]
+    assert "หจก.K" in names and "หจก.M" not in names, names
     pred = ctx["prediction"]
     # discount concrete = {25,30} → area_disc ระหว่าง 25-30 (ไม่เจือจางด้วย asphalt 2-5)
     assert pred and pred["area_disc_lo"] >= 20, pred
@@ -71,8 +71,8 @@ def test_intel_context_subtype():
     # ผ่าน production entry: intel_context คำนวณ subtype จาก project_name เอง
     ctx = ci.intel_context("นครพนม", "ก่อสร้างถนน คสล. ต.โพนทอง", "", "", 1000000, c)
     assert ctx is not None, ctx
-    txt = "\n".join(ctx["lines"])
-    assert "หจก.K" in txt and "หจก.M" not in txt, txt   # concrete job ไม่ดึง asphalt
+    names = [cmp["name"] for ct in ctx["company_tables"] for cmp in ct["companies"]]
+    assert "หจก.K" in names and "หจก.M" not in names, names   # concrete job ไม่ดึง asphalt
     print("✅ intel_context subtype (end-to-end concrete)")
 
 

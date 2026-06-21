@@ -570,7 +570,7 @@ def _round2_warned_names(conn, province, tokens, loc) -> list:
     try:
         rows, _scope, _lv = _ci.select_competitors(province, tokens, loc.get("tambon", ""), loc.get("amphoe"), conn)
         from collections import Counter
-        return [w for w, _ in Counter(r["winner"] for r in rows if r.get("winner")).most_common(_ci.SHOW_N)]
+        return [w for w, _ in Counter(r["winner"] for r in rows if r.get("winner")).most_common(3)]
     except Exception:
         return []
 

@@ -63,7 +63,6 @@ _PROVINCIAL_AGENCY_KW = ("องค์การบริหารส่วนจ
 
 MIN_COMPETITORS = 2     # distinct winners ขั้นต่ำก่อนหยุด fallback
 PROVINCE_FALLBACK_MIN = 3   # อำเภอไม่มี precedent → คาดจากจังหวัดได้ถ้า distinct winners ≥ นี้ (หยาบกว่า local จึงตั้งสูงกว่า)
-SHOW_N = 3              # จำนวนบริษัทที่โชว์
 MIN_GAMES_FOR_IQR = 3   # ต่ำกว่านี้โชว์แค่ median
 IQR_WIDE = 20           # p75-p25 เกินนี้ = ช่วงกว้าง (ลดความเชื่อมั่น)
 TAMBON_MIN = 5          # ตำบลมีงาน < นี้ → โชว์บล็อกอำเภอคู่กันด้วย
@@ -422,10 +421,35 @@ def _conf_tag(n: int, p25, p75) -> str:
     return "🟢"
 
 
+def _resolve_tin(conn, name):
+    """หา bidder_tin จาก bid_results ด้วยชื่อ (cgd_winners ไม่มี tin ที่เชื่อถือได้ — N+157 winner_tin เพี้ยน ~99%).
+    normalized exact match (ตัด prefix นิติบุคคล, ใช้ helper จาก portal_views) + LIKE prefilter ด้วยคำยาวสุด.
+    None ถ้าไม่เจอ/ชื่อสั้นเกิน/error (รวม 'ไม่มีตาราง bid_results') — ห้าม throw."""
+    try:
+        import portal_views as _pv
+        core = _pv._norm_name(name)
+        key = _pv._prefilter_key(name)
+        if not core or not key:
+            return None
+        cand = conn.execute(
+            "SELECT bidder_name, bidder_tin FROM bid_results WHERE bidder_name LIKE ?",
+            (f"%{key}%",)).fetchall()
+        for row in cand:
+            bname, tin = row[0], row[1]
+            if tin and _pv._norm_name(bname) == core:
+                return tin
+        return None
+    except Exception:
+        _log.debug("_resolve_tin failed for name=%r", name, exc_info=True)
+        return None
+
+
 def _scope_block(rows: list, label: str, now_year=None) -> tuple:
     """บล็อกคู่แข่ง 1 scope (ตำบล/อำเภอ/จังหวัด). สถิติทุกตัว scope-local จาก rows.
     p25/p75/median ถ่วงน้ำหนักความสด (L3 recency, half-life 1 ปี) — งานเก่าจาง.
-    คืน (lines, p25, p75, n, top_name, top_median, median)."""
+    companies = ทุกบริษัทที่ชนะใน rows (ไม่จำกัด — เดิม SHOW_N=3) เรียงจำนวนงานชนะมาก→น้อย, ไม่มี tin
+    (tin resolve โดย _build_intel ซึ่งมี conn).
+    คืน (lines, p25, p75, n, top_name, top_median, median, companies)."""
     counts = Counter(r["winner"] for r in rows if r.get("winner"))
     dw = [(r["discount_pct"], recency_weight(r.get("fiscal_year"), now_year))
           for r in rows if r.get("discount_pct") is not None]
@@ -433,23 +457,19 @@ def _scope_block(rows: list, label: str, now_year=None) -> tuple:
     p25, p75 = _wpct(discs, wts, 25), _wpct(discs, wts, 75)
     med = _wpct(discs, wts, 50)
     n = len(rows)
-    top3 = counts.most_common(SHOW_N)
-    top_name = top3[0][0] if top3 else None
+    ranked = counts.most_common()                  # ทุกบริษัท ไม่จำกัด (เดิม most_common(SHOW_N))
+    top_name = ranked[0][0] if ranked else None
     top_median = _company_stats_from_rows(rows, top_name)["median"] if top_name else None
     lines = [f"{label} — {n} งาน {_conf_tag(n, p25, p75)}"]
-    for w, _ in top3:
+    companies = []
+    for w, _wins in ranked:
         cs = _company_stats_from_rows(rows, w)
-        nm = w or "?"                       # ชื่อเต็ม (text ธรรมดา ไม่จำกัดความยาว)
-        if cs["p25"] is not None:
-            lines.append(f"  • {nm} · {cs['games']} งาน · ลด {cs['median']:.0f}% "
-                         f"({cs['p25']:.0f}–{cs['p75']:.0f}%)")
-        elif cs["median"] is not None:
-            lines.append(f"  • {nm} · {cs['games']} งาน · ลด {cs['median']:.0f}%")
-        else:
-            lines.append(f"  • {nm} · {cs['games']} งาน")
+        pids = [r["project_id"] for r in rows if r.get("winner") == w and r.get("project_id")]
+        companies.append({"name": w or "?", "games": cs["games"], "median": cs["median"],
+                          "p25": cs["p25"], "p75": cs["p75"], "project_ids": pids})
     if p75:
         lines.append(f"  📊 ส่วนลด {p25:.0f}–{p75:.0f}%")
-    return lines, p25, p75, n, top_name, top_median, med
+    return lines, p25, p75, n, top_name, top_median, med, companies
 
 
 def confidence_label(area_n: int, p25, p75) -> str:
@@ -509,6 +529,7 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
     cf = dict(subtype=subtype, nature=nature, contested_only=contested_only, market=market,
               work_kind=work_kind)
     blocks = []
+    company_tables = []              # N+161: บล็อกบริษัทแบบ structured (เต็มลิสต์ + tin) ต่อ scope ที่มีคู่แข่ง
     pp25 = pp75 = ptop = ptopm = pmed = None
     basis = ""
     used_rows = []                   # reference rows ของ scope ที่ใช้คาดราคา (สำหรับ explain snapshot)
@@ -523,8 +544,11 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
         tn = len(t_rows)
         if tambon:
             if t_rows:
-                tl, t25, t75, _n, ttop, ttopm, tmed = _scope_block(t_rows, f"🏘 ในตำบล{tambon}")
+                tl, t25, t75, _n, ttop, ttopm, tmed, t_cos = _scope_block(t_rows, f"🏘 ในตำบล{tambon}")
                 blocks += tl
+                company_tables.append({"label": f"🏘 ในตำบล{tambon}", "n": _n,
+                                       "conf_tag": _conf_tag(_n, t25, t75), "p25": t25, "p75": t75,
+                                       "companies": t_cos})
                 pp25, pp75, ptop, ptopm, pmed, basis = t25, t75, ttop, ttopm, tmed, "ตำบล"
                 basis_sub, basis_dist, basis_old = tambon, amphoe, t_old
                 used_rows = t_rows
@@ -533,8 +557,11 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
         if tn < TAMBON_MIN:                       # ตำบลน้อย → โชว์อำเภอคู่กัน
             a_rows, a_old = _fetch_scope(conn, province, tokens, district=amphoe, **cf)
             if a_rows:
-                al, a25, a75, _n, atop, atopm, amed = _scope_block(a_rows, f"🏙 ในอำเภอ{amphoe}")
+                al, a25, a75, _n, atop, atopm, amed, a_cos = _scope_block(a_rows, f"🏙 ในอำเภอ{amphoe}")
                 blocks += al
+                company_tables.append({"label": f"🏙 ในอำเภอ{amphoe}", "n": _n,
+                                       "conf_tag": _conf_tag(_n, a25, a75), "p25": a25, "p75": a75,
+                                       "companies": a_cos})
                 if pp25 is None:                  # ตำบลไม่มี → คาดอิงอำเภอล้วน
                     pp25, pp75, ptop, ptopm, pmed, basis = a25, a75, atop, atopm, amed, "อำเภอ"
                     basis_sub, basis_dist, basis_old = None, amphoe, a_old
@@ -555,8 +582,11 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
         p_rows, p_old = _fetch_scope(conn, province, tokens, **cf)
         if not p_rows:
             return None
-        pl, p25, p75, _n, ptopn, ptopmd, pmedn = _scope_block(p_rows, f"🏙 ใน{province}")
+        pl, p25, p75, _n, ptopn, ptopmd, pmedn, p_cos = _scope_block(p_rows, f"🏙 ใน{province}")
         blocks += pl
+        company_tables.append({"label": f"🏙 ใน{province}", "n": _n,
+                               "conf_tag": _conf_tag(_n, p25, p75), "p25": p25, "p75": p75,
+                               "companies": p_cos})
         pp25, pp75, ptop, ptopm, pmed, basis = p25, p75, ptopn, ptopmd, pmedn, "จังหวัด"
         basis_sub, basis_dist, basis_old = None, None, p_old
         used_rows = p_rows
@@ -566,8 +596,11 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
     if amphoe and pp25 is None:
         pf_rows, pf_old = _fetch_scope(conn, province, tokens, **cf)
         if _distinct_winners(pf_rows) >= PROVINCE_FALLBACK_MIN:
-            fl, f25, f75, _n, ftop, ftopm, fmed = _scope_block(pf_rows, f"🗺 ทั้งจังหวัด{province} (ข้ามพื้นที่)")
+            fl, f25, f75, _n, ftop, ftopm, fmed, f_cos = _scope_block(pf_rows, f"🗺 ทั้งจังหวัด{province} (ข้ามพื้นที่)")
             blocks += fl
+            company_tables.append({"label": f"🗺 ทั้งจังหวัด{province} (ข้ามพื้นที่)", "n": _n,
+                                   "conf_tag": _conf_tag(_n, f25, f75), "p25": f25, "p75": f75,
+                                   "companies": f_cos})
             pp25, pp75, ptop, ptopm, pmed, basis = f25, f75, ftop, ftopm, fmed, "จังหวัด (ข้ามพื้นที่)"
             basis_sub, basis_dist, basis_old = None, None, pf_old
             used_rows = pf_rows
@@ -583,6 +616,7 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
             pmed += new25 - pp25
         pp25, pp75 = new25, new75
     pred = predict_winning_price(budget, pp25, pp75, ptop, ptopm, area_median=pmed)
+    winrate_table = None
     if pred:
         import bid_field as _bf                       # 2B เจ้าตลาด + B′ ตาราง win% (population เดียวกับราคา)
         _ids = [r["project_id"] for r in used_rows if r.get("project_id")]
@@ -590,9 +624,12 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
                 else f" (อ.{amphoe})" if basis == "อำเภอ"
                 else f" (ต.{tambon}+อ.{amphoe})" if basis.startswith("ตำบล+")
                 else f" (ใน{province})")
-        _wl, _fl, _conf = _bf.field_and_winrate(conn, province, tokens, budget,
-                                                scope_label=_lbl, basis=basis, project_ids=_ids,
-                                                cf=cf, amphoe=amphoe)
+        _grid, _fl, _conf = _bf.field_and_winrate(conn, province, tokens, budget,
+                                                   scope_label=_lbl, basis=basis, project_ids=_ids,
+                                                   cf=cf, amphoe=amphoe)
+        _wl = _bf.winrate_lines(_grid, _conf, price_basis=basis) if _grid else []
+        if _grid:
+            winrate_table = {**_grid, "conf": _conf, "price_basis": basis}
         if _wl and _conf is None:                      # 🟢 local → ตารางแทน a/b/c (consistent ทุกอย่าง local)
             lines += [""] + _wl
         elif _wl:                                      # 🟡/🟠 assisted → คงราคา local + ตารางต่อท้าย (price sacred)
@@ -622,8 +659,14 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
     except Exception as e:
         _log.warning("build_explain failed: %s", e)
         explain = None
+    _tin_cache = {}
+    for ct in company_tables:
+        for cmp in ct["companies"]:
+            if cmp["name"] not in _tin_cache:
+                _tin_cache[cmp["name"]] = _resolve_tin(conn, cmp["name"])
+            cmp["tin"] = _tin_cache[cmp["name"]]
     return {"lines": lines, "prediction": pred, "tambon": tambon, "amphoe": amphoe,
-            "explain": explain}
+            "explain": explain, "company_tables": company_tables, "winrate_table": winrate_table}
 
 
 def intel_context(province: str, project_name: str, dept_name: str = "",

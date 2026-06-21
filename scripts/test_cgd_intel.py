@@ -286,9 +286,13 @@ def test_build_intel_dual():
     L = "\n".join(ctx["lines"])
     assert ctx["lines"][0].startswith("💡 ราคาอ้างอิง (งานถนน ต.โพนทอง อ.บ้านแพง)"), ctx["lines"][0]
     assert "🏘 ในตำบลโพนทอง" in L and "🏙 ในอำเภอบ้านแพง" in L, L      # 2 บล็อก
-    assert "หจก.C" not in L.split("ในอำเภอ")[0], "ตำบลไม่ควรมี C (อยู่ไผ่ล้อม)"  # scope-local ตำบล
-    assert "หจก.C" in L, "อำเภอควรมี C"                              # อำเภอรวม ไผ่ล้อม
-    assert "หจก.X" not in L, "เรณูนคร ไม่ควรโผล่ (คนละอำเภอ)"
+    tambon_ct = next(ct for ct in ctx["company_tables"] if ct["label"].startswith("🏘 ในตำบลโพนทอง"))
+    amphoe_ct = next(ct for ct in ctx["company_tables"] if ct["label"].startswith("🏙 ในอำเภอบ้านแพง"))
+    tambon_names = [cmp["name"] for cmp in tambon_ct["companies"]]
+    amphoe_names = [cmp["name"] for cmp in amphoe_ct["companies"]]
+    assert "หจก.C" not in tambon_names, "ตำบลไม่ควรมี C (อยู่ไผ่ล้อม)"  # scope-local ตำบล
+    assert "หจก.C" in amphoe_names, "อำเภอควรมี C"                    # อำเภอรวม ไผ่ล้อม
+    assert "หจก.X" not in tambon_names and "หจก.X" not in amphoe_names, "เรณูนคร ไม่ควรโผล่ (คนละอำเภอ)"
     assert "อิงตำบล" in L and "แนะนำราคายื่น" in L, L              # คาดอิงตำบล + headline ใหม่
     assert ctx["prediction"] and ctx["prediction"]["area_price_lo"] > 0, ctx["prediction"]
     # ตำบลไม่มีงาน → "ยังไม่มี" + อำเภอยังโชว์
@@ -335,11 +339,16 @@ def test_scope_stats():
     s = ci._company_stats_from_rows(rows, "หจก.A")   # 2 งาน disc 5,8 → median 6.5, ไม่มี IQR
     assert s["games"] == 2 and s["median"] == 6.5 and s["p25"] is None, s
     assert ci._company_stats_from_rows(rows, "หจก.D")["games"] == 0   # ไม่อยู่ใน scope
-    lines, p25, p75, n, top, topm, med = ci._scope_block(rows, "🏘 ในตำบลโพนทอง")
+    lines, p25, p75, n, top, topm, med, companies = ci._scope_block(rows, "🏘 ในตำบลโพนทอง")
     assert n == 3 and lines[0].startswith("🏘 ในตำบลโพนทอง — 3 งาน"), (n, lines[0])
-    assert any("หจก.A" in l for l in lines), lines
+    assert not any("หจก.A" in l for l in lines), "bullet รายบริษัทย้ายไป companies (ไม่ใช่ lines แล้ว)"
+    names = [cmp["name"] for cmp in companies]
+    assert "หจก.A" in names and "หจก.B" in names, companies   # ครบทุกบริษัท (ไม่จำกัด 3 แล้ว)
+    a = next(cmp for cmp in companies if cmp["name"] == "หจก.A")
+    assert a["games"] == 2 and a["median"] == 6.5, a
+    assert a["project_ids"] and set(a["project_ids"]) == {"R1", "R2"}, a
     assert med is not None, med   # median ของ scope (สำหรับ 'ปกติ' ในคาดราคา)
-    print("✅ scope stats + block (scope-local)")
+    print("✅ scope stats + block (scope-local, full company list)")
 
 
 def test_confidence_label():
@@ -354,11 +363,46 @@ def test_intel_lines():
     c = _fixture_conn()   # ไม่มี project_locations → resolve degrade province (graceful)
     out = ci.intel_lines("นครพนม", "ก่อสร้างถนน คสล. ต.โพนทอง", conn=c)
     assert out and out[0].startswith("💡 ราคาอ้างอิง (งานถนน"), out
-    assert any("• หจก." in l for l in out), out                  # มีคู่แข่ง
     assert any("ส่วนลด" in l for l in out), out
     assert ci.intel_lines("นครพนม", "จัดซื้อรถยนต์", conn=c) == []
     assert ci.intel_lines("เชียงใหม่", "ก่อสร้างถนน", conn=c) == []
     print("✅ intel_lines")
+
+
+def _tin_fixture_conn():
+    """conn แยกจาก _fixture_conn — มี bid_results สำหรับ _resolve_tin."""
+    c = _fixture_conn()
+    c.execute("""CREATE TABLE bid_results (project_id TEXT, bidder_name TEXT, bidder_tin TEXT)""")
+    c.execute("INSERT INTO bid_results VALUES ('R1','หจก.A','1234567890123')")
+    c.commit()
+    return c
+
+
+def test_resolve_tin():
+    c = _tin_fixture_conn()
+    assert ci._resolve_tin(c, "หจก.A") == "1234567890123"
+    assert ci._resolve_tin(c, "หจก.ไม่มีตัวนี้") is None
+    assert ci._resolve_tin(c, "") is None
+    # ไม่มีตาราง bid_results → graceful None (ไม่ throw)
+    c2 = _fixture_conn()
+    assert ci._resolve_tin(c2, "หจก.A") is None
+    print("✅ _resolve_tin (match / no-match / no-table graceful)")
+
+
+def test_build_intel_company_tables_and_winrate_table():
+    c = _fixture_conn()
+    ctx = ci.intel_context("นครพนม", "ก่อสร้างถนน คสล. ต.โพนทอง", conn=c)
+    assert ctx is not None, ctx
+    assert "company_tables" in ctx and "winrate_table" in ctx, ctx
+    assert ctx["company_tables"], "ต้องมีอย่างน้อย 1 บล็อก (ตำบลโพนทอง มีคู่แข่ง)"
+    blk = ctx["company_tables"][0]
+    assert set(blk.keys()) >= {"label", "n", "conf_tag", "p25", "p75", "companies"}, blk
+    names = [cmp["name"] for cmp in blk["companies"]]
+    assert "หจก.A" in names and "หจก.B" in names, names    # ครบทุกบริษัท ไม่จำกัด 3
+    for cmp in blk["companies"]:
+        assert "tin" in cmp, cmp                            # key มีเสมอ (None ถ้า resolve ไม่ได้)
+        assert cmp["tin"] is None, cmp                       # _fixture_conn ไม่มี bid_results → resolve ไม่ได้เสมอ graceful
+    print("✅ _build_intel: company_tables + winrate_table keys present, full company list, tin graceful-None")
 
 
 def test_wiring_format_notification():
@@ -411,5 +455,7 @@ if __name__ == "__main__":
     test_scope_stats()
     test_confidence_label()
     test_intel_lines()
+    test_resolve_tin()
+    test_build_intel_company_tables_and_winrate_table()
     test_wiring_format_notification()
     print("ALL PASS (moi location disambiguation)")

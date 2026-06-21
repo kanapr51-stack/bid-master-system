@@ -1019,3 +1019,24 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 ### Followup
 - รอกัญจน์สั่ง merge `worktree-portal-interest-star` → main + push/deploy VPS (ไม่ได้ทำใน task นี้ตามแผน)
 - ก่อนรอ merge ต้องทำ final whole-branch code review (most capable model) + `superpowers:finishing-a-development-branch` ต่อ
+
+## งานที่ N+161: Bid Board win% ladder เต็ม N + รายชื่อคู่แข่งครบ คลิกไปหน้าบริษัท (2026-06-22)
+
+### สถานะ: ✅ เสร็จ (code+test ครบ Task 1-7, Sophia SAFE) — รอกัญจน์ confirm deploy VPS
+
+### บริบท
+ออกแบบผ่าน `superpowers:brainstorming` (spec commit `c9d02e2`, `docs/superpowers/specs/2026-06-22-bidboard-intel-table-design.md`) + `superpowers:writing-plans` (plan `docs/superpowers/plans/2026-06-22-bidboard-intel-table.md`, 7 tasks) รันแบบ inline (ไม่ใช้ subagent — กัญจน์หลับแล้ว ไม่มีคนตอบคำถาม subagent). เปลี่ยน 2 อย่าง: (1) ตาราง win%-by-bidders จาก 3 จุด a/b/c เป็น ladder เต็ม N=1..max จริงจากข้อมูล (N=1 = 100% เสมอ) (2) โชว์ผู้รับเหมาทุกคนที่ป้อนการคำนวณ (ไม่ใช่ top 3) เป็นลิงก์คลิกไปหน้า `/portal/company`, คลิกแล้วเห็นผลงานในพื้นที่นั้นๆ ก่อนผลงานทั้งหมด
+
+### Fix / ผล
+- Task 1 (`scripts/bid_field.py`, commit `d1ce125`): `_center_stats` ladder เต็ม `ns=[1]+range(2,max+1)`, `_evaluate_winrate` hardcode N=1=100%, `field_and_winrate` คืน `grid` dict แทน text lines
+- Task 2/3 (`scripts/cgd_intel.py`, commit `2ee9c95`): ลบ `SHOW_N=3` cap → `_scope_block` คืน `companies` list ครบทุกบริษัท (ไม่ใช่ text bullet); `_build_intel` ประกอบ `company_tables`(ต่อ scope)+`winrate_table`(grid+conf+basis) ใส่ใน return dict; เพิ่ม `_resolve_tin(conn,name)` หา tin จาก `bid_results` (normalized name match, graceful None)
+- Task 4 (`scripts/portal_views.py`, commit `2033fa2`): `job_detail()` ส่งผ่าน `company_tables`/`winrate_table`; `render_job_page()` render ตาราง HTML ใหม่ 2 อัน (`_render_company_tables` คลิกไป `/portal/company` ถ้า resolve tin ได้/เทาถ้าไม่ได้, `_render_winrate_table` ladder เต็ม N=1..max)
+- Task 5 (`scripts/portal_views.py`, commit `fa0d175`): `area_portfolio(conn,name,project_ids)` exact-match ผลงานบริษัทเฉพาะ project_ids ที่ส่งมา (ไม่ fuzzy geo — bid_results พิกัดบาง ~7/1084); `render_company_page()` เพิ่ม section "📍 ผลงานในพื้นที่นี้" ก่อน timeline รายปี
+- Task 6 (`scripts/bms_api.py`, commit `ff4c9c4`): route `/portal/company` รับ `area_ids`/`area_label` query param ส่งต่อเข้า area_portfolio + render
+- Task 7: regression 9 ไฟล์ test ที่เกี่ยวข้องทั้งหมด ALL PASS/OK ไม่มี traceback; Sophia ตรวจ SQL injection(parameterized ทั้ง `_resolve_tin`/`area_portfolio`), XSS(`area_label` escaped), None-safety, N=1=100% hardcode, ไม่มี silent error → **verdict: SAFE TO PROCEED**
+- พบ side-effect: `Sebastian_LINE_Sender.py:_round2_warned_names` พึ่ง `cgd_intel.SHOW_N` จริง (top-3 LINE disclaimer) — แก้เป็น hardcode `3` ตรง (ไม่เกี่ยวกับ web ladder ใหม่, LINE ยังจำกัดความยาวเดิม)
+- พบ plan inconsistency 3 จุดตอนเขียน test จริง (ไม่อยู่ใน plan ตั้งแต่แรก แก้ระหว่างทำ): (1) plan's test assert "1ราย"/"4ราย" ไม่มีเว้นวรรค ขัดกับ render code ที่ใส่เว้นวรรค "N ราย" (ตรงกับ convention เดิมในไฟล์) → ใช้แบบเว้นวรรค (2) `test_area_portfolio_exact_match_only` fixture R3 winner จริงๆตรงกับหจก.A (ไม่ตรงกับ comment "winner≠หจก.A") → แก้ id list เป็น `["R1","R2","R4"]` ให้ R4(คนละบริษัท)สาธิต filter จริง (3) "ปี 2568" ขึ้นซ้ำในกราฟแถบ "ยื่น–ชนะ รายปี" ก่อน timeline อยู่แล้ว → assert position ด้วย marker `class="yhead"` เฉพาะ timeline แทน
+- Regression รอบแรก (Task 2/3): 19 ไฟล์ test ที่ import cgd_intel/bid_field — พบ 4 ไฟล์ test เก่าที่ assert bullet text "หจก.X" in lines ต้องแก้เป็น assert บน `company_tables` structured data: `test_cgd_intel.py`, `test_road_subtype.py`(2 จุด), `test_water_subtype.py`(2 จุด)
+
+### Followup
+- Deploy VPS: scp `bid_field.py`/`cgd_intel.py`/`portal_views.py`/`bms_api.py` + restart `bms-api` systemd — **รอกัญจน์ confirm ก่อนลงมือ** (shared infra)

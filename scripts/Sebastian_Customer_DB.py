@@ -314,6 +314,7 @@ def init_schema():
     _migrate_v131()
     _migrate_v132()
     _migrate_v133()
+    _migrate_v134()
     print(f"Schema v1.14 ready: {DB_PATH}")
 
 
@@ -356,6 +357,19 @@ def _migrate_v133():
         if rows:
             buf = [(_pv._norm_name(w), pid) for pid, w in rows]
             conn.executemany("UPDATE cgd_winners SET normalized_winner=? WHERE project_id=?", buf)
+
+
+def _migrate_v134():
+    """index cgd_winners(province,fiscal_year,proc_type) — /portal/job ช้ามาก (กัญจน์รายงาน
+    2026-06-22 หลัง backfill สกลนคร) วัดจริง: cgd_intel._fetch() เดิมมี idx_cgdw_province
+    ใช้ได้แค่กรอง province (390K แถวต่อจังหวัดใหญ่) แล้ว scan ทุกแถวเช็ค fiscal_year/proc_type/LIKE
+    เอง = 600ms/call × หลาย scope block (ตำบล/อำเภอ/จังหวัด) ต่อหน้า = รวม 3.7s/หน้า.
+    composite index ตัด province+fy+proc_type ก่อน LIKE เหลือ ~1,100 แถว (ลด 350x) ก่อนค่อย LIKE
+    เฉพาะ subset เล็กนั้น — fiscal_year/proc_type เป็น IN() เล็กๆ ทั้งคู่ SQLite ทำ multi-probe ได้
+    ปกติ ไม่ต้องห่วงเรื่องลำดับคอลัมน์."""
+    with get_connection() as conn:
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_cgdw_prov_fy_proc "
+                     "ON cgd_winners(province, fiscal_year, proc_type)")
 
 
 def _migrate_v130():

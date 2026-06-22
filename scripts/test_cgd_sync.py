@@ -19,7 +19,8 @@ with db.get_connection() as c:
     wi = [r[1] for r in c.execute("PRAGMA index_list(cgd_winners)")]
 assert "idx_bid_results_tin" in bi, bi
 assert "idx_cgd_winners_normwin" in wi, wi
-print("✅ v132/v133: idx_bid_results_tin + idx_cgd_winners_normwin มีจริง")
+assert "idx_cgdw_prov_fy_proc" in wi, wi   # v134: /portal/job ช้า (cgd_intel._fetch scope query)
+print("✅ v132/v133/v134: index ทั้งหมดมีจริง")
 
 rows = [{"project_id": "P1", "province": "นครพนม", "dept": "อบต.x", "project_name": "ถนน",
          "winner": "บ.A", "winner_tin": "1", "budget": 1100000, "win_price": 950000,

@@ -2,7 +2,7 @@
 รันบน VPS: ดึง projectId งานแข่งจริงจาก cgd_winners → getProcureResult → record_bid_results.
 sequential + politeness sleep + resumable (backfill_seen.json) + fail-open ต่องาน.
 fetched_at = announce_date ของงาน (recency ถูกต้องสำหรับ 2B). ดู spec 2026-06-13-allbidders-backfill-2a."""
-import os, sys, json, time, argparse
+import os, sys, json, time, argparse, datetime
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(__file__))
@@ -16,6 +16,13 @@ SLEEP = 1.5            # politeness ต่องาน (rate-limit retry อย�
 CHECKPOINT_EVERY = 50
 COOLDOWN_EVERY = 25    # ทุก N งาน พักยาว (กัน generateToken rate-limit — VPS พังหลัง ~26 งานถ้าไม่พัก)
 COOLDOWN_SEC = 130     # >2 นาที (budget generateToken ~30/รอบ ตาม winner_sweep pattern)
+
+
+def current_fy(today: datetime.date = None) -> int:
+    """ปีงบไทย ณ วันนี้ (ต.ค.-ก.ย., เลขปี = พ.ศ. ของเดือน ก.ย. ที่ปิดปีงบ).
+    ใช้ตั้ง --fy default แบบไม่ตายตัว กัน timer รายวันค้างปีเก่าหลังเดือน ต.ค. (พ.ศ. ใหม่)."""
+    today = today or datetime.date.today()
+    return today.year + 543 + (1 if today.month >= 10 else 0)
 
 
 def log(msg: str):
@@ -118,7 +125,8 @@ def run(provinces: list, fy: list, limit=None, dry_run=False, sleep=SLEEP,
 def main():
     ap = argparse.ArgumentParser(description="Backfill full-bidder list (2A) จาก cgd_winners → bid_results")
     ap.add_argument("--provinces", default="นครพนม,บึงกาฬ", help="คั่นด้วย ,")
-    ap.add_argument("--fy", default="2567,2568,2569", help="ปีงบ คั่นด้วย ,")
+    fy_now = current_fy()
+    ap.add_argument("--fy", default=f"{fy_now-1},{fy_now}", help="ปีงบ คั่นด้วย , (default = ปีงบปัจจุบัน+ปีก่อนหน้า คำนวณจากวันนี้)")
     ap.add_argument("--districts", default="", help="อำเภอ คั่นด้วย , (กรองจากชื่องาน) — ว่าง=ทั้งจังหวัด")
     ap.add_argument("--limit", type=int, default=None, help="จำกัดจำนวนงาน (probe run)")
     ap.add_argument("--dry-run", action="store_true", help="นับ candidate อย่างเดียว ไม่ดึง API")

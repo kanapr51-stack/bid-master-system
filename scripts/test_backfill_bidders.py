@@ -151,5 +151,15 @@ def test_select_district_filter():
     assert {"D1", "D2", "D3"} <= ids_all, ids_all
     print("✅ select_candidates district filter (ชื่องาน LIKE)")
 
+def test_current_fy():
+    import datetime
+    assert bb.current_fy(datetime.date(2026, 6, 22)) == 2569      # ก่อน ต.ค. → ปีงบเดิม (เม.ย.69-ก.ย.69 ครอบ)
+    assert bb.current_fy(datetime.date(2026, 9, 30)) == 2569       # วันสุดท้ายปีงบ
+    assert bb.current_fy(datetime.date(2026, 10, 1)) == 2570       # ข้ามปีงบใหม่ 1 ต.ค.
+    assert bb.current_fy(datetime.date(2026, 12, 31)) == 2570
+    print("✅ current_fy (ปีงบไทย ต.ค.-ก.ย., ข้ามปีงบที่ 1 ต.ค.)")
+
+
 test_select_district_filter()
+test_current_fy()
 print("ALL PASS backfill_bidders")

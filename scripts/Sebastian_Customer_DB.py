@@ -312,6 +312,8 @@ def init_schema():
     _migrate_v129()
     _migrate_v130()
     _migrate_v131()
+    _migrate_v132()
+    _migrate_v133()
     print(f"Schema v1.14 ready: {DB_PATH}")
 
 
@@ -325,6 +327,35 @@ def _migrate_v131():
                 created_at  TEXT NOT NULL,
                 PRIMARY KEY (customer_id, project_id)
             )""")
+
+
+def _migrate_v132():
+    """index bid_results(bidder_tin) — company_profile()/head_to_head() ใช้ WHERE bidder_tin=?/IN(...)
+    มาตลอดโดยไม่มี index ใช้ได้ (PK เดิม (project_id,bidder_tin) ช่วยไม่ได้เพราะ tin ไม่ใช่คอลัมน์แรก)
+    → full table scan ยืนยันจริงด้วย EXPLAIN QUERY PLAN ก่อนแก้ (2026-06-22, กัญจน์รายงาน
+    /portal/company ช้าเวลาดูบริษัทที่มี 100+ งาน, ตารางโตเร็วจาก backfill สกลนคร)."""
+    with get_connection() as conn:
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_bid_results_tin ON bid_results(bidder_tin)")
+
+
+def _migrate_v133():
+    """normalized_winner — won_portfolio() เดิมใช้ LIKE '%key%' หา cgd_winners.winner (full scan,
+    วัดจริง 1.2M+ แถวหลัง sync สกลนคร = ~3 วินาที/ครั้ง) เปลี่ยนเป็น precompute ชื่อ normalized
+    (ตัด prefix นิติบุคคล ตาม portal_views._norm_name) ตอน write (cgd_sync_to_vps.merge_winners)
+    + index ให้ exact match ใช้ index seek แทน scan. backfill แถวเก่าที่ยังไม่มีค่า (resumable —
+    เช็ค IS NULL กันรันซ้ำหนักทุก startup หลังทำครั้งแรกเสร็จ)."""
+    import portal_views as _pv
+    with get_connection() as conn:
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(cgd_winners)")]
+        if "normalized_winner" not in cols:
+            conn.execute("ALTER TABLE cgd_winners ADD COLUMN normalized_winner TEXT")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_cgd_winners_normwin ON cgd_winners(normalized_winner)")
+        rows = conn.execute(
+            "SELECT project_id, winner FROM cgd_winners "
+            "WHERE normalized_winner IS NULL AND winner IS NOT NULL AND winner != ''").fetchall()
+        if rows:
+            buf = [(_pv._norm_name(w), pid) for pid, w in rows]
+            conn.executemany("UPDATE cgd_winners SET normalized_winner=? WHERE project_id=?", buf)
 
 
 def _migrate_v130():

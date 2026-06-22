@@ -177,19 +177,18 @@ def _prefilter_key(name):
 def won_portfolio(conn, name, proc="all"):
     """ผลงานที่ชนะของบริษัท (cgd_winners — ทุกวิธีจัดซื้อ, winner-only).
     join ด้วย 'ชื่อ' (winner) — winner_tin ใน source เพี้ยน ~99% (ดู progress_log N+157).
-    match แบบ normalized exact (ตัด prefix นิติบุคคล) + LIKE prefilter ด้วยคำยาวสุด.
+    match แบบ normalized_winner exact (index seek — เดิม LIKE scan ทั้งตาราง วัดจริง ~3s/ครั้ง
+    หลัง cgd_winners โต 1.2M+ แถว ดู N+157.5 perf fix 2026-06-22).
     stats เต็มเสมอ; proc กรองเฉพาะ job list. คืน None ถ้าไม่มีตาราง/ชื่อสั้นเกิน/ไม่เจองาน."""
     core = _norm_name(name)
-    key = _prefilter_key(name)
-    if not core or not key:
+    if not core:
         return None
     try:
-        cand = conn.execute(
+        rows = conn.execute(
             "SELECT project_id, project_name, winner, win_price, budget, proc_type "
-            "FROM cgd_winners WHERE winner LIKE ?", (f"%{key}%",)).fetchall()
+            "FROM cgd_winners WHERE normalized_winner=?", (core,)).fetchall()
     except sqlite3.OperationalError:
         return None
-    rows = [r for r in cand if _norm_name(r["winner"]) == core]   # normalized exact (กัน substring ผิด)
     if not rows:
         return None
     groups = {k: {"count": 0, "value": 0.0} for k in ("bid", "specific", "other")}

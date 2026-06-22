@@ -11,6 +11,15 @@ with db.get_connection() as c:
     cols = [r[1] for r in c.execute("PRAGMA table_info(cgd_winners)")]
 assert "project_id" in cols and "winner" in cols and "win_price" in cols, cols
 assert "district" in cols and "subdistrict" in cols, cols  # v121
+assert "normalized_winner" in cols, cols  # v133 perf fix
+
+# v132/v133 perf fix: index ต้องมีจริง (เดิม full scan — ดู progress_log N+157.5)
+with db.get_connection() as c:
+    bi = [r[1] for r in c.execute("PRAGMA index_list(bid_results)")]
+    wi = [r[1] for r in c.execute("PRAGMA index_list(cgd_winners)")]
+assert "idx_bid_results_tin" in bi, bi
+assert "idx_cgd_winners_normwin" in wi, wi
+print("✅ v132/v133: idx_bid_results_tin + idx_cgd_winners_normwin มีจริง")
 
 rows = [{"project_id": "P1", "province": "นครพนม", "dept": "อบต.x", "project_name": "ถนน",
          "winner": "บ.A", "winner_tin": "1", "budget": 1100000, "win_price": 950000,
@@ -25,6 +34,14 @@ assert got[0]["proc_type"] == "ประกวดราคาอิเล็ก�
 assert got[0]["district"] == "บ้านแพง" and got[0]["subdistrict"] == "โพนทอง", got[0]  # v121
 sy.merge_winners(rows, now="2026-06-07T00:00:00")  # idempotent (INSERT OR REPLACE ตาม project_id)
 assert len(sy.get_cgd_winners("นครพนม")) == 1
+
+# N+157.5 perf fix: normalized_winner ต้องถูกคำนวณตอน merge และไม่ถูกเคลียร์เป็น NULL ตอน re-merge
+# (REPLACE เขียนทั้งแถว — ถ้า merge_winners ไม่ใส่คอลัมน์นี้จะหายทุกรอบ sync)
+import portal_views as pv
+with db.get_connection() as c:
+    nw = c.execute("SELECT normalized_winner FROM cgd_winners WHERE project_id='P1'").fetchone()
+assert nw[0] == pv._norm_name("บ.A"), nw
+print("✅ merge_winners: normalized_winner คงอยู่หลัง re-merge")
 
 # extract_subset: ดึง subset เป้าหมายจาก winner_history.db (residential)
 wh = str(Path(os.environ["BMS_DATA_DIR"]) / "wh.db")

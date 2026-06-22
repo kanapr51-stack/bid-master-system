@@ -33,14 +33,18 @@ REMOTE_APP = os.environ.get("BMS_REMOTE_APP", "/opt/bms/app")
 
 _MERGE_SQL = """INSERT OR REPLACE INTO cgd_winners
     (project_id, province, dept, project_name, winner, winner_tin, budget,
-     win_price, discount_pct, announce_date, fiscal_year, proc_type, district, subdistrict, synced_at)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"""
+     win_price, discount_pct, announce_date, fiscal_year, proc_type, district, subdistrict,
+     synced_at, normalized_winner)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"""
 _BATCH = 5000
 
 
 def merge_winners(rows, now: str = None) -> int:
     """upsert cgd_winners (idempotent ตาม project_id). รับ list หรือ generator (memory-safe
-    สำหรับ 6 แสนแถวบน VPS RAM น้อย — executemany เป็น batch). ใช้ฝั่ง VPS รับ + test."""
+    สำหรับ 6 แสนแถวบน VPS RAM น้อย — executemany เป็น batch). ใช้ฝั่ง VPS รับ + test.
+    คำนวณ normalized_winner ที่นี่เสมอ (REPLACE เขียนทั้งแถว — ถ้าไม่ใส่จะเคลียร์ค่าที่ migration
+    backfill ไว้กลับเป็น NULL ทุกรอบ sync, ดู N+157.5 perf fix 2026-06-22)."""
+    import portal_views as _pv
     now = now or _now()
     n = 0
     buf = []
@@ -49,7 +53,8 @@ def merge_winners(rows, now: str = None) -> int:
             buf.append((r["project_id"], r.get("province"), r.get("dept"), r.get("project_name"),
                         r.get("winner"), r.get("winner_tin"), r.get("budget"), r.get("win_price"),
                         r.get("discount_pct"), r.get("announce_date"), r.get("fiscal_year"),
-                        r.get("proc_type"), r.get("district"), r.get("subdistrict"), now))
+                        r.get("proc_type"), r.get("district"), r.get("subdistrict"), now,
+                        _pv._norm_name(r.get("winner"))))
             if len(buf) >= _BATCH:
                 conn.executemany(_MERGE_SQL, buf); n += len(buf); buf = []
         if buf:

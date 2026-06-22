@@ -147,9 +147,10 @@ _W = "ห้างหุ้นส่วนจำกัด เอ"
 def _seed_won():
     c = _seed()
     c.execute("CREATE TABLE cgd_winners(project_id TEXT, project_name TEXT, winner TEXT, "
-              "winner_tin TEXT, budget REAL, win_price REAL, proc_type TEXT)")
+              "winner_tin TEXT, budget REAL, win_price REAL, proc_type TEXT, normalized_winner TEXT)")
     def ins(pid, nm, w, b, wp, pt):
-        c.execute("INSERT INTO cgd_winners VALUES (?,?,?,?,?,?,?)", (pid, nm, w, "เพี้ยน", b, wp, pt))
+        c.execute("INSERT INTO cgd_winners VALUES (?,?,?,?,?,?,?,?)",
+                  (pid, nm, w, "เพี้ยน", b, wp, pt, pv._norm_name(w)))
     ins('69020000001', 'ถนน e-bidding', _W, 1000000, 900000, 'ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)')
     ins('69020000002', 'อาคารเฉพาะเจาะจง', _W, 2000000, 2000000, 'เฉพาะเจาะจง')
     ins('68020000003', 'ซ่อมสอบราคา', _W, 600000, 500000, 'สอบราคา')

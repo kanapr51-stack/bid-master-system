@@ -921,9 +921,9 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 - ส่วนลดแยกอำเภอ→ตำบล (ยังติด: ต้อง parse location จากชื่องาน)
 - seed company_tin ให้ tenant อื่น (Hong/ณฐมน/Mr.suvit) เมื่อรู้บริษัท
 
-## งานที่ N+156: Backfill บ้าน 12K (residential home-fetch) — เริ่ม (2026-06-20)
+## งานที่ N+156: Backfill บ้าน 12K (residential home-fetch) (2026-06-20 → 2026-06-22)
 
-### สถานะ: ⏳ กำลังรัน background (เครื่องบ้าน residential)
+### สถานะ: ✅ เสร็จ — fetch + import ขึ้น VPS แล้ว, coverage 2 จังหวัดเกือบเต็ม
 
 ### บริบท (จาก debug session "ทำไม bid_results น้อย")
 - bid_results = เฉพาะงานแข่งประมูล (e-bidding) ที่ดึง bidder ครบ — มีแค่ 1,075/13,170 (8%) ของ 2 จังหวัดบ้าน
@@ -932,12 +932,14 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 
 ### สิ่งที่ทำ
 - VPS `select_candidates(นครพนม+บึงกาฬ, fy 2558-2569)` → **12,093 candidates** (seen 1,015 excluded) → scp local
-- รัน `_backfill_home_fetch.py` background (เครื่องบ้าน): 27 done, 12,066 todo · ~9 ชม · resumable (results.json)
-- เสร็จ → scp results → VPS import (record_bid_results) → bid_results ครบทั้งบ้าน
+- รัน `_backfill_home_fetch.py` background (เครื่องบ้าน) — เสร็จ 2026-06-21 22:05: `stored=5993 empty=50 error=3, total_in_results=12090` (cumulative รวมรอบก่อน)
+- **2026-06-22: import ขึ้น VPS** — เขียน `_backfill_home_import.py` (one-off, อ่าน JSON → `store.record_bid_results(pid, bidders, fetched_at=announce_date)` แบบเดียวกับ `backfill_bidders.py` production), smoke-test ผ่าน temp DB ก่อน (5 sample projects, idempotent re-run ยืนยัน todo=0 ไม่ insert ซ้ำ), backup prod DB ก่อน (`bms_customers_pre_backfill_import_20260622_052605.db`), รันจริงบน VPS: **stored_projects=11,999, bid_rows=87,394** ใน ~53s
+- Sanity หลัง import: bid_results รวม 5,242→82,856 แถว, distinct projects 1,075→13,066 สำหรับ 2 จังหวัด (นครพนม 8,609 + บึงกาฬ 4,457 ≈ เต็ม universe 13,170) · dup PK (project_id,bidder_tin) = 0 · winner price_agree cross-check กับ `cgd_winners.win_price` ตรง · พบ 167 projects มี winner row >1 — ตรวจ sample แล้วเป็นงานจัดซื้อหลาย lot (เช่น เวชภัณฑ์) ที่แต่ละ lot มีผู้ชนะของตัวเอง ไม่ใช่ bug
+- ลบไฟล์ temp บน VPS แล้ว (`/tmp/backfill_results.json`, `_backfill_home_import.py`) · `/health` OK หลังเสร็จ
 
 ### Followup
-- เมื่อ fetch เสร็จ: scp backfill_results.json → VPS → import → verify count เพิ่ม
-- profile/head-to-head ของทุก customer รวยขึ้น (ของกัญจน์ 28 งานแข่งเก่าจะเข้าครบ)
+- profile/head-to-head ของทุก customer รวยขึ้น (ของกัญจน์ 28 งานแข่งเก่าเข้าครบแล้ว)
+- ยังไม่ลบไฟล์ local `data/_backfill_home/` (43MB) + `scripts/_backfill_home_fetch.py`/`_backfill_home_import.py` — รอกัญจน์ยืนยันก่อนเคลียร์ (ข้อมูลขึ้น DB แล้ว ไฟล์ local เป็น artifact เดิมไม่จำเป็นต้องเก็บต่อ)
 
 ## งานที่ N+157: Portal company — ผลงานที่ชนะทุกวิธีจัดซื้อ (proc_type) + filter (2026-06-20)
 

@@ -341,6 +341,30 @@ assert 'class="itbl"' in html_wt, html_wt
 assert "<table" in html_wt and html_wt.count("<table") == html_wt.count("</table>"), html_wt
 print("OK render_job_page_winrate_table_full_ladder")
 
+# --- render_job_page: custom winrate calculator form + result (N+168) ---
+data_calc = {"job": {"project_id": "P1", "name": "งานทดสอบ", "location": "", "budget": 1000000,
+                     "deadline": None, "pred_lo": None, "pred_hi": None},
+            "bidders": [], "intel_lines": [],
+            "company_tables": [{"label": "🏘 ในตำบลโพนทอง", "n": 5, "conf_tag": "🟢 มั่นใจ",
+                                "p25": 10.0, "p75": 20.0, "median": 15.0,
+                                "companies": [{"name": "หจก.A", "tin": "111", "games": 5,
+                                              "median": 14.0, "p25": 10.0, "p75": 18.0,
+                                              "project_ids": ["R1"]}]}],
+            "winrate_table": None, "custom_calc": None}
+html_form = pv.render_job_page(data_calc, "tok", 0)
+assert 'name="my_price"' in html_form, html_form
+assert 'value="หจก.A"' in html_form and "ชนะ 5 งาน" in html_form, html_form   # checkbox มาจาก company_tables
+assert 'name="extra_names"' in html_form, html_form                          # textarea เพิ่มชื่ออื่น
+assert "คำนวณโอกาสชนะ" in html_form, html_form
+
+data_calc["custom_calc"] = {"my_discount_pct": 15.0, "overall_win_pct": 62,
+                            "breakdown": [{"name": "หจก.A", "win_pct_against": 74, "median": 14.0,
+                                          "p25": 10.0, "p75": 18.0, "has_history": True}]}
+html_result = pv.render_job_page(data_calc, "tok", 0)
+assert "62%" in html_result and "74%" in html_result, html_result
+assert "อิงจากสถิติตอนที่บริษัทนั้นชนะในอดีต" in html_result, html_result   # disclaimer ต้องมีเสมอ
+print("OK render_job_page_custom_calc_form")
+
 # --- area_portfolio + render_company_page area section (N+161 highlight area-of-origin jobs) ---
 def _area_conn():
     c = sqlite3.connect(":memory:")

@@ -373,6 +373,20 @@ _CSS = (
     ".itbl .notin{color:#999}"
     ".tblwrap{overflow-x:auto;margin:8px 0;-webkit-overflow-scrolling:touch;"
     "border-radius:12px;border:1px solid #e3e7eb;background:#fff}"
+    ".calcform{margin:10px 0}"
+    ".calcform label{display:block;font-size:13px;padding:4px 0;color:#444}"
+    ".calcform textarea{width:100%;box-sizing:border-box;font-size:14px;padding:9px;"
+    "border:1px solid #ddd;border-radius:8px;font-family:inherit;resize:vertical;margin:4px 0}"
+    ".calcform input[type=number]{font-size:14px;padding:7px 9px;border:1px solid #ddd;"
+    "border-radius:8px;width:160px}"
+    ".calcform button{margin-top:8px;font-size:14px;padding:8px 14px;border:0;border-radius:8px;"
+    "background:#1d72b4;color:#fff}"
+    ".calcresult{background:#fff;border-radius:12px;padding:12px 14px;margin:10px 0;"
+    "box-shadow:0 2px 8px rgba(0,0,0,.05)}"
+    ".calcresult .big{font-size:20px;font-weight:700;color:#1d72b4;margin:0 0 8px}"
+    ".calcresult .crow{display:flex;justify-content:space-between;gap:8px;font-size:13px;"
+    "padding:4px 0;border-bottom:1px solid #f2f2f2}"
+    ".calcresult .note{font-size:12px;color:#888;margin-top:8px}"
 )
 
 
@@ -484,6 +498,52 @@ def _render_winrate_table(wt):
     return "".join(out)
 
 
+def _render_custom_calc_form(company_tables, custom_calc, prefill, tok, pid):
+    """ฟอร์มคำนวณโอกาสชนะเจาะจงคู่แข่ง (N+168) — checkbox จาก company_tables (dedupe ด้วยชื่อ
+    normalized) + textarea พิมพ์ชื่อเพิ่ม + ราคาที่จะยื่น. ไม่มี JS — submit จริงไปหลังบ้าน."""
+    prefill = prefill or {}
+    seen, opts = set(), []
+    for blk in company_tables or []:
+        for cmp_ in blk.get("companies") or []:
+            core = _norm_name(cmp_["name"])
+            if core and core not in seen:
+                seen.add(core)
+                opts.append(cmp_)
+    checked_names = set(prefill.get("selected_names") or [])
+    out = ["<div class=\"bidhead\">🎯 คำนวณโอกาสชนะเจาะจงคู่แข่ง</div>",
+           "<form class=\"calcform\" method=\"post\" action=\"/portal/job/calc\">",
+           f"<input type=\"hidden\" name=\"t\" value=\"{tok}\">",
+           f"<input type=\"hidden\" name=\"pid\" value=\"{_h.escape(str(pid))}\">"]
+    for cmp_ in opts:
+        nm = _h.escape(cmp_["name"])
+        chk = " checked" if cmp_["name"] in checked_names else ""
+        if cmp_.get("median") is not None:
+            out.append(f"<label><input type=\"checkbox\" name=\"competitors\" value=\"{nm}\"{chk}> "
+                       f"{nm} (ชนะ {cmp_['games']} งาน, ลดเฉลี่ย {cmp_['median']:.0f}%)</label>")
+        else:
+            out.append(f"<label><input type=\"checkbox\" name=\"competitors\" value=\"{nm}\"{chk}> {nm}</label>")
+    extra_pf = _h.escape("\n".join(prefill.get("extra_names") or []))
+    out.append("<label>หรือพิมพ์ชื่อบริษัทอื่นเพิ่ม (1 ชื่อ/บรรทัด):</label>"
+               f"<textarea name=\"extra_names\" rows=\"2\">{extra_pf}</textarea>")
+    price_pf = _h.escape(str(prefill.get("my_price") or ""))
+    out.append("<label>ราคาที่จะยื่น (บาท):</label>"
+               f"<input type=\"number\" name=\"my_price\" value=\"{price_pf}\" min=\"1\" step=\"1\">"
+               "<button type=\"submit\">คำนวณโอกาสชนะ</button></form>")
+    if custom_calc:
+        out.append(f"<div class=\"calcresult\"><div class=\"big\">🎯 โอกาสชนะของคุณรวม: "
+                   f"{custom_calc['overall_win_pct']}%</div>"
+                   f"<div class=\"meta\">ราคาของคุณ = ลด {custom_calc['my_discount_pct']}%</div>")
+        for b in custom_calc["breakdown"]:
+            hist_note = "" if b["has_history"] else " (ไม่มีประวัติเฉพาะบริษัทนี้ — ใช้ค่าเฉลี่ยพื้นที่แทน)"
+            out.append(f"<div class=\"crow\"><span>{_h.escape(b['name'])}{hist_note}</span>"
+                       f"<span>ชนะคุณ ~{b['win_pct_against']}%</span></div>")
+        out.append("<div class=\"note\">*อิงจากสถิติตอนที่บริษัทนั้นชนะในอดีต "
+                   "ไม่ใช่ทุกครั้งที่เขายื่นซอง</div></div>")
+    elif custom_calc is None and prefill.get("my_price"):
+        out.append("<div class=\"msg\">เลือกคู่แข่งอย่างน้อย 1 บริษัท หรือกรอกราคาให้ถูกต้อง</div>")
+    return "".join(out)
+
+
 def render_job_page(data, token, exp, notes=None, overview="", starred=False):
     tok = _h.escape(token)
     head = _HEAD("รายละเอียดงาน")
@@ -515,6 +575,9 @@ def render_job_page(data, token, exp, notes=None, overview="", starred=False):
         b.append(_render_company_tables(data["company_tables"], tok))
     if data.get("winrate_table"):
         b.append(_render_winrate_table(data["winrate_table"]))
+    if data.get("company_tables"):
+        b.append(_render_custom_calc_form(data["company_tables"], data.get("custom_calc"),
+                                          data.get("calc_prefill"), tok, j["project_id"]))
     if not data["bidders"]:
         b.append("<div class=\"bidhead\">ยังไม่มีผู้ยื่น</div>")
         b.append("<div class=\"msg\">งานนี้ยังไม่มีข้อมูลผู้ยื่น — รอประมูล/ประกาศผล</div>")

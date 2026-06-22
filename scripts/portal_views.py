@@ -364,8 +364,10 @@ _CSS = (
     ".itbl.wr tr:first-child{display:none}"
     ".itbl.wr,.itbl.wr tbody,.itbl.wr tr,.itbl.wr td{display:block;width:100%;text-align:left}"
     ".itbl.wr tr{margin:0 0 10px;padding:8px 10px;background:#fafbfc;border-radius:10px;border:1px solid #eee}"
-    ".itbl.wr td{display:flex;justify-content:space-between;padding:3px 0;border-bottom:0;white-space:normal}"
-    ".itbl.wr td::before{content:attr(data-label);color:#888;font-weight:600;margin-right:8px}"
+    # กัญจน์ทักว่า label/value ห่างกันเกินไป (space-between ดันค่าไปขอบขวาสุดของการ์ด) — เปลี่ยนเป็น
+    # ชิดกันแบบ "ป้าย: ค่า" อ่านเป็นกลุ่มเดียวได้ใน 1 สายตา ไม่ต้องกวาดข้ามการ์ด
+    ".itbl.wr td{display:flex;gap:6px;padding:3px 0;border-bottom:0;white-space:normal}"
+    ".itbl.wr td::before{content:attr(data-label) ':';color:#888;font-weight:600}"
     ".itbl.wr td:first-child{font-weight:700;color:#333;border-bottom:1px solid #eee;margin-bottom:4px;padding-bottom:6px}"
     "}"
 )

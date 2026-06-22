@@ -1039,4 +1039,4 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 - Regression รอบแรก (Task 2/3): 19 ไฟล์ test ที่ import cgd_intel/bid_field — พบ 4 ไฟล์ test เก่าที่ assert bullet text "หจก.X" in lines ต้องแก้เป็น assert บน `company_tables` structured data: `test_cgd_intel.py`, `test_road_subtype.py`(2 จุด), `test_water_subtype.py`(2 จุด)
 
 ### Followup
-- Deploy VPS: scp `bid_field.py`/`cgd_intel.py`/`portal_views.py`/`bms_api.py` + restart `bms-api` systemd — **รอกัญจน์ confirm ก่อนลงมือ** (shared infra)
+- ✅ Deploy VPS เสร็จ (2026-06-22): push origin/main (`a9d3f77`→`00fd79b`, 7 commits) → VPS `git pull` fast-forward สะอาด → `systemctl restart bms-api` → `/health` OK (`{"ok":true,"db":true}`)

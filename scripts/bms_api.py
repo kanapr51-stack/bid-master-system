@@ -1041,14 +1041,24 @@ async def portal_star_toggle_get(t: str = "", pid: str = "", back: str = "board"
 
 
 @app.get("/portal/job")
-async def portal_job_get(t: str = "", pid: str = ""):
+async def portal_job_get(t: str = "", pid: str = "", calc_my_price: str = "",
+                         calc_competitors: str = "", calc_extra: str = ""):
     v = follow_token.verify_token(t)
     if not v:
         return HTMLResponse(_follow_page_html(t, "invalid", {}, "", 0))
+    calc_params = None
+    calc_prefill = None
+    if calc_my_price or calc_competitors or calc_extra:
+        selected = [s for s in calc_competitors.split("\x1f") if s]
+        extra = [s for s in calc_extra.split("\n") if s.strip()]
+        calc_params = {"my_price": calc_my_price, "selected_names": selected, "extra_names": extra}
+        calc_prefill = {"my_price": calc_my_price, "selected_names": selected, "extra_names": extra}
     with get_conn() as conn:
         cust = conn.execute("SELECT id FROM customers WHERE line_user_id=?", (v[0],)).fetchone()
         cid = cust["id"] if cust else None
-        data = portal_views.job_detail(conn, pid)
+        data = portal_views.job_detail(conn, pid, calc_params)
+        if data and calc_prefill:
+            data["calc_prefill"] = calc_prefill
         notes = portal_views.list_job_notes(conn, cid, pid) if cid else []
         overview = portal_views.get_job_overview(conn, cid, pid) if cid else ""
         starred = pid in portal_views.starred_project_ids(conn, cid)
@@ -1098,6 +1108,24 @@ async def portal_job_note_post(request: Request):
             elif action == "save_overview":
                 portal_views.save_job_overview(conn, cid, pid, g("note"))
     return RedirectResponse(f"/portal/job?t={quote(t)}&pid={quote(pid)}", status_code=303)
+
+
+@app.post("/portal/job/calc")
+async def portal_job_calc_post(request: Request):
+    from urllib.parse import parse_qs, quote
+    form = parse_qs((await request.body()).decode("utf-8"))
+    g = lambda k: (form.get(k) or [""])[0]
+    gl = lambda k: form.get(k) or []
+    t, pid = g("t"), g("pid")
+    v = follow_token.verify_token(t)
+    if not v:
+        return HTMLResponse(_follow_page_html(t, "invalid", {}, "", 0))
+    competitors = "\x1f".join(gl("competitors"))   # \x1f กัน ',' ชนชื่อบริษัทที่มี comma จริง (ไม่ค่อยมีแต่กันไว้)
+    extra = g("extra_names")
+    price = g("my_price")
+    url = (f"/portal/job?t={quote(t)}&pid={quote(pid)}&calc_my_price={quote(price)}"
+          f"&calc_competitors={quote(competitors)}&calc_extra={quote(extra)}")
+    return RedirectResponse(url, status_code=303)
 
 
 @app.post("/webhook/line")

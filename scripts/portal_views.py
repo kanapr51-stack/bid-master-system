@@ -350,26 +350,21 @@ _CSS = (
     ".rdate.past{color:#d9534f}"
     ".pastlist summary{color:#d9534f}"
     ".star{font-size:20px;text-decoration:none;margin-left:8px;vertical-align:middle}"
-    ".itbl{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0;line-height:1.4}"
-    ".itbl th,.itbl td{padding:5px 7px;text-align:right;border-bottom:1px solid #eee;white-space:nowrap}"
+    # กัญจน์ทักว่า card-transform เดิมแยกแถวเป็นกล่องลอยหลายกล่อง อ่านไม่รู้สึกเป็นตารางเดียว
+    # → กลับมาเป็นตารางจริง 1 กล่อง มีเส้นกรอบ (grid) รอบทุก cell ชัดเจน ห่อด้วย .tblwrap กล่องเดียว
+    ".itbl{width:100%;border-collapse:collapse;font-size:12px;line-height:1.4}"
+    # เส้นกรอบแค่ขวา+ล่างของแต่ละ cell (ไม่ใส่บน/ซ้าย) — รวมกันมองเป็นเส้นตารางครบทุกช่อง
+    # แต่ไม่ไปชนกับกรอบมุมโค้งของ .tblwrap รอบนอก (เลี่ยงเส้นซ้อนที่มุม)
+    ".itbl th,.itbl td{padding:6px 8px;text-align:right;white-space:nowrap;"
+    "border-right:1px solid #e3e7eb;border-bottom:1px solid #e3e7eb}"
     ".itbl th:first-child,.itbl td:first-child{text-align:left}"
-    ".itbl th{color:#888;font-weight:600;background:#fafbfc}"
+    ".itbl tr th:last-child,.itbl tr td:last-child{border-right:0}"
+    ".itbl tr:last-child td{border-bottom:0}"
+    ".itbl th{color:#555;font-weight:600;background:#f3f6f9}"
     ".itbl a{color:#1d72b4;text-decoration:none}"
     ".itbl .notin{color:#999}"
-    ".tblwrap{overflow-x:auto;margin:8px 0;-webkit-overflow-scrolling:touch}"
-    # ตาราง win%-ladder (N=1..max คอลัมน์) — มือถือจอแคบเลื่อนแนวนอนหาง่ายยาก (research 2025: UX
-    # Movement/Tenscope) → พลิกแต่ละแถวเป็นการ์ดแนวตั้ง label:value แทน ไม่เสียข้อมูลแม้แต่คอลัมน์เดียว
-    "@media (max-width:480px){"
-    ".itbl.wr{border:0}"
-    ".itbl.wr tr:first-child{display:none}"
-    ".itbl.wr,.itbl.wr tbody,.itbl.wr tr,.itbl.wr td{display:block;width:100%;text-align:left}"
-    ".itbl.wr tr{margin:0 0 10px;padding:8px 10px;background:#fafbfc;border-radius:10px;border:1px solid #eee}"
-    # กัญจน์ทักว่า label/value ห่างกันเกินไป (space-between ดันค่าไปขอบขวาสุดของการ์ด) — เปลี่ยนเป็น
-    # ชิดกันแบบ "ป้าย: ค่า" อ่านเป็นกลุ่มเดียวได้ใน 1 สายตา ไม่ต้องกวาดข้ามการ์ด
-    ".itbl.wr td{display:flex;gap:6px;padding:3px 0;border-bottom:0;white-space:normal}"
-    ".itbl.wr td::before{content:attr(data-label) ':';color:#888;font-weight:600}"
-    ".itbl.wr td:first-child{font-weight:700;color:#333;border-bottom:1px solid #eee;margin-bottom:4px;padding-bottom:6px}"
-    "}"
+    ".tblwrap{overflow-x:auto;margin:8px 0;-webkit-overflow-scrolling:touch;"
+    "border-radius:12px;border:1px solid #e3e7eb;background:#fff}"
 )
 
 
@@ -467,11 +462,10 @@ def _render_winrate_table(wt):
     """ตารางโอกาสชนะตามจำนวนผู้ยื่น N=1..max เต็ม (เดิม 3 คอลัมน์ mean±SD)."""
     ns, rows = wt["ns"], wt["rows"]
     out = [f"<div class=\"bidhead\">💵 โอกาสชนะตามจำนวนผู้ยื่น (งบ {wt['budget']:,.0f})</div>",
-           "<div class=\"tblwrap\"><table class=\"itbl wr\"><tr><th>ราคายื่น</th>"
+           "<div class=\"tblwrap\"><table class=\"itbl\"><tr><th>ราคายื่น</th>"
            + "".join(f"<th>{k} ราย</th>" for k in ns) + "</tr>"]
     for price, ws in rows:
-        out.append(f"<tr><td data-label=\"ราคายื่น\">{price:,.0f}</td>"
-                  + "".join(f"<td data-label=\"{k} ราย\">{w}%</td>" for k, w in zip(ns, ws)) + "</tr>")
+        out.append(f"<tr><td>{price:,.0f}</td>" + "".join(f"<td>{w}%</td>" for w in ws) + "</tr>")
     out.append("</table></div>")
     sd_txt = f" (±{round(wt['n_sd'])})" if len(ns) > 1 else ""
     out.append(f"<div class=\"meta\">📊 สนามนี้เฉลี่ย {round(wt['n_mean'])} ผู้ยื่น{sd_txt} "

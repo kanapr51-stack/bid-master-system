@@ -306,10 +306,9 @@ data_wt = {"job": {"project_id": "P1", "name": "งานทดสอบ", "loca
 html_wt = pv.render_job_page(data_wt, "tok", 0)
 assert "1 ราย" in html_wt and "4 ราย" in html_wt, html_wt    # ladder เต็ม N=1..4 (ไม่ใช่ 3 จุดเดิม)
 assert "100%" in html_wt, html_wt                            # N=1 = 100% เสมอ
-# N+166: mobile card-transform — ทุก td ต้องมี data-label (กันเสียข้อมูลตอนพลิกเป็นการ์ดแนวตั้ง)
-assert 'class="itbl wr"' in html_wt, html_wt
-assert 'data-label="ราคายื่น"' in html_wt, html_wt
-assert 'data-label="1 ราย"' in html_wt and 'data-label="4 ราย"' in html_wt, html_wt
+# N+166.1: กัญจน์ขอกลับเป็นตารางจริงกล่องเดียวมีเส้นกรอบ (เลิก card-transform ที่แยกเป็นหลายกล่อง)
+assert 'class="itbl"' in html_wt, html_wt
+assert "<table" in html_wt and html_wt.count("<table") == html_wt.count("</table>"), html_wt
 print("OK render_job_page_winrate_table_full_ladder")
 
 # --- area_portfolio + render_company_page area section (N+161 highlight area-of-origin jobs) ---

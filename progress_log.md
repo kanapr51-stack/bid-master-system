@@ -1107,3 +1107,30 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 1. รอ residential fetch สกลนคร (2558-2567, 10,751 งาน) เสร็จ → import เข้า `bid_results` (ปรับ `_backfill_home_import.py` ให้รับ path arg เหมือนกัน หรือเขียนใหม่คล้ายเดิม)
 2. **ตัดสินใจเรื่อง FY2568 proc_type anomaly ก่อน wire เข้า daily timer** — ตัวเลือก: (a) เพิ่ม literal label นี้เข้า `COMPETITIVE_SET` เฉพาะ query สกลนคร (b) รอ CGD แก้ที่ต้นทาง แล้ว re-sync (c) ใช้ fallback อื่น (เช่น  contains "ประกาศเชิญชวนทั่วไป") — ยังไม่ฟันธง รอตัดสินใจ
 3. เพิ่มสกลนครเข้า default ของ `backfill_bidders.py --provinces` (เช็คก่อน deploy — อาจ hardcode 2 จังหวัดเดิมเหมือนที่เจอกับ `--fy`/TARGET) แล้ว deploy timer ใหม่ — **ทำได้เฉพาะหลังแก้ #2** ไม่งั้น timer จะมองไม่เห็นงานปีงบปัจจุบันของสกลนครเงียบๆ
+
+## งานที่ N+165: แก้ /portal/company โหลดช้า — missing index + full-scan LIKE (2026-06-22)
+
+### สถานะ: ✅ เสร็จ
+
+### บริบท
+คุณกัญจน์รายงานหน้า Bid Board (`/portal/company`) โหลดช้ามาก โดยเฉพาะบริษัทที่มีผลงาน 100+ งาน — ตรวจ root cause พบว่า**งานของผมเองในวันนี้ (sync สกลนคร เข้า `cgd_winners`) ทำให้ปัญหาเดิมที่ซ่อนอยู่เด่นชัดขึ้น** เพราะ `cgd_winners` โตจาก 617K → 1.2M แถวทันที
+
+### Root cause (ยืนยันด้วย benchmark จริงบน VPS ก่อนแก้)
+1. `company_profile()` query `WHERE bidder_tin=?` บน `bid_results` — ไม่มี index ใช้ได้เลย (PK เดิม `(project_id,bidder_tin)` ช่วยไม่ได้เพราะ tin ไม่ใช่คอลัมน์แรก) → `EXPLAIN QUERY PLAN` ยืนยัน `SCAN bid_results`
+2. `won_portfolio()` query `WHERE winner LIKE '%key%'` บน `cgd_winners` — LIKE มี wildcard นำหน้า ใช้ index ไม่ได้โดยธรรมชาติ → **วัดจริง 3,015ms, match 213,812 แถว** ก่อนกรองด้วย Python normalized-name ซ้ำอีกชั้น — เป็นตัวการหลักของความช้า
+
+### Fix
+- `_migrate_v132`: `CREATE INDEX idx_bid_results_tin ON bid_results(bidder_tin)`
+- `_migrate_v133`: เพิ่ม column `cgd_winners.normalized_winner` (precompute ด้วย `portal_views._norm_name` เดิม) + index + backfill แถวเก่า (resumable, เช็ค `IS NULL` กันรันซ้ำหนักทุก startup)
+- `cgd_sync_to_vps.merge_winners()` ต้องคำนวณ `normalized_winner` ทุกครั้งที่ merge ด้วย — เพราะ `INSERT OR REPLACE` เขียนทั้งแถว ถ้าไม่ใส่จะเคลียร์ค่ากลับเป็น NULL ทุกรอบ sync ครั้งถัดไป (เกือบเป็น bug ซ้อน bug)
+- `won_portfolio()` เปลี่ยนจาก LIKE-prefilter+Python-filter เป็น indexed exact match บน `normalized_winner` ตรงๆ
+
+### ผล (วัดจริงบน VPS หลัง deploy)
+- migration ครั้งแรก (backfill 1.2M แถว) ใช้เวลา **2m46s** — one-time cost, รันแล้วครั้งเดียวพอ
+- `won_portfolio`: **3,015ms → 10ms (เร็วขึ้น ~300x)** — ยืนยันด้วย `EXPLAIN QUERY PLAN` เปลี่ยนจาก scan เป็น `SEARCH ... USING INDEX idx_cgd_winners_normwin`
+- `company_profile`: query plan เปลี่ยนเป็น `SEARCH ... USING INDEX idx_bid_results_tin` ถูกต้อง — เลขเวลาที่วัดได้ (149ms) สูงกว่า baseline เดิม (33ms) เพราะช่วงนั้น residential fetch สกลนครกำลังเขียน `bid_results` พร้อมกันอยู่ (lock contention ชั่วคราว) — โครงสร้าง query plan ถูกแล้ว ปัญหาจริง (full scan) หายไป, จะ scale ดีขึ้นเรื่อยๆเมื่อตารางโตต่อ
+- backup DB ก่อน migrate (`bms_customers_pre_perf_index_20260622_074249.db`, 929MB) + restart `bms-api` แล้ว `/health` OK
+- commit `c4fa4ef`, push + deploy VPS ครบ
+
+### Followup
+- ไม่มี — ปิดงานสมบูรณ์ (เป็น side-effect ที่ดีจาก N+164 ที่ทำให้เจอ bug ที่ซ่อนมานาน)

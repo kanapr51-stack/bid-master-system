@@ -1097,8 +1097,13 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 - รัน `_winner_history_build.py` (CGD CKAN bulk fetch, **คนละขั้นกับ bid_results backfill** — bulk 1,000 แถว/call ไม่ใช่ทีละงาน จึงเร็วกว่ามาก ไม่ใช่ 7-8 ชม.) — โดน "API None (quota/error)" 3 รอบติด (calls=224, 265, ~1) รวม **67/96 combos** (ปีงบ 2568-2563 ครบ, 2562 ได้ 3/9, 2561-2558 ยังไม่ทำ) → สรุป: โดน rate-limit/quota จริง ไม่ใช่ transient — หยุด retry รอวันถัดไป
 - sync ของที่มีตอนนี้ (819,392 แถว 3 จังหวัด) เข้า VPS `cgd_winners` แล้วสำเร็จ (`push()` idempotent, merge ซ้ำได้ปลอดภัย) — สกลนคร 202,035 แถว (FY2568-2565 ครบ, 2565 partial) ขึ้น VPS แล้ว
 
+### Update 2026-06-22 (ต่อ): quota reset เร็วกว่าคาด — winner_history ครบ + เจอ bug ใหม่
+- quota CGD reset ภายในชั่วโมงเดียว (ไม่ต้องรอข้ามวันจริง) — retry ต่อจนครบ **96/96 combos** สกลนคร (รวมทุกปีงบ 2558-2568) — เจอ `sqlite3.OperationalError: database is locked` ทรานเซียนต์ 1 ครั้งระหว่าง retry (lock ค้างจาก process ก่อนหน้าปิดไม่ทันที) → retry อีกทีผ่านปกติ
+- `cgd_sync_to_vps.py --push` รอบที่ 2 (ข้อมูลครบ 1,208,567 แถว 3 จังหวัด) สำเร็จ → VPS `cgd_winners` สกลนคร = **591,210 แถว ครบทุกปีงบ 2558-2568**
+- 🐛 **พบ data anomaly ใหม่**: `cgd_winners.proc_type` ของสกลนคร **เฉพาะปีงบ 2568** เป็น label รวม `"วิธีการจัดหา ประกาศเชิญชวนทั่วไป คัดเลือก เฉพาะเจาะจง"` (ไม่แยกเป็น e-bidding/คัดเลือก/เฉพาะเจาะจง แบบปีอื่นๆ/จังหวัดอื่นๆ) → ไม่ match `COMPETITIVE_SET` เลย → `backfill_bidders.py --provinces สกลนคร --dry-run` (default fy ปัจจุบัน) ได้ **0 candidates** ทั้งที่มีงานจริง 59,143 รายการปีนั้น — เช็คนครพนม/บึงกาฬ ปีงบเดียวกันแล้ว **ไม่เจอปัญหานี้** (label แยกปกติ) → เป็น anomaly เฉพาะ resource file ของสกลนครปีงบ 2568 จาก CGD ไม่ใช่ schema เปลี่ยนทั้งระบบ
+- scope ปีงบ 2558-2567 (10 ปี, label สะอาด) ของสกลนคร dry-run ได้ **10,751 candidates** — ขนาดใกล้เคียง backfill เดิม (12,093 งาน 2 จังหวัด) → เริ่ม residential fetch รอบใหม่ (`_backfill_home_fetch.py` ปรับให้รับ path arg แล้ว, commit `b4754cb`) ด้วยไฟล์แยก `data/_backfill_home/skn_backfill_cands.json`/`skn_backfill_results.json` — กำลังรัน background (คาด ~9-12 ชม. เหมือนรอบเดิม)
+
 ### Followup (ค้าง)
-1. resume `_winner_history_build.py` วันถัดไป (quota reset) ให้ครบ 96/96 combos (เหลือ ~30: 2562 อีก 6, 2561(8)/2560(5)/2559(4)/2558(7))
-2. `cgd_sync_to_vps.py --push` ซ้ำอีกครั้งหลัง winner_history ครบ (idempotent, ไม่ต้องกลัวซ้ำ)
-3. รัน `backfill_bidders.py --provinces สกลนคร` (full bidder list → `bid_results`) — ขั้นนี้ "ช้า" แบบเดิม (ทีละงาน + rate-limit) อาจต้องดูว่าใช้เน็ตบ้านหรือ VPS ตรงได้ตาม volume จริง
-4. เพิ่มสกลนครเข้า default ของ `backfill_bidders.py --provinces` (เช็คก่อน deploy — อาจ hardcode 2 จังหวัดเดิมเหมือนที่เจอกับ `--fy`/TARGET) แล้ว deploy timer ใหม่
+1. รอ residential fetch สกลนคร (2558-2567, 10,751 งาน) เสร็จ → import เข้า `bid_results` (ปรับ `_backfill_home_import.py` ให้รับ path arg เหมือนกัน หรือเขียนใหม่คล้ายเดิม)
+2. **ตัดสินใจเรื่อง FY2568 proc_type anomaly ก่อน wire เข้า daily timer** — ตัวเลือก: (a) เพิ่ม literal label นี้เข้า `COMPETITIVE_SET` เฉพาะ query สกลนคร (b) รอ CGD แก้ที่ต้นทาง แล้ว re-sync (c) ใช้ fallback อื่น (เช่น  contains "ประกาศเชิญชวนทั่วไป") — ยังไม่ฟันธง รอตัดสินใจ
+3. เพิ่มสกลนครเข้า default ของ `backfill_bidders.py --provinces` (เช็คก่อน deploy — อาจ hardcode 2 จังหวัดเดิมเหมือนที่เจอกับ `--fy`/TARGET) แล้ว deploy timer ใหม่ — **ทำได้เฉพาะหลังแก้ #2** ไม่งั้น timer จะมองไม่เห็นงานปีงบปัจจุบันของสกลนครเงียบๆ

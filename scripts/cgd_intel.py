@@ -424,22 +424,18 @@ def _conf_tag(n: int, p25, p75) -> str:
 
 def _resolve_tin(conn, name):
     """หา bidder_tin จาก bid_results ด้วยชื่อ (cgd_winners ไม่มี tin ที่เชื่อถือได้ — N+157 winner_tin เพี้ยน ~99%).
-    normalized exact match (ตัด prefix นิติบุคคล, ใช้ helper จาก portal_views) + LIKE prefilter ด้วยคำยาวสุด.
+    indexed exact match บน normalized_name (เดิม LIKE scan ทั้งตาราง — วัดจริง 173ms/call ที่ ~83K แถว,
+    เปลี่ยนเป็น index seek ดู N+165.1 perf fix 2026-06-22).
     None ถ้าไม่เจอ/ชื่อสั้นเกิน/error (รวม 'ไม่มีตาราง bid_results') — ห้าม throw."""
     try:
         import portal_views as _pv
         core = _pv._norm_name(name)
-        key = _pv._prefilter_key(name)
-        if not core or not key:
+        if not core:
             return None
-        cand = conn.execute(
-            "SELECT bidder_name, bidder_tin FROM bid_results WHERE bidder_name LIKE ?",
-            (f"%{key}%",)).fetchall()
-        for row in cand:
-            bname, tin = row[0], row[1]
-            if tin and _pv._norm_name(bname) == core:
-                return tin
-        return None
+        row = conn.execute(
+            "SELECT bidder_tin FROM bid_results WHERE normalized_name=? AND bidder_tin != '' LIMIT 1",
+            (core,)).fetchone()
+        return row[0] if row else None
     except Exception:
         _log.debug("_resolve_tin failed for name=%r", name, exc_info=True)
         return None

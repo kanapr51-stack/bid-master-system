@@ -42,4 +42,15 @@ s.record_bid_results("P4", [{"receiveNameTh": "", "receiveTin": "", "pricePropos
 assert len(s.get_bid_results("P4")) == 0, "ไม่มี tin/name → ข้าม"
 print("✅ no-TIN name-fallback")
 
+# v135 perf fix: normalized_name ต้องถูกคำนวณตอนเขียน และไม่ถูกเคลียร์เป็น NULL ตอนเขียนซ้ำ
+import portal_views as pv
+with db.get_connection() as c:
+    nn = c.execute("SELECT normalized_name FROM bid_results WHERE project_id='P1' AND bidder_tin='111'").fetchone()
+assert nn[0] == pv._norm_name("บ.A"), nn
+s.record_bid_results("P1", bidders, fetched_at="2026-06-08")   # เขียนซ้ำ (เช่น winner-poller อัปเดต)
+with db.get_connection() as c:
+    nn2 = c.execute("SELECT normalized_name FROM bid_results WHERE project_id='P1' AND bidder_tin='111'").fetchone()
+assert nn2[0] == pv._norm_name("บ.A"), nn2   # ต้องไม่หาย
+print("✅ record_bid_results: normalized_name คงอยู่หลังเขียนซ้ำ")
+
 print("✅ PASS bid_results")

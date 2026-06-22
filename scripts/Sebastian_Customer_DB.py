@@ -315,6 +315,7 @@ def init_schema():
     _migrate_v132()
     _migrate_v133()
     _migrate_v134()
+    _migrate_v135()
     print(f"Schema v1.14 ready: {DB_PATH}")
 
 
@@ -370,6 +371,27 @@ def _migrate_v134():
     with get_connection() as conn:
         conn.execute("CREATE INDEX IF NOT EXISTS idx_cgdw_prov_fy_proc "
                      "ON cgd_winners(province, fiscal_year, proc_type)")
+
+
+def _migrate_v135():
+    """normalized_name บน bid_results — cgd_intel._resolve_tin() เดิม LIKE '%key%' บน bidder_name
+    (full scan, วัดจริง 173ms/call ตอนนี้ที่ ~83K แถว และจะแย่ลงเรื่อยๆตาม backfill สกลนคร) เปลี่ยน
+    เป็น precompute (ตาม portal_views._norm_name เดียวกับ N+165) + index — เป็น pattern เดียวกับ
+    cgd_winners.normalized_winner (v133). ต้องอัปเดต record_bid_results() ให้เขียนคอลัมน์นี้ทุกครั้ง
+    ด้วย (INSERT OR REPLACE เขียนทั้งแถว ไม่งั้นค่าจะหายตอนงานเดิมถูกเขียนซ้ำ)."""
+    import portal_views as _pv
+    with get_connection() as conn:
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(bid_results)")]
+        if "normalized_name" not in cols:
+            conn.execute("ALTER TABLE bid_results ADD COLUMN normalized_name TEXT")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_bid_results_normname ON bid_results(normalized_name)")
+        rows = conn.execute(
+            "SELECT project_id, bidder_tin, bidder_name FROM bid_results "
+            "WHERE normalized_name IS NULL AND bidder_name IS NOT NULL AND bidder_name != ''").fetchall()
+        if rows:
+            buf = [(_pv._norm_name(n), pid, tin) for pid, tin, n in rows]
+            conn.executemany(
+                "UPDATE bid_results SET normalized_name=? WHERE project_id=? AND bidder_tin=?", buf)
 
 
 def _migrate_v130():
@@ -990,7 +1012,10 @@ class SubscriptionStore:
     def record_bid_results(self, project_id: str, bidders: list, fetched_at: str = None) -> int:
         """เก็บ bidders (จาก get_procure_result) ลง bid_results — competitive intel.
         bidder dict: receiveNameTh, receiveTin, priceProposal, priceAgree, resultFlag, is_sme.
-        is_winner = มี priceAgree. idempotent (INSERT OR REPLACE ตาม project+tin). คืนจำนวน row."""
+        is_winner = มี priceAgree. idempotent (INSERT OR REPLACE ตาม project+tin). คืนจำนวน row.
+        คำนวณ normalized_name ทุกครั้ง (v135 perf fix) — INSERT OR REPLACE เขียนทั้งแถว ถ้าไม่ใส่
+        ค่าจะหายกลับเป็น NULL ทุกครั้งที่งานเดิมถูกเขียนซ้ำ (เช่น winner-poller อัปเดต priceAgree)."""
+        import portal_views as _pv
         fetched_at = fetched_at or _now()
         n = 0
         with get_connection() as conn:
@@ -1004,11 +1029,11 @@ class SubscriptionStore:
                 conn.execute("""
                     INSERT OR REPLACE INTO bid_results
                       (project_id, bidder_name, bidder_tin, price_proposal, price_agree,
-                       is_winner, is_sme, result_flag, fetched_at)
-                    VALUES (?,?,?,?,?,?,?,?,?)
+                       is_winner, is_sme, result_flag, fetched_at, normalized_name)
+                    VALUES (?,?,?,?,?,?,?,?,?,?)
                 """, (project_id, name, key, b.get("priceProposal") or "", pa,
                       1 if pa else 0, 1 if b.get("is_sme") else 0,
-                      b.get("resultFlag") or "", fetched_at))
+                      b.get("resultFlag") or "", fetched_at, _pv._norm_name(name)))
                 n += 1
         return n
 

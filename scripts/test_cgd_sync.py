@@ -18,9 +18,13 @@ with db.get_connection() as c:
     bi = [r[1] for r in c.execute("PRAGMA index_list(bid_results)")]
     wi = [r[1] for r in c.execute("PRAGMA index_list(cgd_winners)")]
 assert "idx_bid_results_tin" in bi, bi
+assert "idx_bid_results_normname" in bi, bi   # v135: cgd_intel._resolve_tin LIKE scan
 assert "idx_cgd_winners_normwin" in wi, wi
 assert "idx_cgdw_prov_fy_proc" in wi, wi   # v134: /portal/job ช้า (cgd_intel._fetch scope query)
-print("✅ v132/v133/v134: index ทั้งหมดมีจริง")
+with db.get_connection() as c:
+    bcols = [r[1] for r in c.execute("PRAGMA table_info(bid_results)")]
+assert "normalized_name" in bcols, bcols
+print("✅ v132/v133/v134/v135: index + column ทั้งหมดมีจริง")
 
 rows = [{"project_id": "P1", "province": "นครพนม", "dept": "อบต.x", "project_name": "ถนน",
          "winner": "บ.A", "winner_tin": "1", "budget": 1100000, "win_price": 950000,

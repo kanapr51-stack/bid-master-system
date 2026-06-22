@@ -379,10 +379,12 @@ def test_intel_lines():
 
 
 def _tin_fixture_conn():
-    """conn แยกจาก _fixture_conn — มี bid_results สำหรับ _resolve_tin."""
+    """conn แยกจาก _fixture_conn — มี bid_results สำหรับ _resolve_tin (มี normalized_name ตาม v135)."""
+    import portal_views as _pv
     c = _fixture_conn()
-    c.execute("""CREATE TABLE bid_results (project_id TEXT, bidder_name TEXT, bidder_tin TEXT)""")
-    c.execute("INSERT INTO bid_results VALUES ('R1','หจก.A','1234567890123')")
+    c.execute("""CREATE TABLE bid_results (project_id TEXT, bidder_name TEXT, bidder_tin TEXT,
+        normalized_name TEXT)""")
+    c.execute("INSERT INTO bid_results VALUES ('R1','หจก.A','1234567890123',?)", (_pv._norm_name("หจก.A"),))
     c.commit()
     return c
 

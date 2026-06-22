@@ -264,6 +264,36 @@ finally:
 assert captured["dept_name"] == "อบต.ทดสอบ", captured
 print("OK job_detail_dept_name_passthrough")
 
+
+def test_job_detail_custom_calc():
+    orig_ctx = cgd_intel.intel_context
+    cgd_intel.intel_context = lambda *a, **k: {
+        "lines": [], "company_tables": [{"label": "x", "n": 5, "conf_tag": "🟢 มั่นใจ",
+                                         "p25": 10.0, "p75": 20.0, "median": 15.0, "companies": []}],
+        "winrate_table": None,
+        "scope_rows": [{"winner": "หจก.A", "discount_pct": 12.0, "fiscal_year": "2568"}] * 3,
+    }
+    try:
+        c = _seed()
+        d = pv.job_detail(c, "69010000001",
+                          calc_params={"my_price": "900000", "selected_names": ["หจก.A"], "extra_names": []})
+        assert d["custom_calc"] is not None, d
+        assert "overall_win_pct" in d["custom_calc"], d["custom_calc"]
+        # ไม่ส่ง calc_params → ไม่คำนวณ ไม่พัง
+        d2 = pv.job_detail(c, "69010000001")
+        assert d2["custom_calc"] is None, d2
+        # ส่ง calc_params แต่ intel_context คืน None → graceful, ไม่ throw
+        cgd_intel.intel_context = lambda *a, **k: None
+        d3 = pv.job_detail(c, "69010000001",
+                          calc_params={"my_price": "900000", "selected_names": ["หจก.A"], "extra_names": []})
+        assert d3["custom_calc"] is None, d3
+    finally:
+        cgd_intel.intel_context = orig_ctx
+    print("OK job_detail_custom_calc")
+
+
+test_job_detail_custom_calc()
+
 # --- render_job_page: intel section (📊 วิเคราะห์ราคา & คู่แข่งในพื้นที่) ---
 c = _seed()
 d = pv.job_detail(c, "69010000001")

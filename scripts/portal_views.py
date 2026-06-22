@@ -59,7 +59,7 @@ def _discount(price, budget):
     return None
 
 
-def job_detail(conn, pid):
+def job_detail(conn, pid, calc_params=None):
     ps = conn.execute(
         "SELECT project_name, budget, province FROM projects_seen WHERE project_id=?",
         (pid,)).fetchone()
@@ -80,6 +80,7 @@ def job_detail(conn, pid):
     intel_lines = None
     company_tables = None
     winrate_table = None
+    custom_calc = None
     try:
         import cgd_intel
         intel_ctx = cgd_intel.intel_context(
@@ -89,6 +90,13 @@ def job_detail(conn, pid):
             intel_lines = intel_ctx["lines"]
             company_tables = intel_ctx.get("company_tables")
             winrate_table = intel_ctx.get("winrate_table")
+            if calc_params and intel_ctx.get("scope_rows") and company_tables:
+                fallback = company_tables[0]
+                custom_calc = cgd_intel.calc_custom_winrate(
+                    intel_ctx["scope_rows"],
+                    {"median": fallback.get("median"), "p25": fallback.get("p25"), "p75": fallback.get("p75")},
+                    calc_params.get("my_price"), budget,
+                    calc_params.get("selected_names") or [], calc_params.get("extra_names") or [])
     except Exception:
         intel_lines = None
     loc, deadline = "", None
@@ -129,7 +137,7 @@ def job_detail(conn, pid):
                     "location": loc, "budget": budget, "deadline": deadline,
                     "pred_lo": pred_lo, "pred_hi": pred_hi}, "bidders": bidders,
             "intel_lines": intel_lines, "company_tables": company_tables,
-            "winrate_table": winrate_table}
+            "winrate_table": winrate_table, "custom_calc": custom_calc}
 
 
 # proc_type → กลุ่ม. _PROC_BID mirror cgd_intel.COMPETITIVE_SET (source of truth ของ "แข่งราคาจริง")

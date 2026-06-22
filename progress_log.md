@@ -1164,3 +1164,28 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 - **รอบ 2**: กัญจน์ไม่ชอบ card-transform เลย — บอกว่าแยกเป็นหลายกล่องลอย (1 กล่อง/แถว) ไม่รู้สึกเป็นตารางเดียว ขอกลับเป็นตารางจริงกล่องเดียวมีเส้นกรอบ (grid) → **ถอด card-transform ทิ้งทั้งหมด** (ไม่มี `wr` class/`data-label`/media query แยกกล่องแล้ว), แก้ `.itbl` ให้มี border-right+border-bottom ทุก cell (ตัดขอบนอกสุดด้านขวา/ล่างออก กันซ้อนกับกรอบ `.tblwrap`), `.tblwrap` เป็นกล่องเดียวมีขอบ+มุมโค้งรอบนอก — กลายเป็นตารางสเปรดชีตจริงในกล่องเดียว ไม่ใช่การ์ดหลายกล่องอีกต่อไป (commit `98892fe`)
 - L: card-transform เป็น pattern ที่ research แนะนำสำหรับตารางกว้างมาก แต่ตารางนี้มีแค่ ~6-8 คอลัมน์ — กัญจน์ (ผู้ใช้จริง) ชอบตารางจริงมากกว่า บทเรียน: research ทั่วไปไม่ได้ fit ทุก use case เสมอ ต้องเช็ค feedback ผู้ใช้จริงก่อนยึดติด pattern เดียว
 - deploy VPS ทั้ง 2 รอบแล้ว `/health` OK
+
+## งานที่ N+167: แก้ /portal/job โหลดช้า — composite index cgd_winners + index bid_results.normalized_name (2026-06-22)
+
+### สถานะ: ✅ เสร็จ
+
+### บริบท
+คุณกัญจน์รายงานว่าเข้าหน้ารายละเอียดงาน (`/portal/job`) โหลดนานมาก — ตรวจแบบเดียวกับ N+165 (วัดจริงก่อนแก้)
+
+### Root cause (วัดจริงบน VPS)
+- `intel_context()` ของงานก่อสร้างถนนจริง 1 งาน ใช้เวลา **3,679ms**
+- `cgd_intel._fetch()` filter `province=? AND fiscal_year IN(...) AND proc_type IN(...) AND project_name LIKE(...)` — index เดิม (`idx_cgdw_province`) กรองได้แค่ province (390,108 แถวสำหรับนครพนม) แล้ว scan ทุกแถวเช็คที่เหลือเอง = 601ms/call × `_build_intel()` เรียกหลายรอบ (ตำบล/อำเภอ/จังหวัด) ต่อหน้า
+- `cgd_intel._resolve_tin()` (เรียกต่อบริษัทที่โผล่ในตาราง) ใช้ `bidder_name LIKE '%key%'` บน `bid_results` — full scan วัดจริง 173ms/call
+
+### Fix
+- `_migrate_v134`: composite index `cgd_winners(province, fiscal_year, proc_type)` — ยืนยันด้วย query ตรงว่า filter 3 คอลัมน์นี้ (ก่อน LIKE) เหลือแค่ 1,108 แถว จาก 390,108 (ลด 350x)
+- `_migrate_v135`: เพิ่ม `bid_results.normalized_name` (precompute เหมือน N+165) + index, อัปเดต `record_bid_results()` ให้เขียนคอลัมน์นี้ทุกครั้ง (กัน INSERT OR REPLACE เคลียร์ค่าเป็น NULL ตอนงานเดิมถูกเขียนซ้ำ เช่น winner-poller), `_resolve_tin()` เปลี่ยนเป็น indexed exact match
+
+### ผล (วัดจริงทีละขั้นบน VPS งานเดียวกัน)
+- baseline: 3,679ms → หลังแก้ cgd_winners index: 691ms (5.3x) → หลังแก้ bid_results index: **407ms (รวม ~9x จาก baseline)**
+- ยืนยัน query plan เปลี่ยนจาก `SCAN`/`SEARCH...USING INDEX idx_cgdw_province` เป็น `SEARCH...USING INDEX idx_cgdw_prov_fy_proc` ถูกต้อง
+- backup DB ก่อน migrate ทั้ง 2 ครั้ง, migration เร็ว (index สร้าง 9.6s + 0.7s, ไม่มี backfill หนักเหมือน v133)
+- commit `d711466` + `45b417b`, push + deploy VPS ครบ, regression sweep 12 ไฟล์ test ALL PASS
+
+### Followup
+- ไม่มี — 407ms ถือว่าเร็วพอสำหรับตอนนี้ ถ้ากัญจน์ยังรู้สึกช้าอยู่ค่อยมาดูจุดต่อไป (เช่น `_resolve_tin` ยังเรียกซ้ำต่อบริษัทแม้ cache ใน scope เดียวกันแล้ว)

@@ -1042,3 +1042,25 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 
 ### Followup
 - ✅ Deploy VPS เสร็จ (2026-06-22): push origin/main (`a9d3f77`→`00fd79b`, 7 commits) → VPS `git pull` fast-forward สะอาด → `systemctl restart bms-api` → `/health` OK (`{"ok":true,"db":true}`)
+
+## งานที่ N+162: bms-backfill-bidders timer รายวัน — ปิดช่องว่าง "งานไม่มีคนติดตาม = ไม่เก็บ bid_results" (2026-06-22)
+
+### สถานะ: ✅ เสร็จ
+
+### บริบท
+หลัง backfill 12K (N+156) เสร็จ คุณกัญจน์ถามว่าระบบเก็บผู้ยื่นซอง+ผู้ชนะ+ราคาของ **ทุกงาน** จริงไหม (ไม่ใช่แค่งานติดตาม) — ตรวจแล้วพบช่องว่างจริง: `bms-winner-poller` (timer เดิม ทุก 6 ชม.) poll เฉพาะงานที่มีลูกค้ากด follow เท่านั้น งานที่ไม่มีคนติดตามจะไม่ถูกเก็บ `bid_results` อัตโนมัติเลย ต้องรัน `backfill_bidders.py` มือเป็นระยะ
+
+### สิ่งที่ทำ
+- คุณกัญจน์ถามเรื่อง schedule (สัปดาห์ละครั้ง ใช้เวลา 12 ชม. มั้ย) → อธิบาย: 12 ชม.รอบแรกคือ catch-up ของเก่าทั้งหมด (12 ปี/12,093 งาน) ครั้งเดียว ไม่ใช่ค่าใช้จ่ายที่ต้องเสียซ้ำทุกรอบ — `backfill_bidders.py` มี `NOT IN bid_results` กันดึงซ้ำในตัวอยู่แล้ว รอบถัดไปจะดึงแค่งานปิดใหม่ (~19 งาน/สัปดาห์ ≈ 30 วินาที)
+- คุณกัญจน์เลือก **รายวัน** (ถี่กว่าที่เสนอ, ข้อมูลสดกว่า + batch เล็กกว่า = WAF risk ต่ำกว่าด้วย)
+- 🐛 พบ bug ก่อน deploy: `backfill_bidders.py --fy` default hardcode `"2567,2568,2569"` — timer รันถาวรจะค้างปีงบเก่าเงียบๆหลัง 1 ต.ค.2569 (FY2570 เริ่ม) → เขียน `current_fy(today=None)` คำนวณปีงบไทย (ต.ค.-ก.ย.) จากวันนี้จริง, default เปลี่ยนเป็น `f"{fy_now-1},{fy_now}"` (ไม่ตายตัว) + test `test_current_fy()` ครอบ 4 case (ก่อน/หลัง 1 ต.ค.)
+- dry-run บน VPS จริงด้วย default ใหม่: เหลือแค่ **5 candidates** (ของเก่าจาก backfill 12K ถูกตัดหมดแล้ว) → รันจริง `stored=4 empty=1 error=0` เสร็จใน <10s ตรงบน VPS เลย (ไม่ต้องผ่านเน็ตบ้านเหมือนรอบ bulk — volume เล็กพอ ไม่โดน WAF)
+- เขียน `deploy/systemd/bms-backfill-bidders.{service,timer}` (ตาม pattern `bms-winner-poller` เดิม) — รายวัน 02:00 UTC (09:00 ไทย, หลัง full-bkg sweep 01:30) → scp ขึ้น VPS เป็น root → `daemon-reload` + `enable --now` → ทดสอบ trigger มือ 1 ครั้ง `Result=success`
+
+### Fix / ผล
+- `bid_results` coverage ไปข้างหน้า: ครอบทุกงานปิดใหม่ใน 2 จังหวัด ไม่จำกัดแค่งานติดตามอีกต่อไป
+- commit: `a5f4129` (fix current_fy) + `b053ac7` (deploy timer files), push origin/main แล้ว
+- timer ถัดไป: 2026-06-23 02:00 UTC
+
+### Followup
+- ไม่มี — เสร็จสมบูรณ์ รอดูผลรันอัตโนมัติรอบแรกพรุ่งนี้

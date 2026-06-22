@@ -1189,3 +1189,27 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 
 ### Followup
 - ไม่มี — 407ms ถือว่าเร็วพอสำหรับตอนนี้ ถ้ากัญจน์ยังรู้สึกช้าอยู่ค่อยมาดูจุดต่อไป (เช่น `_resolve_tin` ยังเรียกซ้ำต่อบริษัทแม้ cache ใน scope เดียวกันแล้ว)
+
+## งานที่ N+168: Custom Win% Calculator — กรอกราคา+คู่แข่งเอง คำนวณโอกาสชนะให้ (2026-06-22)
+
+### สถานะ: ✅ เสร็จ — กัญจน์อนุมัติให้ทำจนเสร็จเองแบบ autonomous (ไปนอนแล้ว)
+
+### บริบท
+คุณกัญจน์อยากให้ระบบทำนายราคามีโหมดเจาะจง: กรอกราคาที่ตัวเองอยากยื่นเอง + เลือก/พิมพ์คู่แข่งที่คาดว่าจะมา แล้วคำนวณโอกาสชนะให้ — ต่างจากตาราง win%-by-N-bidders เดิม (generic, ไม่เจาะจงบริษัท) ออกแบบผ่าน `superpowers:brainstorming` (spec `docs/superpowers/specs/2026-06-22-custom-winrate-calculator-design.md`) + `superpowers:writing-plans` (plan 6 task) รัน inline (กัญจน์ไปนอน ไม่มีคนตอบ subagent)
+
+### สิ่งที่ทำ (5 commit, `60fca30`→`0da2b28`)
+1. **`cgd_intel.py`**: `_build_intel()` เพิ่ม `median` ต่อ company_tables block + เพิ่ม `scope_rows` ใน return (rows เดียวกับที่ทำ company_tables) — ฟังก์ชันใหม่ `_cdf_3pt()` (piecewise-linear CDF จาก p25/median/p75, clamp 5-95%), `_resolve_competitor_name()` (หาชื่อ normalized match ใน rows), `calc_custom_winrate()` (core: แปลงราคา→%ลด, หาสถิติคู่แข่งหรือ fallback ค่าเฉลี่ยพื้นที่, รวมหลายคู่แข่งด้วย independence)
+2. **`portal_views.py`**: `job_detail(conn, pid, calc_params=None)` เพิ่ม param ใหม่ (optional, ไม่กระทบ caller เดิม) + `_render_custom_calc_form()` (checkbox จาก company_tables dedupe + textarea พิมพ์ชื่อเพิ่ม + ราคา + ผลลัพธ์พร้อม disclaimer)
+3. **`bms_api.py`**: `GET /portal/job` รับ query param ใหม่ (`calc_my_price`/`calc_competitors`/`calc_extra`) + route ใหม่ `POST /portal/job/calc` (form→303 redirect กลับ GET พร้อม params, ใช้ `\x1f` คั่นชื่อบริษัทกัน comma ชนชื่อจริง) — ไม่มี schema/DB เปลี่ยนเลย
+4. **🐛 พบ + แก้ math bug ตั้งแต่ตอนเขียนแผน (ก่อนโค้ดจริง)**: spec draft แรกเขียนทิศทาง `win_pct_against` สลับกัน (label บอกว่าเป็นโอกาสเราชนะ แต่สูตรจริงคือโอกาสคู่แข่งชนะ) → แก้ spec (`151626d`) ก่อนเขียนโค้ด, ยืนยันด้วยมือ: `win_pct_against = (1-CDF)*100` = โอกาสคู่แข่งชนะเรา (เขาลดลึกกว่า), `overall_win_pct = ∏CDF_i` = โอกาสเราชนะทุกคน — Sophia ตรวจโค้ดจริงซ้ำอีกชั้น ยืนยันตรงทิศ
+5. **🐛 พบ arithmetic error ในแผนเอง**: test fixture คาด median=11.0 จาก `_pct([9,10,11,12],50)` — คำนวณจริงด้วย python ก่อนเขียนแผนได้ 10.5 (ไม่ใช่ 11.0) → แก้ assertion ในแผนก่อนรัน
+
+### Verification
+- TDD ครบทุก task (เขียน test fail ก่อน → implement → pass) — เพิ่ม test 5 ฟังก์ชันใน `test_cgd_intel.py` (basic/multi-competitor/fallback/dedupe/invalid) + 1 ฟังก์ชันใน `test_portal_views.py` (form+result render)
+- regression sweep 7 ไฟล์ test ที่เกี่ยวข้อง ALL PASS ทุกรอบ (หลังทุก task)
+- Sophia ตรวจทิศทางสูตร + SQL injection + None-safety + backward-compat + XSS (เสริม ไม่ได้ขอ) → **verdict: SAFE TO PROCEED**
+- deploy VPS: ไม่มี schema change เลย → แค่ `git pull` + restart `bms-api`, ไม่ต้อง backup DB พิเศษ
+
+### Followup
+- ไม่มี — ฟีเจอร์ใช้งานได้เต็มรูปแบบ ดูผลตอนกัญจน์ตื่นมาทดสอบจริงบนมือถือ
+

@@ -70,15 +70,19 @@ my_discount_pct = (budget - my_price) / budget * 100
 - ถ้า `my_discount_pct` อยู่ระหว่างจุดที่รู้ 2 จุด → interpolate เชิงเส้นตรงระหว่าง 2 จุดนั้น
 - ถ้า `my_discount_pct < p25` → extrapolate ด้วย slope เดียวกับช่วง p25↔median, **clamp ไม่ให้ต่ำกว่า 5%** (กัน "0% โอกาสเขาชนะ" ซึ่งมั่นใจเกินจริงจาก sample เล็ก)
 - ถ้า `my_discount_pct > p75` → extrapolate ด้วย slope เดียวกับช่วง median↔p75, **clamp ไม่ให้เกิน 95%**
-- `win_pct_against_this_competitor = round((1 - CDF(my_discount_pct)) * 100)` (โอกาส**เรา**ชนะคู่แข่งรายนี้ = โอกาสที่เขาลดน้อยกว่าเรา)
+- `win_pct_against = round((1 - CDF(my_discount_pct)) * 100)` — นี่คือโอกาสที่ **คู่แข่งรายนี้ชนะเรา** (เขาลดลึกกว่าเรา = เขาชนะ — ราคาต่ำสุดชนะ) ตรงกับที่แสดงในหน้าผลลัพธ์ว่า "หจก.ABC ชนะคุณ ~X%". โอกาส**เรา**ชนะคู่แข่งรายนี้ = `100 - win_pct_against` = `CDF(my_discount_pct) * 100`
+
+⚠️ **เคยเขียนผิดทิศตอน draft แรก** (label บอกว่าเป็นโอกาสเราชนะ ทั้งที่สูตรคือโอกาสเขาชนะ) — แก้ก่อนเขียนโค้ดจริงแล้ว ดู §4.4 ที่ใช้ค่านี้ถูกทิศ
 
 นี่คือ piecewise-linear interpolation อย่างง่าย **คนละโมเดลกับ k_mid/power-law ที่ใช้ในตาราง win%-by-N-bidders เดิม** (โมเดลเดิมใช้ mean/sd ของจำนวนผู้ยื่น ไม่มีข้อมูลระดับบริษัท) — เป็นฟังก์ชันใหม่แยกเฉพาะ ไม่ปนกับโค้ดเดิม
 
 ### 4.4 รวมหลายคู่แข่งเป็น 1 ค่า
 
 ```
-overall_win_pct = product(win_pct_against_i / 100 for each selected competitor) * 100
+overall_win_pct = product((100 - win_pct_against_i) / 100 for each selected competitor) * 100
 ```
+(`100 - win_pct_against_i` = โอกาส**เรา**ชนะคู่แข่งรายนั้นรายเดียว — คูณทุกรายเข้าด้วยกัน = โอกาสเราชนะ**ทุกราย**พร้อมกัน)
+
 สมมติแต่ละบริษัทตัดสินใจราคาอิสระจากกัน (independence) — สมมติฐานเดียวกับที่โมเดล N-bidders เดิมใช้อยู่แล้ว ไม่ใช่ของใหม่
 
 ถ้าไม่ติ๊ก/พิมพ์คู่แข่งเลย → ไม่คำนวณ, render ข้อความ "เลือกคู่แข่งอย่างน้อย 1 บริษัท หรือดูตาราง win% ทั่วไปด้านบนแทน"

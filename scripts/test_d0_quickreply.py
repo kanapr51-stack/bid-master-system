@@ -70,9 +70,34 @@ def test_send_line_push_payload():
     print("✅ send_line_push (quickReply ใน payload + backward-compat)")
 
 
+def test_is_plain_text_stage():
+    assert ls._is_plain_text_stage({"announce_type": "D0"}) is True
+    assert ls._is_plain_text_stage({"source_stage": "province_tor_review"}) is True
+    assert ls._is_plain_text_stage({"source_stage": "province_tor_review_soft"}) is True   # startswith
+    assert ls._is_plain_text_stage({"announce_type": "B0", "source_stage": "api_enriched"}) is False
+    assert ls._is_plain_text_stage({}) is False
+    print("✅ _is_plain_text_stage (D0 + province_tor_review* → plain, อื่นๆ → การ์ด)")
+
+
+def test_plain_text_body_header_before_name():
+    # N+163: หัวข้อ (บรรทัดแรกของ text) ต้องขึ้นก่อนชื่องาน — เดิม full_name ขึ้นก่อน
+    text = "🔔 พบงานเปิดกำหนดวันยื่นซองใหม่\n📍 นครพนม\n💰 ราคากลาง 1.0 ล้านบาท"
+    body = ls._plain_text_body(text, "ก่อสร้างถนน คสล.")
+    lines = body.split("\n")
+    assert lines[0] == "🔔 พบงานเปิดกำหนดวันยื่นซองใหม่", lines
+    assert lines[1] == "ก่อสร้างถนน คสล.", lines
+    assert lines[2:] == ["📍 นครพนม", "💰 ราคากลาง 1.0 ล้านบาท"], lines
+    # text บรรทัดเดียว (ไม่มี rest) → ไม่มี \n ท้ายเกิน
+    body2 = ls._plain_text_body("🔔 หัวข้อเดียว", "ชื่องาน")
+    assert body2 == "🔔 หัวข้อเดียว\nชื่องาน", body2
+    print("✅ _plain_text_body (หัวข้อขึ้นก่อนชื่องาน)")
+
+
 if __name__ == "__main__":
     test_is_following()
     test_quick_reply_items()
     test_text_message()
     test_send_line_push_payload()
+    test_is_plain_text_stage()
+    test_plain_text_body_header_before_name()
     print("ALL PASS d0 quickreply")

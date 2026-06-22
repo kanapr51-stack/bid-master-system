@@ -1134,3 +1134,27 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 
 ### Followup
 - ไม่มี — ปิดงานสมบูรณ์ (เป็น side-effect ที่ดีจาก N+164 ที่ทำให้เจอ bug ที่ซ่อนมานาน)
+
+## งานที่ N+166: Bid Board readability pass — พื้นหลังนวล + Thai line-height + ตาราง win% เป็นการ์ดมือถือ + แก้ a11y emoji (2026-06-22)
+
+### สถานะ: ✅ เสร็จ
+
+### บริบท
+คุณกัญจน์ขอให้ไปค้นคว้าวิธีทำเว็บให้น่าอ่าน/อ่านง่าย (dispatch fork agent ค้นคว้า NN/g, WCAG, Cadson Demak/Microsoft Thai typography, 2025 mobile-table UX research) แล้วขอให้ลงมือแก้ตาม checklist ทันที + เพิ่มโจทย์ "พื้นหลังสีอ่อนๆสวยๆ ไม่จืดชืดเหมือนสีขาวล้วน" + ย้ำ "ห้ามเสียข้อมูล"
+
+### สิ่งที่ทำ (ตรงตาม checklist ที่ค้นคว้ามา)
+1. **พื้นหลัง**: `body{background:#f5f6f8}` → `linear-gradient(160deg,#f3f7fc 0%,#fbf7f0 100%)` (ฟ้าอ่อน→ครีมอ่อน) — เช็ค luminance สูงพอ ไม่กระทบ contrast ตัวอักษรเทาเดิม (เลย darken `.meta` จาก #777→#666 เพิ่ม safety margin ด้วย เพราะ #777 บนขาวล้วนเดิมก็ contrast ~4.48:1 ชนเส้น AA 4.5:1 อยู่แล้ว)
+2. **line-height ไทย**: เพิ่ม `line-height:1.8` ที่ body (ไทยมีวรรณยุกต์/สระบน-ล่าง ต้องการพื้นที่มากกว่าอังกฤษตามคำแนะนำ Cadson Demak/Microsoft) — แยก `.itbl{line-height:1.4}` ไม่ให้ตารางข้อมูลยืดยาวเกินจำเป็น
+3. **ตาราง win%-ladder บนมือถือ**: เพิ่ม `class="itbl wr"` + `data-label` ทุก `<td>` ใน `_render_winrate_table()` + media query `max-width:480px` พลิกแต่ละแถวเป็นการ์ดแนวตั้ง label:value (เลิกพึ่ง scroll แนวนอนที่ research บอกว่าคนหาไม่เจอ) — **ไม่เสียข้อมูลแม้คอลัมน์เดียว** ยืนยันด้วย test ใหม่เช็ค data-label ครบทุก N
+4. **ตัวเลขเด่น**: เพิ่ม `.feature` class (ใหญ่+หนา+พื้นสีฟ้าอ่อน) ให้บรรทัด "คาดราคา" บนหน้างาน — ตัวเลขที่ตัดสินใจสำคัญสุดต้องเด่นสุด ตาม F-pattern eye-tracking research
+5. **แก้ a11y**: `cgd_intel._conf_tag()` 2 จาก 3 branch คืน emoji เปล่าๆ (🟡/🟢 ไม่มีคำ) ขัด WCAG 1.4.1 (สีห้ามเป็นสัญญาณเดียว) → เพิ่มคำกำกับเป็น "🟡 ปานกลาง"/"🟢 มั่นใจ" — audit ทั่ว codebase แล้ว จุดอื่นที่ลูกค้าเห็น (head_to_head, winrate_table conf) มีคำกำกับอยู่แล้ว ไม่ต้องแก้
+6. **ไม่แก้**: ไม่เพิ่ม custom Thai webfont (Sarabun ฯลฯ) — สถาปัตยกรรมไม่มี JS/รูปภาพเดิมดีอยู่แล้วสำหรับผู้ใช้เน็ตช้าในชนบท คงไว้ตามคำแนะนำ
+
+### Verification
+- generate ตัวอย่างหน้างานจริงด้วยข้อมูลสมมุติ ตรวจ HTML output ด้วยมือ (ไม่มี browser/screenshot tool ในเครื่องนี้) — markup ถูกต้อง ไม่มี tag ค้าง
+- test ใหม่: `test_conf_tag_always_has_text()` (cgd_intel) + ขยาย `render_job_page_winrate_table_full_ladder` เช็ค `data-label`/`class="itbl wr"` ครบ
+- regression sweep 10 ไฟล์ test ที่เกี่ยวข้อง ALL PASS
+- commit `8de9cac`, push + deploy VPS (`git pull` fast-forward, restart `bms-api`, `/health` OK)
+
+### Followup
+- ไม่มี — เสร็จสมบูรณ์ตาม checklist ที่คุณกัญจน์ขอ

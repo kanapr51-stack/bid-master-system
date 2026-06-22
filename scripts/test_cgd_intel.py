@@ -446,6 +446,73 @@ def test_wiring_format_notification():
     print("✅ wiring format_notification (D0 ทุก stage, ไม่มีบล็อก/ลิงก์ intel ฝังในข้อความ)")
 
 
+def _calc_fixture_rows():
+    """rows เหมือนรูปแบบที่ _fetch_scope คืน — มี 2 บริษัท: A (ลดลึก, สม่ำเสมอ) B (ลดน้อย)."""
+    rows = []
+    for d in (10.0, 12.0, 11.0, 9.0):
+        rows.append({"winner": "หจก.A", "discount_pct": d, "fiscal_year": "2568"})
+    for d in (25.0, 27.0, 26.0, 24.0):
+        rows.append({"winner": "หจก.B", "discount_pct": d, "fiscal_year": "2568"})
+    return rows
+
+
+def test_calc_custom_winrate_basic():
+    rows = _calc_fixture_rows()
+    fallback = {"median": 15.0, "p25": 10.0, "p75": 20.0}
+    # budget 1,000,000 ราคาเรา 850,000 → ลด 15% — อยู่ระหว่าง A (median~10.5) กับ B (median~25.5)
+    out = ci.calc_custom_winrate(rows, fallback, my_price=850000, budget=1000000,
+                                 selected_names=["หจก.A"], extra_names=[])
+    assert out is not None, out
+    assert out["my_discount_pct"] == 15.0, out
+    assert len(out["breakdown"]) == 1
+    b = out["breakdown"][0]
+    assert b["name"] == "หจก.A" and b["has_history"] is True, b
+    assert b["median"] == 10.5, b   # _pct([9,10,11,12], 50) ของ A — ยืนยันด้วย python จริงก่อนเขียนแผน
+    # เราลด 15% ลึกกว่า p75 ของ A (11.25) → extrapolate เกินช่วง → clamp 95% (เราชนะสูง) A ชนะเราโอกาสต่ำ
+    assert b["win_pct_against"] < 30, b
+    assert out["overall_win_pct"] > 70, out   # เราชนะ A สูง เพราะเราลดลึกกว่าเขามาก
+
+
+def test_calc_custom_winrate_multi_competitor_multiplies():
+    rows = _calc_fixture_rows()
+    fallback = {"median": 15.0, "p25": 10.0, "p75": 20.0}
+    one = ci.calc_custom_winrate(rows, fallback, 850000, 1000000, ["หจก.A"], [])
+    two = ci.calc_custom_winrate(rows, fallback, 850000, 1000000, ["หจก.A", "หจก.B"], [])
+    assert two is not None
+    # เพิ่มคู่แข่งอีกราย (B ลดน้อยกว่าเรามาก → เราชนะ B สูงด้วย) แต่ overall ต้อง <= ตอนมีคู่แข่งรายเดียว
+    # (คูณ probability เพิ่ม ยิ่งมีคนแข่งยิ่งชนะยากขึ้นหรือเท่าเดิม ไม่มากขึ้น)
+    assert two["overall_win_pct"] <= one["overall_win_pct"], (one, two)
+
+
+def test_calc_custom_winrate_unknown_company_uses_fallback():
+    rows = _calc_fixture_rows()
+    fallback = {"median": 15.0, "p25": 10.0, "p75": 20.0}
+    out = ci.calc_custom_winrate(rows, fallback, 850000, 1000000, [], ["บริษัทไม่มีประวัติเลย"])
+    assert out is not None
+    b = out["breakdown"][0]
+    assert b["has_history"] is False, b
+    assert b["median"] == 15.0 and b["p25"] == 10.0 and b["p75"] == 20.0, b   # ใช้ fallback ตรงๆ
+
+
+def test_calc_custom_winrate_dedupes_same_company():
+    rows = _calc_fixture_rows()
+    fallback = {"median": 15.0, "p25": 10.0, "p75": 20.0}
+    # ติ๊ก "หจก.A" + พิมพ์ "หจก.A" ซ้ำชื่อเดิม (normalized ตรงกัน) → นับครั้งเดียว
+    out = ci.calc_custom_winrate(rows, fallback, 850000, 1000000, ["หจก.A"], ["หจก.A"])
+    assert out is not None
+    assert len(out["breakdown"]) == 1, out["breakdown"]
+
+
+def test_calc_custom_winrate_invalid_inputs():
+    rows = _calc_fixture_rows()
+    fallback = {"median": 15.0, "p25": 10.0, "p75": 20.0}
+    assert ci.calc_custom_winrate(rows, fallback, 0, 1000000, ["หจก.A"], []) is None      # ราคา<=0
+    assert ci.calc_custom_winrate(rows, fallback, "abc", 1000000, ["หจก.A"], []) is None  # parse ไม่ได้
+    assert ci.calc_custom_winrate(rows, fallback, 850000, 1000000, [], []) is None         # ไม่มีคู่แข่งเลย
+    assert ci.calc_custom_winrate(rows, fallback, 850000, 0, ["หจก.A"], []) is None        # budget<=0
+    print("✅ calc_custom_winrate (basic/multi/fallback/dedupe/invalid)")
+
+
 if __name__ == "__main__":
     test_match_keywords()
     test_resolve_location_geo()
@@ -472,4 +539,9 @@ if __name__ == "__main__":
     test_resolve_tin()
     test_build_intel_company_tables_and_winrate_table()
     test_wiring_format_notification()
+    test_calc_custom_winrate_basic()
+    test_calc_custom_winrate_multi_competitor_multiplies()
+    test_calc_custom_winrate_unknown_company_uses_fallback()
+    test_calc_custom_winrate_dedupes_same_company()
+    test_calc_custom_winrate_invalid_inputs()
     print("ALL PASS (moi location disambiguation)")

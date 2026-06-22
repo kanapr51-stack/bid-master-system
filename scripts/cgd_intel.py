@@ -862,3 +862,86 @@ def predict_lines(p: dict, basis: str = "ตำบล", contested: bool = False)
     lines.append(f"   (อิง{basis} · ลด {p['area_disc_lo']:.0f}–{p['area_disc_hi']:.0f}%){thin}")
     lines.append("   * สถิติผู้ชนะในอดีต — ถ้าเจ้าใหญ่ลดดุมาแข่ง โอกาสจะต่ำลง")
     return lines
+
+
+def _cdf_3pt(p25, median, p75, x):
+    """ประมาณ CDF(x) จาก 3 จุด (p25,.25)/(median,.50)/(p75,.75) แบบ piecewise-linear บนแกน%ลด.
+    คืน fraction 0.0-1.0, clamp [0.05, 0.95] (กันมั่นใจเกินจริงจาก sample เล็ก). จุดซ้ำ (p25==median
+    เช่น) ให้ y ของจุดหลังทับจุดก่อน (median/p75 สำคัญกว่า p25 เวลาขัดกัน)."""
+    pts = {}
+    for p, y in ((p25, 0.25), (median, 0.50), (p75, 0.75)):
+        pts[p] = y
+    xs = sorted(pts)
+    if len(xs) == 1:
+        return 0.95 if x > xs[0] else (0.05 if x < xs[0] else 0.50)
+    ys = [pts[k] for k in xs]
+    if x <= xs[0]:
+        slope = (ys[1] - ys[0]) / (xs[1] - xs[0])
+        y = ys[0] + slope * (x - xs[0])
+    elif x >= xs[-1]:
+        slope = (ys[-1] - ys[-2]) / (xs[-1] - xs[-2])
+        y = ys[-1] + slope * (x - xs[-1])
+    else:
+        y = ys[0]
+        for i in range(len(xs) - 1):
+            if xs[i] <= x <= xs[i + 1]:
+                y = ys[i] + (ys[i + 1] - ys[i]) * (x - xs[i]) / (xs[i + 1] - xs[i])
+                break
+    return max(0.05, min(0.95, y))
+
+
+def _resolve_competitor_name(rows, typed_name, _norm_name):
+    """หาชื่อ winner ที่ normalized ตรงกับ typed_name ใน rows (เทียบทุกแถว — rows ของ 1 งานไม่ใหญ่
+    ไม่ต้องใช้ index). คืนชื่อดิบที่ตรงในรูปแบบเดียวกับ rows['winner'] หรือ None ถ้าไม่เจอ."""
+    core = _norm_name(typed_name)
+    if not core:
+        return None
+    for r in rows:
+        w = r.get("winner")
+        if w and _norm_name(w) == core:
+            return w
+    return None
+
+
+def calc_custom_winrate(rows, fallback_stats, my_price, budget, selected_names, extra_names):
+    """คำนวณโอกาสชนะเจาะจงคู่แข่ง — my_price ที่ผู้ใช้กรอกเอง vs รายชื่อคู่แข่งที่เลือก/พิมพ์เอง
+    (N+168, กัญจน์ขอ 2026-06-22). rows: scope rows เดียวกับที่ทำ company_tables (จาก _build_intel
+    ใน intel_context()['scope_rows']). fallback_stats: {"median","p25","p75"} ของ scope กว้างสุด
+    (จาก company_tables block แรก/กว้างสุด) ใช้แทนบริษัทที่ไม่มีประวัติพอ (< MIN_GAMES_FOR_IQR เกม).
+    คืน None ถ้าราคา/budget parse ไม่ได้หรือ<=0, หรือไม่มีคู่แข่งให้คำนวณเลย (หลัง dedupe)."""
+    import portal_views as _pv
+    try:
+        budget_f = float(budget)
+        price_f = float(my_price)
+    except (TypeError, ValueError):
+        return None
+    if budget_f <= 0 or price_f <= 0:
+        return None
+    my_discount_pct = max(0.0, (budget_f - price_f) / budget_f * 100)
+    raw_names = [n.strip() for n in (list(selected_names) + list(extra_names)) if n and str(n).strip()]
+    seen_core, names = set(), []
+    for n in raw_names:
+        core = _pv._norm_name(n)
+        if core and core not in seen_core:
+            seen_core.add(core)
+            names.append(n)
+    if not names:
+        return None
+    breakdown = []
+    overall = 1.0
+    for typed in names:
+        exact = _resolve_competitor_name(rows, typed, _pv._norm_name)
+        stats = _company_stats_from_rows(rows, exact) if exact else None
+        if stats and stats.get("p25") is not None and stats.get("p75") is not None \
+                and stats.get("median") is not None:
+            median, p25, p75, has_history = stats["median"], stats["p25"], stats["p75"], True
+        else:
+            median, p25, p75 = fallback_stats["median"], fallback_stats["p25"], fallback_stats["p75"]
+            has_history = False
+        cdf = _cdf_3pt(p25, median, p75, my_discount_pct)
+        win_pct_against = round((1 - cdf) * 100)     # โอกาสคู่แข่งรายนี้ชนะเรา
+        overall *= cdf                                # โอกาสเราชนะรายนี้ สะสมไว้
+        breakdown.append({"name": typed, "win_pct_against": win_pct_against,
+                          "median": median, "p25": p25, "p75": p75, "has_history": has_history})
+    return {"my_discount_pct": round(my_discount_pct, 1), "overall_win_pct": round(overall * 100),
+            "breakdown": breakdown}

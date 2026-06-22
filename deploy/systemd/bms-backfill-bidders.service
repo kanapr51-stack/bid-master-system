@@ -1,0 +1,15 @@
+[Unit]
+Description=BMS Backfill Bidders (เก็บผู้ยื่นซองครบทุกคนของงานที่ปิดใหม่ — ไม่จำกัดแค่งานที่มีคนติดตาม)
+After=network.target
+
+[Service]
+Type=oneshot
+User=bms
+Group=bms
+WorkingDirectory=/opt/bms/app
+EnvironmentFile=/opt/bms/app/.env
+ExecStart=/opt/bms/venv/bin/python /opt/bms/app/scripts/backfill_bidders.py
+Nice=10
+TimeoutStartSec=1800
+StandardOutput=journal
+StandardError=journal

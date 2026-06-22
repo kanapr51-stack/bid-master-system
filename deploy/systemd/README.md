@@ -42,3 +42,13 @@ bms-daily-digest (08:00 UTC=15:00 ไทย) · bms-backup (03:00) · bms-rss-sc
 scp deploy/systemd/bms-winner-poller.* root@VPS:/etc/systemd/system/
 systemctl daemon-reload && systemctl enable --now bms-winner-poller.timer
 ```
+
+## bms-backfill-bidders (เก็บผู้ยื่นซองครบของ "ทุกงาน" ไม่ใช่แค่งานติดตาม — N+162)
+**รายวัน** (02:00 UTC = 09:00 ไทย, หลัง full-bkg) — `backfill_bidders.py` ไม่มี arg: provinces=นครพนม,บึงกาฬ
++ fy=`current_fy()-1,current_fy()` (คำนวณจากวันนี้ — ไม่ตายตัวเหมือนเดิม กันค้างปีงบเก่าหลัง 1 ต.ค.)
++ `project_id NOT IN bid_results` กันดึงซ้ำ → volume จริงเล็กมาก (~2-5 งาน/วัน หลัง backfill ประวัติ 12K เสร็จ 2026-06-22)
+→ ไม่จำกัดแค่งานที่มีลูกค้าติดตาม (ต่างจาก bms-winner-poller) — ปิดช่องว่าง "งานไม่มีคนติดตาม = ไม่เก็บ bid_results"
+```
+scp deploy/systemd/bms-backfill-bidders.* root@VPS:/etc/systemd/system/
+systemctl daemon-reload && systemctl enable --now bms-backfill-bidders.timer
+```

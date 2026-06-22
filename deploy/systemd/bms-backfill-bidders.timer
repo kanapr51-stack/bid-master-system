@@ -1,0 +1,10 @@
+[Unit]
+Description=BMS Backfill Bidders — รายวัน 02:00 UTC = 09:00 ไทย (หลัง province-discovery-full-bkg 01:30 UTC)
+
+[Timer]
+OnCalendar=*-*-* 02:00:00
+Persistent=true
+Unit=bms-backfill-bidders.service
+
+[Install]
+WantedBy=timers.target

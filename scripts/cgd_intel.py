@@ -545,7 +545,7 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
                 blocks += tl
                 company_tables.append({"label": f"🏘 ในตำบล{tambon}", "n": _n,
                                        "conf_tag": _conf_tag(_n, t25, t75), "p25": t25, "p75": t75,
-                                       "companies": t_cos})
+                                       "median": tmed, "companies": t_cos})
                 pp25, pp75, ptop, ptopm, pmed, basis = t25, t75, ttop, ttopm, tmed, "ตำบล"
                 basis_sub, basis_dist, basis_old = tambon, amphoe, t_old
                 used_rows = t_rows
@@ -558,7 +558,7 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
                 blocks += al
                 company_tables.append({"label": f"🏙 ในอำเภอ{amphoe}", "n": _n,
                                        "conf_tag": _conf_tag(_n, a25, a75), "p25": a25, "p75": a75,
-                                       "companies": a_cos})
+                                       "median": amed, "companies": a_cos})
                 if pp25 is None:                  # ตำบลไม่มี → คาดอิงอำเภอล้วน
                     pp25, pp75, ptop, ptopm, pmed, basis = a25, a75, atop, atopm, amed, "อำเภอ"
                     basis_sub, basis_dist, basis_old = None, amphoe, a_old
@@ -583,7 +583,7 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
         blocks += pl
         company_tables.append({"label": f"🏙 ใน{province}", "n": _n,
                                "conf_tag": _conf_tag(_n, p25, p75), "p25": p25, "p75": p75,
-                               "companies": p_cos})
+                               "median": pmedn, "companies": p_cos})
         pp25, pp75, ptop, ptopm, pmed, basis = p25, p75, ptopn, ptopmd, pmedn, "จังหวัด"
         basis_sub, basis_dist, basis_old = None, None, p_old
         used_rows = p_rows
@@ -597,7 +597,7 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
             blocks += fl
             company_tables.append({"label": f"🗺 ทั้งจังหวัด{province} (ข้ามพื้นที่)", "n": _n,
                                    "conf_tag": _conf_tag(_n, f25, f75), "p25": f25, "p75": f75,
-                                   "companies": f_cos})
+                                   "median": fmed, "companies": f_cos})
             pp25, pp75, ptop, ptopm, pmed, basis = f25, f75, ftop, ftopm, fmed, "จังหวัด (ข้ามพื้นที่)"
             basis_sub, basis_dist, basis_old = None, None, pf_old
             used_rows = pf_rows
@@ -663,7 +663,8 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
                 _tin_cache[cmp["name"]] = _resolve_tin(conn, cmp["name"])
             cmp["tin"] = _tin_cache[cmp["name"]]
     return {"lines": lines, "prediction": pred, "tambon": tambon, "amphoe": amphoe,
-            "explain": explain, "company_tables": company_tables, "winrate_table": winrate_table}
+            "explain": explain, "company_tables": company_tables, "winrate_table": winrate_table,
+            "scope_rows": used_rows}
 
 
 def intel_context(province: str, project_name: str, dept_name: str = "",

@@ -413,6 +413,8 @@ def test_build_intel_company_tables_and_winrate_table():
     for cmp in blk["companies"]:
         assert "tin" in cmp, cmp                            # key มีเสมอ (None ถ้า resolve ไม่ได้)
         assert cmp["tin"] is None, cmp                       # _fixture_conn ไม่มี bid_results → resolve ไม่ได้เสมอ graceful
+    assert "median" in blk, blk                            # N+168: ต้องมี median ระดับ block ด้วย (ไม่ใช่แค่ p25/p75)
+    assert "scope_rows" in ctx and isinstance(ctx["scope_rows"], list) and ctx["scope_rows"], ctx.keys()
     print("✅ _build_intel: company_tables + winrate_table keys present, full company list, tin graceful-None")
 
 

@@ -1213,3 +1213,21 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 ### Followup
 - ไม่มี — ฟีเจอร์ใช้งานได้เต็มรูปแบบ ดูผลตอนกัญจน์ตื่นมาทดสอบจริงบนมือถือ
 
+## Checkpoint 2026-06-22 17:30+ — ปิดเครื่อง (กัญจน์เดินทาง)
+
+**สถานะระบบ ณ จุดนี้:**
+- ทุกงานวันนี้ (N+162 ถึง N+168) commit + push ขึ้น `origin/main` ครบแล้ว, HEAD = `7583c00`, deploy VPS ล่าสุดแล้วทุกตัว, `bms-api` `/health` OK
+- ไม่มี uncommitted change ของงานที่ทำวันนี้ (ไฟล์ที่ยังค้าง modified/untracked ใน git status เป็นของเก่าจากก่อนเริ่ม session ไม่เกี่ยวกับงานวันนี้ ไม่ได้แตะ)
+
+**backfill สกลนคร (bid_results, ขั้นที่เหลือของ N+164) — หยุดเมื่อปิดเครื่อง:**
+- checkpoint ล่าสุด: **2,165 / 10,751 งาน** (~20%) บันทึกลง `data/_backfill_home/skn_backfill_results.json` แล้ว (resumable, ไม่เสีย progress)
+- รันบนเครื่องนี้ (เน็ตบ้าน) เท่านั้น — ปิดเครื่อง/เปลี่ยนเครือข่ายแล้วหยุดทำงานทันที ไม่มีทางรันต่อระหว่างเดินทางได้ (eGP บล็อกเน็ตที่ไม่ใช่ residential)
+- **Resume ตอนกลับมา:** `cd scripts && python _backfill_home_fetch.py ../data/_backfill_home/skn_backfill_cands.json ../data/_backfill_home/skn_backfill_results.json` (path arg แบบใหม่จาก commit `b4754cb`) — จะข้ามงานที่ทำไปแล้วอัตโนมัติ
+- หลัง fetch ครบ 10,751: ต้อง import เข้า VPS `bid_results` ต่อ (ขั้นที่ยังไม่ทำ) ตามแผนเดิมใน N+164's followup
+
+**ของอื่นที่ค้างจากวันนี้ (ไม่เร่ง):**
+- N+164: ตัดสินใจเรื่อง FY2568 proc_type anomaly ของสกลนคร (label รวมไม่แยกประเภท) ก่อน wire เข้า daily timer — ยังไม่ฟันธง
+- N+167 followup: ถ้า /portal/job ยังรู้สึกช้าอยู่ (ปัจจุบัน ~407ms) มีจุดต่อไปคือ `_resolve_tin` เรียกซ้ำต่อบริษัท
+
+ไม่มีอะไรเร่งด่วนต้องทำต่อทันที — ปิดเครื่องได้เลยครับ
+

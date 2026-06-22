@@ -1064,3 +1064,41 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 
 ### Followup
 - ไม่มี — เสร็จสมบูรณ์ รอดูผลรันอัตโนมัติรอบแรกพรุ่งนี้
+
+## งานที่ N+163: LINE notification format — หัวข้อขึ้นก่อนชื่องาน + TOR review เลิกเป็นการ์ด (2026-06-22)
+
+### สถานะ: ✅ เสร็จ
+
+### บริบท
+คุณกัญจน์แจ้ง 2 จุดในแจ้งเตือน LINE: (1) "🔔 พบงานเปิดกำหนดวันยื่นซองใหม่" ควรขึ้นเป็นหัวข้อก่อน แล้วค่อยชื่องาน (ปัจจุบันสลับกัน) (2) งานสเตจ "เปิดฟังคำประชาพิจารณ์" (TOR review, ก่อนกำหนดยื่นซอง) ยังเป็นการ์ด flex อยู่ อยากให้เป็น plain-text แบบเดียวกับ D0
+
+### Root cause
+- `Sebastian_LINE_Sender.py` `main()`: ข้อความ D0 ต่อกันแบบ `full_name + "\n" + text` (ชื่องานนำหน้า header เสมอ — `text` มาจาก `format_notification()` ซึ่งบรรทัดแรกคือ header)
+- TOR review (`source_stage="province_tor_review"`) ถูก enqueue ด้วย `announce_type="B0"` (ไม่ใช่ "D0") → dispatch condition เดิมเช็คแค่ `announce_type=="D0"` → ตกไปสาย `else` (flex card + ปุ่ม feedback) ทุกครั้ง
+
+### Fix
+- เพิ่ม `_plain_text_body(text, full_name)` — pure function แยก header บรรทัดแรกออกมา แล้วแทรกชื่องานเป็นบรรทัดที่ 2 (header → ชื่องาน → ส่วนที่เหลือ)
+- เพิ่ม `_is_plain_text_stage(item)` — `announce_type=="D0"` **หรือ** `source_stage.startswith("province_tor_review")` → ใช้ plain text เหมือนกัน (ไม่ใช่การ์ด)
+- ทั้งคู่ extract ออกมาเป็น pure function แยกได้ (เดิม logic ฝังอยู่ใน `main()` ไม่มี test คลุม) + เขียน test ใหม่ 2 ตัวใน `test_d0_quickreply.py`
+- commit `d60f32c`, push origin/main แล้ว — **ยังไม่ deploy VPS** (รอ confirm)
+
+### Followup
+- รอกัญจน์ confirm deploy VPS (`bms_api.py`/`Sebastian_LINE_Sender.py` ไม่ต้อง restart service อะไร เพราะ LINE sender รันผ่าน timer แยก ไม่ใช่ long-running service — แค่ git pull พอ)
+
+## งานที่ N+164: เพิ่มสกลนครเป็นจังหวัดที่ 3 — เต็มรูปแบบ (2026-06-22, 🚧 ค้าง CGD quota)
+
+### สถานะ: 🚧 ค้าง — โดน CGD Open Data quota วันนี้ รอวันถัดไป resume ต่อ
+
+### บริบท
+คุณกัญจน์ขอเพิ่มสกลนครเป็นจังหวัดที่ 3 แบบเต็มรูปแบบ (เหมือนนครพนม+บึงกาฬ) หลังเสร็จงาน N+162 — ตรวจพบว่าสกลนครยังไม่มีข้อมูลพื้นฐานอะไรเลยในระบบ (ไม่ใช่แค่ขาด `bid_results`): `cgd_winners` (VPS) = 0 แถว, `winner_history.db` (local, ต้นทางจาก CGD Open Data) = 0 แถว เพราะ `_winner_history_build.py`/`cgd_sync_to_vps.py` hardcode `PROVS`/`TARGET` ไว้แค่ 2 จังหวัดเดิมตั้งแต่ต้น
+
+### สิ่งที่ทำ
+- แก้ `_winner_history_build.py` PROVS += สกลนคร, `cgd_sync_to_vps.py` TARGET += สกลนคร (commit `e12b575`)
+- รัน `_winner_history_build.py` (CGD CKAN bulk fetch, **คนละขั้นกับ bid_results backfill** — bulk 1,000 แถว/call ไม่ใช่ทีละงาน จึงเร็วกว่ามาก ไม่ใช่ 7-8 ชม.) — โดน "API None (quota/error)" 3 รอบติด (calls=224, 265, ~1) รวม **67/96 combos** (ปีงบ 2568-2563 ครบ, 2562 ได้ 3/9, 2561-2558 ยังไม่ทำ) → สรุป: โดน rate-limit/quota จริง ไม่ใช่ transient — หยุด retry รอวันถัดไป
+- sync ของที่มีตอนนี้ (819,392 แถว 3 จังหวัด) เข้า VPS `cgd_winners` แล้วสำเร็จ (`push()` idempotent, merge ซ้ำได้ปลอดภัย) — สกลนคร 202,035 แถว (FY2568-2565 ครบ, 2565 partial) ขึ้น VPS แล้ว
+
+### Followup (ค้าง)
+1. resume `_winner_history_build.py` วันถัดไป (quota reset) ให้ครบ 96/96 combos (เหลือ ~30: 2562 อีก 6, 2561(8)/2560(5)/2559(4)/2558(7))
+2. `cgd_sync_to_vps.py --push` ซ้ำอีกครั้งหลัง winner_history ครบ (idempotent, ไม่ต้องกลัวซ้ำ)
+3. รัน `backfill_bidders.py --provinces สกลนคร` (full bidder list → `bid_results`) — ขั้นนี้ "ช้า" แบบเดิม (ทีละงาน + rate-limit) อาจต้องดูว่าใช้เน็ตบ้านหรือ VPS ตรงได้ตาม volume จริง
+4. เพิ่มสกลนครเข้า default ของ `backfill_bidders.py --provinces` (เช็คก่อน deploy — อาจ hardcode 2 จังหวัดเดิมเหมือนที่เจอกับ `--fy`/TARGET) แล้ว deploy timer ใหม่

@@ -1,4 +1,4 @@
-"""Phase 3: ดึงทุก contract (มีผู้ชนะ 100%) นครพนม+บึงกาฬ ปี 2566-2568 (ไม่กรอง keyword)
+"""Phase 3: ดึงทุก contract (มีผู้ชนะ 100%) ของจังหวัดเป้าหมาย ปี 2558-2568 (ไม่กรอง keyword)
 → เก็บดิบใน SQLite data/winner_history.db (table winner_history) + raw_json เผื่อ re-extract.
 adaptive winner extraction (column-shift L-006) + price validate flag. checkpointable (resume ได้).
 
@@ -13,7 +13,7 @@ import cgd_api_client as cg
 
 DB = "data/winner_history.db"
 CKPT = "data/_wh_fetch_ckpt.json"
-PROVS = ["นครพนม", "บึงกาฬ"]
+PROVS = ["นครพนม", "บึงกาฬ", "สกลนคร"]
 PAGE = 1000
 CALL_BUDGET = 700          # quota 1000/วัน, ใช้ไปบ้างแล้ว → buffer
 

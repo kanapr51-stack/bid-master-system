@@ -22,7 +22,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 from Sebastian_Customer_DB import get_connection, _now
 
-TARGET = ["นครพนม", "บึงกาฬ"]
+TARGET = ["นครพนม", "บึงกาฬ", "สกลนคร"]
 
 VPS_HOST = os.environ.get("VPS_HOST", "root@45.76.156.166")
 VPS_KEY = os.path.expanduser(os.environ.get("VPS_KEY", "~/.ssh/bms_vps"))

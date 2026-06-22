@@ -412,13 +412,14 @@ def _company_stats_from_rows(rows: list, winner: str) -> dict:
 
 
 def _conf_tag(n: int, p25, p75) -> str:
-    """ป้ายความเชื่อมั่นแบบสั้น (ต่อบล็อก)."""
+    """ป้ายความเชื่อมั่นแบบสั้น (ต่อบล็อก). ทุก emoji ต้องมีคำกำกับเสมอ — สีเดียวห้ามเป็นสัญญาณ
+    เดี่ยวๆ (WCAG 1.4.1, audit 2026-06-22 เจอ 🟡/🟢 เปล่าๆไม่มีคำ ก่อนแก้)."""
     wide = p25 is not None and p75 is not None and (p75 - p25) > IQR_WIDE
     if n < 10:
         return "🔴 ข้อมูลน้อย"
     if n < 30 or wide:
-        return "🟡"
-    return "🟢"
+        return "🟡 ปานกลาง"
+    return "🟢 มั่นใจ"
 
 
 def _resolve_tin(conn, name):

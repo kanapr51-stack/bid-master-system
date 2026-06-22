@@ -359,6 +359,15 @@ def test_confidence_label():
     print("✅ confidence_label")
 
 
+def test_conf_tag_always_has_text():
+    # N+166 (WCAG 1.4.1): emoji เปล่าๆห้ามเป็นสัญญาณเดียว — ทุก branch ต้องมีคำกำกับ
+    assert ci._conf_tag(40, 5, 10) == "🟢 มั่นใจ", ci._conf_tag(40, 5, 10)
+    assert ci._conf_tag(15, 5, 10) == "🟡 ปานกลาง", ci._conf_tag(15, 5, 10)
+    assert ci._conf_tag(40, 5, 30) == "🟡 ปานกลาง", ci._conf_tag(40, 5, 30)   # IQR กว้าง
+    assert ci._conf_tag(5, None, None) == "🔴 ข้อมูลน้อย", ci._conf_tag(5, None, None)
+    print("✅ _conf_tag (ทุก branch มีคำกำกับ ไม่มี emoji เปล่าๆ)")
+
+
 def test_intel_lines():
     c = _fixture_conn()   # ไม่มี project_locations → resolve degrade province (graceful)
     out = ci.intel_lines("นครพนม", "ก่อสร้างถนน คสล. ต.โพนทอง", conn=c)
@@ -454,6 +463,7 @@ if __name__ == "__main__":
     test_predict_lines()
     test_scope_stats()
     test_confidence_label()
+    test_conf_tag_always_has_text()
     test_intel_lines()
     test_resolve_tin()
     test_build_intel_company_tables_and_winrate_table()

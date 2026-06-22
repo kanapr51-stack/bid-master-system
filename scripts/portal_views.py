@@ -286,12 +286,19 @@ def area_portfolio(conn, name, project_ids):
 
 
 _CSS = (
-    "body{font-family:-apple-system,'Segoe UI',sans-serif;margin:0;padding:18px;background:#f5f6f8;color:#222}"
+    # background: soft pastel gradient (ไม่ขาวจืดเกินไป) — luminance สูงพอ ไม่กระทบ contrast ตัวอักษรเทาเดิม
+    # line-height 1.8: งานวิจัย Cadson Demak/Microsoft Typography — ไทยมีวรรณยุกต์/สระบน-ล่าง
+    # ต้องการพื้นที่แนวตั้งมากกว่าอังกฤษ (เดิม 1.5) ดู progress_log N+166
+    "body{font-family:-apple-system,'Segoe UI',sans-serif;margin:0;padding:18px;"
+    "background:linear-gradient(160deg,#f3f7fc 0%,#fbf7f0 100%);color:#222;line-height:1.8}"
     ".wrap{max-width:480px;margin:0 auto}"
     ".back{display:inline-block;font-size:14px;color:#1d72b4;text-decoration:none;margin:0 0 12px}"
     ".h{font-size:18px;font-weight:700;margin:2px 0 4px}"
     ".jid{font-size:12px;color:#aaa;margin:0 0 6px}"
-    ".meta{font-size:13px;color:#777;margin:3px 0}"
+    ".meta{font-size:13px;color:#666;margin:3px 0}"
+    # ตัวเลขเด่น (เช่น คาดราคา) — ใหญ่/หนา/มีสี ให้กวาดตาเจอใน 3 วินาที (NN/g F-pattern)
+    ".feature{font-size:16px;font-weight:700;color:#1d72b4;background:#eaf3fb;border-radius:10px;"
+    "padding:8px 12px;margin:8px 0}"
     ".dl{font-size:13px;color:#d9534f;margin:3px 0}"
     ".cd{font-size:13px;font-weight:600;color:#1d72b4;margin:3px 0}"
     ".msg{font-size:15px;color:#555;margin:14px 0}"
@@ -343,13 +350,24 @@ _CSS = (
     ".rdate.past{color:#d9534f}"
     ".pastlist summary{color:#d9534f}"
     ".star{font-size:20px;text-decoration:none;margin-left:8px;vertical-align:middle}"
-    ".itbl{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0}"
+    ".itbl{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0;line-height:1.4}"
     ".itbl th,.itbl td{padding:5px 7px;text-align:right;border-bottom:1px solid #eee;white-space:nowrap}"
     ".itbl th:first-child,.itbl td:first-child{text-align:left}"
     ".itbl th{color:#888;font-weight:600;background:#fafbfc}"
     ".itbl a{color:#1d72b4;text-decoration:none}"
     ".itbl .notin{color:#999}"
     ".tblwrap{overflow-x:auto;margin:8px 0;-webkit-overflow-scrolling:touch}"
+    # ตาราง win%-ladder (N=1..max คอลัมน์) — มือถือจอแคบเลื่อนแนวนอนหาง่ายยาก (research 2025: UX
+    # Movement/Tenscope) → พลิกแต่ละแถวเป็นการ์ดแนวตั้ง label:value แทน ไม่เสียข้อมูลแม้แต่คอลัมน์เดียว
+    "@media (max-width:480px){"
+    ".itbl.wr{border:0}"
+    ".itbl.wr tr:first-child{display:none}"
+    ".itbl.wr,.itbl.wr tbody,.itbl.wr tr,.itbl.wr td{display:block;width:100%;text-align:left}"
+    ".itbl.wr tr{margin:0 0 10px;padding:8px 10px;background:#fafbfc;border-radius:10px;border:1px solid #eee}"
+    ".itbl.wr td{display:flex;justify-content:space-between;padding:3px 0;border-bottom:0;white-space:normal}"
+    ".itbl.wr td::before{content:attr(data-label);color:#888;font-weight:600;margin-right:8px}"
+    ".itbl.wr td:first-child{font-weight:700;color:#333;border-bottom:1px solid #eee;margin-bottom:4px;padding-bottom:6px}"
+    "}"
 )
 
 
@@ -447,10 +465,11 @@ def _render_winrate_table(wt):
     """ตารางโอกาสชนะตามจำนวนผู้ยื่น N=1..max เต็ม (เดิม 3 คอลัมน์ mean±SD)."""
     ns, rows = wt["ns"], wt["rows"]
     out = [f"<div class=\"bidhead\">💵 โอกาสชนะตามจำนวนผู้ยื่น (งบ {wt['budget']:,.0f})</div>",
-           "<div class=\"tblwrap\"><table class=\"itbl\"><tr><th>ราคายื่น</th>"
+           "<div class=\"tblwrap\"><table class=\"itbl wr\"><tr><th>ราคายื่น</th>"
            + "".join(f"<th>{k} ราย</th>" for k in ns) + "</tr>"]
     for price, ws in rows:
-        out.append(f"<tr><td>{price:,.0f}</td>" + "".join(f"<td>{w}%</td>" for w in ws) + "</tr>")
+        out.append(f"<tr><td data-label=\"ราคายื่น\">{price:,.0f}</td>"
+                  + "".join(f"<td data-label=\"{k} ราย\">{w}%</td>" for k, w in zip(ns, ws)) + "</tr>")
     out.append("</table></div>")
     sd_txt = f" (±{round(wt['n_sd'])})" if len(ns) > 1 else ""
     out.append(f"<div class=\"meta\">📊 สนามนี้เฉลี่ย {round(wt['n_mean'])} ผู้ยื่น{sd_txt} "
@@ -483,7 +502,7 @@ def render_job_page(data, token, exp, notes=None, overview="", starred=False):
         if cd:
             b.append(f"<div class=\"cd\">⏳ {cd}</div>")
     if j.get("pred_lo") and j.get("pred_hi"):
-        b.append(f"<div class=\"meta\">💵 คาดราคา {_baht(j['pred_lo'])}–{_baht(j['pred_hi'])} บาท</div>")
+        b.append(f"<div class=\"feature\">💵 คาดราคา {_baht(j['pred_lo'])}–{_baht(j['pred_hi'])} บาท</div>")
     if data.get("intel_lines"):
         b.append("<div class=\"bidhead\">📊 วิเคราะห์ราคา & คู่แข่งในพื้นที่</div>")
         for line in data["intel_lines"]:

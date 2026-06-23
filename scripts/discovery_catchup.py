@@ -120,24 +120,47 @@ def main() -> int:
     else:
         print(f"catchup: ไม่พลาด discovery slot (last_ok={int(now-last_ok)}s ago)")
 
-    # 3) full sweep slots (per-province) — พลาดไหม? (safety net catch-up)
-    for moi, slots in FULL_SLOTS_UTC.items():
+    # 3) full sweep slots (per-province) — safety net catch-up (quiet retry)
+    # full sweep จบ partial เพราะ rate limit = เรื่องปกติ (single-province paginate > budget/window).
+    # ไม่ใช่ 'พลาด' → ไม่เด้ง Discord ตอน retry ปกติ. retry เงียบให้ครบ + throttle กัน spam.
+    # alert เฉพาะกรณีเดียว: retry แล้ว 'ยัง partial ซ้ำ' = rate budget ตันจริง. ดู memory project_discovery_nodata_waf_turnstile
+    def _read_marker(moi):
         fm = _load(os.path.join(DATA, f"last_fullsweep_{moi}.json"))
-        last_full = _iso_to_epoch(fm.get("ts", "")) if fm else 0.0
+        ts = _iso_to_epoch(fm.get("ts", "")) if fm else 0.0
+        partial = bool(fm.get("partial")) if fm else False
+        return ts, partial
+
+    for moi, slots in FULL_SLOTS_UTC.items():
+        name = PROV_NAME.get(moi, moi)
+        last_full, is_partial = _read_marker(moi)
         fslot = _most_recent_slot_hm(now_dt, slots)
-        if fslot == 0 or last_full >= fslot - SLACK_SEC:
-            print(f"catchup: ไม่พลาด full sweep {PROV_NAME.get(moi, moi)}")
+        if fslot == 0:
             continue
+        # slot สำเร็จครบแล้ว (complete marker) → ไม่ต้องทำอะไร
+        if last_full >= fslot - SLACK_SEC and not is_partial:
+            print(f"catchup: ไม่พลาด full sweep {name} (complete)")
+            continue
+        # throttle: เพิ่ง attempt slot นี้ไม่นาน (partial) → skip เงียบ กัน spam/ซ้ำเติม rate limit
+        if last_full >= fslot - SLACK_SEC and is_partial and (now - last_full) < CATCHUP_RETRY_SEC:
+            print(f"catchup: full sweep {name} เพิ่ง attempt {int(now-last_full)}s (partial) — skip throttle")
+            continue
+        # ต้องรัน: timer ยังไม่รัน slot นี้ หรือ partial เกิน retry window → retry 'เงียบ' (ไม่เด้ง 'พลาด')
         if ran_heavy:
             print(f"catchup: cooldown {COOLDOWN_FULL}s ก่อน full sweep (กัน rate limit)")
             time.sleep(COOLDOWN_FULL)
         thai = (datetime.fromtimestamp(fslot, timezone.utc) + timedelta(hours=7)).strftime("%H:%M")
-        print(f"catchup: 🔄 พลาด full sweep {PROV_NAME.get(moi, moi)} slot {thai} → รัน --full --moi {moi}")
-        _discord(f"🔄 BMS catch-up: พลาด full sweep {PROV_NAME.get(moi, moi)} รอบ {thai} → รันให้ทันที")
+        print(f"catchup: 🔄 full sweep {name} slot {thai} ยังไม่ครบ → retry เงียบ --full --moi {moi}")
         r = subprocess.run([PY, script, "--worker", "--ingest", "--full", "--moi", moi],
                            cwd="/opt/bms/app", env=base_env)
-        print(f"catchup: full sweep {PROV_NAME.get(moi, moi)} exit={r.returncode}")
+        print(f"catchup: full sweep {name} exit={r.returncode}")
         ran_heavy = True
+        # recheck marker หลัง retry — ครบ=เงียบ / ยัง partial ซ้ำ=เด้ง alert (rate budget ตันจริง)
+        ts2, partial2 = _read_marker(moi)
+        if ts2 >= fslot - SLACK_SEC and not partial2:
+            print(f"catchup: ✅ full sweep {name} ครบหลัง retry (เงียบ ไม่เด้ง)")
+        else:
+            _discord(f"⚠️ BMS: full sweep {name} รอบ {thai} ยัง partial หลัง retry "
+                     f"(ชน rate limit ซ้ำ — ดู rate budget/pagination)")
 
     return 0
 

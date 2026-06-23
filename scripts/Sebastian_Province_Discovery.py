@@ -522,15 +522,17 @@ def main():
     if partial_abort:
         print("⚠️ partial sweep (ชน rate limit) — reconcile/ingest ทำกับจังหวัดที่ paginate ได้แล้ว")
 
-    # full sweep marker per-province (ให้ discovery_catchup รู้ว่า full รอบนี้สำเร็จครบ)
-    # เขียนเฉพาะ full + 1 จังหวัด + ครบ (ไม่ partial) → ถ้า partial/พลาด catchup จะ retry
-    if args.full and len(moi_ids) == 1 and args.ingest and not args.dry_run and not partial_abort:
+    # full sweep marker per-province — เขียนทุกรอบ (รวม partial) ติด flag `partial`
+    # catch-up ใช้แยก: complete=พอใจ slot / partial=เพิ่ง attempt (retry เงียบ + throttle ไม่เด้ง 'พลาด')
+    # ts update ทุกรอบ → เป็น attempt-time ให้ catch-up throttle กัน re-fire spam (root: single-province > rate budget/window)
+    if args.full and len(moi_ids) == 1 and args.ingest and not args.dry_run:
         try:
             fmpath = os.path.join(os.environ.get("BMS_DATA_DIR", "/opt/bms/data"),
                                   f"last_fullsweep_{moi_ids[0]}.json")
             with open(fmpath, "w", encoding="utf-8") as f:
-                json.dump({"ts": _utc_now(), "moi": moi_ids[0]}, f, ensure_ascii=False)
-            print(f"📍 full sweep marker เขียนแล้ว: {moi_ids[0]}")
+                json.dump({"ts": _utc_now(), "moi": moi_ids[0], "partial": partial_abort},
+                          f, ensure_ascii=False)
+            print(f"📍 full sweep marker เขียนแล้ว: {moi_ids[0]} (partial={partial_abort})")
         except Exception:
             pass
 
@@ -544,7 +546,8 @@ def main():
                     + ("✅" if gap == 0 else "⚠️ ดู audit รายวัน"))
         _discord("\n".join([
             f"🔍 Full sweep {prov_f} จบ ({now_th_f})",
-            f"• scan เจอ: {len(active)} งาน",
+            f"• scan เจอ: {len(active)} งาน"
+            + (" ⚠️ partial (ชน rate limit — ไม่ครบ, catch-up เก็บตก)" if partial_abort else ""),
             f"• ประทับตรา Discovery: {marked} งาน (ใหม่ {ingested})",
             f"• {gap_line}",
         ]))

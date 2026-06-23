@@ -90,11 +90,12 @@ def job_detail(conn, pid, calc_params=None):
             intel_lines = intel_ctx["lines"]
             company_tables = intel_ctx.get("company_tables")
             winrate_table = intel_ctx.get("winrate_table")
-            if calc_params and intel_ctx.get("scope_rows") and company_tables:
-                fallback = company_tables[0]
+            if calc_params and company_tables:
                 custom_calc = cgd_intel.calc_custom_winrate(
-                    intel_ctx["scope_rows"],
-                    {"median": fallback.get("median"), "p25": fallback.get("p25"), "p75": fallback.get("p75")},
+                    conn, (ps["province"] if ps else "") or "",
+                    cgd_intel.match_keywords((ps["project_name"] if ps else "") or ""),
+                    (ps["project_name"] if ps else "") or "", dept_name,
+                    intel_ctx.get("amphoe"),
                     calc_params.get("my_price"), budget,
                     calc_params.get("selected_names") or [], calc_params.get("extra_names") or [])
     except Exception:
@@ -534,11 +535,12 @@ def _render_custom_calc_form(company_tables, custom_calc, prefill, tok, pid):
                    f"{custom_calc['overall_win_pct']}%</div>"
                    f"<div class=\"meta\">ราคาของคุณ = ลด {custom_calc['my_discount_pct']}%</div>")
         for b in custom_calc["breakdown"]:
-            hist_note = "" if b["has_history"] else " (ไม่มีประวัติเฉพาะบริษัทนี้ — ใช้ค่าเฉลี่ยพื้นที่แทน)"
-            out.append(f"<div class=\"crow\"><span>{_h.escape(b['name'])}{hist_note}</span>"
+            src = b.get("source") or ""
+            src_note = f" ({src})" if src else ""
+            out.append(f"<div class=\"crow\"><span>{_h.escape(b['name'])}{src_note}</span>"
                        f"<span>ชนะคุณ ~{b['win_pct_against']}%</span></div>")
-        out.append("<div class=\"note\">*อิงจากสถิติตอนที่บริษัทนั้นชนะในอดีต "
-                   "ไม่ใช่ทุกครั้งที่เขายื่นซอง</div></div>")
+        out.append("<div class=\"note\">*โอกาส% ประเมินจากนิสัยการยื่นราคาของคู่แข่งในงานประเภท+หน่วยงาน"
+                   "แบบเดียวกัน (โมเดล Gates) — เป็นการประมาณ ไม่ใช่การรับประกัน</div></div>")
     elif custom_calc is None and prefill.get("my_price"):
         out.append("<div class=\"msg\">เลือกคู่แข่งอย่างน้อย 1 บริษัท หรือกรอกราคาให้ถูกต้อง</div>")
     return "".join(out)

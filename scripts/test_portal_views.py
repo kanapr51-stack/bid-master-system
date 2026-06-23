@@ -267,28 +267,40 @@ print("OK job_detail_dept_name_passthrough")
 
 def test_job_detail_custom_calc():
     orig_ctx = cgd_intel.intel_context
+    orig_calc = cgd_intel.calc_custom_winrate
     cgd_intel.intel_context = lambda *a, **k: {
-        "lines": [], "company_tables": [{"label": "x", "n": 5, "conf_tag": "🟢 มั่นใจ",
-                                         "p25": 10.0, "p75": 20.0, "median": 15.0, "companies": []}],
-        "winrate_table": None,
-        "scope_rows": [{"winner": "หจก.A", "discount_pct": 12.0, "fiscal_year": "2568"}] * 3,
-    }
+        "lines": [], "amphoe": "นาทม",
+        "company_tables": [{"label": "x", "n": 5, "conf_tag": "🟢 มั่นใจ",
+                            "p25": 10.0, "p75": 20.0, "median": 15.0,
+                            "companies": [{"name": "หจก.A", "tin": "1", "games": 3, "median": 12.0,
+                                           "p25": 10.0, "p75": 15.0, "project_ids": ["K0"]}]}],
+        "winrate_table": None, "scope_rows": [], }
+    captured = {}
+    def fake_calc(conn, province, tokens, project_name, dept_name, district,
+                  my_price, budget, selected_names, extra_names):
+        captured.update(province=province, tokens=tokens, district=district,
+                        my_price=my_price, selected=selected_names)
+        return {"my_discount_pct": 10.0, "overall_win_pct": 55, "breakdown": []}
+    cgd_intel.calc_custom_winrate = fake_calc
     try:
         c = _seed()
         d = pv.job_detail(c, "69010000001",
                           calc_params={"my_price": "900000", "selected_names": ["หจก.A"], "extra_names": []})
-        assert d["custom_calc"] is not None, d
-        assert "overall_win_pct" in d["custom_calc"], d["custom_calc"]
-        # ไม่ส่ง calc_params → ไม่คำนวณ ไม่พัง
+        assert d["custom_calc"] == {"my_discount_pct": 10.0, "overall_win_pct": 55, "breakdown": []}, d
+        # job_detail ส่ง args ถูก: district จาก intel_ctx amphoe, my_price/selected จาก calc_params
+        assert captured["district"] == "นาทม" and captured["my_price"] == "900000", captured
+        assert captured["selected"] == ["หจก.A"], captured
+        # ไม่ส่ง calc_params → ไม่เรียก calc, custom_calc None
         d2 = pv.job_detail(c, "69010000001")
         assert d2["custom_calc"] is None, d2
-        # ส่ง calc_params แต่ intel_context คืน None → graceful, ไม่ throw
+        # intel_context None → graceful, ไม่ throw
         cgd_intel.intel_context = lambda *a, **k: None
         d3 = pv.job_detail(c, "69010000001",
                           calc_params={"my_price": "900000", "selected_names": ["หจก.A"], "extra_names": []})
         assert d3["custom_calc"] is None, d3
     finally:
         cgd_intel.intel_context = orig_ctx
+        cgd_intel.calc_custom_winrate = orig_calc
     print("OK job_detail_custom_calc")
 
 
@@ -358,11 +370,13 @@ assert 'name="extra_names"' in html_form, html_form                          # t
 assert "คำนวณโอกาสชนะ" in html_form, html_form
 
 data_calc["custom_calc"] = {"my_discount_pct": 15.0, "overall_win_pct": 62,
-                            "breakdown": [{"name": "หจก.A", "win_pct_against": 74, "median": 14.0,
-                                          "p25": 10.0, "p75": 18.0, "has_history": True}]}
+                            "breakdown": [{"name": "หจก.A", "win_pct_against": 30,
+                                           "source": "ตรงงาน+หน่วยงาน 12 ครั้ง", "has_history": True}]}
 html_result = pv.render_job_page(data_calc, "tok", 0)
-assert "62%" in html_result and "74%" in html_result, html_result
-assert "อิงจากสถิติตอนที่บริษัทนั้นชนะในอดีต" in html_result, html_result   # disclaimer ต้องมีเสมอ
+assert "โอกาสชนะของคุณรวม: 62%" in html_result, html_result
+assert "หจก.A" in html_result and "ชนะคุณ ~30%" in html_result, html_result
+assert "ตรงงาน+หน่วยงาน 12 ครั้ง" in html_result, html_result          # ป้าย source ต่อราย
+assert "โมเดล Gates" in html_result, html_result                       # disclaimer ใหม่
 print("OK render_job_page_custom_calc_form")
 
 # --- area_portfolio + render_company_page area section (N+161 highlight area-of-origin jobs) ---

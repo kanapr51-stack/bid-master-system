@@ -112,6 +112,16 @@ def poll_winners(store, resolve_result, now: str = None, log=print,
                 except Exception as e:
                     log(f"  verify {pid} error: {type(e).__name__}: {e}")
             meta = names.get(pid, {})
+            # ป้อน cgd_winners ทันที (แข่งจริง ≥2 ราย + budget>0) → เครื่องคิด Win% เห็นงาน awarded สด
+            # ไม่ต้องรอ CGD open-data sync (ช้าเป็นเดือน). เฉพาะเจาะจง 1 ราย ข้าม (ไม่ใช่งานแข่ง)
+            if len(res["bidders"]) >= 2 and meta.get("budget"):
+                try:
+                    store.upsert_cgd_winner(pid, meta.get("province", ""),
+                                            meta.get("project_name", ""), meta.get("budget"),
+                                            res.get("winner"), res.get("winning_price"),
+                                            res.get("announce_date", ""))
+                except Exception as e:
+                    log(f"  cgd_winner upsert {pid} error: {type(e).__name__}: {e}")
             for f in fs:
                 cid = f["customer_id"]
                 if mode == "live":

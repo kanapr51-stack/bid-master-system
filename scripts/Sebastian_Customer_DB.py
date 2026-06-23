@@ -1037,6 +1037,37 @@ class SubscriptionStore:
                 n += 1
         return n
 
+    def upsert_cgd_winner(self, project_id, province, project_name, budget, winner,
+                          win_price, announce_date="", fiscal_year=None,
+                          proc_type="ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)") -> bool:
+        """upsert cgd_winners 1 แถวจาก winner-poller (งานติดตามที่ award จริงแล้ว) → ป้อนเครื่องคิด
+        Win% ทันที ไม่ต้องรอ CGD open-data sync (ช้าเป็นเดือน). winner_tin=None (เพี้ยน ~99% N+157 →
+        join ด้วยชื่อ normalized). คืน False ถ้า budget/win_price ใช้ไม่ได้ (ไม่เขียน). idempotent ตาม
+        project_id. caller ต้องการันตี 'แข่งจริง + มีผู้ชนะ' (bidders≥2 + priceAgree) ก่อนเรียก."""
+        import portal_views as _pv
+        try:
+            bud = float(budget) if budget else 0
+            wp = float(win_price) if win_price not in (None, "") else None
+        except (TypeError, ValueError):
+            return False
+        if bud <= 0 or wp is None or wp <= 0:
+            return False
+        disc = round((bud - wp) / bud * 100, 2)
+        if fiscal_year is None:
+            from datetime import date
+            fiscal_year = str(date.today().year + 543)
+        with get_connection() as conn:
+            conn.execute("""
+                INSERT OR REPLACE INTO cgd_winners
+                  (project_id, province, dept, project_name, winner, winner_tin, budget,
+                   win_price, discount_pct, announce_date, fiscal_year, proc_type, district,
+                   subdistrict, synced_at, normalized_winner)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            """, (project_id, province or "", "", project_name or "", winner or "", None,
+                  int(bud), int(wp), disc, announce_date or "", fiscal_year, proc_type,
+                  None, None, _now(), _pv._norm_name(winner)))
+        return True
+
     def get_bid_results(self, project_id: str) -> list[dict]:
         with get_connection() as conn:
             conn.row_factory = sqlite3.Row

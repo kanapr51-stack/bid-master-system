@@ -95,4 +95,47 @@ def test_capture_bidders_at_prelim():
 
 
 test_capture_bidders_at_prelim()
+
+
+def test_cgd_winners_upsert_on_award():
+    """winner-poller ตอน award (แข่งจริง ≥2 ราย + budget>0) → upsert cgd_winners ป้อนเครื่องคิด Win%
+    ทันที. งานเฉพาะเจาะจง (1 ราย) ไม่เขียน."""
+    s2 = db.SubscriptionStore()
+    cid = s2.add_customer("U2", "แม่")
+    with db.get_connection() as conn:
+        conn.execute("INSERT INTO projects_seen (project_id,announce_type,province,source,first_seen_at,project_name,budget) "
+                     "VALUES (?,?,?,?,?,?,?)", ("AW1", "D0", "นครพนม", "province_api", "2026-05-01",
+                     "ก่อสร้างถนนคอนกรีตเสริมเหล็ก องค์การบริหารส่วนตำบลนาทม", 1000000))
+        conn.execute("INSERT INTO projects_seen (project_id,announce_type,province,source,first_seen_at,project_name,budget) "
+                     "VALUES (?,?,?,?,?,?,?)", ("AW2", "D0", "นครพนม", "province_api", "2026-05-01",
+                     "จัดซื้อเฉพาะเจาะจง", 500000))
+    s2.add_follow(cid, "AW1", "D0", "2026-06-01T00:00:00"); s2.mark_stage_notified(cid, "AW1", "D0")
+    s2.add_follow(cid, "AW2", "D0", "2026-06-01T00:00:00"); s2.mark_stage_notified(cid, "AW2", "D0")
+
+    def fake(pid):
+        if pid == "AW1":   # แข่งจริง 2 ราย มีผู้ชนะ
+            return {"winner": "หจก.ชนะ", "winning_price": "800000", "announce_date": "2026-06-20",
+                    "bidders": [{"receiveNameTh": "หจก.ชนะ", "receiveTin": "1", "priceProposal": "800000", "priceAgree": "800000"},
+                                {"receiveNameTh": "หจก.แพ้", "receiveTin": "2", "priceProposal": "900000", "priceAgree": ""}]}
+        if pid == "AW2":   # เฉพาะเจาะจง 1 ราย
+            return {"winner": "ผู้ขายเดียว", "winning_price": "495000", "announce_date": "2026-06-20",
+                    "bidders": [{"receiveNameTh": "ผู้ขายเดียว", "receiveTin": "9", "priceProposal": "495000", "priceAgree": "495000"}]}
+        return {}
+    wp.poll_winners(s2, fake, now="2026-06-21T00:00:00", log=lambda m: None, max_days=60)
+
+    with db.get_connection() as c:
+        row = c.execute("SELECT province,project_name,budget,winner,win_price,discount_pct,proc_type,"
+                        "fiscal_year,normalized_winner FROM cgd_winners WHERE project_id='AW1'").fetchone()
+    assert row is not None, "งานแข่ง(2+ราย)+ผู้ชนะ → ต้องเขียน cgd_winners"
+    assert row[2] == 1000000 and row[3] == "หจก.ชนะ" and row[4] == 800000, row
+    assert abs(row[5] - 20.0) < 0.01, row          # (1M-800k)/1M = 20%
+    assert "e-bidding" in (row[6] or ""), row[6]    # proc_type ใน COMPETITIVE_SET
+    assert row[8], "normalized_winner ต้องถูกเซ็ต (ใช้ join ชื่อในเครื่องคิด)"
+    with db.get_connection() as c:
+        assert c.execute("SELECT COUNT(*) FROM cgd_winners WHERE project_id='AW2'").fetchone()[0] == 0, \
+            "เฉพาะเจาะจง 1 ราย → ไม่เขียน cgd_winners"
+    print("✅ PASS cgd_winners upsert on award (competitive only)")
+
+
+test_cgd_winners_upsert_on_award()
 print("ALL PASS winner poller")

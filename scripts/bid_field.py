@@ -5,7 +5,7 @@ import sqlite3, sys, os, math, logging, json, time
 from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(__file__))
-from cgd_intel import COMPETITIVE_SET, recency_weight
+from cgd_intel import COMPETITIVE_SET, recency_weight, road_subtype, water_subtype, agency_market
 
 _log = logging.getLogger(__name__)
 
@@ -15,6 +15,7 @@ LEADER_WIN_RATE = 0.40  # ชนะ ≥ 40% ของที่ลง (สุ่�
 DISC_MAX = 60.0         # ตัด outlier disc (unit-price เพี้ยน)
 ESS_FLOOR = 6          # effective sample (weighted) ขั้นต่ำ — bootstrap (ขยับ 8/10 เมื่อ backfill โต = B″)
 MIN_N_AUCTIONS = 3     # local auctions ขั้นต่ำที่จะเชื่อ n centering (2 → variance ไร้ความหมาย)
+MIN_OWN_BIDS = 5       # จำนวนแถวดิบขั้นต่ำต่อชั้น ก่อนเชื่อประวัติบริษัทเอง (gate นับดิบ ไม่ใช่ ESS — spec §4.2)
 
 
 def _median(xs):
@@ -354,3 +355,74 @@ def field_and_winrate(conn, province, tokens, budget, subdistrict=None, district
                                attempts[2] if len(attempts) > 2 else [], grid, conf, basis)
     fl = field_lines(analyze_field(local_auc), budget, scope_label)
     return grid, fl, conf
+
+
+def _pooled_dist(conn, province, tokens, subdistrict=None, district=None):
+    """สนามทั่วไป — แบน _field_auctions เป็น [(discount, recency_weight)]. graceful []."""
+    auc = _field_auctions(conn, province, tokens, subdistrict=subdistrict, district=district)
+    return [(bid[1], recency_weight(bid[3] if len(bid) > 3 else None)) for a in auc for bid in a]
+
+
+def _company_bid_dist(conn, name, this_subtype, this_market, min_bids=MIN_OWN_BIDS):
+    """ประวัติยื่นจริงของบริษัท (all-bids) เลือกชั้นเจาะจงสุดที่จำนวนดิบ ≥ min_bids:
+    ชั้น1 subtype+agency → ชั้น2 subtype → ชั้น3 ทุกงาน. ทุกชั้นบาง → (None,'pooled').
+    gate = จำนวนดิบ (spec §4.2 — recency ใช้ในการคิด P เท่านั้น ไม่ใช่เกณฑ์ตกชั้น)."""
+    import portal_views as _pv
+    core = _pv._norm_name(name)
+    if not core:
+        return None, "pooled"
+    pt = ",".join("?" for _ in COMPETITIVE_SET)
+    sql = ("SELECT b.price_proposal, cw.budget, cw.project_name, cw.fiscal_year "
+           "FROM bid_results b JOIN cgd_winners cw ON cw.project_id=b.project_id "
+           f"WHERE b.normalized_name=? AND cw.proc_type IN ({pt}) "
+           "AND cw.budget>0 AND CAST(b.price_proposal AS REAL)>0")
+    try:
+        rows = conn.execute(sql, (core, *COMPETITIVE_SET)).fetchall()
+    except sqlite3.DatabaseError:
+        return None, "pooled"
+    tagged = []                                    # (discount, weight, subtype, market)
+    for pp, budget, pname, fy in rows:
+        try:
+            bid = float(pp); bud = float(budget)
+        except (TypeError, ValueError):
+            continue
+        if bid <= 0 or bud <= 0:
+            continue
+        disc = (bud - bid) / bud * 100.0
+        if disc < 0 or disc > DISC_MAX:
+            continue
+        st = road_subtype(pname) or water_subtype(pname)
+        tagged.append((disc, recency_weight(fy), st, agency_market(pname)))
+    layers = []                                    # (label, predicate) เรียงเจาะจง→กว้าง
+    if this_subtype and this_market:
+        layers.append(("ตรงงาน+หน่วยงาน", lambda st, mk: st == this_subtype and mk == this_market))
+    if this_subtype:
+        layers.append(("ตรงประเภทงาน", lambda st, mk: st == this_subtype))
+    if this_market and not this_subtype:
+        layers.append(("ตรงหน่วยงาน", lambda st, mk: mk == this_market))
+    layers.append(("ทุกประเภทงาน", lambda st, mk: True))
+    for label, pred in layers:
+        d = [(disc, w) for disc, w, st, mk in tagged if pred(st, mk)]
+        if len(d) >= min_bids:
+            return d, f"{label} {len(d)} ครั้ง"
+    return None, "pooled"
+
+
+def gates_winrate(probs):
+    """Gates (1967) combine: P_win = 1/(1+Σ(1−Pi)/Pi). แก้ Friedman collapse (∏Pi → 0 เมื่อคนเยอะ).
+    probs=[Pi] (โอกาสเราชนะคู่แข่งแต่ละราย, ควร clamp (0,1) มาแล้ว). ตัด None ทิ้ง. ว่าง → None."""
+    ps = [p for p in probs if p is not None]
+    if not ps:
+        return None
+    s = sum((1.0 - p) / p for p in ps)
+    return 1.0 / (1.0 + s)
+
+
+def p_beat(dist, my_discount):
+    """โอกาสเราชนะคู่แข่ง 1 ราย = สัดส่วนถ่วงน้ำหนักของ bids ที่ลด 'ตื้นกว่า' เรา (ราคาเขาสูงกว่า = เราชนะ).
+    dist=[(discount, weight)]. clamp [0.05,0.95] (กันมั่นใจเกินจริง). น้ำหนักรวม≤0 → None."""
+    tot = sum(w for _d, w in dist)
+    if tot <= 0:
+        return None
+    below = sum(w for d, w in dist if d < my_discount)
+    return max(0.05, min(0.95, below / tot))

@@ -109,4 +109,80 @@ def test_field_block_endtoend_and_gate():
     print("✅ field_and_winrate 2B block end-to-end + gate")
 
 test_field_block_endtoend_and_gate()
+
+def test_gates_winrate():
+    # fair-share property: ทุกคน P=0.5 → 1/(N+1)
+    assert abs(bf.gates_winrate([0.5, 0.5, 0.5]) - 0.25) < 1e-9, bf.gates_winrate([0.5,0.5,0.5])
+    # รายเดียว → P เอง
+    assert abs(bf.gates_winrate([0.9]) - 0.9) < 1e-9, bf.gates_winrate([0.9])
+    # ไม่ดิ่งศูนย์เท่า Friedman: 11 ราย @0.5 → Gates=1/12≈0.083 >> Friedman 0.5^11≈0.00049
+    g = bf.gates_winrate([0.5] * 11)
+    assert abs(g - 1/12) < 1e-9 and g > 0.5**11 * 100, g
+    # ว่าง / None ล้วน → None
+    assert bf.gates_winrate([]) is None
+    assert bf.gates_winrate([None, None]) is None
+    # ตัด None ทิ้งก่อนคิด
+    assert abs(bf.gates_winrate([0.9, None]) - 0.9) < 1e-9, bf.gates_winrate([0.9, None])
+    print("✅ gates_winrate (fair-share / single / no-collapse / empty)")
+
+def test_p_beat():
+    # ลด 30% → ชนะคนที่ลด 10,20 (2/3) ไม่ชนะคนลด 40
+    d = [(10.0, 1.0), (20.0, 1.0), (40.0, 1.0)]
+    assert abs(bf.p_beat(d, 30.0) - 2/3) < 1e-9, bf.p_beat(d, 30.0)
+    # clamp สูง: ลดลึกกว่าทุกคน → 1.0 → 0.95
+    assert bf.p_beat([(10.0,1.0),(20.0,1.0)], 50.0) == 0.95
+    # clamp ต่ำ: ลดตื้นกว่าทุกคน → 0 → 0.05
+    assert bf.p_beat([(40.0,1.0),(50.0,1.0)], 10.0) == 0.05
+    # weight สำคัญ: bid ใหม่ (40, w=1.0) ถ่วงหนักกว่า bid เก่า (10, w=0.25) → P ต่ำ
+    assert abs(bf.p_beat([(10.0,0.25),(40.0,1.0)], 30.0) - 0.2) < 1e-9, bf.p_beat([(10.0,0.25),(40.0,1.0)],30.0)
+    # ว่าง / น้ำหนัก 0 → None
+    assert bf.p_beat([], 30.0) is None
+    assert bf.p_beat([(10.0, 0.0)], 30.0) is None
+    print("✅ p_beat (fraction / clamp / weighted / empty)")
+
+test_gates_winrate()
+test_p_beat()
+
+def test_pooled_and_company_dist():
+    import Sebastian_Customer_DB as db
+    db.init_schema()
+    s = db.SubscriptionStore()
+    # ชื่องาน encode subtype(concrete) + agency: local=อบต. / central=กรมทางหลวงชนบท
+    LOCAL = "ก่อสร้างถนนคอนกรีตเสริมเหล็ก สาย{0} องค์การบริหารส่วนตำบลนาทม อำเภอนาทม จังหวัดนครพนม"
+    CENTRAL = "ก่อสร้างถนนคอนกรีตเสริมเหล็ก สาย{0} กรมทางหลวงชนบท จังหวัดนครพนม"
+    rows = []
+    for i in range(6):   # 6 งาน concrete+local (อบต.)
+        rows.append((f"L{i}", "นครพนม", "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)", LOCAL.format(i), 1000000, "2568"))
+    for i in range(4):   # 4 งาน concrete+central (กรม) — agency ต่าง
+        rows.append((f"C{i}", "นครพนม", "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)", CENTRAL.format(i), 1000000, "2568"))
+    with db.get_connection() as conn:
+        conn.executemany(
+            "INSERT OR REPLACE INTO cgd_winners (project_id,province,proc_type,project_name,budget,fiscal_year) "
+            "VALUES (?,?,?,?,?,?)", rows)
+    # หจก.ครบ: ยื่นครบ 6 local → ผ่านชั้น1 (subtype+agency). ลด 20% (800k/1M)
+    for i in range(6):
+        s.record_bid_results(f"L{i}", [{"receiveNameTh": "หจก.ครบ", "receiveTin": "1", "priceProposal": "800000"}])
+    # หจก.ตก: ยื่น 3 local + 4 central → local=3(<5 ตกชั้น1) แต่ concrete รวม 7 → ผ่านชั้น2 (subtype)
+    for i in range(3):
+        s.record_bid_results(f"L{i}", [{"receiveNameTh": "หจก.ตก", "receiveTin": "2", "priceProposal": "850000"}])
+    for i in range(4):
+        s.record_bid_results(f"C{i}", [{"receiveNameTh": "หจก.ตก", "receiveTin": "2", "priceProposal": "850000"}])
+    with db.get_connection() as conn:
+        # pooled: สนามถนน นครพนม → ต้องมี bids
+        pooled = bf._pooled_dist(conn, "นครพนม", ["ถนน"])
+        assert len(pooled) > 0 and all(len(t) == 2 for t in pooled), pooled
+        # หจก.ครบ → ชั้น 1 (subtype+agency), label มีจำนวน
+        dist1, lab1 = bf._company_bid_dist(conn, "หจก.ครบ", "concrete", "local")
+        assert dist1 is not None and "หน่วยงาน" in lab1, (lab1, len(dist1 or []))
+        assert len(dist1) == 6, dist1
+        # หจก.ตก → concrete+local=3 <5 → ตกมาชั้น 2 (subtype only) = 7
+        dist2, lab2 = bf._company_bid_dist(conn, "หจก.ตก", "concrete", "local")
+        assert dist2 is not None and len(dist2) == 7, (lab2, len(dist2 or []))
+        assert "ประเภทงาน" in lab2, lab2
+        # ไม่มีประวัติ → (None, 'pooled')
+        d3, lab3 = bf._company_bid_dist(conn, "หจก.ไม่มีเลย", "concrete", "local")
+        assert d3 is None and lab3 == "pooled", (d3, lab3)
+    print("✅ _pooled_dist + _company_bid_dist (layered raw-count gate)")
+
+test_pooled_and_company_dist()
 print("ALL PASS bid_field")

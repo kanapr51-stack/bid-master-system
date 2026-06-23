@@ -280,9 +280,27 @@ git commit -m "feat(bid_field): add _pooled_dist + layered _company_bid_dist (pe
 - Produces: `calc_custom_winrate(conn, province, tokens, project_name, dept_name, district, my_price, budget, selected_names, extra_names) -> dict | None`
   คืน `{"my_discount_pct": float, "overall_win_pct": int, "breakdown": [{"name": str, "win_pct_against": int, "source": str, "has_history": bool}]}` หรือ `None`
 
+- [ ] **Step 0: แยก DB ของ test_cgd_intel.py ออกจาก prod (สำคัญ — กัน seed ลง bms_customers.db จริง)**
+
+`test_cgd_intel.py` ปัจจุบันไม่ตั้ง `BMS_DATA_DIR` → `Sebastian_Customer_DB` จะชี้ `data/bms_customers.db` จริง. แก้บรรทัด 2-4 (top imports) ให้ตั้ง temp dir **ก่อน** import ใดๆ ที่อาจ load `Sebastian_Customer_DB`:
+
+แทน:
+```python
+import os, sys, sqlite3, csv; from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent)); sys.stdout.reconfigure(encoding="utf-8")
+os.environ.setdefault("BMS_FOLLOW_SECRET", "test-secret-cgd-intel")
+```
+ด้วย:
+```python
+import os, sys, sqlite3, csv, tempfile; from pathlib import Path
+os.environ["BMS_DATA_DIR"] = tempfile.mkdtemp()   # isolate Sebastian_Customer_DB ออกจาก prod (seed ลง temp)
+sys.path.insert(0, str(Path(__file__).parent)); sys.stdout.reconfigure(encoding="utf-8")
+os.environ.setdefault("BMS_FOLLOW_SECRET", "test-secret-cgd-intel")
+```
+
 - [ ] **Step 1: แทน test เดิมใน `scripts/test_cgd_intel.py`**
 
-ลบ `_calc_fixture_rows` + test 5 ตัว (`test_calc_custom_winrate_*`, บรรทัด ~450-513) แล้วใส่แทน:
+ลบ `_calc_fixture_rows` + test 5 ตัว (`test_calc_custom_winrate_*`, บรรทัด ~450-513) แล้วใส่แทน (หมายเหตุ: ใช้ `db.get_connection()` ตัวเดียวกันทั้ง seed และเรียก calc — conn เดียว DB เดียว):
 
 ```python
 def _seed_calc_db():
@@ -309,7 +327,8 @@ def test_calc_custom_winrate_known_deep_competitor():
     with db.get_connection() as conn:
         # เราลด 30% (700k/1M). คู่แข่ง 'หจก.ลึก' ลด 35% บ่อย → เขามักชนะเรา → P(เราชนะ) ต่ำ
         out = ci.calc_custom_winrate(conn, "นครพนม", ["ถนน"],
-                                     "ก่อสร้างถนนคอนกรีตเสริมเหล็ก องค์การบริหารส่วนตำบลนาทม", "อบต.นาทม",
+                                     "ก่อสร้างถนนคอนกรีตเสริมเหล็ก องค์การบริหารส่วนตำบลนาทม",
+                                     "องค์การบริหารส่วนตำบลนาทม",
                                      "นาทม", my_price=700000, budget=1000000,
                                      selected_names=["หจก.ลึก"], extra_names=[])
     assert out is not None, out
@@ -325,7 +344,8 @@ def test_calc_custom_winrate_gates_no_collapse():
     extras = [f"บริษัทไม่รู้จัก {i}" for i in range(11)]
     with db.get_connection() as conn:
         out = ci.calc_custom_winrate(conn, "นครพนม", ["ถนน"],
-                                     "ก่อสร้างถนนคอนกรีตเสริมเหล็ก องค์การบริหารส่วนตำบลนาทม", "อบต.นาทม",
+                                     "ก่อสร้างถนนคอนกรีตเสริมเหล็ก องค์การบริหารส่วนตำบลนาทม",
+                                     "องค์การบริหารส่วนตำบลนาทม",
                                      "นาทม", my_price=650000, budget=1000000,   # ลด 35% (ลึก)
                                      selected_names=[], extra_names=extras)
     assert out is not None, out
@@ -483,11 +503,11 @@ git commit -m "feat(cgd_intel): rewrite calc_custom_winrate with Gates model + p
 
 - [ ] **Step 3: แก้ test ใน `scripts/test_portal_views.py`**
 
-(3a) `test_job_detail_custom_calc` (บรรทัด ~268): mock intel_context ต้องคืน `amphoe` + seed bid_results ให้ "หจก.A" มีประวัติ. แทนฟังก์ชันด้วย:
+(3a) `test_job_detail_custom_calc` (บรรทัด ~268): นี่เป็น **wiring test** — ตรวจว่า `job_detail` ส่ง args ถูกตัวให้ `calc_custom_winrate` แล้วแนบผลเข้า `data["custom_calc"]`. **ห้าม** seed Sebastian DB จริง เพราะ `job_detail` รัน calc บน conn in-memory `c` (จาก `_seed()`) ไม่ใช่ไฟล์ DB — mismatch. ใช้ monkeypatch `calc_custom_winrate` แทน. การคิดเลขจริง end-to-end ครอบคลุมแล้วใน Task 3. แทนฟังก์ชันด้วย:
 ```python
 def test_job_detail_custom_calc():
-    import Sebastian_Customer_DB as dbm
     orig_ctx = cgd_intel.intel_context
+    orig_calc = cgd_intel.calc_custom_winrate
     cgd_intel.intel_context = lambda *a, **k: {
         "lines": [], "amphoe": "นาทม",
         "company_tables": [{"label": "x", "n": 5, "conf_tag": "🟢 มั่นใจ",
@@ -495,29 +515,32 @@ def test_job_detail_custom_calc():
                             "companies": [{"name": "หจก.A", "tin": "1", "games": 3, "median": 12.0,
                                            "p25": 10.0, "p75": 15.0, "project_ids": ["K0"]}]}],
         "winrate_table": None, "scope_rows": [], }
+    captured = {}
+    def fake_calc(conn, province, tokens, project_name, dept_name, district,
+                  my_price, budget, selected_names, extra_names):
+        captured.update(province=province, tokens=tokens, district=district,
+                        my_price=my_price, selected=selected_names)
+        return {"my_discount_pct": 10.0, "overall_win_pct": 55, "breakdown": []}
+    cgd_intel.calc_custom_winrate = fake_calc
     try:
         c = _seed()
-        # seed ประวัติ "หจก.A" ในสนามถนนคอนกรีต อบต. ให้ p_beat คิดได้
-        dbm.init_schema()
-        s = dbm.SubscriptionStore()
-        nm = "ก่อสร้างถนนคอนกรีตเสริมเหล็ก สาย{0} องค์การบริหารส่วนตำบลนาทม จังหวัดนครพนม"
-        with dbm.get_connection() as cc:
-            cc.executemany("INSERT OR REPLACE INTO cgd_winners (project_id,province,proc_type,project_name,budget,fiscal_year) VALUES (?,?,?,?,?,?)",
-                           [(f"K{i}", "นครพนม", "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)", nm.format(i), 1000000, "2568") for i in range(6)])
-        for i in range(6):
-            s.record_bid_results(f"K{i}", [{"receiveNameTh": "หจก.A", "receiveTin": "1", "priceProposal": "880000"}])
         d = pv.job_detail(c, "69010000001",
                           calc_params={"my_price": "900000", "selected_names": ["หจก.A"], "extra_names": []})
-        assert d["custom_calc"] is not None, d
-        assert "overall_win_pct" in d["custom_calc"], d["custom_calc"]
+        assert d["custom_calc"] == {"my_discount_pct": 10.0, "overall_win_pct": 55, "breakdown": []}, d
+        # job_detail ส่ง args ถูก: district จาก intel_ctx amphoe, my_price/selected จาก calc_params
+        assert captured["district"] == "นาทม" and captured["my_price"] == "900000", captured
+        assert captured["selected"] == ["หจก.A"], captured
+        # ไม่ส่ง calc_params → ไม่เรียก calc, custom_calc None
         d2 = pv.job_detail(c, "69010000001")
         assert d2["custom_calc"] is None, d2
+        # intel_context None → graceful, ไม่ throw
         cgd_intel.intel_context = lambda *a, **k: None
         d3 = pv.job_detail(c, "69010000001",
                           calc_params={"my_price": "900000", "selected_names": ["หจก.A"], "extra_names": []})
         assert d3["custom_calc"] is None, d3
     finally:
         cgd_intel.intel_context = orig_ctx
+        cgd_intel.calc_custom_winrate = orig_calc
     print("OK job_detail_custom_calc")
 ```
 

@@ -142,4 +142,47 @@ def test_p_beat():
 
 test_gates_winrate()
 test_p_beat()
+
+def test_pooled_and_company_dist():
+    import Sebastian_Customer_DB as db
+    db.init_schema()
+    s = db.SubscriptionStore()
+    # ชื่องาน encode subtype(concrete) + agency: local=อบต. / central=กรมทางหลวงชนบท
+    LOCAL = "ก่อสร้างถนนคอนกรีตเสริมเหล็ก สาย{0} องค์การบริหารส่วนตำบลนาทม อำเภอนาทม จังหวัดนครพนม"
+    CENTRAL = "ก่อสร้างถนนคอนกรีตเสริมเหล็ก สาย{0} กรมทางหลวงชนบท จังหวัดนครพนม"
+    rows = []
+    for i in range(6):   # 6 งาน concrete+local (อบต.)
+        rows.append((f"L{i}", "นครพนม", "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)", LOCAL.format(i), 1000000, "2568"))
+    for i in range(4):   # 4 งาน concrete+central (กรม) — agency ต่าง
+        rows.append((f"C{i}", "นครพนม", "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)", CENTRAL.format(i), 1000000, "2568"))
+    with db.get_connection() as conn:
+        conn.executemany(
+            "INSERT OR REPLACE INTO cgd_winners (project_id,province,proc_type,project_name,budget,fiscal_year) "
+            "VALUES (?,?,?,?,?,?)", rows)
+    # หจก.ครบ: ยื่นครบ 6 local → ผ่านชั้น1 (subtype+agency). ลด 20% (800k/1M)
+    for i in range(6):
+        s.record_bid_results(f"L{i}", [{"receiveNameTh": "หจก.ครบ", "receiveTin": "1", "priceProposal": "800000"}])
+    # หจก.ตก: ยื่น 3 local + 4 central → local=3(<5 ตกชั้น1) แต่ concrete รวม 7 → ผ่านชั้น2 (subtype)
+    for i in range(3):
+        s.record_bid_results(f"L{i}", [{"receiveNameTh": "หจก.ตก", "receiveTin": "2", "priceProposal": "850000"}])
+    for i in range(4):
+        s.record_bid_results(f"C{i}", [{"receiveNameTh": "หจก.ตก", "receiveTin": "2", "priceProposal": "850000"}])
+    with db.get_connection() as conn:
+        # pooled: สนามถนน นครพนม → ต้องมี bids
+        pooled = bf._pooled_dist(conn, "นครพนม", ["ถนน"])
+        assert len(pooled) > 0 and all(len(t) == 2 for t in pooled), pooled
+        # หจก.ครบ → ชั้น 1 (subtype+agency), label มีจำนวน
+        dist1, lab1 = bf._company_bid_dist(conn, "หจก.ครบ", "concrete", "local")
+        assert dist1 is not None and "หน่วยงาน" in lab1, (lab1, len(dist1 or []))
+        assert len(dist1) == 6, dist1
+        # หจก.ตก → concrete+local=3 <5 → ตกมาชั้น 2 (subtype only) = 7
+        dist2, lab2 = bf._company_bid_dist(conn, "หจก.ตก", "concrete", "local")
+        assert dist2 is not None and len(dist2) == 7, (lab2, len(dist2 or []))
+        assert "ประเภทงาน" in lab2, lab2
+        # ไม่มีประวัติ → (None, 'pooled')
+        d3, lab3 = bf._company_bid_dist(conn, "หจก.ไม่มีเลย", "concrete", "local")
+        assert d3 is None and lab3 == "pooled", (d3, lab3)
+    print("✅ _pooled_dist + _company_bid_dist (layered raw-count gate)")
+
+test_pooled_and_company_dist()
 print("ALL PASS bid_field")

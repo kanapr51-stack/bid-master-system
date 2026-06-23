@@ -37,11 +37,12 @@ def _method(project_name: str) -> str:
 
 
 def _category(project_name: str) -> str:
-    """หมวดงานหยาบจาก keyword ในชื่องาน."""
+    """หมวดงานหยาบจาก keyword ในชื่องาน. 'น้ำ' = ระบบน้ำจริงเท่านั้น (กัน 'ห้องน้ำ'/'ท่อระบายน้ำ'
+    ในอาคารหลุดเข้ามา → จับ keyword เฉพาะ ไม่ใช่ 'น้ำ' ห้วน)."""
     n = project_name or ""
     if "ถนน" in n or "ทางหลวง" in n:
         return "ถนน"
-    if "น้ำเสีย" in n or "ประปา" in n or "บำบัดน้ำ" in n or "น้ำ" in n:
+    if any(k in n for k in ("น้ำเสีย", "บำบัดน้ำ", "ประปา", "ชลประทาน", "ฝาย", "อ่างเก็บน้ำ", "ระบบน้ำ")):
         return "น้ำ"
     if "อาคาร" in n or "ซ่อมแซม" in n or "ปรับปรุง" in n or "ห้อง" in n or "โรงเรียน" in n:
         return "อาคาร"
@@ -56,29 +57,26 @@ def _num(x):
 
 
 def compute_profile(jobs: list) -> dict:
-    """สถิติเชิงลึกจาก jobs=[{pid,yr,prov,budget,agree,name,dept}] (pure). %ลด ตัด bad row (disc<0/>60)."""
+    """สถิติเชิงลึกจาก jobs=[{pid,yr,prov,budget,agree,name,dept}] (pure).
+    มูลค่า (total/by_category/max) คิดจาก 'แถว valid' เท่านั้น (budget>0, agree>0, 0≤%ลด≤60) —
+    ตัด bad row (ราคาตกลง>งบ = column-shift CGD ปีเก่า). count ต่อจังหวัด/วิธี = ทุกงาน."""
     n = len(jobs)
     base = {"total_wins": n, "total_value": 0.0, "year_min": None, "year_max": None,
             "by_year": {}, "by_province": {}, "home_province": None, "by_method": {},
             "by_category": {}, "competitive_disc": {"n": 0}, "direct_disc": {"n": 0},
-            "budget": {}, "bad_rows": 0, "jobs": jobs}
+            "budget": {}, "bad_rows": 0, "max_competitive": None, "max_direct": None,
+            "max_overall": None, "jobs": jobs}
     if n == 0:
         return base
-    base["total_value"] = sum(_num(j["agree"]) for j in jobs)
     yrs = [str(j["yr"]) for j in jobs if j.get("yr")]
     base["year_min"], base["year_max"] = (min(yrs), max(yrs)) if yrs else (None, None)
-    by_year = defaultdict(lambda: {"n": 0, "value": 0.0})
-    for j in jobs:
-        y = str(j.get("yr") or "?")
-        by_year[y]["n"] += 1
-        by_year[y]["value"] += _num(j["agree"])
-    base["by_year"] = {y: by_year[y] for y in sorted(by_year)}
     prov = Counter(j.get("prov") or "?" for j in jobs)
     base["by_province"] = dict(prov.most_common())
     base["home_province"] = prov.most_common(1)[0][0]
     base["by_method"] = dict(Counter(_method(j["name"]) for j in jobs))
-    base["by_category"] = dict(Counter(_category(j["name"]) for j in jobs))
-    comp, direct, bad = [], [], 0
+
+    # แยก valid (มูลค่าเชื่อถือได้) ออกจาก bad (column-shift)
+    valid, bad = [], 0
     for j in jobs:
         b, a = _num(j["budget"]), _num(j["agree"])
         if b <= 0 or a <= 0:
@@ -87,13 +85,42 @@ def compute_profile(jobs: list) -> dict:
         if disc < 0 or disc > DISC_MAX:
             bad += 1
             continue
-        (comp if _method(j["name"]) == "competitive" else direct).append(disc)
+        valid.append((j, b, a, disc))
     base["bad_rows"] = bad
+    base["total_value"] = sum(a for _j, _b, a, _d in valid)
+
+    by_year = defaultdict(lambda: {"n": 0, "value": 0.0})
+    for j, _b, a, _d in valid:
+        by_year[str(j.get("yr") or "?")]["n"] += 1
+        by_year[str(j.get("yr") or "?")]["value"] += a
+    base["by_year"] = {y: by_year[y] for y in sorted(by_year)}
+
+    cat = defaultdict(lambda: {"n": 0, "value": 0.0, "max": 0.0})
+    for j, _b, a, _d in valid:
+        c = cat[_category(j["name"])]
+        c["n"] += 1
+        c["value"] += a
+        c["max"] = max(c["max"], a)
+    base["by_category"] = {k: dict(v) for k, v in
+                           sorted(cat.items(), key=lambda x: -x[1]["value"])}
+
+    comp_d, direct_d = [], []
+    best = {"competitive": None, "direct": None, "overall": None}
+    for j, _b, a, disc in valid:
+        m = _method(j["name"])
+        (comp_d if m == "competitive" else direct_d).append(disc)
+        cand = {"value": int(a), "pid": j["pid"], "name": j["name"], "prov": j.get("prov"),
+                "yr": str(j.get("yr"))}
+        for key in ("overall", m):
+            if key in best and (best[key] is None or a > best[key]["value"]):
+                best[key] = cand
+    base["max_competitive"], base["max_direct"], base["max_overall"] = (
+        best["competitive"], best["direct"], best["overall"])
 
     def _stat(xs):
         return {"n": len(xs), "median": round(st.median(xs), 1), "min": round(min(xs), 1),
                 "max": round(max(xs), 1)} if xs else {"n": 0}
-    base["competitive_disc"], base["direct_disc"] = _stat(comp), _stat(direct)
+    base["competitive_disc"], base["direct_disc"] = _stat(comp_d), _stat(direct_d)
     buds = [_num(j["budget"]) for j in jobs if _num(j["budget"]) > 0]
     if buds:
         base["budget"] = {"min": int(min(buds)), "median": int(st.median(buds)), "max": int(max(buds))}
@@ -161,8 +188,17 @@ def format_report(name: str, profile: dict, calls: int = 0) -> str:
     bm = p["by_method"]
     out.append(f"วิธี: ประกวดราคา {bm.get('competitive',0)} · เฉพาะเจาะจง {bm.get('direct',0)} "
                f"· อื่นๆ {bm.get('other',0)}")
-    out.append("หมวดงาน: " + " · ".join(f"{k} {v}" for k, v in
-               sorted(p["by_category"].items(), key=lambda x: -x[1])))
+    out.append("📊 ประเภทงาน (จากงานข้อมูลครบ):")
+    out.append(f"   {'ประเภท':<8}{'จำนวน':>7}{'มูลค่ารวม':>16}{'สูงสุด':>15}")
+    for c, d in p["by_category"].items():
+        out.append(f"   {c:<8}{d['n']:>5} งาน{d['value']:>15,.0f}{d['max']:>15,.0f}")
+
+    def _mx(m):
+        return (f"{m['value']:,} บาท ({m['prov']} ปี{m['yr']})" if m else "—")
+    out.append("🏆 มูลค่าสูงสุด (ราคาตกลง):")
+    out.append(f"   บิดดิ้ง (e-bidding): {_mx(p['max_competitive'])}")
+    out.append(f"   เฉพาะเจาะจง:        {_mx(p['max_direct'])}")
+    out.append(f"   รวมทุกวิธี:         {_mx(p['max_overall'])}")
     cd = p["competitive_disc"]
     if cd["n"]:
         out.append(f"💸 ลดราคา (e-bidding แข่งจริง, n={cd['n']}): median {cd['median']}% "

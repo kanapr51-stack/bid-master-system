@@ -13,7 +13,7 @@ import cgd_api_client as cg
 
 DB = "data/winner_history.db"
 CKPT = "data/_wh_fetch_ckpt.json"
-PROVS = ["นครพนม", "บึงกาฬ", "สกลนคร"]
+PROVS = ["นครพนม", "บึงกาฬ", "สกลนคร", "อุดรธานี"]
 PAGE = 1000
 CALL_BUDGET = 700          # quota 1000/วัน, ใช้ไปบ้างแล้ว → buffer
 

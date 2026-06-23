@@ -1,5 +1,6 @@
 """test_cgd_intel.py — competitor-profile intel + location disambiguation (resolve→select→lines)."""
-import os, sys, sqlite3, csv; from pathlib import Path
+import os, sys, sqlite3, csv, tempfile; from pathlib import Path
+os.environ["BMS_DATA_DIR"] = tempfile.mkdtemp()   # isolate Sebastian_Customer_DB ออกจาก prod (seed ลง temp)
 sys.path.insert(0, str(Path(__file__).parent)); sys.stdout.reconfigure(encoding="utf-8")
 os.environ.setdefault("BMS_FOLLOW_SECRET", "test-secret-cgd-intel")
 import cgd_intel as ci
@@ -446,71 +447,72 @@ def test_wiring_format_notification():
     print("✅ wiring format_notification (D0 ทุก stage, ไม่มีบล็อก/ลิงก์ intel ฝังในข้อความ)")
 
 
-def _calc_fixture_rows():
-    """rows เหมือนรูปแบบที่ _fetch_scope คืน — มี 2 บริษัท: A (ลดลึก, สม่ำเสมอ) B (ลดน้อย)."""
-    rows = []
-    for d in (10.0, 12.0, 11.0, 9.0):
-        rows.append({"winner": "หจก.A", "discount_pct": d, "fiscal_year": "2568"})
-    for d in (25.0, 27.0, 26.0, 24.0):
-        rows.append({"winner": "หจก.B", "discount_pct": d, "fiscal_year": "2568"})
-    return rows
+def _seed_calc_db():
+    """seed สนามถนนคอนกรีต อบต.นครพนม + คู่แข่ง 1 รายมีประวัติลดลึก (หจก.ลึก)."""
+    import Sebastian_Customer_DB as db
+    db.init_schema()
+    s = db.SubscriptionStore()
+    LOCAL = "ก่อสร้างถนนคอนกรีตเสริมเหล็ก สาย{0} องค์การบริหารส่วนตำบลนาทม อำเภอนาทม จังหวัดนครพนม"
+    with db.get_connection() as conn:
+        conn.executemany(
+            "INSERT OR REPLACE INTO cgd_winners (project_id,province,proc_type,project_name,budget,fiscal_year) "
+            "VALUES (?,?,?,?,?,?)",
+            [(f"K{i}", "นครพนม", "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)", LOCAL.format(i), 1000000, "2568")
+             for i in range(8)])
+    # สนาม: หลายบริษัทลดตื้น ~10-15% (เป็น pooled baseline)
+    for i in range(8):
+        s.record_bid_results(f"K{i}", [
+            {"receiveNameTh": f"หจก.สนาม{i}", "receiveTin": str(100+i), "priceProposal": "880000"},
+            {"receiveNameTh": "หจก.ลึก", "receiveTin": "9", "priceProposal": "650000"}])  # ลึก ลด 35%
+    return db
 
-
-def test_calc_custom_winrate_basic():
-    rows = _calc_fixture_rows()
-    fallback = {"median": 15.0, "p25": 10.0, "p75": 20.0}
-    # budget 1,000,000 ราคาเรา 850,000 → ลด 15% — อยู่ระหว่าง A (median~10.5) กับ B (median~25.5)
-    out = ci.calc_custom_winrate(rows, fallback, my_price=850000, budget=1000000,
-                                 selected_names=["หจก.A"], extra_names=[])
+def test_calc_custom_winrate_known_deep_competitor():
+    db = _seed_calc_db()
+    with db.get_connection() as conn:
+        # เราลด 30% (700k/1M). คู่แข่ง 'หจก.ลึก' ลด 35% บ่อย → เขามักชนะเรา → P(เราชนะ) ต่ำ
+        out = ci.calc_custom_winrate(conn, "นครพนม", ["ถนน"],
+                                     "ก่อสร้างถนนคอนกรีตเสริมเหล็ก องค์การบริหารส่วนตำบลนาทม",
+                                     "องค์การบริหารส่วนตำบลนาทม",
+                                     "นาทม", my_price=700000, budget=1000000,
+                                     selected_names=["หจก.ลึก"], extra_names=[])
     assert out is not None, out
-    assert out["my_discount_pct"] == 15.0, out
-    assert len(out["breakdown"]) == 1
+    assert out["my_discount_pct"] == 30.0, out
     b = out["breakdown"][0]
-    assert b["name"] == "หจก.A" and b["has_history"] is True, b
-    assert b["median"] == 10.5, b   # _pct([9,10,11,12], 50) ของ A — ยืนยันด้วย python จริงก่อนเขียนแผน
-    # เราลด 15% ลึกกว่า p75 ของ A (11.25) → extrapolate เกินช่วง → clamp 95% (เราชนะสูง) A ชนะเราโอกาสต่ำ
-    assert b["win_pct_against"] < 30, b
-    assert out["overall_win_pct"] > 70, out   # เราชนะ A สูง เพราะเราลดลึกกว่าเขามาก
+    assert b["name"] == "หจก.ลึก" and b["has_history"] is True, b
+    assert b["win_pct_against"] > 50, b          # หจก.ลึก ลดลึกกว่าเรา → เขาชนะเราเกินครึ่ง
+    print("✅ calc_custom_winrate known deep competitor")
 
+def test_calc_custom_winrate_gates_no_collapse():
+    """regression bug 0%: คู่แข่งไม่รู้จัก 11 ราย (pooled) + เราลดลึก → overall ต้อง >0 (Gates ไม่ดิ่งศูนย์)."""
+    db = _seed_calc_db()
+    extras = [f"บริษัทไม่รู้จัก {i}" for i in range(11)]
+    with db.get_connection() as conn:
+        out = ci.calc_custom_winrate(conn, "นครพนม", ["ถนน"],
+                                     "ก่อสร้างถนนคอนกรีตเสริมเหล็ก องค์การบริหารส่วนตำบลนาทม",
+                                     "องค์การบริหารส่วนตำบลนาทม",
+                                     "นาทม", my_price=650000, budget=1000000,   # ลด 35% (ลึก)
+                                     selected_names=[], extra_names=extras)
+    assert out is not None, out
+    assert len(out["breakdown"]) == 11 and all(not b["has_history"] for b in out["breakdown"]), out
+    # Gates: 11 ราย pooled ที่เราลดลึก → ต้องไม่ใช่ 0 และไม่เกิน 100
+    assert 0 < out["overall_win_pct"] <= 100, out["overall_win_pct"]
+    # ทุกรายใช้ source = สนามทั่วไป
+    assert all(b["source"] == "สนามทั่วไป" for b in out["breakdown"]), out
+    print("✅ calc_custom_winrate Gates no-collapse (regression bug 0%)")
 
-def test_calc_custom_winrate_multi_competitor_multiplies():
-    rows = _calc_fixture_rows()
-    fallback = {"median": 15.0, "p25": 10.0, "p75": 20.0}
-    one = ci.calc_custom_winrate(rows, fallback, 850000, 1000000, ["หจก.A"], [])
-    two = ci.calc_custom_winrate(rows, fallback, 850000, 1000000, ["หจก.A", "หจก.B"], [])
-    assert two is not None
-    # เพิ่มคู่แข่งอีกราย (B ลดน้อยกว่าเรามาก → เราชนะ B สูงด้วย) แต่ overall ต้อง <= ตอนมีคู่แข่งรายเดียว
-    # (คูณ probability เพิ่ม ยิ่งมีคนแข่งยิ่งชนะยากขึ้นหรือเท่าเดิม ไม่มากขึ้น)
-    assert two["overall_win_pct"] <= one["overall_win_pct"], (one, two)
-
-
-def test_calc_custom_winrate_unknown_company_uses_fallback():
-    rows = _calc_fixture_rows()
-    fallback = {"median": 15.0, "p25": 10.0, "p75": 20.0}
-    out = ci.calc_custom_winrate(rows, fallback, 850000, 1000000, [], ["บริษัทไม่มีประวัติเลย"])
-    assert out is not None
-    b = out["breakdown"][0]
-    assert b["has_history"] is False, b
-    assert b["median"] == 15.0 and b["p25"] == 10.0 and b["p75"] == 20.0, b   # ใช้ fallback ตรงๆ
-
-
-def test_calc_custom_winrate_dedupes_same_company():
-    rows = _calc_fixture_rows()
-    fallback = {"median": 15.0, "p25": 10.0, "p75": 20.0}
-    # ติ๊ก "หจก.A" + พิมพ์ "หจก.A" ซ้ำชื่อเดิม (normalized ตรงกัน) → นับครั้งเดียว
-    out = ci.calc_custom_winrate(rows, fallback, 850000, 1000000, ["หจก.A"], ["หจก.A"])
-    assert out is not None
-    assert len(out["breakdown"]) == 1, out["breakdown"]
-
-
-def test_calc_custom_winrate_invalid_inputs():
-    rows = _calc_fixture_rows()
-    fallback = {"median": 15.0, "p25": 10.0, "p75": 20.0}
-    assert ci.calc_custom_winrate(rows, fallback, 0, 1000000, ["หจก.A"], []) is None      # ราคา<=0
-    assert ci.calc_custom_winrate(rows, fallback, "abc", 1000000, ["หจก.A"], []) is None  # parse ไม่ได้
-    assert ci.calc_custom_winrate(rows, fallback, 850000, 1000000, [], []) is None         # ไม่มีคู่แข่งเลย
-    assert ci.calc_custom_winrate(rows, fallback, 850000, 0, ["หจก.A"], []) is None        # budget<=0
-    print("✅ calc_custom_winrate (basic/multi/fallback/dedupe/invalid)")
+def test_calc_custom_winrate_dedupe_and_invalid():
+    db = _seed_calc_db()
+    with db.get_connection() as conn:
+        # ติ๊ก + พิมพ์ชื่อเดียวกัน → นับครั้งเดียว
+        out = ci.calc_custom_winrate(conn, "นครพนม", ["ถนน"], "ถนนคอนกรีต อบต.", "อบต.",
+                                     "นาทม", 700000, 1000000, ["หจก.ลึก"], ["หจก.ลึก"])
+        assert out is not None and len(out["breakdown"]) == 1, out
+        # invalid inputs → None
+        assert ci.calc_custom_winrate(conn, "นครพนม", ["ถนน"], "x", "y", "นาทม", 0, 1000000, ["หจก.ลึก"], []) is None
+        assert ci.calc_custom_winrate(conn, "นครพนม", ["ถนน"], "x", "y", "นาทม", "abc", 1000000, ["หจก.ลึก"], []) is None
+        assert ci.calc_custom_winrate(conn, "นครพนม", ["ถนน"], "x", "y", "นาทม", 700000, 1000000, [], []) is None
+        assert ci.calc_custom_winrate(conn, "นครพนม", ["ถนน"], "x", "y", "นาทม", 700000, 0, ["หจก.ลึก"], []) is None
+    print("✅ calc_custom_winrate dedupe + invalid")
 
 
 if __name__ == "__main__":
@@ -539,9 +541,7 @@ if __name__ == "__main__":
     test_resolve_tin()
     test_build_intel_company_tables_and_winrate_table()
     test_wiring_format_notification()
-    test_calc_custom_winrate_basic()
-    test_calc_custom_winrate_multi_competitor_multiplies()
-    test_calc_custom_winrate_unknown_company_uses_fallback()
-    test_calc_custom_winrate_dedupes_same_company()
-    test_calc_custom_winrate_invalid_inputs()
+    test_calc_custom_winrate_known_deep_competitor()
+    test_calc_custom_winrate_gates_no_collapse()
+    test_calc_custom_winrate_dedupe_and_invalid()
     print("ALL PASS (moi location disambiguation)")

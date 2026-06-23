@@ -129,7 +129,7 @@ overall_win_pct = round(P_win × 100)
 | `_pooled_dist(conn, province, tokens, district)` | `bid_field.py` (ใหม่/refactor จาก `_field_auctions`) | pooled `[(discount, weight)]` ของสนาม (§4.3) |
 | `p_beat(dist, my_discount)` | `bid_field.py` (ใหม่) | `Pᵢ` clamp [0.05,0.95] (§4.4) · `None` ถ้า dist ว่าง |
 | `gates_winrate(probs)` | `bid_field.py` (ใหม่) | Gates combine (§4.5) · pure |
-| `calc_custom_winrate(...)` | `cgd_intel.py` (rewrite) | derive `this_subtype`/`this_market` → per-name `_company_bid_dist` → p_beat → gates · คืน `{overall_win_pct, my_discount_pct, breakdown:[{name, win_pct_against, p_beat, source, n_games}]}` |
+| `calc_custom_winrate(...)` | `cgd_intel.py` (rewrite) | derive `this_subtype`/`this_market` → per-name `_company_bid_dist` → p_beat → gates · คืน `{overall_win_pct, my_discount_pct, breakdown:[{name, win_pct_against, source, has_history}]}` (`source`=ป้ายชั้น/"สนามทั่วไป", `has_history`=มีประวัติบริษัทไหม) |
 | `_render_custom_calc_form(...)` | `portal_views.py` (ปรับ output) | ฟอร์มเดิม + ผลใหม่ (P ต่อราย + ป้าย layer ที่ใช้ เช่น "ถนนคอนกรีต อบต. 91 ครั้ง" / "สนามทั่วไป" + disclaimer) |
 
 **reuse ของเดิม (ไม่เขียนใหม่):** `road_subtype`, `water_subtype`, `agency_market`, `recency_weight`, `COMPETITIVE_SET` ใน `cgd_intel.py`.

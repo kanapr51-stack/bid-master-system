@@ -109,4 +109,37 @@ def test_field_block_endtoend_and_gate():
     print("✅ field_and_winrate 2B block end-to-end + gate")
 
 test_field_block_endtoend_and_gate()
+
+def test_gates_winrate():
+    # fair-share property: ทุกคน P=0.5 → 1/(N+1)
+    assert abs(bf.gates_winrate([0.5, 0.5, 0.5]) - 0.25) < 1e-9, bf.gates_winrate([0.5,0.5,0.5])
+    # รายเดียว → P เอง
+    assert abs(bf.gates_winrate([0.9]) - 0.9) < 1e-9, bf.gates_winrate([0.9])
+    # ไม่ดิ่งศูนย์เท่า Friedman: 11 ราย @0.5 → Gates=1/12≈0.083 >> Friedman 0.5^11≈0.00049
+    g = bf.gates_winrate([0.5] * 11)
+    assert abs(g - 1/12) < 1e-9 and g > 0.5**11 * 100, g
+    # ว่าง / None ล้วน → None
+    assert bf.gates_winrate([]) is None
+    assert bf.gates_winrate([None, None]) is None
+    # ตัด None ทิ้งก่อนคิด
+    assert abs(bf.gates_winrate([0.9, None]) - 0.9) < 1e-9, bf.gates_winrate([0.9, None])
+    print("✅ gates_winrate (fair-share / single / no-collapse / empty)")
+
+def test_p_beat():
+    # ลด 30% → ชนะคนที่ลด 10,20 (2/3) ไม่ชนะคนลด 40
+    d = [(10.0, 1.0), (20.0, 1.0), (40.0, 1.0)]
+    assert abs(bf.p_beat(d, 30.0) - 2/3) < 1e-9, bf.p_beat(d, 30.0)
+    # clamp สูง: ลดลึกกว่าทุกคน → 1.0 → 0.95
+    assert bf.p_beat([(10.0,1.0),(20.0,1.0)], 50.0) == 0.95
+    # clamp ต่ำ: ลดตื้นกว่าทุกคน → 0 → 0.05
+    assert bf.p_beat([(40.0,1.0),(50.0,1.0)], 10.0) == 0.05
+    # weight สำคัญ: bid ใหม่ (40, w=1.0) ถ่วงหนักกว่า bid เก่า (10, w=0.25) → P ต่ำ
+    assert abs(bf.p_beat([(10.0,0.25),(40.0,1.0)], 30.0) - 0.2) < 1e-9, bf.p_beat([(10.0,0.25),(40.0,1.0)],30.0)
+    # ว่าง / น้ำหนัก 0 → None
+    assert bf.p_beat([], 30.0) is None
+    assert bf.p_beat([(10.0, 0.0)], 30.0) is None
+    print("✅ p_beat (fraction / clamp / weighted / empty)")
+
+test_gates_winrate()
+test_p_beat()
 print("ALL PASS bid_field")

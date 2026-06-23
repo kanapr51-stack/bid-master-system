@@ -15,6 +15,7 @@ LEADER_WIN_RATE = 0.40  # ชนะ ≥ 40% ของที่ลง (สุ่�
 DISC_MAX = 60.0         # ตัด outlier disc (unit-price เพี้ยน)
 ESS_FLOOR = 6          # effective sample (weighted) ขั้นต่ำ — bootstrap (ขยับ 8/10 เมื่อ backfill โต = B″)
 MIN_N_AUCTIONS = 3     # local auctions ขั้นต่ำที่จะเชื่อ n centering (2 → variance ไร้ความหมาย)
+MIN_OWN_BIDS = 5       # จำนวนแถวดิบขั้นต่ำต่อชั้น ก่อนเชื่อประวัติบริษัทเอง (gate นับดิบ ไม่ใช่ ESS — spec §4.2)
 
 
 def _median(xs):
@@ -354,3 +355,23 @@ def field_and_winrate(conn, province, tokens, budget, subdistrict=None, district
                                attempts[2] if len(attempts) > 2 else [], grid, conf, basis)
     fl = field_lines(analyze_field(local_auc), budget, scope_label)
     return grid, fl, conf
+
+
+def gates_winrate(probs):
+    """Gates (1967) combine: P_win = 1/(1+Σ(1−Pi)/Pi). แก้ Friedman collapse (∏Pi → 0 เมื่อคนเยอะ).
+    probs=[Pi] (โอกาสเราชนะคู่แข่งแต่ละราย, ควร clamp (0,1) มาแล้ว). ตัด None ทิ้ง. ว่าง → None."""
+    ps = [p for p in probs if p is not None]
+    if not ps:
+        return None
+    s = sum((1.0 - p) / p for p in ps)
+    return 1.0 / (1.0 + s)
+
+
+def p_beat(dist, my_discount):
+    """โอกาสเราชนะคู่แข่ง 1 ราย = สัดส่วนถ่วงน้ำหนักของ bids ที่ลด 'ตื้นกว่า' เรา (ราคาเขาสูงกว่า = เราชนะ).
+    dist=[(discount, weight)]. clamp [0.05,0.95] (กันมั่นใจเกินจริง). น้ำหนักรวม≤0 → None."""
+    tot = sum(w for _d, w in dist)
+    if tot <= 0:
+        return None
+    below = sum(w for d, w in dist if d < my_discount)
+    return max(0.05, min(0.95, below / tot))

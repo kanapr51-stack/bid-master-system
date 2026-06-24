@@ -1,3 +1,11 @@
+> ⚠️ **SUPERSEDED (2026-06-24, commit 337f891) — อย่ารัน Task 1-2 ของแผนนี้.**
+> เดิมแผนจะเพิ่มลิงก์ `🔍 ดูวิเคราะห์ราคา+คู่แข่งบน Bid Board` ตรงการ์ด D0 (build_job_link) แต่พบว่า
+> **ซ้ำซ้อน** — การ์ดมีลิงก์ `build_follow_link` (⭐) พาไปหน้า `/follow` ที่มีปุ่ม intel เดียวกันอยู่แล้ว
+> (เห็นเฉพาะตอน state=active). แก้ด้วย **Option C**: ให้ `_follow_page_html` โชว์ปุ่ม intel ตอน
+> state=inactive ด้วย → กด ⭐ ครั้งเดียว preview intel ได้ก่อน follow โดยไม่ต้องมี 2 ลิงก์ในการ์ด.
+> Task 3-5 (portal `job_detail` ผูก `intel_lines` + render) **ทำไปแล้วก่อนหน้า** (มากับงาน portal/Gates).
+> การ์ด D0 ยัง inline intel เหมือนเดิม (ไม่ได้ลบ — ต่างจาก Task 2 เดิม).
+
 # D0 Notification → Bid Board Job Link Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

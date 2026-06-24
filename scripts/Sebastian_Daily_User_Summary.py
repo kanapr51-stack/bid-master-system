@@ -28,25 +28,32 @@ from Sebastian_LINE_Sender import _load_line_token, send_line_push
 TZ_TH = timezone(timedelta(hours=7))
 
 
-def build_message(name: str, matched_today: int) -> str:
-    """สร้างข้อความ heartbeat รายบุคคล (butler persona, อบอุ่น, signal สูง)"""
+def build_message(name: str, matched_today: int, tomorrow_jobs=None, link_fn=None) -> str:
+    """สร้างข้อความ heartbeat รายบุคคล (butler persona). tomorrow_jobs = งานยื่นซองพรุ่งนี้
+    (ในพื้นที่) → ต่อท้ายเป็น section ถ้ามี. link_fn(pid)->url ต่อรายการ."""
     name = name or "ลูกค้า"
     d = datetime.now(TZ_TH)
     today = f"{d.day}/{d.month}"
     head = f"🎩 สรุปประจำวัน {today} — Sebastian\n\nสวัสดีครับ คุณ{name}\n"
     if matched_today > 0:
-        return (
+        base = (
             head +
             f"วันนี้ผมตรวจงานประมูลในพื้นที่ของคุณครบทุกรอบแล้ว\n"
             f"📬 เจองานที่เกี่ยวกับคุณ {matched_today} งาน — ส่งให้คุณก่อนหน้านี้แล้ว ✅\n\n"
             f"พรุ่งนี้ผมจะเฝ้าตรวจให้ต่อครับ 🫡"
         )
-    return (
-        head +
-        f"วันนี้ผมตรวจงานประมูลในพื้นที่ของคุณครบทุกรอบแล้ว\n"
-        f"📭 ยังไม่มีงานใหม่ที่ตรงกับเงื่อนไขของคุณวันนี้\n\n"
-        f"ไม่ต้องห่วงครับ ผมเฝ้าให้ตลอด — มีงานเมื่อไหร่ส่งทันที 🫡"
-    )
+    else:
+        base = (
+            head +
+            f"วันนี้ผมตรวจงานประมูลในพื้นที่ของคุณครบทุกรอบแล้ว\n"
+            f"📭 ยังไม่มีงานใหม่ที่ตรงกับเงื่อนไขของคุณวันนี้\n\n"
+            f"ไม่ต้องห่วงครับ ผมเฝ้าให้ตลอด — มีงานเมื่อไหร่ส่งทันที 🫡"
+        )
+    if tomorrow_jobs:
+        import bid_open
+        base += (f"\n\n📅 พรุ่งนี้มีงานเปิดประมูล {len(tomorrow_jobs)} งานในพื้นที่ของคุณ:\n"
+                 + bid_open.format_job_bullets(tomorrow_jobs, link_fn))
+    return base
 
 
 def _discord(msg: str) -> None:
@@ -65,9 +72,11 @@ def main():
     args = ap.parse_args()
 
     today_th = datetime.now(TZ_TH).strftime("%Y-%m-%d")
+    tomorrow_th = (datetime.now(TZ_TH) + timedelta(days=1)).strftime("%Y-%m-%d")
     now_th = datetime.now(TZ_TH).strftime("%H:%M")
 
-    # โหลด active real customers + นับงานที่ match วันนี้ (ไม่นับ test account)
+    # โหลด active real customers + นับงานที่ match วันนี้ (ไม่นับ test account) + งานยื่นซองพรุ่งนี้
+    import bid_open
     with get_connection() as conn:
         customers = conn.execute(
             "SELECT id, line_user_id, display_name FROM customers "
@@ -81,17 +90,20 @@ def main():
                 "AND attempted_at LIKE ?",
                 (c["id"], today_th + "%"),
             ).fetchone()[0]
-            targets.append((c, cnt))
+            tomorrow_jobs = bid_open.bid_open_for_customer(conn, c["id"], tomorrow_th)
+            targets.append((c, cnt, tomorrow_jobs))
 
     print(f"[{now_th}] daily summary — {len(targets)} real customers (today_th={today_th})", flush=True)
 
+    from Sebastian_LINE_Sender import build_follow_link
     token = None if args.dry_run else _load_line_token()
     ok = fail = 0
-    for c, cnt in targets:
+    for c, cnt, tomorrow_jobs in targets:
         name = c["display_name"] or c["line_user_id"][:10]
-        msg = build_message(name, cnt)
+        link_fn = (lambda uid: lambda pid: build_follow_link(uid, pid))(c["line_user_id"])
+        msg = build_message(name, cnt, tomorrow_jobs=tomorrow_jobs, link_fn=link_fn)
         if args.dry_run:
-            print(f"\n--- [{name}] matched_today={cnt} ---\n{msg}\n", flush=True)
+            print(f"\n--- [{name}] matched_today={cnt} พรุ่งนี้={len(tomorrow_jobs)} ---\n{msg}\n", flush=True)
             ok += 1
             continue
         success, error_type, error_msg = send_line_push(token, c["line_user_id"], msg)

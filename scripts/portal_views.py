@@ -112,6 +112,15 @@ def job_detail(conn, pid, calc_params=None):
             deadline = (l["deadline"] if "deadline" in l.keys() else None) or None
     except sqlite3.OperationalError:
         loc, deadline = "", None
+    if not deadline:
+        # fallback: งาน rss วันยื่นซองอยู่ใน project_enrichments (ไม่ถูก copy ไป project_locations.deadline)
+        try:
+            er = conn.execute(
+                "SELECT bid_submit_date FROM project_enrichments WHERE project_id=?", (pid,)).fetchone()
+            if er and er["bid_submit_date"]:
+                deadline = er["bid_submit_date"]
+        except sqlite3.OperationalError:
+            pass
     if not loc and ps and ps["province"]:
         loc = f"จ.{ps['province']}"
     pred_lo = pred_hi = None

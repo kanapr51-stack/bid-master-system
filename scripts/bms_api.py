@@ -414,6 +414,14 @@ def _portal_jobs(user_id: str):
                 loc = None
             moi = (loc["moi_name"] if loc and "moi_name" in loc.keys() else "") or ""
             deadline = (loc["deadline"] if loc and "deadline" in loc.keys() else "") or ""
+            if not deadline:
+                # fallback: งาน rss วันยื่นซองอยู่ใน project_enrichments (ไม่ถูก copy ไป project_locations.deadline)
+                try:
+                    er = conn.execute(
+                        "SELECT bid_submit_date FROM project_enrichments WHERE project_id=?", (pid,)).fetchone()
+                    deadline = (er["bid_submit_date"] if er and er["bid_submit_date"] else "") or ""
+                except sqlite3.OperationalError:
+                    deadline = ""
             prov = ps["province"] or ""
             location = ((f"ต.{moi} " if moi else "") + (f"จ.{prov}" if prov else "")).strip()
             budget = ps["budget"] or 0

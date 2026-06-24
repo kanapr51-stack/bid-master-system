@@ -8,7 +8,7 @@ import bms_api as api
 
 
 def _job(**kw):
-    base = {"project_id": "P", "name": "งาน", "location": "จ.บึงกาฬ", "deadline": "",
+    base = {"project_id": "P", "name": "งาน", "location": "จ.บึงกาฬ", "deadline": "", "deadline_time": "",
             "pred_lo": None, "pred_hi": None, "winner": None, "winner_price": None,
             "winner_disc": None, "competitors": [], "bidders": [], "prelim_low": None, "prelim_n": 0}
     base.update(kw)
@@ -17,7 +17,7 @@ def _job(**kw):
 
 groups = {
     "bidding": [_job(project_id="PD", name="ถนน คสล. บ้านนาสาร", location="ต.โพธิ์หมากแข้ง จ.บึงกาฬ",
-                     deadline="2026-12-31", pred_lo=679000, pred_hi=730000)],
+                     deadline="2026-12-31", deadline_time="09.00-16.00 น.", pred_lo=679000, pred_hi=730000)],
     "prelim": [_job(project_id="PP", name="งานสรุปราคา", prelim_low=738000.0, prelim_n=3)],
     "won": [_job(project_id="PW", name="ถนน W", winner="หจก.X", winner_price=738000.0,
                  winner_disc=26.2, competitors=[{"name": "หจก.Y", "price": 752000.0}],
@@ -29,7 +29,7 @@ h = api._portal_page_html(groups, 2000000000, "TOK")
 assert "งานที่คุณติดตาม (4)" in h, h
 # req3 + req4: bidding label เปลี่ยน + วันที่ไทย + countdown
 assert "ประกาศวันยื่นซอง" in h and "กำลังประมูล" not in h, h
-assert "ยื่นซอง 31 ธ.ค. 2569" in h and "เหลืออีก" in h, h
+assert "ยื่นซอง 31 ธ.ค. 2569 09.00-16.00 น." in h and "เหลืออีก" in h, h
 assert "679,000" in h, h
 # req2: prelim แยกจาก won ทางการ
 assert "สรุปราคาเบื้องต้น" in h and "ราคาต่ำสุดที่เสนอ 738,000 บาท (3 ราย)" in h, h

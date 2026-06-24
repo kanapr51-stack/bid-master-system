@@ -100,25 +100,29 @@ def job_detail(conn, pid, calc_params=None):
                     calc_params.get("selected_names") or [], calc_params.get("extra_names") or [])
     except Exception:
         intel_lines = None
-    loc, deadline = "", None
+    loc, deadline, deadline_time = "", None, None
     try:
         l = conn.execute(
-            "SELECT moi_name, province_name, deadline FROM project_locations WHERE project_id=?",
+            "SELECT moi_name, province_name, deadline, deadline_time FROM project_locations WHERE project_id=?",
             (pid,)).fetchone()
         if l:
             moi = (l["moi_name"] or "") if "moi_name" in l.keys() else ""
             prov = (l["province_name"] or "") if "province_name" in l.keys() else ""
             loc = ((f"ต.{moi} " if moi else "") + (f"จ.{prov}" if prov else "")).strip()
             deadline = (l["deadline"] if "deadline" in l.keys() else None) or None
+            deadline_time = (l["deadline_time"] if "deadline_time" in l.keys() else None) or None
     except sqlite3.OperationalError:
-        loc, deadline = "", None
-    if not deadline:
-        # fallback: งาน rss วันยื่นซองอยู่ใน project_enrichments (ไม่ถูก copy ไป project_locations.deadline)
+        loc, deadline, deadline_time = "", None, None
+    if not deadline or not deadline_time:
+        # fallback: งาน rss วัน+เวลายื่นซองอยู่ใน project_enrichments (ไม่ถูก copy ไป project_locations)
         try:
             er = conn.execute(
-                "SELECT bid_submit_date FROM project_enrichments WHERE project_id=?", (pid,)).fetchone()
-            if er and er["bid_submit_date"]:
-                deadline = er["bid_submit_date"]
+                "SELECT bid_submit_date, bid_submit_time FROM project_enrichments WHERE project_id=?", (pid,)).fetchone()
+            if er:
+                if not deadline and er["bid_submit_date"]:
+                    deadline = er["bid_submit_date"]
+                if not deadline_time and ("bid_submit_time" in er.keys()) and er["bid_submit_time"]:
+                    deadline_time = er["bid_submit_time"]
         except sqlite3.OperationalError:
             pass
     if not loc and ps and ps["province"]:
@@ -145,6 +149,7 @@ def job_detail(conn, pid, calc_params=None):
     bidders.sort(key=lambda b: (not b["is_winner"], b["price"] is None, b["price"] or 0))
     return {"job": {"project_id": pid, "name": (ps["project_name"] if ps else "") or pid,
                     "location": loc, "budget": budget, "deadline": deadline,
+                    "deadline_time": deadline_time,
                     "pred_lo": pred_lo, "pred_hi": pred_hi}, "bidders": bidders,
             "intel_lines": intel_lines, "company_tables": company_tables,
             "winrate_table": winrate_table, "custom_calc": custom_calc}
@@ -572,7 +577,10 @@ def render_job_page(data, token, exp, notes=None, overview="", starred=False):
     if j["budget"]:
         b.append(f"<div class=\"meta\">💰 ราคากลาง {_baht(j['budget'])} บาท</div>")
     if j.get("deadline"):
-        b.append(f"<div class=\"dl\">⏰ ยื่นซอง {_h.escape(_fmt_date_th(j['deadline']))}</div>")
+        _dl = _fmt_date_th(j['deadline'])
+        if j.get("deadline_time"):
+            _dl += " " + j["deadline_time"]
+        b.append(f"<div class=\"dl\">⏰ ยื่นซอง {_h.escape(_dl)}</div>")
         cd = _countdown_th(j["deadline"])
         if cd:
             b.append(f"<div class=\"cd\">⏳ {cd}</div>")

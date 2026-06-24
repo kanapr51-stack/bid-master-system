@@ -413,19 +413,24 @@ def _portal_jobs(user_id: str):
                 continue
             try:
                 loc = conn.execute(
-                    "SELECT moi_name, deadline FROM project_locations WHERE project_id=?", (pid,)).fetchone()
+                    "SELECT moi_name, deadline, deadline_time FROM project_locations WHERE project_id=?", (pid,)).fetchone()
             except sqlite3.OperationalError:
                 loc = None
             moi = (loc["moi_name"] if loc and "moi_name" in loc.keys() else "") or ""
             deadline = (loc["deadline"] if loc and "deadline" in loc.keys() else "") or ""
-            if not deadline:
-                # fallback: งาน rss วันยื่นซองอยู่ใน project_enrichments (ไม่ถูก copy ไป project_locations.deadline)
+            deadline_time = (loc["deadline_time"] if loc and "deadline_time" in loc.keys() else "") or ""
+            if not deadline or not deadline_time:
+                # fallback: งาน rss วัน+เวลายื่นซองอยู่ใน project_enrichments (ไม่ถูก copy ไป project_locations)
                 try:
                     er = conn.execute(
-                        "SELECT bid_submit_date FROM project_enrichments WHERE project_id=?", (pid,)).fetchone()
-                    deadline = (er["bid_submit_date"] if er and er["bid_submit_date"] else "") or ""
+                        "SELECT bid_submit_date, bid_submit_time FROM project_enrichments WHERE project_id=?", (pid,)).fetchone()
+                    if er:
+                        if not deadline:
+                            deadline = (er["bid_submit_date"] or "") if "bid_submit_date" in er.keys() else ""
+                        if not deadline_time:
+                            deadline_time = (er["bid_submit_time"] or "") if "bid_submit_time" in er.keys() else ""
                 except sqlite3.OperationalError:
-                    deadline = ""
+                    pass
             prov = ps["province"] or ""
             location = ((f"ต.{moi} " if moi else "") + (f"จ.{prov}" if prov else "")).strip()
             budget = ps["budget"] or 0
@@ -438,7 +443,8 @@ def _portal_jobs(user_id: str):
             ann = ps["announce_type"] or ""
             lsn = (f["last_stage_notified"] if "last_stage_notified" in f.keys() else "") or ""
             job = {"project_id": pid, "name": ps["project_name"] or pid, "location": location,
-                   "deadline": deadline, "pred_lo": pr["area_price_lo"] if pr else None,
+                   "deadline": deadline, "deadline_time": deadline_time,
+                   "pred_lo": pr["area_price_lo"] if pr else None,
                    "pred_hi": pr["area_price_hi"] if pr else None,
                    "winner": None, "winner_price": None, "winner_disc": None, "competitors": [],
                    "bidders": [], "prelim_low": None, "prelim_n": 0}
@@ -561,7 +567,10 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0, token: str = "") -> str:
         if kind == "bidding":
             L.append("<div class=\"dots\">●━━●━━○<span class=\"badge bd\">ประกาศวันยื่นซอง</span></div>")
             if j["deadline"]:
-                L.append(f"<div class=\"dl\">⏰ ยื่นซอง {_h.escape(_fmt_date_th(j['deadline']))}</div>")
+                _dl = _fmt_date_th(j['deadline'])
+                if j.get("deadline_time"):
+                    _dl += " " + j["deadline_time"]
+                L.append(f"<div class=\"dl\">⏰ ยื่นซอง {_h.escape(_dl)}</div>")
                 cd = _countdown_th(j["deadline"])
                 if cd:
                     L.append(f"<div class=\"cd\">⏳ {cd}</div>")

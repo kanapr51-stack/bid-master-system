@@ -32,9 +32,9 @@ with db.get_connection() as c:
     c.execute("INSERT INTO price_predictions (project_id,budget,area_price_lo,area_price_hi,predicted_at) "
               "VALUES ('PD',1000000,679000,730000,'t')")
     try:
-        c.execute("INSERT INTO project_locations (project_id,moi_name,deadline,created_at) VALUES ('PD','โพธิ์หมากแข้ง','15 มิ.ย. 2569','t')")
+        c.execute("INSERT INTO project_locations (project_id,moi_name,deadline,deadline_time,created_at) VALUES ('PD','โพธิ์หมากแข้ง','15 มิ.ย. 2569','09.00-12.00 น.','t')")
     except Exception:
-        c.execute("UPDATE project_locations SET moi_name='โพธิ์หมากแข้ง', deadline='15 มิ.ย. 2569' WHERE project_id='PD'")
+        c.execute("UPDATE project_locations SET moi_name='โพธิ์หมากแข้ง', deadline='15 มิ.ย. 2569', deadline_time='09.00-12.00 น.' WHERE project_id='PD'")
 
 import bms_api as api
 g = api._portal_jobs("U")
@@ -50,6 +50,7 @@ assert "PU" not in allpids, allpids
 bd = g["bidding"][0]
 assert bd["pred_lo"] == 679000 and bd["pred_hi"] == 730000, bd
 assert "15 มิ.ย." in bd["deadline"] and "โพธิ์หมากแข้ง" in bd["location"], bd
+assert bd["deadline_time"] == "09.00-12.00 น.", bd
 w = g["won"][0]
 assert w["winner"] == "หจก.X" and w["winner_price"] == 738000.0, w
 assert w["winner_disc"] == 26.2, w

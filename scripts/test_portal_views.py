@@ -10,7 +10,7 @@ def _seed():
     c.execute("CREATE TABLE projects_seen(project_id TEXT, project_name TEXT, budget REAL, province TEXT)")
     c.execute("CREATE TABLE bid_results(project_id TEXT, bidder_name TEXT, bidder_tin TEXT, "
               "price_proposal TEXT, price_agree TEXT, is_winner INT, is_sme INT)")
-    c.execute("CREATE TABLE project_locations(project_id TEXT, moi_name TEXT, province_name TEXT, deadline TEXT)")
+    c.execute("CREATE TABLE project_locations(project_id TEXT, moi_name TEXT, province_name TEXT, deadline TEXT, deadline_time TEXT)")
     c.execute("CREATE TABLE price_predictions(project_id TEXT, area_price_lo REAL, area_price_hi REAL)")
     c.execute("INSERT INTO projects_seen VALUES ('69010000001','งานถนน A',1000000,'นครพนม')")
     c.execute("INSERT INTO bid_results VALUES ('69010000001','หจก.เอ','T1','900000','900000',1,0)")
@@ -19,7 +19,7 @@ def _seed():
     c.execute("INSERT INTO bid_results VALUES ('69010000002','หจก.เอ','T1','500000','',0,0)")
     # งานประมูล (D0) ยังไม่มีผู้ยื่น — มี deadline + คาดราคา
     c.execute("INSERT INTO projects_seen VALUES ('69010000009','งานประมูลใหม่',1500000,'นครพนม')")
-    c.execute("INSERT INTO project_locations VALUES ('69010000009','','นครพนม','2027-12-31')")
+    c.execute("INSERT INTO project_locations VALUES ('69010000009','','นครพนม','2027-12-31','13.00-16.00 น.')")
     c.execute("INSERT INTO price_predictions VALUES ('69010000009',1200000,1400000)")
     return c
 
@@ -70,10 +70,11 @@ print("OK render_job_page")
 c = _seed()
 db = pv.job_detail(c, "69010000009")
 assert db["bidders"] == [] and db["job"]["deadline"] == "2027-12-31", db["job"]
+assert db["job"]["deadline_time"] == "13.00-16.00 น.", db["job"]
 assert db["job"]["pred_lo"] == 1200000 and db["job"]["pred_hi"] == 1400000, db["job"]
 hb = pv.render_job_page(db, "TOK", 0)
 assert "ยังไม่มีผู้ยื่น" in hb, hb
-assert "ยื่นซอง 31 ธ.ค. 2570" in hb and "เหลืออีก" in hb, hb          # countdown
+assert "ยื่นซอง 31 ธ.ค. 2570 13.00-16.00 น." in hb and "เหลืออีก" in hb, hb          # countdown + เวลา
 assert "คาดราคา 1,200,000–1,400,000" in hb, hb
 assert "ผู้ยื่นทั้งหมด" not in hb, hb                                # ไม่โชว์ตารางผู้ยื่น
 print("OK render_job_page_bidding")

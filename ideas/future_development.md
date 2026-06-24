@@ -308,3 +308,23 @@ memory: project_price_by_road_type · related: project_cgd_market_insight (proc_
 - เทียบ: งาน 69059132412 (อาคาร, scope อำเภอ n=3) คาดแม่น ✅ — ปัญหาอยู่ที่ "ตำบลบางเกินไป" โดยเฉพาะ
 - แนวทางที่ค้างเสนอกัญจน์: (a) guard min distinct-winners≥2 + min-n ก่อนใช้ตำบลทับอำเภอ (b) blend ตำบล+อำเภอถ่วงน้ำหนักด้วย n (c) shrinkage ดึง median ตำบลเข้าหาอำเภอเมื่อ n น้อย
 - memory: project_scope_selection_bug
+
+---
+
+## ▶ NEXT SESSION (queued 2026-06-20): หน้า "ส่องคู่แข่ง" (company page) — มิติงานประมูล vs เจาะจง + ราคาสูงสุด + filter
+
+**ที่มา:** กัญจน์สั่งระหว่าง backfill บ้านกำลังรัน — "ทำ session หน้า"
+
+**ต้องทำ (หน้า `/portal/company` ใน `portal_views.render_company_page` + `company_profile`/แหล่งใหม่):**
+1. **แยกสถิติ งานประมูล (competitive) vs งานเจาะจง (specific)** — จำนวน + มูลค่า แยกตาม proc_type
+   - competitive = COMPETITIVE_SET (e-bidding/สอบราคา/คัดเลือก) · เจาะจง/ตกลงราคา = อีกกลุ่ม
+2. **งานมูลค่าสูงสุด (overall)** — ชื่องาน + มูลค่า (win_price)
+3. **แยก: สูงสุดของประมูล** เท่าไหร่ + **สูงสุดของวิธีอื่นๆ** เท่าไหร่ (2 ตัวเลขแยก)
+4. **ตัวเลือก/filter: เลือกดูตามประเภทการจัดซื้อจัดจ้าง** (proc_type) — ให้ user กรอง view ได้
+
+**แหล่งข้อมูล:** ใช้ **`cgd_winners`** (มี proc_type, win_price, budget, project_name ครบทุกวิธี — ไม่ใช่แค่ bid_results ที่เป็นเฉพาะ competitive)
+- match บริษัทที่ดูด้วย **ชื่อ** (cgd_winners.winner = bidder_name) เหมือน head_to_head ใช้ our_name
+- ระวัง: company_profile ปัจจุบันดึงจาก bid_results (competitive เท่านั้น) → ฟีเจอร์นี้ต้องเพิ่ม query CGD โดยตรง
+- หมายเหตุ insight: ของกัญจน์ 282 ชนะ = 79% เจาะจง / 21% แข่ง → การแยกนี้สำคัญมากเชิง positioning
+
+**ไม่ใช่ bug — เป็น feature เพิ่ม** · ทำ inline TDD ได้ (เหมือน head-to-head N+155)

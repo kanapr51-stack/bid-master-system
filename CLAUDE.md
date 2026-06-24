@@ -138,7 +138,20 @@ print(f'winner_cache: {len(cache)}')
 
 ## 🎯 Domain-Specific Rules
 
-### Sheets (6 sheets after Phase A redesign)
+### Product DB (SQLite, primary source of truth — `Sebastian_Customer_DB.py` schema)
+
+Sheets ด้านล่างเป็น **legacy/secondary view** แล้ว — ของจริงอยู่ใน DB นี้ ใช้ตรวจ sanity (Sophia ใช้ตารางกลุ่มนี้เป็นหลัก):
+
+| Table | หน้าที่ |
+|---|---|
+| `customers`, `subscriptions`, `subscription_provinces` | ลูกค้า + พื้นที่ที่ subscribe |
+| `notification_queue`, `delivery_log` | คิวแจ้งเตือน + log การส่ง (dedup key: customer,project,source_stage — ดู [[project_event_centric_queue]]) |
+| `job_stars`, `followed_jobs`, `job_notes`, `job_overview` | ⭐ ที่สนใจ + บันทึกย่อต่องาน |
+| `price_predictions`, `bid_results` | ทำนายราคา + ผลจริงสำหรับ closed-loop win-rate |
+| `cgd_winners`, `project_locations`, `project_enrichments` | ข้อมูล CGD winner + location enrichment |
+| `enrichment_daily_stats` | metrics รายวันของ enrichment worker |
+
+### Sheets (6 sheets after Phase A redesign) — legacy, ใช้เป็น view สำหรับมนุษย์เท่านั้น
 
 ดู `docs/egp_stepid_catalog.md` สำหรับรายละเอียด stepId → sheet mapping
 
@@ -235,4 +248,4 @@ scrape → classify → refresh → download → analyze → cost → rank → n
 
 ---
 
-**Last updated:** 2026-05-16 (Phase A complete + Discord/Progress protocol added)
+**Last updated:** 2026-06-21 (Product DB ขึ้นเป็น primary source, Sheets เป็น legacy view; `scripts/README.md` + `.gsd/CODEBASE.md` refreshed — ดู [[project_resume_session]])

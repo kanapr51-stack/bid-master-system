@@ -335,6 +335,10 @@ def _follow_page_html(token: str, state: str, d: dict, deadline: str, exp_epoch:
             f"<button class=\"unfollow\" type=\"submit\">ยกเลิกการติดตาม</button></form>")
     else:  # inactive
         body.insert(0, "<div class=\"h\">ติดตามงานนี้?</div>")
+        pid_esc = _html.escape(str(project_id))
+        body.append(                                   # ดู preview วิเคราะห์ได้ก่อนตัดสินใจ follow
+            f"<a class=\"intel\" href=\"/portal/job?t={tok}&pid={pid_esc}\">"
+            f"🔍 ดูวิเคราะห์ราคา+คู่แข่งบน Bid Board</a>")
         body.append(
             f"<form method=\"post\" action=\"/follow\">"
             f"<input type=\"hidden\" name=\"t\" value=\"{tok}\">"

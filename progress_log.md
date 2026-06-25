@@ -1322,3 +1322,35 @@ VPS `git pull` โดน block: 5 ไฟล์ (Customer_DB/Winner_Poller/bid_fi
 - ดูผล slot ถัดไป: นครพนม 07:30 / บึงกาฬ 08:30,20:30 ไทย — ควรเงียบ (ไม่มี "พลาด")
 - C (root, ไม่ทำตอนนี้): pagination resume ให้ full sweep จังหวัดเดียววิ่งจบรอบเดียวใน budget
 - จัดการ deploy-debt CRLF 5 ไฟล์บน VPS (renormalize .gitattributes)
+
+
+## งานที่ N+172: แจ้งงานยกเลิกโครงการ + แก้ Board (cancelled-project notification) (2026-06-25)
+
+### สถานะ: ✅ เสร็จ (local main, 4 commits) · ⏳ ยังไม่ deploy VPS · brainstorming→spec→plan→TDD ครบ
+
+### ที่มา
+พ่อกัญจน์เห็นงานที่ยกเลิกโครงการแล้วค้างอยู่ใน "สรุปราคาเบื้องต้น" บน Web Board + อยากให้แจ้งเตือนงานยกเลิก
+
+### Root cause
+lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage ยกเลิก** → Board group ตาม last_stage_notified
+งานเคยขึ้น PRELIM แล้วยกเลิกทีหลังค้างใน prelim ตลอด. legacy Sheets classifier ตรวจยกเลิกได้ แต่ไม่ถูกพอร์ตมาฝั่ง DB/Board/notification
+
+### Fix (4 task TDD, piggyback winner-poller ไม่สร้าง cron ใหม่)
+1. `Sebastian_Classifier.py`: extract `_cancel_note` + `is_cancelled()` (R / D1,W1 / B*) — classify_by_stepid พฤติกรรมเดิมคงเดิม (regression test ครอบ B*+winner→awarded)
+2. `Sebastian_Winner_Poller.py`: cancellation pass (param `resolve_status=None`) วนทุก active follow → get_project_detail → is_cancelled → enqueue `followed_cancelled` + mark `CANCELLED` + close + ข้าม poll winner; fail-safe error=ไม่ false-cancel
+3. `Sebastian_LINE_Sender.py`: `format_cancelled_notification` + dispatch block (re-derive note ตอน render เหมือน prelim) → ผ่าน queue→digest เดิม (ช่วง LINE quota เต็มจะรวมใน digest 1 ก.ค. เอง)
+4. `bms_api.py`: groups["cancelled"] เช็ค lsn=="CANCELLED" ก่อน prelim + chip + badge bx + render section
+
+### Verify (verifiable success criteria — ผ่านหมด)
+- test_is_cancelled (3 สัญญาณ + classify regression), test_winner_poller_cancel (enqueue+mark+close+skip+fail-safe+backward-compat), test_format_cancelled, test_portal_cancelled (PC=cancelled ไม่ใช่ prelim) — + regression test_winner_poller / test_portal_jobs เขียวหมด
+- backfill: ไม่ต้องเขียนแยก — งานยกเลิกค้างถูกจับในรอบ poll แรกหลัง deploy
+- commits: 3cccc8f / fbc2f02 / f382bea / 76bc055 · spec+plan ใน docs/superpowers/
+
+### Sophia sanity verdict: ✅ SAFE TO PROCEED
+- dedup ✅ (source_stage="followed_cancelled" UNIQUE 3-col ไม่ชน sibling), classify regression ✅ (B*+winner→awarded), fail-safe ✅ (verify ด้วยรันจริง), valid=False จาก getProjectDetail → is_cancelled("","","")=(False,"") ปลอดภัย, last_stage_notified="CANCELLED" ไม่ break code path ไหน (star_metrics/_STAGE_RANK ใช้ .get fallback)
+- ⚠️ verify live VPS queue schema ไม่ได้ (ไม่มี SSH key) — แต่ followed_prelim/winner LIVE ใช้ dedup 3-col เดียวกันอยู่แล้ว = migrate แล้วโดยปริยาย (low risk)
+- ⚠️ operational cost: getProjectDetail ทุก active follow/รอบ poller (~6ชม.) เพิ่มโหลด eGP ถ้า follow list โต — จับตา
+
+### Followup
+- **deploy VPS** (winner-poller + bms_api รันบน VPS) — ยังไม่ทำ รอ confirm (deploy-debt CRLF 5 ไฟล์ยังค้างจาก N+171 ระวัง merge); pre-deploy: เช็ค live queue schema 3-col + รัน 6 test บน VPS
+- ถ้า follow list โต → พิจารณาจำกัด cancellation pass เฉพาะ stage ที่ "น่าจะยกเลิก" หรือ cache getProjectDetail

@@ -45,6 +45,8 @@ RETRY_DELAY_MIN   = 30
 MAX_ATTEMPTS      = 5
 PROVINCE_QUAL_BATCH = int(os.environ.get("BMS_QUAL_BATCH", "5"))   # Pass 3 (province_api)
 MAX_QUAL_ATTEMPTS   = 5    # macro-retry transient (provider error) จน MAX แล้ว fail
+LOCFILL_BATCH        = int(os.environ.get("BMS_LOCFILL_BATCH", "8"))  # location backfill/resolve
+LOCFILL_MAX_ATTEMPTS = 3
 CIRCUIT_BREAK       = 5    # provider errors ติดกัน → หยุด batch (กัน WAF/outage)
 # INC-001 Rev 3: cross-run cooldown — เมื่อตรวจพบ WAF/circuit-break → หยุดทั้ง plane
 # กัน positive feedback loop (worker timer 2นาที << WAF cooldown 30-40นาที → ต่ออายุ block เอง 1.5 วัน)
@@ -543,6 +545,63 @@ def notify_bid_open_followups(store, log, resolve_deadline=None) -> int:
     if due:
         log(f"⭐ bid-open followups: {len(due)} due, {sent} enqueued (mode={mode})")
     return sent
+
+
+def _bump_locfill_retry(project_id: str) -> None:
+    """locfill: เพิ่ม attempt + ตั้ง backoff (ไม่แตะ enrichment_status)."""
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE project_locations SET enrichment_attempts=enrichment_attempts+1, next_retry_at=? "
+            "WHERE project_id=?", (_now_plus(RETRY_DELAY_MIN), project_id))
+
+
+def resolve_missing_locations(log, resolve_detail=None, sleep_sec: float = 1.5) -> int:
+    """เติม moi_name (ตำบล)+พิกัด ให้งาน province_api ที่ค้าง NULL (backfill + งานใหม่, self-healing).
+    resolve_detail(pid)->dict = get_procurement_detail (inject ได้เพื่อ test). คืนจำนวนที่เติมสำเร็จ."""
+    if resolve_detail is None:
+        from process5_http_client import get_procurement_detail
+        resolve_detail = get_procurement_detail
+    import job_matcher as jm
+    now = _now()
+    with get_connection() as conn:
+        rows = [dict(r) for r in conn.execute("""
+            SELECT pl.project_id, ps.dept_name
+            FROM project_locations pl
+            LEFT JOIN projects_seen ps ON ps.project_id = pl.project_id
+            WHERE pl.source='province_api' AND pl.moi_name IS NULL
+              AND pl.enrichment_attempts < ?
+              AND (pl.next_retry_at IS NULL OR pl.next_retry_at <= ?)
+            ORDER BY pl.enrichment_attempts ASC, pl.created_at ASC
+            LIMIT ?
+        """, (LOCFILL_MAX_ATTEMPTS, now, LOCFILL_BATCH)).fetchall()]
+    resolved = 0
+    for r in rows:
+        pid = r["project_id"]
+        try:
+            d = resolve_detail(pid) or {}
+        except Exception as e:
+            log(f"  locfill {pid} error: {type(e).__name__}: {e}")
+            _bump_locfill_retry(pid)
+            if sleep_sec:
+                time.sleep(sleep_sec)
+            continue
+        moi = (d.get("moi_name") or "").strip() if d.get("valid") else ""
+        if moi:
+            save_project_location_raw(pid, d.get("district_moi_id") or "", moi,
+                                      d.get("latitude") or "", d.get("longitude") or "")
+            resolved += 1
+            log(f"  📍 locfill {pid} → ต.{moi} (coord={bool(d.get('latitude'))})")
+        else:
+            tb = jm.tambon_from_dept(r.get("dept_name") or "")
+            if tb:
+                save_project_location_raw(pid, "", tb, "", "")
+                resolved += 1
+                log(f"  📍 locfill {pid} → ต.{tb} (dept fallback)")
+            else:
+                _bump_locfill_retry(pid)
+        if sleep_sec:
+            time.sleep(sleep_sec)
+    return resolved
 
 
 def main():

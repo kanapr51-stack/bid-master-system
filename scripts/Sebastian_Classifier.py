@@ -140,6 +140,36 @@ LETTER_TO_SHEET = {
 }
 
 
+def _cancel_note(step: str) -> str:
+    """note ระบุจุดที่ยกเลิก จาก stepId prefix (step = uppercased/stripped)."""
+    if step.startswith("B"):
+        return f"ยกเลิกตั้งแต่ต้น ({step})"
+    elif step.startswith("M") or step.startswith("U"):
+        return f"ยกเลิกระหว่างเตรียม TOR ({step})"
+    elif step.startswith("S") or step.startswith("Z"):
+        return f"ยกเลิกระหว่างยื่นซอง ({step})"
+    elif step.startswith(("W", "C", "I", "E", "X")):
+        return f"ยกเลิกหลังประมูล ({step})"
+    elif step.startswith("Q"):
+        return f"ยกเลิกตั้งแต่ขั้นวางแผน ({step})"
+    return f"ยกเลิก ({step or 'ไม่ทราบ stage'})"
+
+
+def is_cancelled(step_id: str, project_status_raw: str, announce_type: str):
+    """Predicate ยกเลิก (reuse ได้ทั้ง sheets classifier + winner-poller).
+    คืน (cancelled: bool, note: str). 3 สัญญาณ:
+      - projectStatus == "R"            (gold)
+      - announce_type in ("D1", "W1")   (secondary — ลงท้าย "1")
+      - step_id ขึ้นต้น "B"             (Block stage)
+    note: R/D1/W1 → ระบุ stage; B-prefix ล้วน → "" (ตรงกับ path LETTER_TO_SHEET เดิม)."""
+    step = (step_id or "").upper().strip()
+    if project_status_raw == "R" or announce_type in ("D1", "W1"):
+        return (True, _cancel_note(step))
+    if step.startswith("B"):
+        return (True, "")
+    return (False, "")
+
+
 def classify_by_stepid(step_id: str, project_status_raw: str, announce_type: str, has_winner: bool):
     """
     คืน (sheet_name, note_text)
@@ -150,22 +180,9 @@ def classify_by_stepid(step_id: str, project_status_raw: str, announce_type: str
     """
     step = (step_id or "").upper().strip()
 
-    # 1) Cancellation signals (gold + secondary)
+    # 1) Cancellation signals (gold + secondary) — B-prefix ล้วน ไปต่อ path has_winner→letter เดิม
     if project_status_raw == "R" or announce_type in ("D1", "W1"):
-        # หาจุดที่ยกเลิก
-        if step.startswith("B"):
-            note = f"ยกเลิกตั้งแต่ต้น ({step})"
-        elif step.startswith("M") or step.startswith("U"):
-            note = f"ยกเลิกระหว่างเตรียม TOR ({step})"
-        elif step.startswith("S") or step.startswith("Z"):
-            note = f"ยกเลิกระหว่างยื่นซอง ({step})"
-        elif step.startswith(("W", "C", "I", "E", "X")):
-            note = f"ยกเลิกหลังประมูล ({step})"
-        elif step.startswith("Q"):
-            note = f"ยกเลิกตั้งแต่ขั้นวางแผน ({step})"
-        else:
-            note = f"ยกเลิก ({step or 'ไม่ทราบ stage'})"
-        return ("cancelled_jobs", note)
+        return ("cancelled_jobs", _cancel_note(step))
 
     # 2) มี winner cache → awarded
     if has_winner:

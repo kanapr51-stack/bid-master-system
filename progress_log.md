@@ -1360,3 +1360,31 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 
 ### Followup
 - จับตา operational cost: cancellation pass เรียก getProjectDetail ทุก active follow/รอบ — ถ้า follow list โตค่อยจำกัด stage/cache (ตอนนี้ follow น้อย ไม่มีปัญหา)
+
+
+## งานที่ N+173: Location backfill + forward resolve — เติมตำบล/พิกัด province_api (2026-06-26)
+
+### สถานะ: ✅ เสร็จ + DEPLOYED VPS + verified drain เริ่มแล้ว · Sophia SAFE
+
+### ที่มา
+กัญจน์ถามทำไม board กลุ่ม "ยื่นซอง" ไม่ขึ้นตำบล (ขึ้นแค่ "จ.X"). debug เจอ: ไม่ใช่ bug การ์ด — **moi_name (ตำบล) ว่าง** ในงาน source=province_api (enrichment_status=failed placeholder). board render location จาก moi อยู่แล้ว → moi ว่าง = ขึ้นแค่จังหวัด
+
+### ขนาด + root cause
+- **1,117/2,781 แถว (40%)** project_locations มี province แต่ moi=NULL — ทั้งหมด province_api, จังหวัด นครพนม 750+บึงกาฬ 367, ช่วง 30พ.ค.–24มิ.ย. (ไม่ใช่ history 10 ปี = winner_history.db คนละชุด)
+- province_api ลงทะเบียน moi=NULL; การดึง location จริง (getProcurementDetail) เกิดเฉพาะใน pass แจ้งเตือน (gate RESOLVED+open) → งานไม่ผ่าน gate ค้าง NULL
+- พิสูจน์: getProcurementDetail คืน moi+อำเภอ+พิกัดจริง (ข้อมูลมีใน eGP แค่ไม่เคยดึง). dept_name fallback ได้ตำบลเดียวกัน (อบต.ตั้งชื่อตามตำบล) แต่ getProcurementDetail ดีกว่า (ที่ตั้งงานจริง+อำเภอ+พิกัด+ครอบทุกหน่วยงาน)
+
+### Fix (2 task TDD, worker pass เดียวแก้ทั้ง backfill+forward)
+- `cc1a3a0` `resolve_missing_locations(log, resolve_detail, sleep_sec)` ใน Sebastian_Enrichment_Worker.py: selector source=province_api+moi NULL+attempts<3 → getProcurementDetail → save_project_location_raw (ตำบล/อำเภอ/พิกัด), tambon_from_dept fallback, _bump_locfill_retry (stop@3). batch=8, sleep 1.5s
+- `d198c4b` เสียบใน main() หลัง cooldown gate (INC-001) → skip ตอน WAF ร้อน
+- self-healing: งานใหม่ moi ว่างถูกเก็บรอบถัดไปเอง (อุดรอยรั่ว — มิ.ย. ตกหล่นเพิ่ม 42)
+- spec `cf64b22` + plan ครบ · test_resolve_missing_locations 6 เคสเขียว (local+prod venv)
+
+### Deploy + verify (DEPLOYED 2026-06-25 ~17:29 UTC)
+- push c4b04f1→d198c4b · deploy.sh ff-pull + bms-api restart · schema source col ยืนยัน (ปิด Sophia ⚠️)
+- รอบ worker 17:30 (โค้ดใหม่): resolve 5 งานจริง (ต.ท่ากกแดง/นาสวรรค์/คำแก้ว/โนนสว่าง coord=True) → "Location resolve: เติม 5 งาน"
+- NULL-moi 1117→1112, เติมแล้ว 45→50 · drain ~5-8/รอบ (timer ~2นาที) → เกลี้ยงใน ~ไม่กี่ชม.
+
+### Followup
+- ดู drain จนใกล้ 0 (เหลือเฉพาะ eGP ไม่มี moi + non-อบต. ที่ attempts=3) — board ทยอยขึ้น ต.+จ.
+- (idea) แสดง "อำเภอ" บน board ด้วย (district_moi_id → ชื่อ) — ตอนนี้เก็บ district+พิกัดแล้ว ทำเพิ่มได้ภายหลัง

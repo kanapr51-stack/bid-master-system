@@ -660,6 +660,14 @@ def main():
         log("=== Enrichment Worker done (cooldown set) ===")
         return
 
+    # Location backfill/resolve (province_api ที่ moi ว่าง) — rate-disciplined, หลัง cooldown gate
+    try:
+        nfill = resolve_missing_locations(log)
+        if nfill:
+            log(f"Location resolve: เติมตำบล/พิกัด {nfill} งาน")
+    except Exception as e:
+        log(f"Location resolve ERROR: {type(e).__name__}: {e}")
+
     # Take batch of pending items
     with get_connection() as conn:
         rows = conn.execute("""

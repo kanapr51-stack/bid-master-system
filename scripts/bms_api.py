@@ -403,7 +403,7 @@ def _portal_jobs(user_id: str):
             "SELECT project_id, last_stage_notified FROM followed_jobs "
             "WHERE customer_id=? AND status IN ('active','closed')",
             (cid,)).fetchall()
-        groups = {"won": [], "prelim": [], "bidding": [], "pre": []}
+        groups = {"won": [], "prelim": [], "bidding": [], "pre": [], "cancelled": []}
         for f in follows:
             pid = f["project_id"]
             ps = conn.execute(
@@ -448,6 +448,9 @@ def _portal_jobs(user_id: str):
                    "pred_hi": pr["area_price_hi"] if pr else None,
                    "winner": None, "winner_price": None, "winner_disc": None, "competitors": [],
                    "bidders": [], "prelim_low": None, "prelim_n": 0}
+            if lsn == "CANCELLED":
+                groups["cancelled"].append(job)
+                continue
             win = next((r for r in results if r["is_winner"]), None)
             if win or ann.startswith("W") or lsn == "W0":
                 if win:
@@ -523,7 +526,7 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0, token: str = "") -> str:
         ".more{font-size:13px;font-weight:600;color:#1d72b4;margin:8px 0 0}"
         ".dots{font-size:12px;color:#999;margin:4px 0}"
         ".badge{font-size:11px;padding:2px 8px;border-radius:10px;color:#fff;margin-left:6px}"
-        ".bd{background:#1d72b4}.bw{background:#1a7f37}.bp{background:#7a5cc6}.bs{background:#c2410c}"
+        ".bd{background:#1d72b4}.bw{background:#1a7f37}.bp{background:#7a5cc6}.bs{background:#c2410c}.bx{background:#9ca3af}"
         ".cd{font-size:13px;font-weight:600;color:#1d72b4;margin:3px 0}"
         ".msg{font-size:15px;color:#555;margin:12px 0}"
         ".exp{font-size:11px;color:#bbb;margin-top:18px;text-align:center}"
@@ -544,7 +547,8 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0, token: str = "") -> str:
     # ชิปเลือกประเภทงานที่อยากดู (single-select แบบแท็บ) — "ทั้งหมด" default, กดประเภท=ดูอันเดียว
     chips = []
     for key, clabel in (("bidding", "🔵 ยื่นซอง"), ("prelim", "📊 สรุปราคา"),
-                        ("pre", "🟣 ประชาวิจารณ์"), ("won", "🏆 ผู้ชนะ")):
+                        ("pre", "🟣 ประชาวิจารณ์"), ("won", "🏆 ผู้ชนะ"),
+                        ("cancelled", "❌ ยกเลิก")):
         if groups.get(key):
             chips.append(f"<button type=\"button\" class=\"stagechip\" data-key=\"{key}\">{clabel}</button>")
     filter_html = ""
@@ -589,6 +593,9 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0, token: str = "") -> str:
                 disc = f" (ลด {j['winner_disc']:.0f}%)" if j["winner_disc"] is not None else ""
                 L.append(f"<div class=\"win\">🏆 {_h.escape(j['winner'])} · {_baht(j['winner_price'])}{disc}</div>")
             L.append("<div class=\"more\">ดูผู้ยื่นทั้งหมด →</div>")
+        elif kind == "cancelled":
+            L.append("<div class=\"dots\"><span class=\"badge bx\">❌ ยกเลิกโครงการ</span></div>")
+            L.append("<div class=\"meta\">โครงการนี้ถูกยกเลิกแล้ว</div>")
         else:
             L.append("<div class=\"dots\">●━━○━━○<span class=\"badge bp\">รับฟังคำประชาวิจารณ์</span></div>")
         if kind != "won":
@@ -603,7 +610,8 @@ def _portal_page_html(groups: dict, exp_epoch: int = 0, token: str = "") -> str:
         return f"<div class=\"job\" data-starred=\"{starred_attr}\">{star_link}{joblink}</div>"
 
     for key, label in (("bidding", "🔵 ประกาศวันยื่นซอง"), ("prelim", "📊 สรุปราคาเบื้องต้น"),
-                       ("pre", "🟣 รับฟังคำประชาวิจารณ์"), ("won", "🏆 ประกาศผู้ชนะทางการ")):
+                       ("pre", "🟣 รับฟังคำประชาวิจารณ์"), ("won", "🏆 ประกาศผู้ชนะทางการ"),
+                       ("cancelled", "❌ ยกเลิกโครงการ")):
         if groups.get(key):
             cards = "".join(_card(j, key) for j in groups[key])
             body.append(f"<div class=\"gw\" data-key=\"{key}\"><div class=\"grp\">{label} ({len(groups[key])})</div>{cards}</div>")

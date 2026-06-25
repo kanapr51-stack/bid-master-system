@@ -38,25 +38,66 @@ def _too_old(starred_at: str, now: str, max_days: int) -> bool:
 
 def poll_winners(store, resolve_result, now: str = None, log=print,
                  max_days: int = MAX_DAYS, sleep_sec: int = 0, verify_hook=None,
-                 resolve_prelim=None) -> dict:
+                 resolve_prelim=None, resolve_status=None) -> dict:
     """core (testable): resolve_result(pid) → {} หรือ {winner, bidders[...]}.
     mode จาก env BMS_PROVINCE_NOTIFY_MODE (live=enqueue, อื่น=shadow log).
     verify_hook(pid, winning_price) = closed-loop เทียบราคาคาด vs จริง (inject ได้, ปลอดภัย).
-    resolve_prelim(pid) → {} หรือ {has_summary, lowest_price, num_bidders, ...} = prelim pass (Round 1)."""
+    resolve_prelim(pid) → {} หรือ {has_summary, lowest_price, num_bidders, ...} = prelim pass (Round 1).
+    resolve_status(pid) → {step_id, project_status_raw, announce_type} = cancellation pass
+      (ตรวจ is_cancelled ก่อน prelim/formal; pid ที่ยกเลิก → แจ้ง+ปิด+ข้ามการ poll winner)."""
     now = now or _dt.datetime.now().isoformat()
     mode = os.environ.get("BMS_PROVINCE_NOTIFY_MODE", "preview")
     all_active = store.get_active_follows()
-    # formal pass: poll งานที่ stage D0 หรือ PRELIM
-    formal_follows = [f for f in all_active if (f.get("last_stage_notified") or "") in ("D0", "PRELIM")]
+    stats = {"polled": 0, "notified": 0, "no_result": 0, "closed_stale": 0,
+             "notified_prelim": 0, "cancelled": 0}
+
+    # --- Cancellation pass (ก่อน prelim/formal) — ทุก active follow (B0/D0/PRELIM) ---
+    cancelled_pids = set()
+    if resolve_status is not None:
+        from Sebastian_Classifier import is_cancelled
+        cancel_by_pid = {}
+        for f in all_active:
+            cancel_by_pid.setdefault(f["project_id"], []).append(f)
+        for pid, fs in cancel_by_pid.items():
+            try:
+                det = resolve_status(pid) or {}
+            except Exception as e:
+                log(f"  status {pid} error: {type(e).__name__}: {e}")
+                continue  # fail-safe: ไม่ false-cancel
+            cancelled, note = is_cancelled(det.get("step_id", ""),
+                                           det.get("project_status_raw", ""),
+                                           det.get("announce_type", ""))
+            if not cancelled:
+                continue
+            cancelled_pids.add(pid)
+            for f in fs:
+                cid = f["customer_id"]
+                if mode == "live":
+                    store.enqueue_for_customer(cid, {
+                        "project_id": pid, "source_stage": "followed_cancelled"})
+                    store.mark_stage_notified(cid, pid, "CANCELLED")
+                    store.close_follow(pid, cid)
+                    log(f"  ❌→ cancelled ENQUEUED {pid} cust{cid} ({note})")
+                else:
+                    log(f"  [SHADOW] cancelled {pid} cust{cid}: {note}")
+            stats["cancelled"] += 1
+            if sleep_sec:
+                time.sleep(sleep_sec)
+
+    # formal pass: poll งานที่ stage D0 หรือ PRELIM (ข้าม pid ที่ยกเลิกแล้ว)
+    formal_follows = [f for f in all_active
+                      if (f.get("last_stage_notified") or "") in ("D0", "PRELIM")
+                      and f["project_id"] not in cancelled_pids]
     # prelim pass: เฉพาะ stage D0 ที่ยังไม่เคยแจ้งเบื้องต้น
-    prelim_follows = [f for f in all_active if (f.get("last_stage_notified") or "") == "D0"]
+    prelim_follows = [f for f in all_active
+                      if (f.get("last_stage_notified") or "") == "D0"
+                      and f["project_id"] not in cancelled_pids]
     by_pid = {}
     for f in formal_follows:
         by_pid.setdefault(f["project_id"], []).append(f)
     prelim_by_pid = {}
     for f in prelim_follows:
         prelim_by_pid.setdefault(f["project_id"], []).append(f)
-    stats = {"polled": 0, "notified": 0, "no_result": 0, "closed_stale": 0, "notified_prelim": 0}
     # ชื่องาน (snapshot) — ดึงครอบคลุมทั้ง formal + prelim
     qpids = set(by_pid) | set(prelim_by_pid)
     names = {}
@@ -187,8 +228,13 @@ def main():
         from prelim_summary import fetch_prelim_summary
         return fetch_prelim_summary(pid)
 
+    def resolve_status(pid):
+        from process5_http_client import get_project_detail
+        return get_project_detail(pid)
+
     stats = poll_winners(store, get_procure_result, log=log, sleep_sec=POLL_SLEEP_SEC,
-                         verify_hook=verify_hook, resolve_prelim=resolve_prelim)
+                         verify_hook=verify_hook, resolve_prelim=resolve_prelim,
+                         resolve_status=resolve_status)
     log(f"=== Winner Poller done — {stats} ===")
 
 

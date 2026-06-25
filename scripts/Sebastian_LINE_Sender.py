@@ -454,6 +454,18 @@ def format_prelim_notification(project_name: str, budget, prelim: dict, cmp: dic
     return "\n".join(lines)
 
 
+def format_cancelled_notification(project_name: str, province: str = "", note: str = "") -> str:
+    """การ์ดแจ้งงานที่ติดตามถูกยกเลิกโครงการ (followed_cancelled)."""
+    lines = ["❌ โครงการถูกยกเลิก"]
+    if project_name:
+        lines.append(project_name[:80])
+    if province:
+        lines.append(f"📍 จ.{province}")
+    if note:
+        lines.append(note)
+    return "\n".join(lines)
+
+
 def format_winner(project_name: str, winner: str, price_agree: str,
                   competitors: list = None, budget=0, project_id: str = "") -> str:
     """การ์ดแจ้งผู้ชนะของงานที่ติดตาม (⭐) — ผู้ชนะ + ราคา + คู่แข่งทุกราย + ราคา (competitive intel).
@@ -750,6 +762,37 @@ def main():
                                    error=error_msg, error_type=error_type)
         log(f"⭐ winner sent={success} {item['project_id']} cust{item['customer_id']} ({error_msg})")
         log("=== LINE Sender done (winner) ===")
+        return
+
+    # ❌ cancelled notification (followed_cancelled): โครงการที่ติดตามถูกยกเลิก
+    # (source_stage-gated → inert กับ notification อื่นทั้งหมด). note re-derive ตอน render (เหมือน prelim)
+    if item.get("source_stage") == "followed_cancelled":
+        pid = item["project_id"]
+        pname = _clean_project_name(item.get("project_name") or "") or pid
+        note = ""
+        try:
+            from process5_http_client import get_project_detail
+            from Sebastian_Classifier import is_cancelled
+            det = get_project_detail(pid) or {}
+            _, note = is_cancelled(det.get("step_id", ""), det.get("project_status_raw", ""),
+                                   det.get("announce_type", ""))
+        except Exception as e:
+            log(f"  cancelled note re-derive fail {pid}: {type(e).__name__}: {e}")
+        text = format_cancelled_notification(pname, item.get("province", ""), note)
+        if dry_run:
+            log("─── DRY RUN: cancelled notification ───")
+            for ln in text.splitlines():
+                log("  " + ln)
+            store.mark_delivery_result(item["id"], item["customer_id"], item["project_id"],
+                                       status="failed", error="dry_run", error_type="retryable")
+            log("=== LINE Sender done (cancelled dry-run) ===")
+            return
+        success, error_type, error_msg = send_line_push(token, item["line_user_id"], text, quick_reply=None)
+        store.mark_delivery_result(item["id"], item["customer_id"], item["project_id"],
+                                   status="sent" if success else "failed",
+                                   error=error_msg, error_type=error_type)
+        log(f"❌ cancelled sent={success} {item['project_id']} cust{item['customer_id']} ({error_msg})")
+        log("=== LINE Sender done (cancelled) ===")
         return
 
     # Step 4a: API enrichment (opportunistic — skip if WAF state unknown/blocked)

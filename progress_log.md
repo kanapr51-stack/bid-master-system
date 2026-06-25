@@ -1351,6 +1351,12 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 - ⚠️ verify live VPS queue schema ไม่ได้ (ไม่มี SSH key) — แต่ followed_prelim/winner LIVE ใช้ dedup 3-col เดียวกันอยู่แล้ว = migrate แล้วโดยปริยาย (low risk)
 - ⚠️ operational cost: getProjectDetail ทุก active follow/รอบ poller (~6ชม.) เพิ่มโหลด eGP ถ้า follow list โต — จับตา
 
+### ✅ DEPLOYED VPS (2026-06-25) — กัญจน์ confirm "deploy เลย"
+- push origin 066bbdd→97f19f8 (6 commits) · VPS `bash scripts/deploy.sh` ff-pull clean (CRLF debt reconciled แล้ว ไม่ค้าง) + init_schema v1.14 + bms-api restart → active
+- ssh key = `~/.ssh/bms_vps` (session แรก fail เพราะไม่ระบุ -i; Sophia ก็ fail เพราะงี้) · VPS `bms@45.76.156.166`
+- pre-deploy verify: live queue schema = `UNIQUE(customer_id,project_id,source_stage)` 3-col ✅ (Sophia unknown เคลียร์) · 6 test รัน venv prod เขียวครบ · poller+bms_api import OK
+- ผลทันที: Board กลุ่ม ❌ ยกเลิกโครงการ LIVE · winner-poller cancellation pass รอบถัดไป 12:15 UTC (19:15 ไทย) · การ์ดยกเลิก→queue→digest (LINE quota เต็ม รวมส่ง ~1 ก.ค.)
+- `bms-winner-poller.timer` enabled (รัน 06:15 + ~6ชม.)
+
 ### Followup
-- **deploy VPS** (winner-poller + bms_api รันบน VPS) — ยังไม่ทำ รอ confirm (deploy-debt CRLF 5 ไฟล์ยังค้างจาก N+171 ระวัง merge); pre-deploy: เช็ค live queue schema 3-col + รัน 6 test บน VPS
-- ถ้า follow list โต → พิจารณาจำกัด cancellation pass เฉพาะ stage ที่ "น่าจะยกเลิก" หรือ cache getProjectDetail
+- จับตา operational cost: cancellation pass เรียก getProjectDetail ทุก active follow/รอบ — ถ้า follow list โตค่อยจำกัด stage/cache (ตอนนี้ follow น้อย ไม่มีปัญหา)

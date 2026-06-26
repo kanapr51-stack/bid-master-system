@@ -432,7 +432,17 @@ def _portal_jobs(user_id: str):
                 except sqlite3.OperationalError:
                     pass
             prov = ps["province"] or ""
-            location = ((f"ต.{moi} " if moi else "") + (f"จ.{prov}" if prov else "")).strip()
+            amphoe = ""
+            if moi and prov:
+                try:
+                    import geo_reverse
+                    _ams = geo_reverse.amphoes_of_tambon(prov, moi)
+                    if len(_ams) == 1:
+                        amphoe = _ams[0]
+                except Exception:
+                    pass
+            location = ((f"ต.{moi} " if moi else "") + (f"อ.{amphoe} " if amphoe else "")
+                        + (f"จ.{prov}" if prov else "")).strip()
             budget = ps["budget"] or 0
             pr = conn.execute(
                 "SELECT area_price_lo, area_price_hi FROM price_predictions WHERE project_id=?", (pid,)).fetchone()

@@ -10,7 +10,8 @@ prelim = {"has_price": True, "lowest_price": 740000.0, "num_bidders": 3, "reveal
 cmp = {"held": False, "error_pct": 1.4, "upper": 730000, "area_price_lo": 670000, "area_price_hi": 730000}
 txt = snd.format_prelim_notification("ถนนคอนกรีต ต.โพธิ์หมากแข้ง", 1017000, prelim, cmp, "P1")
 assert "เบื้องต้น" in txt and "740,000" in txt and "3 ราย" in txt, txt
-assert "กรอบบน" in txt and "730,000" in txt, txt
+assert "ส่วนลดจริง 27%" in txt, txt                          # ลด% จริง (เก็บไว้)
+assert "กรอบบน" not in txt and "ความแม่นยำ" not in txt and "คลาดเคลื่อน" not in txt, txt  # ตัดคาดการณ์ออก
 assert "รอประกาศผู้ชนะ" in txt and "P1" in txt, txt
 
 # 2-ซอง (ไม่มีราคา) → ไม่มีบรรทัดเทียบ

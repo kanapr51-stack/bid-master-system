@@ -1,4 +1,4 @@
-"""test_format_winner_detailed.py — Round 2: ผู้ชนะ + ความแม่น + breakdown ต่อราย + ป้าย."""
+"""test_format_winner_detailed.py — ผู้ชนะ + รายชื่อผู้ยื่นทั้งหมด (ราคา + ลด%) เรียบง่าย."""
 import os, sys, tempfile
 from pathlib import Path
 os.environ["BMS_DATA_DIR"] = tempfile.mkdtemp()
@@ -17,8 +17,10 @@ cmp = {"held": False, "error_pct": 1.1, "upper": 730000}
 acc = {"verified": 5, "in_range": 4, "in_range_pct": 80.0}
 txt = snd.format_winner_detailed("ถนนคอนกรีต", "หจก.X", 738000, 1017000, analyzed, cmp, acc, 28.0, "P1")
 assert "ผู้ชนะ: หจก.X" in txt and "738,000" in txt, txt
-assert "ความแม่นยำ" in txt and "คาดกรอบบน" in txt and "อยู่ในกรอบ 4/5" in txt, txt
-assert "หจก.Y" in txt and "เจ้าประจำ" in txt, txt          # ป้าย regular_missed
-assert "หน้าใหม่" in txt, txt                                # Z
-assert "ตลาดตำบล 28" in txt, txt
+assert "ผู้ยื่นทั้งหมด 3 ราย" in txt, txt                     # รายชื่อผู้ยื่นครบ
+assert "หจก.Y" in txt and "752,000" in txt and "หจก.Z" in txt, txt   # ทุกรายมีราคายื่น
+assert "ลด27%" in txt and "ลด26%" in txt, txt               # ลด% ต่อราย
+# ข้อมูลเบื้องลึกต้องไม่โผล่ (เก็บไว้พัฒนาระบบ)
+assert "ความแม่นยำ" not in txt and "คลาดเคลื่อน" not in txt, txt
+assert "ประวัติ" not in txt and "ตลาดตำบล" not in txt and "เจ้าประจำ" not in txt, txt
 print("OK test_format_winner_detailed")

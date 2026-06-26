@@ -437,15 +437,11 @@ def format_prelim_notification(project_name: str, budget, prelim: dict, cmp: dic
     if prelim.get("has_price") and prelim.get("lowest_price"):
         low = prelim["lowest_price"]
         lines.append(f"📊 ราคาต่ำสุดที่เสนอ: {_fmt_baht(low)} บาท · ผู้เสนอ {n} ราย")
-        if cmp:
-            acc_line = _accuracy_line(cmp, low)
-            if acc_line:
-                lines.append(acc_line)
-            try:
-                d = (1 - float(low) / float(budget)) * 100
-                lines.append(f"   (ส่วนลดจริง {d:.0f}%)")
-            except (ValueError, TypeError, ZeroDivisionError):
-                pass
+        try:
+            d = (1 - float(low) / float(budget)) * 100
+            lines.append(f"   (ส่วนลดจริง {d:.0f}%)")
+        except (ValueError, TypeError, ZeroDivisionError):
+            pass
     else:
         lines.append(f"📊 มีผู้เสนอ {n} ราย · ราคายังไม่เปิดเผย (เกณฑ์ 2 ซอง) · รอผลทางการ")
     lines.append("⏳ รอประกาศผู้ชนะทางการ — จะแจ้งรายชื่อ + คู่แข่งอีกครั้ง")
@@ -497,8 +493,9 @@ _TAG_LABEL = {"warned": "✅เราเตือน", "regular_missed": "🔸�
 
 
 def format_winner_detailed(project_name, winner, price_agree, budget, analyzed, cmp, acc, market_disc, project_id=""):
-    """Round 2 — ผู้ชนะ + ความแม่น(กรอบบน)+สะสม + breakdown ต่อราย(ประวัติ/ป้าย) + ส่วนลด vs ตลาด.
-    analyzed = cgd_intel.analyze_bidders(...). cmp = compare_prediction(...). acc = prediction_accuracy_summary()."""
+    """ผู้ชนะ + รายชื่อผู้ยื่นทั้งหมด (ราคา + ลด%) — เรียบง่าย ไม่มีข้อมูลคาดการณ์/ประวัติ.
+    cmp/acc/market_disc ยังรับไว้ (caller คำนวณ closed-loop ภายใน) แต่ไม่แสดงในการ์ด — เก็บไว้พัฒนาระบบ.
+    analyzed = cgd_intel.analyze_bidders(...)."""
     lines = ["⭐ งานที่ติดตาม — ประกาศผู้ชนะแล้ว"]
     if project_name:
         lines.append(f"🏗 {project_name[:80]}")
@@ -508,29 +505,12 @@ def format_winner_detailed(project_name, winner, price_agree, budget, analyzed, 
     except (ValueError, TypeError, ZeroDivisionError):
         pass
     lines.append(f"🏆 ผู้ชนะ: {winner} · {_fmt_baht(price_agree)}{win_disc}")
-    if cmp:
-        line = _accuracy_line(cmp, price_agree)
-        if line:
-            if acc and acc.get("verified"):
-                line += f" · สะสมอยู่ในกรอบ {acc['in_range']}/{acc['verified']}"
-            lines.append(line)
     if analyzed:
-        lines.append(f"📊 ผู้ยื่น {len(analyzed)} ราย (เรียงราคา · เทียบประวัติพื้นที่):")
+        lines.append(f"📊 ผู้ยื่นทั้งหมด {len(analyzed)} ราย (เรียงราคา):")
         for i, b in enumerate(analyzed, 1):
             crown = "🏆" if b["is_winner"] else "  "
-            h = b["hist"]
-            if h["n"] > 0:
-                _lv = h.get("ewma") if h.get("ewma") is not None else h["median"]
-                hist_s = f"{h['scope']}ล่าสุด~{_lv:.0f}%({h['n']}ครั้ง){b['trend'] or ''}"
-            else:
-                hist_s = "ไม่มีประวัติ"
             d = f"ลด{b['discount']:.0f}%" if b["discount"] is not None else ""
-            lines.append(f" {i}){crown} {b['name'][:24]} {_fmt_baht(b['price'])} {d} · {hist_s} · {_TAG_LABEL.get(b['tag'],'')}")
-    if market_disc is not None and analyzed:
-        wd = next((b["discount"] for b in analyzed if b["is_winner"]), None)
-        if wd is not None:
-            rel = "มากกว่า" if wd > market_disc + 1 else "น้อยกว่า" if wd < market_disc - 1 else "พอๆกัน"
-            lines.append(f"📉 ผู้ชนะลด {wd:.0f}% vs ตลาดตำบล {market_disc:.0f}% ({rel})")
+            lines.append(f" {i}){crown} {b['name'][:24]} {_fmt_baht(b['price'])} {d}")
     if project_id:
         lines.append(f"🔑 {project_id}")
     return "\n".join(lines)

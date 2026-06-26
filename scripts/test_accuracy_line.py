@@ -34,19 +34,8 @@ def test_fallback_no_median():
     print("✅ fallback (ไม่มี median) → เทียบกรอบบน")
 
 
-def test_winner_detailed_median():
-    analyzed = [{"name": "หจก.X", "price": 750000, "discount": 26.0, "is_winner": True,
-                 "hist": {"scope": "ตำบล", "n": 2, "median": 25.0}, "trend": "", "tag": "warned"}]
-    cmp = {"pred_med": 740000, "upper": 800000, "error_pct": -6.0, "held": True}
-    txt = snd.format_winner_detailed("ถนน", "หจก.X", 750000, 1000000, analyzed, cmp,
-                                     {"verified": 5, "in_range": 4}, 28.0, "P1")
-    assert "ความแม่นยำ" in txt and "ราคาที่คาดชนะได้" in txt and "สะสมอยู่ในกรอบ 4/5" in txt, txt
-    print("✅ format_winner_detailed (median win + สะสม)")
-
-
 if __name__ == "__main__":
     test_win_uses_accuracy()
     test_lose_uses_deviation()
     test_fallback_no_median()
-    test_winner_detailed_median()
     print("\n✅ ALL test_accuracy_line PASS")

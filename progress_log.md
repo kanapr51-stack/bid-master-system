@@ -1388,3 +1388,4 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 ### Followup
 - ~~drain~~ ✅ เสร็จ: 696 งานได้ตำบล (1117→421), 421 ที่เหลือ = งานระดับจังหวัด/รพ./สนง. ที่ eGP ไม่มีตำบลจริง (attempts≥3, ตันถูกต้อง ไม่ใช่ bug)
 - ~~(idea) แสดงอำเภอบน board~~ ✅ **เสร็จ+DEPLOYED** (576cc98): `_portal_jobs` resolve อ.จากตำบล (`amphoes_of_tambon`, unique→โชว์ กำกวม→ข้าม). verify จริง: ต.นาทม อ.นาทม จ.นครพนม. test_portal_amphoe 3 เคส+regression เขียว
+- ✅ dept-fallback backfill (one-time): 3 งาน local ตกค้างเพราะ `enrichment_attempts`≥3 สืบทอดจาก enrichment เดิม (locfill selector <3 ตัดก่อนได้ลอง) — bug ไม่ใช่ resolve พลาด (ทั้ง getProcurementDetail+dept fallback คืนตำบลได้). แก้: เติม moi จาก tambon_from_dept ข้าม attempts gate (ฟรี ไม่ยิง API). นาหว้า/เวินพระบาท/มหาชัย → NULL-moi 421→418. งานใหม่ไม่โดน (attempts เริ่ม 0)

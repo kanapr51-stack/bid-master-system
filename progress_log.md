@@ -1386,5 +1386,5 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 - NULL-moi 1117→1112, เติมแล้ว 45→50 · drain ~5-8/รอบ (timer ~2นาที) → เกลี้ยงใน ~ไม่กี่ชม.
 
 ### Followup
-- ดู drain จนใกล้ 0 (เหลือเฉพาะ eGP ไม่มี moi + non-อบต. ที่ attempts=3) — board ทยอยขึ้น ต.+จ.
-- (idea) แสดง "อำเภอ" บน board ด้วย (district_moi_id → ชื่อ) — ตอนนี้เก็บ district+พิกัดแล้ว ทำเพิ่มได้ภายหลัง
+- ~~drain~~ ✅ เสร็จ: 696 งานได้ตำบล (1117→421), 421 ที่เหลือ = งานระดับจังหวัด/รพ./สนง. ที่ eGP ไม่มีตำบลจริง (attempts≥3, ตันถูกต้อง ไม่ใช่ bug)
+- ~~(idea) แสดงอำเภอบน board~~ ✅ **เสร็จ+DEPLOYED** (576cc98): `_portal_jobs` resolve อ.จากตำบล (`amphoes_of_tambon`, unique→โชว์ กำกวม→ข้าม). verify จริง: ต.นาทม อ.นาทม จ.นครพนม. test_portal_amphoe 3 เคส+regression เขียว

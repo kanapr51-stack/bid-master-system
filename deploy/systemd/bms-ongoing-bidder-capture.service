@@ -1,0 +1,16 @@
+[Unit]
+Description=BMS Ongoing Bidder Capture (เก็บผู้ยื่นทุกราย ทุกงาน หลังจากนี้ — นครพนม+บึงกาฬ, ทุก proc_type รวมเฉพาะเจาะจง)
+After=network.target
+
+[Service]
+Type=oneshot
+User=bms
+Group=bms
+WorkingDirectory=/opt/bms/app
+Environment=BMS_DATA_DIR=/opt/bms/data
+EnvironmentFile=/opt/bms/app/.env
+ExecStart=/opt/bms/venv/bin/python /opt/bms/app/scripts/ongoing_bidder_capture.py
+Nice=10
+TimeoutStartSec=1800
+StandardOutput=journal
+StandardError=journal

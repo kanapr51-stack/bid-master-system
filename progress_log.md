@@ -1389,3 +1389,27 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 - ~~drain~~ ✅ เสร็จ: 696 งานได้ตำบล (1117→421), 421 ที่เหลือ = งานระดับจังหวัด/รพ./สนง. ที่ eGP ไม่มีตำบลจริง (attempts≥3, ตันถูกต้อง ไม่ใช่ bug)
 - ~~(idea) แสดงอำเภอบน board~~ ✅ **เสร็จ+DEPLOYED** (576cc98): `_portal_jobs` resolve อ.จากตำบล (`amphoes_of_tambon`, unique→โชว์ กำกวม→ข้าม). verify จริง: ต.นาทม อ.นาทม จ.นครพนม. test_portal_amphoe 3 เคส+regression เขียว
 - ✅ dept-fallback backfill (one-time): 3 งาน local ตกค้างเพราะ `enrichment_attempts`≥3 สืบทอดจาก enrichment เดิม (locfill selector <3 ตัดก่อนได้ลอง) — bug ไม่ใช่ resolve พลาด (ทั้ง getProcurementDetail+dept fallback คืนตำบลได้). แก้: เติม moi จาก tambon_from_dept ข้าม attempts gate (ฟรี ไม่ยิง API). นาหว้า/เวินพระบาท/มหาชัย → NULL-moi 421→418. งานใหม่ไม่โดน (attempts เริ่ม 0)
+
+---
+
+## งานที่ N+174: Ongoing Bidder Capture — เก็บผู้ยื่นทุกราย ทุกงาน หลังจากนี้ (นครพนม+บึงกาฬ) (2026-06-27)
+
+### สถานะ: 🚧 spec เสร็จ+commit · รอ writing-plans → implement
+
+### ที่มา
+กัญจน์ถามระบบเก็บผู้ยื่นทุกรายของทุกงาน (ไม่ใช่แค่ followed) ไหม → ไม่ครบ: `bid_results` (ผู้ยื่นทุกราย) มาแค่ 2 ทาง = followed jobs (winner_poller) + backfill จังหวัดเป้าหมาย (competitive เท่านั้น). cgd_winners/winner_history เก็บแค่ผู้ชนะทั่วประเทศ. กัญจน์อยากเก็บ "ทุกราย ทุกงาน หลังจากนี้" นครพนม+บึงกาฬ รวมเฉพาะเจาะจง
+
+### Decision (brainstorming)
+- scope: นครพนม+บึงกาฬ, ทุก proc_type รวมเฉพาะเจาะจง, **going-forward ไม่ใช่ backfill**
+- เฉพาะเจาะจง (84%, ผู้ยื่นรายเดียว=ผู้ชนะ) → **คัดลอกจาก cgd_winners ไม่เรียก API** (ประหยัด ~84% + กัน WAF)
+- ปมที่เจอ: "รวมเฉพาะเจาะจง" + "สด" ชนกัน — แหล่งเดียวที่มีเจาะจงครบคือ CGD ซึ่ง lag 8-9 เดือน → user เลือก **เอาทั้งคู่**
+- แนวทาง A: โมดูลใหม่ `ongoing_bidder_capture.py` (2 pass) + คอลัมน์ `source` (`procure_api`/`cgd_copy`)
+
+### ดีไซน์ (spec: docs/superpowers/specs/2026-06-27-ongoing-bidder-capture-design.md)
+- Pass 1 LIVE: projects_seen 2 จังหวัด, อายุในช่วง (heuristic — ไม่มี deadline ใน schema) → getProcureResult
+- Pass 2 CGD-FILL: cgd_winners delta (epoch floor) → เจาะจง copy / แข่ง API backstop
+- `_migrate_v136` เพิ่ม source col · idempotent (NOT IN bid_results + INSERT OR REPLACE) · epoch state file
+- timer ใหม่ 03:00 · coexist กับ winner_poller + backfill-bidders ผ่าน NOT IN bid_results
+
+### Followup
+- VPS cgd_winners sync ให้ incremental+schedule (ตอนนี้ full re-push → synced_at ใช้เป็น floor ไม่ได้)

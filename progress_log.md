@@ -1394,7 +1394,7 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 
 ## งานที่ N+175: ส่งงานก่อสร้างทั่ว 2 จังหวัด (whole-province) + daily digest (2026-06-27)
 
-### สถานะ: 🚧 ส่วน 1 (matching) เสร็จ+commit local **ยังไม่ push/deploy** · ส่วน 2 (digest) ยังไม่เริ่ม
+### สถานะ: ✅ DEPLOYED VPS (2026-06-27) ทั้ง 2 ส่วน · self-sanity เทสต์เขียว (Sophia ติด session limit → fallback รันเอง)
 
 ### ที่มา
 กัญจน์/พ่อ: เอางานก่อสร้างทั้งนครพนม+บึงกาฬ (ไม่เอาแค่ 21 ตำบล), ตัดงานซื้อ/เวชภัณฑ์, ส่งทุกคน. วัดจริง: ~21 งานก่อสร้าง/วัน (จาก D0 ~55/วัน; ซื้อ ~21, อื่น ~13 ตัด)
@@ -1409,6 +1409,14 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 ปัจจุบันส่ง "ทีละงาน": worker enqueue (Sebastian_Enrichment_Worker.py:439 source_stage=province_qualified/_soft) → notification_queue → LINE_Sender push ทีละ item. Daily_User_Summary = แค่ heartbeat นับ (ไม่ลิสต์งาน).
 ต้องทำ: (a) Daily_User_Summary ลิสต์งานก่อสร้างที่ qualified วันนี้ใน 2 จว. เป็น 1 ข้อความ (ใช้ bid_open.format_job_bullets) · (b) กันเด้งทีละงานของ discovery: ให้ LINE_Sender ข้าม source_stage discovery (province_qualified/_soft/api_enriched/rss_provisional/province_tor_review*) — followed_* (winner/prelim/cancelled/bid_open) ยัง instant เหมือนเดิม.
 ความเสี่ยง: LINE_Sender เป็น core (การ์ดผู้ชนะ/เตือนเส้นตายผ่านตัวนี้) → ต้อง TDD + Sophia ระวัง. ไม่มี deadline เร่ง (quota เต็มถึง ~1ก.ค.)
+
+### ส่วน 2 — daily digest ✅ DEPLOYED (วิธี: ไม่แตะ LINE_Sender เลย)
+- worker (Sebastian_Enrichment_Worker.py): D0 RESOLVED+open + decision=send + reason=whole_province_keyword → is_digest → qualification_status='qualified_digest' (ไม่ enqueue per-job) stats['digest']. init is_digest=False กัน NameError (mmode off/shadow)
+- Sebastian_Daily_User_Summary.py: fetch_digest_jobs (qualified_digest) + build_message ลิสต์ (reuse bid_open.format_job_bullets) + main ดึง digest 1 ครั้ง/ส่งทุกคน/mark_digest_listed หลัง ok>0 (ไม่ dry-run). dedup ด้วย status qualified_digest→digest_listed
+- test_daily_digest.py (fetch/build/mark) + test_job_matcher +5 เคส เขียว · regression resolve_missing_locations/backfill/bid_results_source เขียว
+- deploy: push 3922623 → deploy.sh ff-pull+migrate+bms-api active · verify VPS: whole_provinces โหลด, match_job ตำบลนอกเป้า→send/ซื้อ→cut, daily dry-run ok (digest=0 รอ worker รอบใหม่)
+- delivery model: discovery งานก่อสร้างทั่วจังหวัด = digest วันละครั้ง (timer bms-daily-user-summary 20:00 เดิม) · followed_* (winner/prelim/cancelled/deadline) ยัง instant ผ่าน LINE_Sender เหมือนเดิม
+- หมายเหตุ: quota LINE เต็มถึง ~1ก.ค. → ถ้าส่งไม่ออก ok=0 → ไม่ mark → digest สะสมจนส่งได้ (ไม่หาย). going-forward only (งานที่ filter ไปแล้วก่อน deploy ไม่ย้อนมา)
 
 ---
 

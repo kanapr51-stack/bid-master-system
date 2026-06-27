@@ -1394,7 +1394,7 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 
 ## งานที่ N+174: Ongoing Bidder Capture — เก็บผู้ยื่นทุกราย ทุกงาน หลังจากนี้ (นครพนม+บึงกาฬ) (2026-06-27)
 
-### สถานะ: 🚧 spec เสร็จ+commit · รอ writing-plans → implement
+### สถานะ: ✅ implement เสร็จ 6 tasks (TDD) · Sophia SAFE · ⏸ รอ confirm deploy VPS
 
 ### ที่มา
 กัญจน์ถามระบบเก็บผู้ยื่นทุกรายของทุกงาน (ไม่ใช่แค่ followed) ไหม → ไม่ครบ: `bid_results` (ผู้ยื่นทุกราย) มาแค่ 2 ทาง = followed jobs (winner_poller) + backfill จังหวัดเป้าหมาย (competitive เท่านั้น). cgd_winners/winner_history เก็บแค่ผู้ชนะทั่วประเทศ. กัญจน์อยากเก็บ "ทุกราย ทุกงาน หลังจากนี้" นครพนม+บึงกาฬ รวมเฉพาะเจาะจง
@@ -1411,5 +1411,18 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 - `_migrate_v136` เพิ่ม source col · idempotent (NOT IN bid_results + INSERT OR REPLACE) · epoch state file
 - timer ใหม่ 03:00 · coexist กับ winner_poller + backfill-bidders ผ่าน NOT IN bid_results
 
+### Implement (6 task TDD, commit ทีละ task: 986fc7d→fdbb0e0 + fix)
+- T1 `986fc7d` v136 bid_results.source + record_bid_results(source=) · T2 `e1bac89` scaffold state(epoch)/seen
+- T3 `717c329` Pass2 CGD-FILL (เจาะจง copy / แข่ง API backstop) · T4 `476502c` Pass1 LIVE (age-window poll)
+- T5 `64594fa` run loops+main+Discord (API-only pacing) · T6 `fdbb0e0` systemd timer 03:00
+- fix: run_live ไม่พักหลัง API ตัวสุดท้าย (Sophia note)
+- test: 5 ไฟล์ใหม่ + regression backfill_bidders เขียวหมด · dry-run epoch_date=2026-06-27 epoch_fy=2569
+- deviation: Pass2 floor = fiscal_year>=epoch_fy (announce_date เป็น Thai date เทียบ ISO ไม่ได้ + ทน full-re-push)
+- **Sophia SAFE** (ทุก test ผ่าน, migration register ถูก, callers เดิมไม่แตก default source, idempotent/pacing/epoch ok)
+
+### Deploy (รอ confirm — CLAUDE.md ห้าม push ไม่ confirm)
+push → VPS pull --ff-only → init_schema (ยืนยัน source col) → dry-run → install+enable timer → Sophia verify บน VPS
+
 ### Followup
 - VPS cgd_winners sync ให้ incremental+schedule (ตอนนี้ full re-push → synced_at ใช้เป็น floor ไม่ได้)
+- (NOTE Sophia, ไม่บล็อก) Pass1 ไม่มี seen-set → งานยกเลิก(R)/ยังไม่ award ถูก poll ทุกรอบจนหลุด window 90 วัน (ต้นทุนความสด ยอมรับ)

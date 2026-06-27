@@ -186,6 +186,20 @@ def match_job(project_name: str, province: str, tambon_field: str = "",
     """คืน (decision, detail). decision ∈ {'send','cut','soft_include'}"""
     cfg = cfg if cfg is not None else load_config()
     name = normalize_thai(project_name)
+
+    # whole-province mode: งานก่อสร้างตามคำค้น "ทั่วทั้งจังหวัด" (ไม่จำกัดตำบล) + ตัดงานซื้อ
+    # (กัญจน์/พ่อ 2026-06-27: เอางานก่อสร้างทั้งนครพนม+บึงกาฬ ไม่เอางานจัดซื้อ/เวชภัณฑ์)
+    if province in cfg.get("whole_provinces", []):
+        if is_procurement(name):
+            return "cut", {"reason": "purchasing_excluded", "province": province}
+        kw = next((k for k in cfg.get("keywords", []) if _kw_hit(k, name)), None)
+        if not kw:
+            return "cut", {"reason": "no_keyword"}
+        neg = next((n for n in cfg.get("negative_keywords", []) if n in name), None)
+        if neg:
+            return "cut", {"keyword": kw, "negative": neg, "reason": "negative_keyword"}
+        return "send", {"keyword": kw, "province": province, "reason": "whole_province_keyword"}
+
     targets = cfg.get("target_tambons", {}).get(province, [])
 
     if not targets:

@@ -3,6 +3,8 @@
   "_status": "pending_review",
   "applies_to": "all_active_users",
   "match_rule": "keyword AND tambon",
+  "_whole_provinces_note": "จังหวัดในนี้ = ส่งงานก่อสร้างตามคำค้น 'ทั่วทั้งจังหวัด' (ไม่จำกัด target_tambon) + ตัดงานซื้อ/จัดซื้อ. กัญจน์/พ่อ 2026-06-27 เอางานก่อสร้างทั้งนครพนม+บึงกาฬ. target_tambons ยังเก็บไว้ (ใช้ถ้าวันหน้าปิดโหมดนี้ หรือจังหวัดอื่น)",
+  "whole_provinces": ["นครพนม", "บึงกาฬ"],
   "dept_filter": false,
   "_keywords_note": "Domain tokens (recall-biased, ChatGPT converged 2026-06-01) — match ANY token. ครอบครัวทำถนน/คอนกรีต/อาคาร → miss road job แพงกว่า include extra. ถ้า false positive → ใส่ negative_keywords",
   "keywords": [

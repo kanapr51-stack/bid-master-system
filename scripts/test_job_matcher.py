@@ -82,9 +82,36 @@ chk(not tor_is_fresh("2026-01-01", TODAY, days=14), "B0 เก่ามาก �
 chk(not tor_is_fresh("", TODAY, days=14), "announce_date ว่าง ควร fresh=False (conservative กัน blast)")
 chk(not tor_is_fresh("ไม่ใช่วันที่", TODAY, days=14), "parse ไม่ได้ ควร fresh=False")
 
+# ── whole_provinces mode: งานก่อสร้างตามคำค้น ทั่วทั้งจังหวัด (ไม่จำกัดตำบล) + ตัดงานซื้อ ──
+CFG_WP = dict(CFG, whole_provinces=["นครพนม", "บึงกาฬ"])
+
+# จ้างก่อสร้าง ตำบลไม่ target (เรณู) → whole province ต้อง send (เดิม CFG จะ cut tambon_not_target)
+d, info = match_job("ประกวดราคาจ้างก่อสร้างถนนคอนกรีต ตำบลเรณู", "นครพนม", cfg=CFG_WP)
+chk(d == "send" and info.get("reason") == "whole_province_keyword",
+    f"จ้างก่อสร้าง ตำบลนอกเป้า + ทั้งจังหวัด ควร send, ได้ {d}/{info.get('reason')}")
+
+# จ้างก่อสร้าง ไม่ระบุตำบล → whole province send เลย (ไม่ต้อง soft_include)
+d, info = match_job("ประกวดราคาจ้างก่อสร้างถนนลาดยางสายหลัก", "บึงกาฬ", cfg=CFG_WP)
+chk(d == "send" and info.get("reason") == "whole_province_keyword",
+    f"จ้างก่อสร้าง ไม่ระบุตำบล + ทั้งจังหวัด ควร send, ได้ {d}/{info.get('reason')}")
+
+# งานซื้อ/จัดซื้อ → ตัด (พ่อกัญจน์ไม่เอางานซื้อ) แม้ match คำก่อสร้าง
+d, info = match_job("ประกวดราคาซื้อคอนกรีตผสมเสร็จ ตำบลบ้านแพง", "นครพนม", cfg=CFG_WP)
+chk(d == "cut" and info.get("reason") == "purchasing_excluded",
+    f"งานซื้อ + ทั้งจังหวัด ควร cut/purchasing_excluded, ได้ {d}/{info.get('reason')}")
+
+# จ้างที่ไม่เข้าคำค้นก่อสร้าง → ตัด
+d, info = match_job("ประกวดราคาจ้างจัดทำอาหารกลางวัน", "นครพนม", cfg=CFG_WP)
+chk(d == "cut" and info.get("reason") == "no_keyword",
+    f"จ้างไม่เข้าคำค้น + ทั้งจังหวัด ควร cut/no_keyword, ได้ {d}/{info.get('reason')}")
+
+# จังหวัดที่ไม่ได้อยู่ใน whole_provinces → พฤติกรรมเดิม (ไม่ subscribe)
+d, info = match_job("ประกวดราคาจ้างก่อสร้างถนน", "ขอนแก่น", cfg=CFG_WP)
+chk(d == "cut", f"จังหวัดนอก whole_provinces ควร cut, ได้ {d}")
+
 if fails:
     print(f"❌ FAIL {len(fails)} assertions:")
     for f in fails:
         print("  " + f)
     sys.exit(1)
-print("✅ PASS proc-type gate (ตัดซื้อ/เก็บจ้างก่อสร้าง) + regression")
+print("✅ PASS proc-type gate + whole_provinces mode + regression")

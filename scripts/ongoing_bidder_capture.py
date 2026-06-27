@@ -145,7 +145,7 @@ def run_live(provinces, epoch_date, get_procure_result, sleep=SLEEP, today=None,
         if sleep and cooldown_every and i % cooldown_every == 0 and i < len(cands):
             log(f"  💤 cooldown {cooldown_sec}s")
             time.sleep(cooldown_sec)
-        elif sleep:
+        elif sleep and i < len(cands):          # ไม่พักหลัง API ตัวสุดท้าย (ตรงกับ run_cgd)
             time.sleep(sleep)
     log(f"[live] stored={stats['stored']} empty={stats['empty']} error={stats['error']}")
     return stats

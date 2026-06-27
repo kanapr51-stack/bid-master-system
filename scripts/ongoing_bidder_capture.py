@@ -13,9 +13,11 @@ import backfill_bidders as bb   # reuse current_fy (DRY)
 DATA_DIR = Path(os.environ.get("BMS_DATA_DIR", "data"))
 STATE_PATH = DATA_DIR / "ongoing_capture_state.json"
 SEEN_CGD_PATH = DATA_DIR / "ongoing_capture_seen_cgd.json"
+LIVE_TRIES_PATH = DATA_DIR / "ongoing_capture_live_tries.json"   # {project_id: empty_poll_count}
 PROVINCES = ["นครพนม", "บึงกาฬ"]
 MIN_AGE_DAYS = 7      # ใหม่กว่านี้ = ยังไม่ award (ไม่ต้อง poll)
 MAX_AGE_DAYS = 90     # เก่ากว่านี้ = เลิก poll (กัน loop งานที่ไม่มีผลถาวร)
+MAX_LIVE_TRIES = 21   # poll empty ครบ N ครั้ง (≈N วัน) → เลิก (ยกเลิก/ไม่ประกาศผล); Pass2/CGD เก็บให้ทีหลัง
 SLEEP = 1.5
 COOLDOWN_EVERY = 25
 COOLDOWN_SEC = 130
@@ -55,6 +57,21 @@ def load_seen(path: Path) -> set:
 def save_seen(path: Path, seen: set):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(sorted(seen), ensure_ascii=False), encoding="utf-8")
+
+
+def load_tries(path: Path) -> dict:
+    """{project_id: empty_poll_count} — นับครั้งที่ poll แล้วยังไม่ประกาศผล (Pass 1)."""
+    if path.exists():
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (ValueError, OSError):
+            return {}
+    return {}
+
+
+def save_tries(path: Path, tries: dict):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(tries, ensure_ascii=False), encoding="utf-8")
 
 
 # ─── Pass 2: CGD-FILL ─────────────────────────────────────────────────────────
@@ -100,11 +117,13 @@ def capture_cgd_one(store, row, get_procure_result) -> str:
 
 
 # ─── Pass 1: LIVE ─────────────────────────────────────────────────────────────
-def select_live_candidates(conn, provinces: list, epoch_date: str, today: datetime.date = None,
+def select_live_candidates(conn, provinces: list, epoch_date: str, seen: set = None,
+                           today: datetime.date = None,
                            min_age: int = MIN_AGE_DAYS, max_age: int = MAX_AGE_DAYS) -> list:
     """projects_seen ในจังหวัดเป้าหมาย, first_seen_at ในช่วง [max(epoch_date, today-max_age), today-min_age],
-    ยังไม่อยู่ bid_results. (first_seen_at เป็น ISO timestamp → เทียบ date string แบบ prefix ได้;
-    ±1 วันที่ขอบ window ยอมรับได้). คืน [project_id]."""
+    ยังไม่อยู่ bid_results, ไม่อยู่ seen (เลิกลองแล้ว — empty ครบ MAX_LIVE_TRIES). (first_seen_at เป็น ISO
+    timestamp → เทียบ date string แบบ prefix ได้; ±1 วันที่ขอบ window ยอมรับได้). คืน [project_id]."""
+    seen = seen or set()
     today = today or _today()
     lo = max(epoch_date, (today - datetime.timedelta(days=max_age)).isoformat())
     hi = (today - datetime.timedelta(days=min_age)).isoformat()
@@ -112,7 +131,7 @@ def select_live_candidates(conn, provinces: list, epoch_date: str, today: dateti
     sql = (f"SELECT project_id FROM projects_seen WHERE province IN ({pv}) "
            f"AND first_seen_at >= ? AND first_seen_at <= ? "
            f"AND project_id NOT IN (SELECT DISTINCT project_id FROM bid_results)")
-    return [r[0] for r in conn.execute(sql, [*provinces, lo, hi])]
+    return [r[0] for r in conn.execute(sql, [*provinces, lo, hi]) if r[0] not in seen]
 
 
 def capture_live_one(store, pid: str, get_procure_result) -> str:
@@ -133,20 +152,33 @@ def capture_live_one(store, pid: str, get_procure_result) -> str:
 
 # ─── Run loops + CLI ──────────────────────────────────────────────────────────
 def run_live(provinces, epoch_date, get_procure_result, sleep=SLEEP, today=None,
-             cooldown_every=COOLDOWN_EVERY, cooldown_sec=COOLDOWN_SEC) -> dict:
-    """Pass 1: poll งานสดใน window. ยิง API ทุก candidate → pace ทุก iteration."""
+             cooldown_every=COOLDOWN_EVERY, cooldown_sec=COOLDOWN_SEC,
+             max_tries=MAX_LIVE_TRIES) -> dict:
+    """Pass 1: poll งานสดใน window. ยิง API ทุก candidate → pace ทุก iteration.
+    tries-counter: empty นับครั้ง, ครบ max_tries → seen (เลิก poll งานยกเลิก/ไม่ประกาศผล);
+    stored → ล้าง counter; error → ไม่นับ (transient, retry รอบหน้า)."""
+    tries = load_tries(LIVE_TRIES_PATH)
+    seen = {pid for pid, n in tries.items() if n >= max_tries}
     with get_connection() as conn:
-        cands = select_live_candidates(conn, provinces, epoch_date, today=today)
-    log(f"[live] candidates: {len(cands)}")
+        cands = select_live_candidates(conn, provinces, epoch_date, seen=seen, today=today)
+    log(f"[live] candidates: {len(cands)} (เลิกลองแล้ว {len(seen)})")
     stats = {"stored": 0, "empty": 0, "error": 0}
     store = SubscriptionStore()
     for i, pid in enumerate(cands, 1):
-        stats[capture_live_one(store, pid, get_procure_result)] += 1
+        status = capture_live_one(store, pid, get_procure_result)
+        stats[status] += 1
+        if status == "stored":
+            tries.pop(pid, None)                    # เก็บได้แล้ว → ล้าง counter
+        elif status == "empty":
+            tries[pid] = tries.get(pid, 0) + 1      # ยังไม่ประกาศผล → นับ
+        if i % CHECKPOINT_EVERY == 0:
+            save_tries(LIVE_TRIES_PATH, tries)
         if sleep and cooldown_every and i % cooldown_every == 0 and i < len(cands):
             log(f"  💤 cooldown {cooldown_sec}s")
             time.sleep(cooldown_sec)
-        elif sleep and i < len(cands):          # ไม่พักหลัง API ตัวสุดท้าย (ตรงกับ run_cgd)
+        elif sleep and i < len(cands):              # ไม่พักหลัง API ตัวสุดท้าย (ตรงกับ run_cgd)
             time.sleep(sleep)
+    save_tries(LIVE_TRIES_PATH, tries)
     log(f"[live] stored={stats['stored']} empty={stats['empty']} error={stats['error']}")
     return stats
 
@@ -206,10 +238,11 @@ def main():
     state = ensure_state()
     log(f"epoch_date={state['epoch_date']} epoch_fy={state['epoch_fy']} provinces={provinces}")
     if args.dry_run:
+        live_seen = {pid for pid, n in load_tries(LIVE_TRIES_PATH).items() if n >= MAX_LIVE_TRIES}
         with get_connection() as conn:
-            nl = len(select_live_candidates(conn, provinces, state["epoch_date"]))
+            nl = len(select_live_candidates(conn, provinces, state["epoch_date"], seen=live_seen))
             nc = len(select_cgd_candidates(conn, provinces, state["epoch_fy"], load_seen(SEEN_CGD_PATH)))
-        log(f"[dry-run] live candidates={nl}, cgd candidates={nc}")
+        log(f"[dry-run] live candidates={nl} (เลิกลองแล้ว {len(live_seen)}), cgd candidates={nc}")
         return
     from process5_http_client import get_procure_result
     summary = {}

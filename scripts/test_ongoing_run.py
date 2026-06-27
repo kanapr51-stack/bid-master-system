@@ -58,7 +58,46 @@ def test_run_live_stats():
     assert stats["stored"] == 1, stats
     print("✅ run_live stats")
 
+def test_run_live_giveup_after_max():
+    """งานที่ poll แล้ว empty ครบ MAX_LIVE_TRIES → เลิก poll (ไม่ re-poll ค้างจนหลุด window)."""
+    if oc.LIVE_TRIES_PATH.exists():
+        oc.LIVE_TRIES_PATH.unlink()
+    with db.get_connection() as conn:
+        conn.execute("DELETE FROM bid_results")
+        conn.execute("DELETE FROM projects_seen")
+        conn.execute("INSERT OR REPLACE INTO projects_seen (project_id, province, first_seen_at) "
+                     "VALUES ('EMP','นครพนม','2026-06-15T00:00:00')")
+    calls = []
+    api = lambda pid: calls.append(pid) or {"bidders": []}   # empty เสมอ (ยังไม่ award/ยกเลิก)
+    today = datetime.date(2026, 6, 27)
+    for _ in range(oc.MAX_LIVE_TRIES):
+        oc.run_live(oc.PROVINCES, "2026-06-12", api, sleep=0, today=today)
+    assert len(calls) == oc.MAX_LIVE_TRIES, len(calls)      # poll ครบ max ครั้งพอดี
+    oc.run_live(oc.PROVINCES, "2026-06-12", api, sleep=0, today=today)
+    assert len(calls) == oc.MAX_LIVE_TRIES, f"เลิกลองแล้วต้องไม่ poll เพิ่ม: {len(calls)}"
+    print("✅ run_live เลิก poll หลัง MAX_LIVE_TRIES empty")
+
+def test_run_live_stored_clears_tries():
+    """empty แล้ว stored ภายหลัง → counter ถูกล้าง (ไม่ค้าง)."""
+    if oc.LIVE_TRIES_PATH.exists():
+        oc.LIVE_TRIES_PATH.unlink()
+    with db.get_connection() as conn:
+        conn.execute("DELETE FROM bid_results")
+        conn.execute("DELETE FROM projects_seen")
+        conn.execute("INSERT OR REPLACE INTO projects_seen (project_id, province, first_seen_at) "
+                     "VALUES ('AW','นครพนม','2026-06-15T00:00:00')")
+    today = datetime.date(2026, 6, 27)
+    oc.run_live(oc.PROVINCES, "2026-06-12", lambda pid: {"bidders": []}, sleep=0, today=today)
+    assert oc.load_tries(oc.LIVE_TRIES_PATH).get("AW") == 1
+    oc.run_live(oc.PROVINCES, "2026-06-12",
+                lambda pid: {"bidders": [{"receiveNameTh": "ก", "receiveTin": "1", "priceProposal": "9"}]},
+                sleep=0, today=today)
+    assert "AW" not in oc.load_tries(oc.LIVE_TRIES_PATH), oc.load_tries(oc.LIVE_TRIES_PATH)
+    print("✅ run_live stored ล้าง tries counter")
+
 test_run_cgd_mixed_and_idempotent()
 test_run_cgd_paces_only_api()
 test_run_live_stats()
+test_run_live_giveup_after_max()
+test_run_live_stored_clears_tries()
 print("ALL PASS ongoing_run")

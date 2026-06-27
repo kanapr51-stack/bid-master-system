@@ -119,3 +119,4 @@ dashboard/parents/.vercel
 # ongoing_bidder_capture runtime state (per-node, do not commit)
 data/ongoing_capture_state.json
 data/ongoing_capture_seen_cgd.json
+data/ongoing_capture_live_tries.json

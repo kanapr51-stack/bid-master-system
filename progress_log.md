@@ -1426,6 +1426,12 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 - oneshot run: Result=success exit 0, ทั้ง 2 pass รัน (candidates 0/0 ถูกต้อง — epoch=วันนี้ → Pass1 เริ่มมีงาน +7วัน; Pass2 รอ CGD ปล่อย FY2569), Discord ส่ง
 - post-migration sanity (VPS): bid_results 240,674 แถว, source dist=[('procure_api',240674)], NULL=0 (backfill ครบ), duplicate(pid,tin)=0 ✅
 
-### Followup
-- VPS cgd_winners sync ให้ incremental+schedule (ตอนนี้ full re-push → synced_at ใช้เป็น floor ไม่ได้)
-- (NOTE Sophia, ไม่บล็อก) Pass1 ไม่มี seen-set → งานยกเลิก(R)/ยังไม่ award ถูก poll ทุกรอบจนหลุด window 90 วัน (ต้นทุนความสด ยอมรับ)
+### Followup #1 (ทำแล้ว 2026-06-27): seen-set Pass 1 — ปิด NOTE Sophia ✅ DEPLOYED
+- MAX_LIVE_TRIES=21: empty ครบ 21 ครั้ง→เลิก poll (งานยกเลิก/ไม่ประกาศผลไม่ค้าง re-poll); stored ล้าง counter; error ไม่นับ
+- tries dict ใน data/ongoing_capture_live_tries.json (gitignore) · test ใหม่ 2 เคส + suite เขียว
+- commit 221f82e · push+deploy.sh VPS · oneshot run success · grep MAX_LIVE_TRIES=4 ยืนยันโค้ดใหม่ live
+- (Sophia verify รอบ followup กำลังรัน ตอน deploy — ถ้า STOP ค่อยแก้)
+
+### Followup #2 (defer): VPS cgd_winners sync incremental+schedule
+- ตอนนี้ full re-push → synced_at ใช้เป็น floor ไม่ได้. ไม่เร่งด่วน: CGD ปล่อย FY2569 อีก ~8-9 เดือน (กลางปี 2570)
+- **action เตือน:** พอ FY2569 ออก → รัน manual cgd_sync 1 รอบ แล้ว Pass 2 เก็บเฉพาะเจาะจงได้เอง (ไม่ต้องสร้าง infra ตอนนี้)

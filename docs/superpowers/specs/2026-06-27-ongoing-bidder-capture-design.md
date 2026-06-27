@@ -88,9 +88,10 @@ cgd_winners (province IN [นครพนม,บึงกาฬ], NOT IN bid_res
 - **กันซ้ำ 2 ชั้น:** `NOT IN bid_results` (SQL ตัดงานที่เก็บแล้ว) + `INSERT OR REPLACE` PK (project_id, bidder_tin)
 - **seen-set แยกต่อ pass:** `data/ongoing_capture_seen_live.json`, `..._cgd.json` (กัน re-poll งาน empty)
 - **epoch:** persist `data/ongoing_capture_state.json` — ตั้งครั้งแรก = วัน deploy. เป็นเส้นแบ่ง "ไม่ backfill"
-  - Pass 1 floor: `first_seen_at ≥ epoch`
-  - Pass 2 floor: `announce_date ≥ epoch` **หรือ** project_id ที่ไม่เคยเห็น
-    - ⚠️ **caveat:** `synced_at` ใช้เป็น floor ไม่ได้ตอนนี้ เพราะ VPS sync ยัง full re-push (617K, synced_at รีเซ็ตหมดทุกครั้ง — ดู runbook cgd-refresh followup). ใช้ announce_date/fiscal_year floor + seen-set แทน
+  - Pass 1 floor: `first_seen_at ≥ epoch_date` (first_seen_at เป็น ISO timestamp เทียบได้)
+  - Pass 2 floor: `CAST(fiscal_year AS INTEGER) ≥ epoch_fy` (ปีงบไทย ณ deploy)
+    - ⚠️ **ทำไมไม่ใช้ announce_date/synced_at:** `cgd_winners.announce_date` เป็น Thai date (`'9-เม.ย.-67'`) เทียบ ISO ไม่ได้; `synced_at` รีเซ็ตหมดทุก full re-push (617K — ดู runbook cgd-refresh followup). `fiscal_year` ทนต่อ full-re-push (key=project_id ไม่ใช่เวลา sync) + ตัดปีเก่าได้ตรง
+    - state file: `{"epoch_date": "YYYY-MM-DD", "epoch_fy": <int>}` (epoch_fy = `backfill_bidders.current_fy()`)
 
 ---
 

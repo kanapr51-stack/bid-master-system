@@ -1392,6 +1392,26 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 
 ---
 
+## งานที่ N+175: ส่งงานก่อสร้างทั่ว 2 จังหวัด (whole-province) + daily digest (2026-06-27)
+
+### สถานะ: 🚧 ส่วน 1 (matching) เสร็จ+commit local **ยังไม่ push/deploy** · ส่วน 2 (digest) ยังไม่เริ่ม
+
+### ที่มา
+กัญจน์/พ่อ: เอางานก่อสร้างทั้งนครพนม+บึงกาฬ (ไม่เอาแค่ 21 ตำบล), ตัดงานซื้อ/เวชภัณฑ์, ส่งทุกคน. วัดจริง: ~21 งานก่อสร้าง/วัน (จาก D0 ~55/วัน; ซื้อ ~21, อื่น ~13 ตัด)
+
+### ส่วน 1 — matching whole-province ✅ (commit local, ยังไม่ deploy)
+- `job_matcher.match_job`: ถ้า province ∈ `whole_provinces` → ตัด is_procurement, keyword(ก่อสร้าง) required, neg, else send (ไม่สนตำบล). reason='whole_province_keyword'
+- config `whole_provinces:["นครพนม","บึงกาฬ"]` (target_tambons เก็บไว้เผื่อปิดโหมด). keyword pre-filter+ตัดซื้อ ยังทำงานเหมือนเดิม
+- test_job_matcher +5 เคส (CFG_WP) เขียว · commit ~ (local, ยังไม่ push)
+- **ยังไม่ deploy โดยตั้งใจ**: ถ้าเปิดก่อนมี digest → quota รีเซ็ต ~1ก.ค. จะเด้งทีละงาน ~21/วัน = สแปม
+
+### ส่วน 2 — daily digest (ยังไม่เริ่ม) — TODO next session
+ปัจจุบันส่ง "ทีละงาน": worker enqueue (Sebastian_Enrichment_Worker.py:439 source_stage=province_qualified/_soft) → notification_queue → LINE_Sender push ทีละ item. Daily_User_Summary = แค่ heartbeat นับ (ไม่ลิสต์งาน).
+ต้องทำ: (a) Daily_User_Summary ลิสต์งานก่อสร้างที่ qualified วันนี้ใน 2 จว. เป็น 1 ข้อความ (ใช้ bid_open.format_job_bullets) · (b) กันเด้งทีละงานของ discovery: ให้ LINE_Sender ข้าม source_stage discovery (province_qualified/_soft/api_enriched/rss_provisional/province_tor_review*) — followed_* (winner/prelim/cancelled/bid_open) ยัง instant เหมือนเดิม.
+ความเสี่ยง: LINE_Sender เป็น core (การ์ดผู้ชนะ/เตือนเส้นตายผ่านตัวนี้) → ต้อง TDD + Sophia ระวัง. ไม่มี deadline เร่ง (quota เต็มถึง ~1ก.ค.)
+
+---
+
 ## งานที่ N+174: Ongoing Bidder Capture — เก็บผู้ยื่นทุกราย ทุกงาน หลังจากนี้ (นครพนม+บึงกาฬ) (2026-06-27)
 
 ### สถานะ: ✅ DEPLOYED VPS (2026-06-27) · Sophia SAFE · service run success · timer active

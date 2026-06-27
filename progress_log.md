@@ -1394,7 +1394,7 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 
 ## งานที่ N+174: Ongoing Bidder Capture — เก็บผู้ยื่นทุกราย ทุกงาน หลังจากนี้ (นครพนม+บึงกาฬ) (2026-06-27)
 
-### สถานะ: ✅ implement เสร็จ 6 tasks (TDD) · Sophia SAFE · ⏸ รอ confirm deploy VPS
+### สถานะ: ✅ DEPLOYED VPS (2026-06-27) · Sophia SAFE · service run success · timer active
 
 ### ที่มา
 กัญจน์ถามระบบเก็บผู้ยื่นทุกรายของทุกงาน (ไม่ใช่แค่ followed) ไหม → ไม่ครบ: `bid_results` (ผู้ยื่นทุกราย) มาแค่ 2 ทาง = followed jobs (winner_poller) + backfill จังหวัดเป้าหมาย (competitive เท่านั้น). cgd_winners/winner_history เก็บแค่ผู้ชนะทั่วประเทศ. กัญจน์อยากเก็บ "ทุกราย ทุกงาน หลังจากนี้" นครพนม+บึงกาฬ รวมเฉพาะเจาะจง
@@ -1420,8 +1420,11 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 - deviation: Pass2 floor = fiscal_year>=epoch_fy (announce_date เป็น Thai date เทียบ ISO ไม่ได้ + ทน full-re-push)
 - **Sophia SAFE** (ทุก test ผ่าน, migration register ถูก, callers เดิมไม่แตก default source, idempotent/pacing/epoch ok)
 
-### Deploy (รอ confirm — CLAUDE.md ห้าม push ไม่ confirm)
-push → VPS pull --ff-only → init_schema (ยืนยัน source col) → dry-run → install+enable timer → Sophia verify บน VPS
+### Deploy ✅ DEPLOYED (2026-06-27, confirm by กัญจน์)
+- push c6da5b1 → deploy.sh (pull+migrate+restart bms-api active) → source col ยืนยันบน VPS
+- install+enable bms-ongoing-bidder-capture.timer (next 2026-06-28 03:00 UTC = 10:00 ไทย)
+- oneshot run: Result=success exit 0, ทั้ง 2 pass รัน (candidates 0/0 ถูกต้อง — epoch=วันนี้ → Pass1 เริ่มมีงาน +7วัน; Pass2 รอ CGD ปล่อย FY2569), Discord ส่ง
+- post-migration sanity (VPS): bid_results 240,674 แถว, source dist=[('procure_api',240674)], NULL=0 (backfill ครบ), duplicate(pid,tin)=0 ✅
 
 ### Followup
 - VPS cgd_winners sync ให้ incremental+schedule (ตอนนี้ full re-push → synced_at ใช้เป็น floor ไม่ได้)

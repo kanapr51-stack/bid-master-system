@@ -97,3 +97,35 @@ def capture_cgd_one(store, row, get_procure_result) -> str:
         store.record_bid_results(pid, [_winner_as_bidder(winner, win_price)], source="cgd_copy")
         return "copied"
     return "empty"
+
+
+# ─── Pass 1: LIVE ─────────────────────────────────────────────────────────────
+def select_live_candidates(conn, provinces: list, epoch_date: str, today: datetime.date = None,
+                           min_age: int = MIN_AGE_DAYS, max_age: int = MAX_AGE_DAYS) -> list:
+    """projects_seen ในจังหวัดเป้าหมาย, first_seen_at ในช่วง [max(epoch_date, today-max_age), today-min_age],
+    ยังไม่อยู่ bid_results. (first_seen_at เป็น ISO timestamp → เทียบ date string แบบ prefix ได้;
+    ±1 วันที่ขอบ window ยอมรับได้). คืน [project_id]."""
+    today = today or _today()
+    lo = max(epoch_date, (today - datetime.timedelta(days=max_age)).isoformat())
+    hi = (today - datetime.timedelta(days=min_age)).isoformat()
+    pv = ",".join("?" for _ in provinces)
+    sql = (f"SELECT project_id FROM projects_seen WHERE province IN ({pv}) "
+           f"AND first_seen_at >= ? AND first_seen_at <= ? "
+           f"AND project_id NOT IN (SELECT DISTINCT project_id FROM bid_results)")
+    return [r[0] for r in conn.execute(sql, [*provinces, lo, hi])]
+
+
+def capture_live_one(store, pid: str, get_procure_result) -> str:
+    """ดึง 1 งานสด → เก็บ bidders. ไม่มีผล (ยังไม่ award) → 'empty' (รอบหน้ายังเป็น candidate ตาม window).
+    fail-open. คืน 'stored'|'empty'|'error'."""
+    try:
+        res = get_procure_result(pid)
+    except Exception as e:
+        log(f"  {pid} live fetch พลาด: {type(e).__name__}: {e}")
+        return "error"
+    if "bidders" not in res:
+        return "error"
+    if not res["bidders"]:
+        return "empty"
+    store.record_bid_results(pid, res["bidders"], source="procure_api")
+    return "stored"

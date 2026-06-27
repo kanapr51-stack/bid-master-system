@@ -316,6 +316,7 @@ def init_schema():
     _migrate_v133()
     _migrate_v134()
     _migrate_v135()
+    _migrate_v136()
     print(f"Schema v1.14 ready: {DB_PATH}")
 
 
@@ -392,6 +393,18 @@ def _migrate_v135():
             buf = [(_pv._norm_name(n), pid, tin) for pid, tin, n in rows]
             conn.executemany(
                 "UPDATE bid_results SET normalized_name=? WHERE project_id=? AND bidder_tin=?", buf)
+
+
+def _migrate_v136():
+    """bid_results +source — แยกที่มาแถว: 'procure_api' (getProcureResult) vs 'cgd_copy'
+    (คัดลอกผู้ชนะจาก cgd_winners สำหรับงานเฉพาะเจาะจง ผู้ยื่นรายเดียว — ongoing_bidder_capture).
+    แถวเก่ามาจาก API ทั้งหมด → backfill NULL→'procure_api' (one-time). record_bid_results ต้องเขียน
+    source ทุกครั้ง (INSERT OR REPLACE เขียนทั้งแถว ไม่งั้นหายเหมือน normalized_name v135)."""
+    with get_connection() as conn:
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(bid_results)")]
+        if "source" not in cols:
+            conn.execute("ALTER TABLE bid_results ADD COLUMN source TEXT")
+            conn.execute("UPDATE bid_results SET source='procure_api' WHERE source IS NULL")
 
 
 def _migrate_v130():
@@ -1009,7 +1022,8 @@ class SubscriptionStore:
                 "UPDATE followed_jobs SET status='closed' WHERE customer_id=? AND project_id=?",
                 (customer_id, project_id))
 
-    def record_bid_results(self, project_id: str, bidders: list, fetched_at: str = None) -> int:
+    def record_bid_results(self, project_id: str, bidders: list, fetched_at: str = None,
+                           source: str = "procure_api") -> int:
         """เก็บ bidders (จาก get_procure_result) ลง bid_results — competitive intel.
         bidder dict: receiveNameTh, receiveTin, priceProposal, priceAgree, resultFlag, is_sme.
         is_winner = มี priceAgree. idempotent (INSERT OR REPLACE ตาม project+tin). คืนจำนวน row.
@@ -1029,11 +1043,11 @@ class SubscriptionStore:
                 conn.execute("""
                     INSERT OR REPLACE INTO bid_results
                       (project_id, bidder_name, bidder_tin, price_proposal, price_agree,
-                       is_winner, is_sme, result_flag, fetched_at, normalized_name)
-                    VALUES (?,?,?,?,?,?,?,?,?,?)
+                       is_winner, is_sme, result_flag, fetched_at, normalized_name, source)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?)
                 """, (project_id, name, key, b.get("priceProposal") or "", pa,
                       1 if pa else 0, 1 if b.get("is_sme") else 0,
-                      b.get("resultFlag") or "", fetched_at, _pv._norm_name(name)))
+                      b.get("resultFlag") or "", fetched_at, _pv._norm_name(name), source))
                 n += 1
         return n
 

@@ -55,3 +55,45 @@ def load_seen(path: Path) -> set:
 def save_seen(path: Path, seen: set):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(sorted(seen), ensure_ascii=False), encoding="utf-8")
+
+
+# ─── Pass 2: CGD-FILL ─────────────────────────────────────────────────────────
+def select_cgd_candidates(conn, provinces: list, epoch_fy: int, seen: set) -> list:
+    """cgd_winners ในจังหวัดเป้าหมาย, fiscal_year >= epoch_fy (ไม่ backfill ปีเก่า),
+    ยังไม่อยู่ bid_results, ไม่อยู่ seen. คืน [(project_id, proc_type, winner, win_price)]."""
+    pv = ",".join("?" for _ in provinces)
+    sql = (f"SELECT project_id, proc_type, winner, win_price FROM cgd_winners "
+           f"WHERE province IN ({pv}) AND CAST(fiscal_year AS INTEGER) >= ? "
+           f"AND project_id NOT IN (SELECT DISTINCT project_id FROM bid_results)")
+    rows = conn.execute(sql, [*provinces, epoch_fy]).fetchall()
+    return [(pid, pt, w, wp) for pid, pt, w, wp in rows if pid not in seen]
+
+
+def _winner_as_bidder(winner, win_price) -> dict:
+    """ผู้ชนะ cgd_winners → bidder dict (ผู้ยื่นรายเดียวงานเฉพาะเจาะจง). receiveTin='' →
+    record_bid_results ใช้ name-fallback key (winner_tin เพี้ยน ~99%). priceAgree set → is_winner=1."""
+    price = str(win_price) if win_price not in (None, "") else ""
+    return {"receiveNameTh": winner or "", "receiveTin": "",
+            "priceProposal": price, "priceAgree": price}
+
+
+def capture_cgd_one(store, row, get_procure_result) -> str:
+    """row=(pid, proc_type, winner, win_price). เฉพาะเจาะจง/ไม่แข่ง → copy (ไม่ยิง API);
+    แข่ง → getProcureResult (fallback copy ถ้าล้ม/ว่าง). คืน 'copied'|'stored'|'empty'|'error'."""
+    pid, proc_type, winner, win_price = row
+    if proc_type not in COMPETITIVE_SET:
+        if not winner:
+            return "empty"
+        store.record_bid_results(pid, [_winner_as_bidder(winner, win_price)], source="cgd_copy")
+        return "copied"
+    try:
+        res = get_procure_result(pid)
+    except Exception:
+        res = {}
+    if res.get("bidders"):
+        store.record_bid_results(pid, res["bidders"], source="procure_api")
+        return "stored"
+    if winner:   # API ล้ม/ว่าง → มีผู้ชนะดีกว่าไม่มี
+        store.record_bid_results(pid, [_winner_as_bidder(winner, win_price)], source="cgd_copy")
+        return "copied"
+    return "empty"

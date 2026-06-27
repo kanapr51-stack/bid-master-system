@@ -305,7 +305,7 @@ def qualify_province_api(store, log) -> int:
 
     TRANSIENT = (DeadlineOutcome.PROVIDER_ERROR, DeadlineOutcome.DOWNLOAD_FAILED)
     stats = {"enqueued": 0, "preview": 0, "expired": 0, "failed": 0, "retry": 0,
-             "filtered": 0, "soft": 0, "kw_skip": 0}
+             "filtered": 0, "soft": 0, "kw_skip": 0, "digest": 0}
     consec_err = 0
     for c in cands:
         pid = c["project_id"]
@@ -402,6 +402,7 @@ def qualify_province_api(store, log) -> int:
         if res.outcome == DeadlineOutcome.RESOLVED and res.is_open():
             # matching layer (keyword + tambon + soft-include) — shadow log / enforce apply
             src_stage = "province_qualified"
+            is_digest = False   # whole-province ก่อสร้าง → พักเป็น digest (สรุปวันละครั้ง) แทนเด้งทีละงาน
             if jm is not None and mmode != "off":
                 # capture เต็มจาก getProcurementDetail (API call เท่าเดิม) — เก็บ raw location
                 # ให้ intel disambiguate ระดับตำบล/อำเภอ (MOI disambiguation Phase A)
@@ -435,7 +436,13 @@ def qualify_province_api(store, log) -> int:
                     if decision == "soft_include":
                         src_stage = "province_soft_location"
                         stats["soft"] += 1
-            if mode == "live":
+                    elif decision == "send" and mdet.get("reason") == "whole_province_keyword":
+                        is_digest = True   # งานก่อสร้างทั่วจังหวัด → ไม่เด้งทีละงาน รวมในสรุป
+            if is_digest:
+                status = "qualified_digest"
+                stats["digest"] = stats.get("digest", 0) + 1
+                log(f"  → 📋 DIGEST {pid} {c['province']} (รวมในสรุปวันละครั้ง)")
+            elif mode == "live":
                 n = store.enqueue_notifications({
                     "project_id": pid, "province": c["province"],
                     "announce_type": c.get("announce_type") or "D0",

@@ -1430,7 +1430,7 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 - MAX_LIVE_TRIES=21: empty ครบ 21 ครั้ง→เลิก poll (งานยกเลิก/ไม่ประกาศผลไม่ค้าง re-poll); stored ล้าง counter; error ไม่นับ
 - tries dict ใน data/ongoing_capture_live_tries.json (gitignore) · test ใหม่ 2 เคส + suite เขียว
 - commit 221f82e · push+deploy.sh VPS · oneshot run success · grep MAX_LIVE_TRIES=4 ยืนยันโค้ดใหม่ live
-- (Sophia verify รอบ followup กำลังรัน ตอน deploy — ถ้า STOP ค่อยแก้)
+- **Sophia SAFE** (followup): threshold ไม่มี off-by-one (poll 21 ครั้งพอดีแล้วหยุด), error transient-safe (เฉพาะ empty นับ), stored ล้าง counter, Pass 2 ไม่กระทบ, gitignore ครบ
 
 ### Followup #2 (defer): VPS cgd_winners sync incremental+schedule
 - ตอนนี้ full re-push → synced_at ใช้เป็น floor ไม่ได้. ไม่เร่งด่วน: CGD ปล่อย FY2569 อีก ~8-9 เดือน (กลางปี 2570)

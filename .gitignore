@@ -115,3 +115,7 @@ data/winner_history.db
 data/_wh_fetch_ckpt.json
 .vercel
 dashboard/parents/.vercel
+
+# ongoing_bidder_capture runtime state (per-node, do not commit)
+data/ongoing_capture_state.json
+data/ongoing_capture_seen_cgd.json

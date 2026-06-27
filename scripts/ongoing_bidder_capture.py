@@ -129,3 +129,96 @@ def capture_live_one(store, pid: str, get_procure_result) -> str:
         return "empty"
     store.record_bid_results(pid, res["bidders"], source="procure_api")
     return "stored"
+
+
+# ─── Run loops + CLI ──────────────────────────────────────────────────────────
+def run_live(provinces, epoch_date, get_procure_result, sleep=SLEEP, today=None,
+             cooldown_every=COOLDOWN_EVERY, cooldown_sec=COOLDOWN_SEC) -> dict:
+    """Pass 1: poll งานสดใน window. ยิง API ทุก candidate → pace ทุก iteration."""
+    with get_connection() as conn:
+        cands = select_live_candidates(conn, provinces, epoch_date, today=today)
+    log(f"[live] candidates: {len(cands)}")
+    stats = {"stored": 0, "empty": 0, "error": 0}
+    store = SubscriptionStore()
+    for i, pid in enumerate(cands, 1):
+        stats[capture_live_one(store, pid, get_procure_result)] += 1
+        if sleep and cooldown_every and i % cooldown_every == 0 and i < len(cands):
+            log(f"  💤 cooldown {cooldown_sec}s")
+            time.sleep(cooldown_sec)
+        elif sleep:
+            time.sleep(sleep)
+    log(f"[live] stored={stats['stored']} empty={stats['empty']} error={stats['error']}")
+    return stats
+
+
+def run_cgd(provinces, epoch_fy, get_procure_result, sleep=SLEEP,
+            cooldown_every=COOLDOWN_EVERY, cooldown_sec=COOLDOWN_SEC) -> dict:
+    """Pass 2: เติมจาก cgd_winners. pace เฉพาะ API call (copy ไม่ยิง API → ไม่พัก กันค้างแสน copy).
+    seen-set กัน re-poll empty/error; copied/stored ตัดด้วย NOT IN bid_results อยู่แล้ว."""
+    seen = load_seen(SEEN_CGD_PATH)
+    with get_connection() as conn:
+        cands = select_cgd_candidates(conn, provinces, epoch_fy, seen)
+    log(f"[cgd] candidates: {len(cands)}")
+    stats = {"copied": 0, "stored": 0, "empty": 0, "error": 0}
+    store = SubscriptionStore()
+    api_calls = 0
+    for i, row in enumerate(cands, 1):
+        is_competitive = row[1] in COMPETITIVE_SET
+        status = capture_cgd_one(store, row, get_procure_result)
+        stats[status] += 1
+        if status != "error":
+            seen.add(row[0])
+        if i % CHECKPOINT_EVERY == 0:
+            save_seen(SEEN_CGD_PATH, seen)
+        if is_competitive:                       # pace เฉพาะที่ยิง API
+            api_calls += 1
+            remaining_api = sum(1 for r in cands[i:] if r[1] in COMPETITIVE_SET)
+            if sleep and cooldown_every and api_calls % cooldown_every == 0 and remaining_api:
+                log(f"  💤 cooldown {cooldown_sec}s")
+                time.sleep(cooldown_sec)
+            elif sleep and remaining_api:
+                time.sleep(sleep)
+    save_seen(SEEN_CGD_PATH, seen)
+    log(f"[cgd] copied={stats['copied']} stored={stats['stored']} "
+        f"empty={stats['empty']} error={stats['error']}")
+    return stats
+
+
+def _notify(summary: dict):
+    """ส่งสรุป Discord (best-effort — ไม่ให้ล้มงานถ้า notify พัง)."""
+    try:
+        from Sebastian_Discord_Notify import load_env, get_credentials, send
+        load_env(); token, ch = get_credentials()
+        parts = [f"{k}: {v}" for k, v in summary.items()]
+        send(token, ch, "✅ Ongoing bidder capture เสร็จ — " + " | ".join(parts))
+    except Exception as e:
+        log(f"discord notify พลาด: {e}")
+
+
+def main():
+    import argparse
+    ap = argparse.ArgumentParser(description="Ongoing bidder capture (going-forward, 2 จังหวัด)")
+    ap.add_argument("--provinces", default=",".join(PROVINCES), help="คั่นด้วย ,")
+    ap.add_argument("--pass", dest="which", choices=["live", "cgd", "all"], default="all")
+    ap.add_argument("--dry-run", action="store_true", help="นับ candidate ไม่เรียก API/ไม่เขียน")
+    args = ap.parse_args()
+    provinces = [p.strip() for p in args.provinces.split(",") if p.strip()]
+    state = ensure_state()
+    log(f"epoch_date={state['epoch_date']} epoch_fy={state['epoch_fy']} provinces={provinces}")
+    if args.dry_run:
+        with get_connection() as conn:
+            nl = len(select_live_candidates(conn, provinces, state["epoch_date"]))
+            nc = len(select_cgd_candidates(conn, provinces, state["epoch_fy"], load_seen(SEEN_CGD_PATH)))
+        log(f"[dry-run] live candidates={nl}, cgd candidates={nc}")
+        return
+    from process5_http_client import get_procure_result
+    summary = {}
+    if args.which in ("live", "all"):
+        summary["live"] = run_live(provinces, state["epoch_date"], get_procure_result)
+    if args.which in ("cgd", "all"):
+        summary["cgd"] = run_cgd(provinces, state["epoch_fy"], get_procure_result)
+    _notify(summary)
+
+
+if __name__ == "__main__":
+    main()

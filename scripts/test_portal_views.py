@@ -307,19 +307,14 @@ def test_job_detail_custom_calc():
 
 test_job_detail_custom_calc()
 
-# --- render_job_page: intel section (📊 วิเคราะห์ราคา & คู่แข่งในพื้นที่) ---
+# --- render_job_page: intel_lines text ตัดออก (ซ้ำกับตารางคู่แข่ง/โอกาสชนะ — กัญจน์ 2026-06-28) ---
 c = _seed()
 d = pv.job_detail(c, "69010000001")
 d["intel_lines"] = ["💡 ราคาอ้างอิง ทดสอบ", "🏆 คู่แข่งหลัก ทดสอบ"]
 h = pv.render_job_page(d, "TOK", 0)
-assert "📊 วิเคราะห์ราคา & คู่แข่งในพื้นที่" in h, h
-assert "💡 ราคาอ้างอิง ทดสอบ" in h and "🏆 คู่แข่งหลัก ทดสอบ" in h, h
-# ลำดับ: section นี้ต้องอยู่ก่อนรายชื่อผู้ยื่นจริง
-assert h.index("📊 วิเคราะห์ราคา") < h.index("ผู้ยื่นทั้งหมด"), "ลำดับผิด — intel ต้องอยู่ก่อนผู้ยื่นจริง"
-d["intel_lines"] = None
-h0 = pv.render_job_page(d, "TOK", 0)
-assert "📊 วิเคราะห์ราคา & คู่แข่งในพื้นที่" not in h0, h0
-print("OK render_job_page_intel")
+assert "📊 วิเคราะห์ราคา & คู่แข่งในพื้นที่" not in h, "intel text block ต้องถูกตัด (ซ้ำตาราง)"
+assert "💡 ราคาอ้างอิง ทดสอบ" not in h, "ข้อความ intel ต้องไม่ render แล้ว (ใช้ตารางแทน)"
+print("OK render_job_page_no_intel_text")
 
 # --- render_job_page: company_tables (N+161 full company list, tin link / notin grey) ---
 data_ct = {"job": {"project_id": "P1", "name": "งานทดสอบ", "location": "", "budget": 0,

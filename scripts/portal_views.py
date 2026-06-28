@@ -586,10 +586,8 @@ def render_job_page(data, token, exp, notes=None, overview="", starred=False):
             b.append(f"<div class=\"cd\">⏳ {cd}</div>")
     if j.get("pred_lo") and j.get("pred_hi"):
         b.append(f"<div class=\"feature\">💵 คาดราคา {_baht(j['pred_lo'])}–{_baht(j['pred_hi'])} บาท</div>")
-    if data.get("intel_lines"):
-        b.append("<div class=\"bidhead\">📊 วิเคราะห์ราคา & คู่แข่งในพื้นที่</div>")
-        for line in data["intel_lines"]:
-            b.append(f"<div class=\"meta\">{_h.escape(line)}</div>")
+    # intel_lines (ข้อความวิเคราะห์ราคา/คู่แข่ง) ตัดออก — ซ้ำกับตารางคู่แข่ง + ตารางโอกาสชนะด้านล่าง
+    # (กัญจน์ 2026-06-28: มีตารางแล้ว ไม่ต้องเขียนด้านบนอีก). job_detail ยังคืน intel_lines ไว้สำหรับ LINE card
     if data.get("company_tables"):
         b.append(_render_company_tables(data["company_tables"], tok))
     if data.get("winrate_table"):

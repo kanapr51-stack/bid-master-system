@@ -301,20 +301,6 @@ export function DocumentsClient({ lineUserId: _lineUserId, classes, initialDocum
           ))}
         </div>
 
-        {/* Future feature hint */}
-        {totalFiles > 0 && (
-          <div style={{ marginTop: 22 }}>
-            <div className="p-mono p-fg-dim" style={{ fontSize: 10, letterSpacing: '0.08em', marginBottom: 10 }}>SEBASTIAN ANALYSIS · กำลังพัฒนา</div>
-            <div className="p-card" style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, opacity: 0.75 }}>
-              <div style={{ color: 'var(--fg-mute)' }}><Icons.Sparkles size={18} /></div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 500 }}>สรุป TOR และ BOQ อัตโนมัติ</div>
-                <div className="p-fg-dim" style={{ fontSize: 11.5, marginTop: 2, lineHeight: 1.4 }}>Sebastian จะดึงหัวข้อสำคัญ, คุณสมบัติ, และเงื่อนไขพิเศษออกมาให้</div>
-              </div>
-              <span className="p-chip p-chip-outline" style={{ fontSize: 9.5, flexShrink: 0 }}>เร็วๆ นี้</span>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

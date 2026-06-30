@@ -288,36 +288,9 @@ export function CompanyStatsClient({ cls, allClasses }: Props) {
           <CoverageCard cls={cls} onEdit={() => router.push('/portal/classes')} />
         </div>
 
-        {/* Future analytics */}
-        <div>
-          <div className="p-mono p-fg-dim" style={{ fontSize: 10, letterSpacing: '0.08em', marginBottom: 4 }}>COMING SOON · สถิติเชิงลึก</div>
-          <div className="p-display" style={{ fontSize: 18, marginTop: 2, marginBottom: 10 }}>กำลังพัฒนา</div>
-          <div className="p-card" style={{ padding: 0, overflow: 'hidden' }}>
-            {[
-              { icon: <Icons.TrendUp size={16} />, label: 'แนวโน้มการประมูลรายไตรมาส', hint: 'เปรียบเทียบจำนวนงาน · งบประมาณ · อัตราชนะ' },
-              { icon: <Icons.Compass size={16} />, label: 'Heatmap งานที่ชนะ', hint: 'กระจายตามจังหวัด/อำเภอ — เห็นจุดแข็งเชิงพื้นที่' },
-              { icon: <Icons.Layers size={16} />, label: 'วิเคราะห์คู่แข่งตัวต่อตัว', hint: 'Head-to-head — บริษัทไหนพบกันบ่อย ใครชนะมากกว่า' },
-              { icon: <Icons.Doc size={16} />, label: 'คุณภาพข้อเสนอ', hint: 'เทียบเสนอราคา vs ราคากลาง · เวลายื่นเอกสาร' },
-              { icon: <Icons.Coin size={16} />, label: 'Cash Flow Forecast', hint: 'ประมาณการรายรับจากงานที่กำลังประมูล' },
-            ].map((it, i) => (
-              <div key={i} style={{
-                padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12,
-                borderTop: i > 0 ? '1px solid var(--line)' : 0, opacity: 0.85,
-              }}>
-                <div style={{ color: 'var(--fg-mute)', flexShrink: 0 }}>{it.icon}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500 }}>{it.label}</div>
-                  <div className="p-fg-dim" style={{ fontSize: 11.5, marginTop: 2, lineHeight: 1.4 }}>{it.hint}</div>
-                </div>
-                <span className="p-chip p-chip-outline" style={{ fontSize: 9.5, flexShrink: 0 }}>เร็วๆ นี้</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
         <div style={{ marginTop: 22 }}>
           <ButlerNote tone="gold">
-            Sebastian กำลังพัฒนา Analytics เชิงลึกสำหรับบริษัทของท่านครับ — ข้อมูลที่ท่านเห็นนี้มาจากประวัติการประมูลจริงในฐานข้อมูล
+            ข้อมูลที่ท่านเห็นนี้มาจากประวัติการประมูลจริงในฐานข้อมูลครับ
           </ButlerNote>
         </div>
       </div>

@@ -170,10 +170,7 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
         title="Company World"
         subtitle={profile.companyName}
         right={
-          <div style={{ display: 'flex', gap: 6 }}>
-            <Link href="/portal/packages" className="p-icon-btn" title="แพ็กเกจ"><Icons.Crown size={18} /></Link>
-            <button className="p-icon-btn" title="แจ้งเตือน"><Icons.Bell size={18} /></button>
-          </div>
+          <Link href="/portal/packages" className="p-icon-btn" title="แพ็กเกจ"><Icons.Crown size={18} /></Link>
         }
       />
 

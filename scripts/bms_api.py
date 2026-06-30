@@ -1556,3 +1556,26 @@ async def portal_get_jobs(
     if groups is None:
         return {"ok": True, "jobs": empty}
     return {"ok": True, "jobs": groups}
+
+
+@app.post("/api/portal/star")
+async def portal_star_toggle_json(
+    request: Request,
+    x_bms_secret=Header(default=None),
+):
+    """Toggle ⭐ (job_stars) จากบอร์ด Next.js — keyed line_user_id."""
+    if x_bms_secret != BMS_INTERNAL_SECRET:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    body = await request.json()
+    line_user_id = (body.get("line_user_id") or "").strip()
+    project_id = (body.get("project_id") or "").strip()
+    if not line_user_id or not project_id:
+        raise HTTPException(status_code=400, detail="line_user_id + project_id required")
+    with get_conn() as conn:
+        cust = conn.execute("SELECT id FROM customers WHERE line_user_id=?", (line_user_id,)).fetchone()
+        if not cust:
+            raise HTTPException(status_code=404, detail="Customer not found")
+        cid = cust["id"]
+        portal_views.toggle_star(conn, cid, project_id)
+        starred = project_id in portal_views.starred_project_ids(conn, cid)
+    return {"ok": True, "starred": starred}

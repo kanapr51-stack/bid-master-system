@@ -317,6 +317,7 @@ def init_schema():
     _migrate_v134()
     _migrate_v135()
     _migrate_v136()
+    _migrate_v137()
     print(f"Schema v1.14 ready: {DB_PATH}")
 
 
@@ -428,6 +429,18 @@ def _migrate_v129():
                 updated_at   TEXT,
                 PRIMARY KEY (customer_id, project_id)
             )""")
+
+
+def _migrate_v137():
+    """customers +notes +email +phone — portal profile/config เก็บใน SQLite (notes = JSON ก้อนเดียว
+    กับที่เว็บใช้: classes/starred/tier/documents/contact). เว็บเขียนตรงเข้า engine DB ผ่าน bms_api
+    แทน Google Sheets (2026-06-30). ดู docs/.../2026-06-30-portal-customer-store-unify.md"""
+    with get_connection() as conn:
+        for col in ("notes", "email", "phone"):
+            try:
+                conn.execute(f"ALTER TABLE customers ADD COLUMN {col} TEXT")
+            except sqlite3.OperationalError:
+                pass  # already exists
 
 
 def _migrate_v128():

@@ -1411,3 +1411,125 @@ async def update_preferences(
             )
 
     return {"ok": True, "sub_id": sub_id, "provinces": provinces}
+
+
+def _provinces_from_notes(notes_str: str) -> list[str]:
+    """ดึงจังหวัด (unique, รักษาลำดับ) จาก notes JSON ของเว็บ: classes[].geo.provinces[].
+    province-level เท่านั้น — เริ่มแค่ระดับจังหวัด (ดู plan 2026-06-30-portal-customer-store-unify)."""
+    if not notes_str:
+        return []
+    try:
+        data = json.loads(notes_str)
+    except (ValueError, TypeError):
+        return []
+    provs: list[str] = []
+    for cls in (data.get("classes") or []):
+        geo = cls.get("geo") or {}
+        for p in (geo.get("provinces") or []):
+            p = (p or "").strip()
+            if p and p not in provs:
+                provs.append(p)
+    return provs
+
+
+@app.get("/api/portal/customer")
+async def portal_get_customer(
+    line_user_id: str = Query(...),
+    x_bms_secret=Header(default=None),
+):
+    """อ่าน customer profile + notes จาก engine DB (แทน Google Sheets ฝั่งเว็บ)."""
+    if x_bms_secret != BMS_INTERNAL_SECRET:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT line_user_id, display_name, email, phone, tier, active, "
+            "created_at, updated_at, notes FROM customers WHERE line_user_id=?",
+            (line_user_id,),
+        ).fetchone()
+    if not row:
+        return {"ok": True, "customer": None}
+    return {"ok": True, "customer": {
+        "line_user_id": row["line_user_id"],
+        "display_name": row["display_name"] or "",
+        "email": row["email"] or "",
+        "phone": row["phone"] or "",
+        "tier": row["tier"] or "trial",
+        "status": "active" if row["active"] else "inactive",
+        "registered_at": row["created_at"] or "",
+        "last_active_at": row["updated_at"] or "",
+        "expires_at": "",
+        "notes": row["notes"] or "",
+    }}
+
+
+@app.post("/api/portal/customer")
+async def portal_upsert_customer(
+    request: Request,
+    x_bms_secret=Header(default=None),
+):
+    """Upsert customer profile + notes จากเว็บ และแตก notes.classes → subscription_provinces
+    (province-level) ให้ engine match จริง. แทน upsertCustomer→Sheets ฝั่งเว็บ."""
+    if x_bms_secret != BMS_INTERNAL_SECRET:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    body = await request.json()
+    line_user_id = (body.get("line_user_id") or "").strip()
+    if not line_user_id:
+        raise HTTPException(status_code=400, detail="line_user_id required")
+
+    now = _now()
+    # อัปเดตเฉพาะ field ที่ส่งมาจริง (ข้ามค่าว่าง/None เพื่อไม่ทับของเดิม)
+    updatable = {k: body[k] for k in ("display_name", "email", "phone", "notes")
+                 if body.get(k) not in (None, "")}
+
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT id FROM customers WHERE line_user_id=?", (line_user_id,)
+        ).fetchone()
+        if row:
+            cid = row["id"]
+            if updatable:
+                sets = ", ".join(f"{k}=?" for k in updatable)
+                conn.execute(
+                    f"UPDATE customers SET {sets}, updated_at=? WHERE id=?",
+                    (*updatable.values(), now, cid),
+                )
+            else:
+                conn.execute("UPDATE customers SET updated_at=? WHERE id=?", (now, cid))
+            is_new = False
+        else:
+            cur = conn.execute(
+                "INSERT INTO customers (line_user_id, display_name, email, phone, notes, "
+                "tier, active, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?)",
+                (line_user_id, body.get("display_name", ""), body.get("email", ""),
+                 body.get("phone", ""), body.get("notes", ""), "trial", 1, now, now),
+            )
+            cid = cur.lastrowid
+            is_new = True
+
+        # province-level matching: notes.classes[].geo.provinces → subscription_provinces.
+        # GUARD: เขียนทับเฉพาะเมื่อแตกจังหวัดได้จริง — กันการ wipe จังหวัดที่ตั้งผ่านแชต LINE
+        # ของลูกค้าที่ยังไม่ได้ตั้ง class บนเว็บ (ดู plan: transition-safe)
+        if "notes" in updatable or is_new:
+            provinces = _provinces_from_notes(body.get("notes", ""))
+            if provinces:
+                sub = conn.execute(
+                    "SELECT id FROM subscriptions WHERE customer_id=? AND active=1", (cid,)
+                ).fetchone()
+                if not sub:
+                    cur2 = conn.execute(
+                        "INSERT INTO subscriptions (customer_id, announce_types, min_budget, "
+                        "delivery_mode, active, created_at, updated_at) VALUES (?,?,?,?,?,?,?)",
+                        (cid, "D0", 0, "instant", 1, now, now),
+                    )
+                    sid = cur2.lastrowid
+                else:
+                    sid = sub["id"]
+                    conn.execute("UPDATE subscriptions SET updated_at=? WHERE id=?", (now, sid))
+                conn.execute("DELETE FROM subscription_provinces WHERE subscription_id=?", (sid,))
+                for p in provinces:
+                    conn.execute(
+                        "INSERT INTO subscription_provinces (subscription_id, province) VALUES (?,?)",
+                        (sid, p),
+                    )
+
+    return {"ok": True, "is_new": is_new, "customer_id": cid}

@@ -4,6 +4,7 @@ export const config: VercelConfig = {
   framework: "nextjs",
   buildCommand: "npm run build",
   installCommand: "npm install",
+  regions: ["sin1"],
   headers: [
     {
       source: "/api/revalidate",

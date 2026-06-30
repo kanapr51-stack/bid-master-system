@@ -1463,3 +1463,34 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 ### Followup #2 (defer): VPS cgd_winners sync incremental+schedule
 - ตอนนี้ full re-push → synced_at ใช้เป็น floor ไม่ได้. ไม่เร่งด่วน: CGD ปล่อย FY2569 อีก ~8-9 เดือน (กลางปี 2570)
 - **action เตือน:** พอ FY2569 ออก → รัน manual cgd_sync 1 รอบ แล้ว Pass 2 เก็บเฉพาะเจาะจงได้เอง (ไม่ต้องสร้าง infra ตอนนี้)
+
+## งานที่ N+176: เว็บบอร์ดช้า → รวม customer store เว็บเข้า engine DB (เลิก Sheets) (2026-06-30)
+
+### สถานะ: ✅ DEPLOYED (2026-06-30) — TTFB 8.99s→1.17s cold / 0.17s warm; E2E ผ่าน Vercel เก็บจังหวัดไทยถูก; sanity เขียว (5 ราย/0 ซ้ำ/0 test)
+
+### ⚠️ Deploy debt: deploy ด้วย scp(VPS)+vercel CLI — **โค้ดยังไม่ commit/push** (Sebastian_Customer_DB.py, bms_api.py, customers.ts, vercel.ts, package.json, lock). ต้อง commit กัน VPS git pull ทับ scp'd files (ดู [[project_deploy_debt]])
+
+### Root cause (วัดจริง)
+- `/portal/world` cold start TTFB **8.99s** — เพราะเว็บ `import { google } from "googleapis"` (lib ยักษ์) ใน `dashboard/web/src/lib/customers.ts` → serverless cold start อืด
+- บั๊กเงียบ: เว็บเขียน customer config (class/จังหวัด/⭐) → **Google Sheets อย่างเดียว**, engine (SQLite) ไม่เห็น = ปุ่มหลอก. เว็บ **ไม่เคยเรียก bms_api เลย** (grep ยืนยัน). ดู [[project_customer_store_split]]
+- 3 store ไม่ sync: Sheets(เว็บ) / SQLite(engine `/opt/bms/data/bms_customers.db`) / Postgres(หน้าประวัติ)
+- Decision (กัญจน์): Option A — เว็บเขียนตรงเข้า engine DB ผ่าน bms_api, province-level ก่อน
+
+### สิ่งที่ทำ (โค้ด — เทส local ผ่านหมด)
+- `Sebastian_Customer_DB.py`: `_migrate_v137()` +notes/email/phone บน customers (idempotent ✅)
+- `bms_api.py`: `GET/POST /api/portal/customer` (keyed line_user_id, X-BMS-Secret) — POST แตก `notes.classes[].geo.provinces` → `subscription_provinces` (province-first). GUARD: ไม่ทับจังหวัดถ้าแตกไม่ได้ (กัน wipe ค่าจากแชต LINE) ✅
+- `dashboard/web/src/lib/customers.ts`: เขียนใหม่ getCustomerByLineId/upsertCustomer → คุย bms_api (fetch), คงรูป Customer เดิม → **call site ไม่ต้องแก้**. ทิ้ง `googleapis` (ออกจาก package.json, tsc exit=0) ✅
+- `vercel.json`: region `sin1`
+- backup prod DB แล้ว: `/opt/bms/backups/bms_customers_20260630_094431.db` (1.95GB)
+
+### Verify ก่อนทำ
+- migration: เพิ่ม notes/email/phone, re-run idempotent OK
+- endpoint (asyncio direct): parse จังหวัด unique ✅, 403 guard ✅, upsert→subscription_provinces ✅, phone-only ไม่ wipe จังหวัด ✅, เปลี่ยน notes→จังหวัดตาม ✅, ไม่ซ้ำ ✅
+- tsc --noEmit exit=0, googleapis removed
+
+### Followup (รอ deploy — prod ต้อง confirm)
+- VPS: ส่ง bms_api.py+Sebastian_Customer_DB.py → run init_schema (v137) → restart bms_api → เช็ค BMS_INTERNAL_SECRET ตั้งจริง
+- Vercel: ตั้ง env BMS_API_URL=https://api.butler-bms.com + BMS_INTERNAL_SECRET → deploy
+- Migrate: อ่าน Sheets customers(notes) ของ 5 รายเดิม → POST /api/portal/customer (กันค่าเว็บเดิมหาย)
+- Sophia sanity + วัด TTFB ใหม่เทียบ 9s
+- defer: expires_at เว็บ (engine ไม่มีคอลัมน์ → daysLeft โชว์ 30), ⭐ บนเว็บ (notes.starred) ยังคนละที่กับ job_stars, จังหวัด/อำเภอ/keywords flat ส่งเป็น "" (province มาจาก notes.classes)

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { TIERS, type Tier } from '@/lib/portal-data';
 import { TopBar, ButlerNote, Icons } from '../_ui';
@@ -72,46 +72,6 @@ function Row({ label, value, accent }: { label: string; value: string; accent?: 
   );
 }
 
-// ── Pay View ──────────────────────────────────────────────────────────────────
-
-function PayView({ tier, finalPrice, billing, onDone }: { tier: Tier; finalPrice: number; billing: string; onDone: () => void }) {
-  const [seconds, setSeconds] = useState(300);
-  useEffect(() => {
-    const t = setInterval(() => setSeconds(s => Math.max(0, s - 1)), 1000);
-    return () => clearInterval(t);
-  }, []);
-  const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
-  const ss = String(seconds % 60).padStart(2, '0');
-  const ref = `SB-2026-${Math.floor(Math.random() * 9000 + 1000)}`;
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 18, alignItems: 'center', textAlign: 'center' }}>
-      <div className="p-mono" style={{ fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent)' }}>PROMPTPAY QR</div>
-      <div className="p-display" style={{ fontSize: 24 }}>สแกนเพื่อชำระ {Math.round(finalPrice * 1.07).toLocaleString()} ฿</div>
-      <div className="p-gilt" style={{ background: 'var(--surface)', padding: 24 }}>
-        <div className="p-qr"><span className="p-mono p-fg-dim" style={{ fontSize: 12 }}>QR Code</span></div>
-        <div className="p-mono" style={{ fontSize: 11, letterSpacing: '0.08em', marginTop: 16, color: 'var(--fg-mute)', textAlign: 'center' }}>
-          QR หมดอายุใน <span style={{ color: 'var(--accent)', fontSize: 16, fontWeight: 600 }}>{mm}:{ss}</span>
-        </div>
-      </div>
-      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div className="p-card" style={{ padding: '8px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span className="p-fg-mute" style={{ fontSize: 12 }}>เลขที่อ้างอิง</span>
-          <span className="p-mono" style={{ fontSize: 12.5, letterSpacing: '0.04em' }}>{ref}</span>
-        </div>
-        <div className="p-card" style={{ padding: '8px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span className="p-fg-mute" style={{ fontSize: 12 }}>ผู้รับเงิน</span>
-          <span style={{ fontSize: 12.5 }}>Manor Master System Co., Ltd.</span>
-        </div>
-      </div>
-      <button className="p-btn p-btn-primary" onClick={onDone} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-        <Icons.Check size={16} />ยืนยันว่าชำระแล้ว (Demo)
-      </button>
-      <div className="p-fg-dim" style={{ fontSize: 11.5, fontStyle: 'italic' }}>ระบบจะตรวจสอบและยืนยันอัตโนมัติภายใน 30 วินาที</div>
-    </div>
-  );
-}
-
 // ── Packages Client ───────────────────────────────────────────────────────────
 
 interface Props {
@@ -125,35 +85,39 @@ export function PackagesClient({ lineUserId, currentTierId, daysLeft, expiryLabe
   const router = useRouter();
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
   const [selectedId, setSelectedId] = useState(currentTierId === 'trial' ? 'standard' : currentTierId);
-  const [step, setStep] = useState<'compare' | 'confirm' | 'pay' | 'success'>('compare');
+  const [step, setStep] = useState<'compare' | 'confirm' | 'sent'>('compare');
+  const [submitting, setSubmitting] = useState(false);
 
   const selected = TIERS.find(t => t.id === selectedId)!;
   const current = TIERS.find(t => t.id === currentTierId)!;
   const isCurrent = selected.id === currentTierId;
   const finalPrice = billing === 'annual' ? selected.price * 10 : selected.price;
 
-  const handleUpgrade = async () => {
-    // Persist tier change
-    await fetch('/api/portal/save', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tierId: selected.id }),
-    }).catch(() => {});
-    setStep('success');
+  const handleRequest = async () => {
+    setSubmitting(true);
+    try {
+      await fetch('/api/portal/upgrade-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tier: selected.id, billing }),
+      });
+      setStep('sent');
+    } catch { /* engine unreachable — ยังพาไปหน้า sent (ไม่ตกหล่นการขาย) */ setStep('sent'); }
+    finally { setSubmitting(false); }
   };
 
-  if (step === 'success') {
+  if (step === 'sent') {
     return (
       <div className="p-enter" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '40px 22px' }}>
         <div style={{ width: 96, height: 96, borderRadius: 14, background: 'var(--gold-glow)', border: '1px solid var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)', marginBottom: 18 }}>
           <Icons.Check2 size={48} />
         </div>
-        <div className="p-mono" style={{ fontSize: 10, letterSpacing: '0.2em', color: 'var(--accent)', marginBottom: 8 }}>PAYMENT SUCCESS</div>
-        <div className="p-display" style={{ fontSize: 30 }}>ยินดีต้อนรับท่าน</div>
-        <div className="p-serif" style={{ fontSize: 18, marginTop: 6, fontStyle: 'italic', color: 'var(--fg-mute)' }}>สู่ Sebastian · {selected.name}</div>
+        <div className="p-mono" style={{ fontSize: 10, letterSpacing: '0.2em', color: 'var(--accent)', marginBottom: 8 }}>REQUEST RECEIVED</div>
+        <div className="p-display" style={{ fontSize: 30 }}>ได้รับเรื่องแล้วครับ</div>
+        <div className="p-serif" style={{ fontSize: 18, marginTop: 6, fontStyle: 'italic', color: 'var(--fg-mute)' }}>ความสนใจแพ็กเกจ {selected.name}</div>
         <div style={{ marginTop: 24, maxWidth: 360, width: '100%' }}>
           <ButlerNote tone="gold">
-            ผมพร้อมรับใช้ท่านเต็มที่แล้วครับ — ตั้งแต่บัดนี้เป็นต้นไป ท่านสามารถปรึกษาผมใน LINE ได้ {selected.chatLabel}
+            ผมแจ้งทีมงานเรียบร้อยแล้วครับ — จะมีผู้ดูแลติดต่อกลับเพื่อยืนยันแพ็กเกจและวิธีชำระเงินโดยเร็วที่สุด
           </ButlerNote>
         </div>
         <button className="p-btn p-btn-primary" onClick={() => router.push('/portal/world')} style={{ width: '100%', maxWidth: 360, marginTop: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
@@ -190,42 +154,38 @@ export function PackagesClient({ lineUserId, currentTierId, daysLeft, expiryLabe
             <div style={{ position: 'sticky', bottom: 76, marginTop: 18, background: 'var(--bg)', padding: '14px 0', borderRadius: 12 }}>
               <button className="p-btn p-btn-primary" onClick={() => setStep('confirm')} style={{ width: '100%', height: 52, fontSize: 15.5, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                 <Icons.Crown size={16} />
-                {isCurrent ? 'ดูรายละเอียดแพ็กเกจ' : `เปลี่ยนเป็น ${selected.name}`}
+                {isCurrent ? 'ดูรายละเอียดแพ็กเกจ' : `สนใจแพ็กเกจ ${selected.name}`}
               </button>
             </div>
           </>
         )}
 
-        {/* ── Confirm ── */}
+        {/* ── Confirm (แจ้งความสนใจ — ยังไม่มีระบบจ่ายเงินออนไลน์) ── */}
         {step === 'confirm' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-            <ButlerNote tone="gold">ขอสรุปแพ็กเกจที่ท่านเลือกครับ — โปรดตรวจสอบรายละเอียดก่อนชำระเงิน</ButlerNote>
+            <ButlerNote tone="gold">ขอสรุปแพ็กเกจที่ท่านสนใจครับ — กดแจ้งความสนใจแล้วทีมงานจะติดต่อกลับเพื่อยืนยันและแจ้งวิธีชำระเงิน</ButlerNote>
             <div className="p-gilt">
-              <div className="p-mono" style={{ fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent)' }}>ORDER SUMMARY</div>
+              <div className="p-mono" style={{ fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent)' }}>PACKAGE SUMMARY</div>
               <div className="p-display" style={{ fontSize: 26, marginTop: 4 }}>Sebastian · {selected.name}</div>
-              <div className="p-fg-mute" style={{ fontSize: 13, marginTop: 2 }}>{selected.nameTh} · {billing === 'annual' ? 'ชำระรายปี' : 'ชำระรายเดือน'}</div>
+              <div className="p-fg-mute" style={{ fontSize: 13, marginTop: 2 }}>{selected.nameTh}</div>
               <div style={{ borderTop: '1px solid var(--line)', marginTop: 16, paddingTop: 14 }}>
                 <Row label="แพ็กเกจ" value={`${selected.name} (${selected.nameTh})`} />
-                <Row label="รอบบิล" value={billing === 'annual' ? 'รายปี · ลด 17%' : 'รายเดือน'} />
+                <Row label="รอบที่สนใจ" value={billing === 'annual' ? 'รายปี · ลด 17%' : 'รายเดือน'} />
                 <Row label="Sebastian Chat" value={selected.chatLabel} accent />
-                <Row label="VAT 7%" value={`${Math.round(finalPrice * 0.07).toLocaleString()} ฿`} />
               </div>
               <div style={{ borderTop: '1px solid var(--line)', marginTop: 14, paddingTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                <div className="p-display" style={{ fontSize: 18 }}>ยอดชำระทั้งหมด</div>
-                <div className="p-display p-fg-accent" style={{ fontSize: 32 }}>{Math.round(finalPrice * 1.07).toLocaleString()}<span className="p-fg-mute" style={{ fontSize: 14, marginLeft: 4 }}>฿</span></div>
+                <div className="p-display" style={{ fontSize: 18 }}>ราคาโดยประมาณ</div>
+                <div className="p-display p-fg-accent" style={{ fontSize: 28 }}>{selected.price === 0 ? 'ฟรี' : finalPrice.toLocaleString()}<span className="p-fg-mute" style={{ fontSize: 14, marginLeft: 4 }}>{selected.price === 0 ? '' : `฿ / ${billing === 'annual' ? 'ปี' : 'เดือน'}`}</span></div>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <button className="p-btn p-btn-ghost" onClick={() => setStep('compare')} style={{ flex: 1 }}>กลับ</button>
-              <button className="p-btn p-btn-primary" onClick={() => selected.price === 0 ? handleUpgrade() : setStep('pay')} style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                <Icons.Coin size={16} />ดำเนินการชำระเงิน
+              <button className="p-btn p-btn-primary" onClick={handleRequest} disabled={submitting} style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <Icons.Crown size={16} />{submitting ? 'กำลังส่ง…' : 'แจ้งความสนใจ'}
               </button>
             </div>
           </div>
         )}
-
-        {/* ── Pay ── */}
-        {step === 'pay' && <PayView tier={selected} finalPrice={finalPrice} billing={billing} onDone={handleUpgrade} />}
       </div>
     </div>
   );

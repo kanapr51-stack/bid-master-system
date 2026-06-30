@@ -1579,3 +1579,42 @@ async def portal_star_toggle_json(
         portal_views.toggle_star(conn, cid, project_id)
         starred = project_id in portal_views.starred_project_ids(conn, cid)
     return {"ok": True, "starred": starred}
+
+
+@app.post("/api/portal/upgrade-request")
+async def portal_upgrade_request(
+    request: Request,
+    x_bms_secret=Header(default=None),
+):
+    """ลูกค้าแจ้งความสนใจอัปเกรดแพ็กเกจ → แจ้ง admin ทาง Discord (ยังไม่มีระบบจ่ายเงินจริง)."""
+    if x_bms_secret != BMS_INTERNAL_SECRET:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    body = await request.json()
+    line_user_id = (body.get("line_user_id") or "").strip()
+    tier = (body.get("tier") or "").strip()
+    billing = (body.get("billing") or "").strip()
+    if not line_user_id or not tier:
+        raise HTTPException(status_code=400, detail="line_user_id + tier required")
+
+    with get_conn() as conn:
+        cust = conn.execute(
+            "SELECT display_name, tier FROM customers WHERE line_user_id=?", (line_user_id,)
+        ).fetchone()
+    name = (cust["display_name"] if cust else "") or "(ไม่ทราบชื่อ)"
+    current = (cust["tier"] if cust else "") or "-"
+
+    try:
+        import Sebastian_Discord_Notify as _dn
+        _dn.load_env()
+        token, ch = _dn.get_credentials()
+        billing_th = "รายปี" if billing == "annual" else "รายเดือน" if billing else "-"
+        _dn.send(token, ch,
+                 f"💎 ลูกค้าสนใจอัปเกรดแพ็กเกจ\n"
+                 f"• ลูกค้า: {name} (`{line_user_id[:12]}…`)\n"
+                 f"• แพ็กเกจที่สนใจ: **{tier}** ({billing_th})\n"
+                 f"• แพ็กเกจปัจจุบัน: {current}\n"
+                 f"→ ติดต่อกลับเพื่อปิดการขาย")
+    except Exception as e:
+        print(f"[upgrade-request] Discord notify failed: {e}", flush=True)
+
+    return {"ok": True}

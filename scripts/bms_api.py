@@ -1679,6 +1679,26 @@ async def portal_star_toggle_json(
     return {"ok": True, "starred": starred}
 
 
+@app.post("/api/portal/follow")
+async def portal_follow_job(
+    request: Request,
+    x_bms_secret=Header(default=None),
+):
+    """ดึงงาน discovery เข้า followed_jobs (status active) — จากปุ่ม 'ติดตาม' บนบอร์ด.
+    reuse _record_follow (เส้นเดียวกับ follow จากลิงก์ LINE)."""
+    if x_bms_secret != BMS_INTERNAL_SECRET:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    body = await request.json()
+    line_user_id = (body.get("line_user_id") or "").strip()
+    project_id = (body.get("project_id") or "").strip()
+    if not line_user_id or not project_id:
+        raise HTTPException(status_code=400, detail="line_user_id + project_id required")
+    res = _record_follow(line_user_id, project_id)
+    if res is None:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    return {"ok": True, "followed": True}
+
+
 @app.post("/api/portal/upgrade-request")
 async def portal_upgrade_request(
     request: Request,

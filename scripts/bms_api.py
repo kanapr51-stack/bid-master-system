@@ -1448,6 +1448,13 @@ async def portal_get_customer(
         ).fetchone()
     if not row:
         return {"ok": True, "customer": None}
+    # trial policy: หมดอายุ created_at + 30 วัน (บอร์ดใช้คำนวณนับถอยหลัง)
+    expires_at = ""
+    if row["created_at"]:
+        try:
+            expires_at = (datetime.fromisoformat(row["created_at"]) + timedelta(days=30)).isoformat(timespec="seconds")
+        except ValueError:
+            expires_at = ""
     return {"ok": True, "customer": {
         "line_user_id": row["line_user_id"],
         "display_name": row["display_name"] or "",
@@ -1457,7 +1464,7 @@ async def portal_get_customer(
         "status": "active" if row["active"] else "inactive",
         "registered_at": row["created_at"] or "",
         "last_active_at": row["updated_at"] or "",
-        "expires_at": "",
+        "expires_at": expires_at,
         "notes": row["notes"] or "",
     }}
 

@@ -1514,3 +1514,26 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 ### Followup (Phase 2 — defer)
 - section "งานใหม่ที่แมตช์" (discovery): ต้องสร้าง matching query บน projects_seen (จังหวัด+keyword) — ยังไม่ทำ
 - card discovery: matchedKeywords/ระยะทาง/sme
+
+## งานที่ N+178: LINE Login จริงบนบอร์ด B (เลิก dev-mock) (2026-06-30)
+
+### สถานะ: ✅ DEPLOYED & VERIFIED — กัญจน์ตัดสินใจยกบอร์ด B (Next.js) เป็นหลัก
+
+### Root cause
+บอร์ด B (`bid-master-dashboard.vercel.app`) login เป็น dev-mock ทุกคน (Vercel ไม่มี LINE_LOGIN_* env) → ทุกคนกลายเป็น "Dev User (Mock)" 0 งาน → บอร์ดว่าง. ลูกค้าจริงเข้าเป็นตัวเองไม่ได้มาตั้งแต่ต้น → ใช้บอร์ด A (ลิงก์ LINE token) เป็นหลัก
+
+### Fix
+- ตั้ง Vercel env (printf กัน BOM): LINE_LOGIN_CHANNEL_ID=2010559564, LINE_LOGIN_CHANNEL_SECRET, LINE_LOGIN_REDIRECT_URI=https://bid-master-dashboard.vercel.app/api/auth/line/callback
+- channel = provider เดียวกับบอท → userId ตรง Ua0d90e8
+- redeploy; กัญจน์ปรับ channel Developing→Published เอง (error "channel developing status")
+- ลบ dev-mock id 13 ตกค้าง
+
+### Verify
+- /api/auth/line redirect → access.line.me จริง (ไม่ใช่ mock)
+- กัญจน์ login จริง → เห็น 15 งาน; DB ยัง 5 ราย ไม่มี mock/บัญชีใหม่โผล่ ✅
+
+### Followup (บอร์ด B จะเป็นหลัก — ของหลอก/ค้างที่ต้องเก็บ)
+- 🔴 หน้าแพ็กเกจ: กดอัปเกรด→"PAYMENT SUCCESS" ปลอม (ไม่มีจ่ายเงินจริง แค่เซฟ tierId)
+- 🟡 ปุ่มกระดิ่งแจ้งเตือน (world) = ของประดับ; Sebastian Chat quota = ตัวเลขเฉยๆ; company-stats "COMING SOON"; documents บางหมวด "เร็วๆนี้"
+- ⚠️ keyword/งบ/รัศมี เซฟได้แต่ engine ใช้แค่จังหวัด match (Phase 2)
+- Phase 2: section discovery "งานใหม่ที่แมตช์"

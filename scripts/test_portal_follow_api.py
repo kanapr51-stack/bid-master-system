@@ -24,6 +24,7 @@ def setup():
     c.execute("INSERT OR IGNORE INTO projects_seen (project_id,announce_type,province,budget,project_name,first_seen_at) "
               "VALUES ('PFOL','D0','นครพนม',5000000,'ก่อสร้างถนนคอนกรีต',?)", (now,))
     c.commit()
+    c.close()
 
 
 async def main():
@@ -33,6 +34,16 @@ async def main():
         await bms_api.portal_follow_job(FakeReq({"line_user_id": "UFOL", "project_id": "PFOL"}), x_bms_secret='bad'); assert False
     except HTTPException as e:
         assert e.status_code == 403
+    # 400 — missing project_id
+    try:
+        await bms_api.portal_follow_job(FakeReq({"line_user_id": "UFOL"}), x_bms_secret='t'); assert False, "no 400"
+    except HTTPException as e:
+        assert e.status_code == 400, e.status_code
+    # 400 — empty line_user_id
+    try:
+        await bms_api.portal_follow_job(FakeReq({"line_user_id": "", "project_id": "PFOL"}), x_bms_secret='t'); assert False, "no 400"
+    except HTTPException as e:
+        assert e.status_code == 400, e.status_code
     # no customer → 404
     try:
         await bms_api.portal_follow_job(FakeReq({"line_user_id": "UNONE", "project_id": "PFOL"}), x_bms_secret='t'); assert False
@@ -45,6 +56,7 @@ async def main():
     st = c.execute("SELECT status FROM followed_jobs fj JOIN customers cu ON cu.id=fj.customer_id "
                    "WHERE cu.line_user_id='UFOL' AND fj.project_id='PFOL'").fetchone()
     assert st and st[0] == 'active', st
+    c.close()
     print("PASS test_portal_follow_api")
 
 

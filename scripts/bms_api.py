@@ -1643,10 +1643,9 @@ async def portal_discover_jobs(
                     "deadline": deadline, "deadline_time": deadline_time,
                     "budget": r["budget"] or 0, "matched_keywords": hits}
             if ann == "D0":
-                if job_matcher.tor_is_fresh(r["first_seen_at"], days=30):
-                    if not deadline or deadline >= today:
-                        card["stage"] = "biddable"
-                        biddable.append((deadline, card))
+                if deadline and deadline >= today:
+                    card["stage"] = "biddable"
+                    biddable.append((deadline, card))
             elif ann.startswith("B"):
                 if job_matcher.tor_is_fresh(r["first_seen_at"], days=14):
                     card["stage"] = "planning"

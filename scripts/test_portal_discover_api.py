@@ -3,7 +3,6 @@ import os, sys, json, sqlite3, asyncio, tempfile, shutil
 from pathlib import Path
 
 SCRATCH = Path(tempfile.mkdtemp())
-shutil.copy(Path(__file__).parent.parent / "data" / "bms_customers.db", SCRATCH / "bms_customers.db")
 os.environ.update(BMS_DATA_DIR=str(SCRATCH), BMS_DB_PATH=str(SCRATCH / "bms_customers.db"), BMS_INTERNAL_SECRET="t")
 sys.path.insert(0, str(Path(__file__).parent))
 import Sebastian_Customer_DB as db; db.init_schema()
@@ -30,14 +29,17 @@ def setup():
         ('D_OTHERPROV', 'D0', 'ชลบุรี', 5000000, 'ก่อสร้างถนนคอนกรีต'),       # นอกพื้นที่ → ตัด
         ('D_NOKW', 'D0', 'นครพนม', 5000000, 'ซื้อเวชภัณฑ์'),                  # ไม่มี keyword → ตัด
         ('D_LOWBUDGET', 'D0', 'นครพนม', 100000, 'ก่อสร้างถนนคอนกรีต'),        # ต่ำกว่างบ → ตัด
+        ('D_EXPIRED', 'D0', 'นครพนม', 5000000, 'ก่อสร้างถนนคอนกรีตสายเก่า'),  # deadline ผ่านแล้ว → ตัด
         ('B_FRESH', 'B0', 'นครพนม', 5000000, 'ก่อสร้างถนนคอนกรีต (ร่าง TOR)'), # planning
     ]
     for pid, ann, prov, bud, name in rows:
         c.execute("INSERT OR IGNORE INTO projects_seen (project_id,announce_type,province,budget,project_name,first_seen_at) "
                   "VALUES (?,?,?,?,?,?)", (pid, ann, prov, bud, name, FRESH))
         if ann == 'D0':
-            c.execute("INSERT OR IGNORE INTO project_enrichments (project_id,bid_submit_date,bid_submit_time) VALUES (?,?,?)",
-                      (pid, FUTURE, "10:00"))
+            submit = "2000-01-01" if pid == 'D_EXPIRED' else FUTURE
+            c.execute("INSERT OR IGNORE INTO project_enrichments "
+                      "(project_id,parser_version,enrichment_status,parsed_at,bid_submit_date,bid_submit_time) "
+                      "VALUES (?,?,?,?,?,?)", (pid, 'test', 'success', FRESH, submit, "10:00"))
     c.execute("INSERT OR IGNORE INTO followed_jobs (customer_id,project_id,starred_at,starred_stage,last_stage_notified,status) "
               "VALUES (?,?,?,?,?,'active')", (cid, 'D_FOLLOWED', FRESH, 'D0', 'D0'))
     c.commit()

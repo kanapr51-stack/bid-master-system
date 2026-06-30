@@ -1537,3 +1537,23 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 - 🟡 ปุ่มกระดิ่งแจ้งเตือน (world) = ของประดับ; Sebastian Chat quota = ตัวเลขเฉยๆ; company-stats "COMING SOON"; documents บางหมวด "เร็วๆนี้"
 - ⚠️ keyword/งบ/รัศมี เซฟได้แต่ engine ใช้แค่จังหวัด match (Phase 2)
 - Phase 2: section discovery "งานใหม่ที่แมตช์"
+
+## งานที่ N+179: เก็บของหลอกบนบอร์ด B (แพ็กเกจปลอม + ปุ่มประดับ) (2026-06-30)
+
+### สถานะ: ✅ DEPLOYED & VERIFIED — บอร์ด B จะเป็นตัวหลัก
+
+### สิ่งที่ทำ
+- 🔴 หน้าแพ็กเกจ: ตัด PAYMENT SUCCESS ปลอม + PromptPay QR ปลอม + "ยืนยันว่าชำระแล้ว (Demo)" + ไม่เปลี่ยน tier เอง → เปลี่ยนเป็น **flow แจ้งความสนใจ**: กด "สนใจแพ็กเกจ X" → confirm (สรุป+ราคาโดยประมาณ ไม่มีใบเสร็จ/VAT) → "แจ้งความสนใจ" → "ได้รับเรื่องแล้ว ทีมงานติดต่อกลับ"
+- engine `POST /api/portal/upgrade-request {tier,billing}` → ส่ง Discord แจ้ง admin (lazy import Sebastian_Discord_Notify) + test (mock Discord)
+- web route `/api/portal/upgrade-request` relay session→engine
+- ซ่อนของประดับ: ปุ่มกระดิ่งแจ้งเตือน (world TopBar), block COMING SOON สถิติเชิงลึก (company-stats), block "เร็วๆนี้" สรุป TOR/BOQ (documents)
+
+### Verify (prod)
+- upgrade-request: 403 guard ✅, happy path กัญจน์ premium → {ok:true} + Discord เด้งจริง
+- vercel build ผ่าน (ไม่มี unused/type error), tsc exit=0
+- push afc9b69 + VPS git reconcile (stash+ff-pull) = origin สะอาด
+
+### ของหลอก/ค้างที่เหลือบนบอร์ด B (Phase ต่อ)
+- Sebastian Chat quota ring (world) = ตัวเลขเฉยๆ (แชตจริงใน LINE) — ยังคงไว้ (ไม่ถึงกับหลอก แค่ข้อมูล)
+- keyword/งบ/รัศมี เซฟได้แต่ engine match แค่จังหวัด (Phase 2 keyword matching)
+- section discovery "งานใหม่ที่แมตช์" (Phase 2)

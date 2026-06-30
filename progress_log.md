@@ -1494,3 +1494,23 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 - Migrate: อ่าน Sheets customers(notes) ของ 5 รายเดิม → POST /api/portal/customer (กันค่าเว็บเดิมหาย)
 - Sophia sanity + วัด TTFB ใหม่เทียบ 9s
 - defer: expires_at เว็บ (engine ไม่มีคอลัมน์ → daysLeft โชว์ 30), ⭐ บนเว็บ (notes.starred) ยังคนละที่กับ job_stars, จังหวัด/อำเภอ/keywords flat ส่งเป็น "" (province มาจาก notes.classes)
+
+## งานที่ N+177: บอร์ด /portal/world โชว์งานจริง Phase 1 (section งานที่ติดตาม) + ⭐→job_stars (2026-06-30)
+
+### สถานะ: ✅ DEPLOYED & VERIFIED
+
+### สิ่งที่ทำ (brainstorm→spec→plan→inline execute ตาม superpowers)
+- spec: `docs/superpowers/specs/2026-06-30-portal-real-jobs-design.md` · plan: `docs/superpowers/plans/2026-06-30-portal-real-jobs-phase1.md`
+- engine: `GET /api/portal/jobs` (reuse `_portal_jobs`, +budget ใน dict) + `POST /api/portal/star` (toggle job_stars) — pattern X-BMS-Secret เดียวกับ /api/portal/customer. test 2 ไฟล์ผ่าน
+- web: `lib/portal-jobs.ts` (getPortalJobs), route `/api/portal/star` (relay session→engine), `world/page.tsx` ดึงงานจริงแทน SEED_JOBS, `world/_client.tsx` render ตาม stage (🔵ยื่นซองได้/🟡รอผล/🏆รู้ผล/⚪วางแผน/❌ยกเลิก) + empty state. ⭐ ผูก project_id จริง เขียน job_stars (เลิก notes.starred บนบอร์ด)
+
+### Verify (prod)
+- engine smoke: กัญจน์ได้ 14 งานจริง (won7/prelim3/bidding2/cancelled2) ชื่อ/budget ครบ
+- ⭐ E2E (throwaway): toggle ON→true OFF→false, cleaned
+- TTFB /portal/world: 1.1s cold/0.47s warm (ไม่ถดถอย)
+- sanity เขียว: customers 5/0 test/0 ซ้ำ, followed_jobs 30 + job_stars 4 ไม่เพี้ยน, 0 orphan, queue 184
+- commit T1-T5 + push (HEAD=3fc988a), VPS git reconcile (stash+ff-pull) = origin/main สะอาด
+
+### Followup (Phase 2 — defer)
+- section "งานใหม่ที่แมตช์" (discovery): ต้องสร้าง matching query บน projects_seen (จังหวัด+keyword) — ยังไม่ทำ
+- card discovery: matchedKeywords/ระยะทาง/sme

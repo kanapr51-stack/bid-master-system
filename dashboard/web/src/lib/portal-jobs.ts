@@ -36,3 +36,31 @@ export async function getPortalJobs(lineUserId: string): Promise<JobGroups> {
   const data = (await res.json()) as { ok: boolean; jobs: JobGroups };
   return data.jobs ?? EMPTY;
 }
+
+export interface DiscoverJob {
+  project_id: string;
+  name: string;
+  location: string;
+  province: string;
+  deadline: string;
+  deadline_time: string;
+  budget: number;
+  matched_keywords: string[];
+  stage: "biddable" | "planning";
+}
+
+export interface DiscoverGroups {
+  biddable: DiscoverJob[];
+  planning: DiscoverJob[];
+}
+
+const EMPTY_DISCOVER: DiscoverGroups = { biddable: [], planning: [] };
+
+export async function getDiscoverJobs(lineUserId: string): Promise<DiscoverGroups> {
+  if (!lineUserId) return EMPTY_DISCOVER;
+  const url = `${BMS_API_URL}/api/portal/discover?line_user_id=${encodeURIComponent(lineUserId)}`;
+  const res = await fetch(url, { headers: { "X-BMS-Secret": BMS_SECRET }, cache: "no-store" });
+  if (!res.ok) throw new Error(`engine GET discover failed: ${res.status}`);
+  const data = (await res.json()) as { ok: boolean; jobs: DiscoverGroups };
+  return data.jobs ?? EMPTY_DISCOVER;
+}

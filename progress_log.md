@@ -1557,3 +1557,33 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 - Sebastian Chat quota ring (world) = ตัวเลขเฉยๆ (แชตจริงใน LINE) — ยังคงไว้ (ไม่ถึงกับหลอก แค่ข้อมูล)
 - keyword/งบ/รัศมี เซฟได้แต่ engine match แค่จังหวัด (Phase 2 keyword matching)
 - section discovery "งานใหม่ที่แมตช์" (Phase 2)
+
+## งานที่ N+180: CHECKPOINT — ก่อนเปลี่ยน session (2026-06-30)
+
+### สถานะ: ⏸ pause เปลี่ยน session
+
+### ✅ เสร็จแล้ว session นี้ (บอร์ด B = bid-master-dashboard.vercel.app/portal/world เป็นตัวหลัก)
+- N+176 customer store เว็บ→engine SQLite (เลิก Sheets/googleapis), cold start 9s→1.2s
+- N+177 บอร์ดโชว์งานติดตามจริง (GET /api/portal/jobs reuse _portal_jobs) + ⭐→job_stars + expires_at=created+30
+- N+178 LINE Login จริง (LINE_LOGIN_* บน Vercel, provider เดียวกับบอท) เลิก dev-mock → กัญจน์ login เห็น 15 งาน
+- N+179 เก็บของหลอก: หน้าแพ็กเกจ PAYMENT SUCCESS/QR/Demo → "แจ้งความสนใจ"→Discord admin (POST /api/portal/upgrade-request); ซ่อนปุ่มกระดิ่ง/COMING SOON/เร็วๆนี้
+- HEAD=5ca5317, VPS git=origin สะอาด, sanity เขียว (5 ราย/0 ซ้ำ)
+
+### 🎯 NEXT ACTION (session หน้า): Phase 2 บอร์ด B
+**ยังไม่มี spec/plan — ต้อง brainstorm ก่อน** (superpowers:brainstorming)
+2 งานหลัก (เรียงตามคุณค่า):
+1. **keyword matching ราย user** — ตอนนี้ engine match แค่จังหวัด (subscription_provinces). keyword/งบ/รัศมีที่ลูกค้าตั้งในหน้า "บริษัท" (notes.classes) เซฟได้แต่ยังไม่กรองงาน → ทำให้ keyword/งบ มีผลจริงกับการ match/แจ้งเตือน. ดู [[project_matching_design]] [[project_matching_per_tenant_debt]]
+2. **section discovery "งานใหม่ที่แมตช์"** — บอร์ดโชว์งานใหม่ในพื้นที่/keyword ที่ลูกค้ายังไม่ติดตาม (ตอนนี้โชว์เฉพาะ followed_jobs). ต้องสร้าง matching query บน projects_seen (จังหวัด+keyword). spec เดิม 2026-06-30-portal-real-jobs-design.md ระบุ discovery เป็น Phase 2
+
+### ⚠️ Gate/gotcha สำคัญ (zero-context ต้องรู้)
+- **บอร์ด 2 ตัว**: A=`api.butler-bms.com/portal` (HTML จากลิงก์ LINE, มีอยู่เดิม) · B=`bid-master-dashboard.vercel.app/portal/world` (Next.js, ตัวหลักใหม่). งานทำกับ B
+- **deploy B**: engine scp `scripts/bms_api.py`→VPS root@45.76.156.166 (`~/.ssh/bms_vps`, user bms, restart `bms-api.service`) + web `cd dashboard/web && vercel deploy --prod --yes`
+- **VPS git reconcile หลัง scp+push**: ต้อง stash+ff-pull (CRLF diff หลอก — ใช้ `git diff --ignore-cr-at-eol`); ดู [[project_deploy_debt]]
+- **vercel env add ห้ามผ่าน PowerShell pipe** (ใส่ BOM) → ใช้ bash printf
+- **secret**: BMS_INTERNAL_SECRET ตั้งแล้วทั้ง VPS .env + Vercel (ค่า A0W4kkq8... — ดูใน scratchpad/bms_secret.txt ถ้าต้อง)
+- engine test: asyncio direct + scratch DB copy (BMS_DATA_DIR) ห้ามแตะ prod
+- ลูกค้าจริงมี follow: Ua0d90e8(กัญจน์ 15), ณฐมน 7, Mr.suvit 8
+
+### ค้าง/ระวัง (เล็ก)
+- Sebastian Chat quota ring (world) = ตัวเลขเฉยๆ แชตจริงใน LINE (ไม่ถึงกับหลอก)
+- Postgres (หน้าประวัติ) ยังแยกจาก SQLite engine

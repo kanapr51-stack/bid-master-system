@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { type BusinessClass, type PortalJob, TIERS } from '@/lib/portal-data';
-import { TopBar, ButlerNote, Chip, Icons, Crest, Diamond } from '../_ui';
+import { type BusinessClass, TIERS } from '@/lib/portal-data';
 import type { PortalProfile } from '@/lib/portal-data';
+import type { JobGroups, JobStage, TrackedJob } from '@/lib/portal-jobs';
+import { TopBar, Chip, Icons, Diamond } from '../_ui';
 
 // ── Quota Ring ────────────────────────────────────────────────────────────────
 
@@ -27,7 +28,7 @@ function QuotaRing({ pct, unlimited }: { pct: number; unlimited: boolean }) {
 
 // ── Summary Card ──────────────────────────────────────────────────────────────
 
-function SumCard({ icon, label, value, unit, sub, accent, href }: { icon: React.ReactNode; label: string; value: number | string; unit: string; sub?: string; accent?: boolean; href?: string }) {
+function SumCard({ icon, label, value, unit, accent, href }: { icon: React.ReactNode; label: string; value: number | string; unit: string; accent?: boolean; href?: string }) {
   const content = (
     <div className="p-card" style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 8, padding: 16, borderColor: accent ? 'var(--accent-deep)' : 'var(--border)', background: accent ? 'var(--gold-glow)' : 'var(--surface)', width: '100%', cursor: href ? 'pointer' : 'default' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: accent ? 'var(--accent)' : 'var(--fg-mute)' }}>
@@ -40,7 +41,6 @@ function SumCard({ icon, label, value, unit, sub, accent, href }: { icon: React.
           <span className="p-display" style={{ fontSize: 30, color: accent ? 'var(--accent)' : 'inherit', lineHeight: 1 }}>{value}</span>
           <span className="p-fg-dim" style={{ fontSize: 12 }}>{unit}</span>
         </div>
-        {sub && <div className="p-fg-dim" style={{ fontSize: 11, marginTop: 4 }}>{sub}</div>}
       </div>
     </div>
   );
@@ -48,178 +48,75 @@ function SumCard({ icon, label, value, unit, sub, accent, href }: { icon: React.
   return content;
 }
 
-// ── Job Card ──────────────────────────────────────────────────────────────────
+// ── helpers ─────────────────────────────────────────────────────────────────
 
-function JobCard({ job, cls, starred, onStar }: { job: PortalJob; cls?: BusinessClass; starred?: boolean; onStar?: () => void }) {
-  const urgency = (job.daysLeft ?? 99) <= 5 ? 'wine' : (job.daysLeft ?? 99) <= 10 ? 'gold' : 'outline';
+function daysLeftOf(deadline: string): number | null {
+  if (!deadline) return null;
+  const d = new Date(deadline);
+  if (isNaN(d.getTime())) return null;
+  return Math.max(0, Math.ceil((d.getTime() - Date.now()) / 86400000));
+}
+
+function fmtBaht(n: number | null): string {
+  if (!n) return '—';
+  return n.toLocaleString('th-TH');
+}
+
+const STAGE_META: { key: JobStage; label: string; icon: string }[] = [
+  { key: 'bidding', label: 'ยื่นซองได้', icon: '🔵' },
+  { key: 'prelim', label: 'รอผล', icon: '🟡' },
+  { key: 'won', label: 'รู้ผลแล้ว', icon: '🏆' },
+  { key: 'pre', label: 'ระยะวางแผน', icon: '⚪' },
+  { key: 'cancelled', label: 'ยกเลิก', icon: '❌' },
+];
+
+// ── Tracked Job Card ──────────────────────────────────────────────────────────
+
+function TrackedJobCard({ job, stage, starred, onStar }: { job: TrackedJob; stage: JobStage; starred: boolean; onStar: () => void }) {
+  const dl = daysLeftOf(job.deadline);
+  const urgency = dl === null ? 'outline' : dl <= 5 ? 'wine' : dl <= 10 ? 'gold' : 'outline';
   return (
     <div className="p-card" style={{ padding: 14, borderColor: starred ? 'var(--accent-deep)' : 'var(--border)', background: starred ? 'var(--gold-glow)' : 'var(--surface)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div className="p-mono p-fg-mute" style={{ fontSize: 11, letterSpacing: '0.04em', marginBottom: 4 }}>{job.agency}</div>
-          <div className="p-display" style={{ fontSize: 15, lineHeight: 1.3 }}>{job.title}</div>
+          {job.location && <div className="p-mono p-fg-mute" style={{ fontSize: 11, letterSpacing: '0.04em', marginBottom: 4 }}>{job.location}</div>}
+          <div className="p-display" style={{ fontSize: 15, lineHeight: 1.3 }}>{job.name}</div>
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-          {onStar && (
-            <button onClick={e => { e.stopPropagation(); onStar(); }}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: starred ? 'var(--accent)' : 'var(--fg-dim)', fontSize: 18, padding: '0 2px', lineHeight: 1 }}>
-              {starred ? '★' : '☆'}
-            </button>
+          <button onClick={e => { e.stopPropagation(); onStar(); }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: starred ? 'var(--accent)' : 'var(--fg-dim)', fontSize: 18, padding: '0 2px', lineHeight: 1 }}>
+            {starred ? '★' : '☆'}
+          </button>
+          {(stage === 'bidding' || stage === 'prelim') && dl !== null && (
+            <Chip tone={urgency} icon={<Icons.Clock size={11} />}>{dl} วัน</Chip>
           )}
-          <Chip tone={urgency} icon={<Icons.Clock size={11} />}>{job.daysLeft} วัน</Chip>
         </div>
       </div>
       <div style={{ display: 'flex', gap: 16, marginTop: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-        <div>
-          <div className="p-mono p-fg-dim" style={{ fontSize: 10, letterSpacing: '0.08em' }}>งบประมาณ</div>
-          <div className="p-serif" style={{ fontSize: 16, fontWeight: 500 }}>
-            <span className="p-fg-accent">{job.budget.toLocaleString()}</span>{' '}
-            <span className="p-fg-dim" style={{ fontSize: 11 }}>ลบ.</span>
-          </div>
-        </div>
-        {cls && (
-          <div style={{ paddingLeft: 16, borderLeft: '1px solid var(--line)' }}>
-            <div className="p-mono p-fg-dim" style={{ fontSize: 10, letterSpacing: '0.08em' }}>ตรงกับ Class</div>
-            <div style={{ fontSize: 13, marginTop: 2, color: cls.color }}>{cls.name}</div>
+        {job.budget > 0 && (
+          <div>
+            <div className="p-mono p-fg-dim" style={{ fontSize: 10, letterSpacing: '0.08em' }}>ราคากลาง</div>
+            <div className="p-serif" style={{ fontSize: 16, fontWeight: 500 }}>
+              <span className="p-fg-accent">{fmtBaht(job.budget)}</span> <span className="p-fg-dim" style={{ fontSize: 11 }}>บาท</span>
+            </div>
           </div>
         )}
-        {job.distance && (
+        {job.pred_lo && job.pred_hi && (
           <div style={{ paddingLeft: 16, borderLeft: '1px solid var(--line)' }}>
-            <div className="p-mono p-fg-dim" style={{ fontSize: 10, letterSpacing: '0.08em' }}>ระยะทาง</div>
-            <div className="p-serif" style={{ fontSize: 14 }}>{job.distance} <span className="p-fg-dim" style={{ fontSize: 11 }}>กม.</span></div>
+            <div className="p-mono p-fg-dim" style={{ fontSize: 10, letterSpacing: '0.08em' }}>คาดราคาเสนอ</div>
+            <div className="p-serif" style={{ fontSize: 13 }}>{fmtBaht(job.pred_lo)}–{fmtBaht(job.pred_hi)}</div>
+          </div>
+        )}
+        {stage === 'won' && job.winner && (
+          <div style={{ paddingLeft: 16, borderLeft: '1px solid var(--line)' }}>
+            <div className="p-mono p-fg-dim" style={{ fontSize: 10, letterSpacing: '0.08em' }}>ผู้ชนะ</div>
+            <div className="p-serif" style={{ fontSize: 13 }}>{job.winner}{job.winner_disc != null && <span className="p-fg-dim"> · ลด {job.winner_disc}%</span>}</div>
           </div>
         )}
       </div>
-      <div style={{ display: 'flex', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
-        {job.matchedKeywords.slice(0, 3).map(k => <Chip key={k} tone="outline">{k}</Chip>)}
-        {job.sme && <Chip tone="emerald">SME +7.5%</Chip>}
-        {job.mit && <Chip tone="emerald">MIT</Chip>}
-      </div>
-    </div>
-  );
-}
-
-// ── Pre-TOR Card ──────────────────────────────────────────────────────────────
-
-function PhaseDot({ label, active }: { label: string; active?: boolean }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-      <div style={{ width: 10, height: 10, borderRadius: '50%', background: active ? 'var(--accent)' : 'var(--border)', border: active ? '0' : '1px solid var(--line)' }} />
-      <span className="p-mono" style={{ fontSize: 9, letterSpacing: '0.04em', color: active ? 'var(--accent)' : 'var(--fg-dim)' }}>{label}</span>
-    </div>
-  );
-}
-
-function PhaseLine({ active }: { active?: boolean }) {
-  return <div style={{ flex: 1, height: 1, marginBottom: 14, background: active ? 'var(--accent-deep)' : 'var(--border)' }} />;
-}
-
-function PretorCard({ job, cls }: { job: PortalJob; cls?: BusinessClass }) {
-  return (
-    <div className="p-card" style={{ padding: 14, position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', top: 0, left: 0, background: 'var(--surface-2)', borderRight: '1px solid var(--accent-deep)', borderBottom: '1px solid var(--accent-deep)', borderBottomRightRadius: 8, padding: '3px 10px', display: 'flex', alignItems: 'center', gap: 6, color: 'var(--accent)' }}>
-        <Icons.Doc size={11} />
-        <span className="p-mono" style={{ fontSize: 9.5, letterSpacing: '0.12em', fontWeight: 600 }}>PRE-TOR</span>
-      </div>
-      <div style={{ marginTop: 20 }}>
-        <div className="p-mono p-fg-mute" style={{ fontSize: 11, letterSpacing: '0.04em', marginBottom: 4 }}>{job.agency}</div>
-        <div className="p-display" style={{ fontSize: 15, lineHeight: 1.3 }}>{job.title}</div>
-      </div>
-      <div style={{ marginTop: 12 }}>
-        <div className="p-mono p-fg-dim" style={{ fontSize: 10, letterSpacing: '0.06em', marginBottom: 6 }}>
-          ขั้นตอน: <span style={{ color: 'var(--accent)' }}>{job.pretorPhase}</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <PhaseDot label="ร่าง" active /><PhaseLine active /><PhaseDot label="รับฟัง" active /><PhaseLine /><PhaseDot label="สรุป" /><PhaseLine /><PhaseDot label="ประมูล" />
-        </div>
-      </div>
-      <div style={{ display: 'flex', gap: 14, marginTop: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-        <div>
-          <div className="p-mono p-fg-dim" style={{ fontSize: 10, letterSpacing: '0.08em' }}>งบประมาณ</div>
-          <div className="p-serif" style={{ fontSize: 16, fontWeight: 500 }}><span className="p-fg-accent">{job.budget.toLocaleString()}</span> <span className="p-fg-dim" style={{ fontSize: 11 }}>ลบ.</span></div>
-        </div>
-        <div style={{ paddingLeft: 14, borderLeft: '1px solid var(--line)' }}>
-          <div className="p-mono p-fg-dim" style={{ fontSize: 10, letterSpacing: '0.08em' }}>ปิดรับความเห็น</div>
-          <div className="p-serif" style={{ fontSize: 14 }}>
-            <span style={{ color: (job.daysToComment ?? 99) <= 7 ? 'var(--wine-soft)' : 'var(--fg)' }}>{job.daysToComment}</span> <span className="p-fg-dim" style={{ fontSize: 11 }}>วัน</span>
-          </div>
-        </div>
-        <div style={{ paddingLeft: 14, borderLeft: '1px solid var(--line)' }}>
-          <div className="p-mono p-fg-dim" style={{ fontSize: 10, letterSpacing: '0.08em' }}>คาดประมูล</div>
-          <div className="p-serif" style={{ fontSize: 13 }}>{job.expectedBidDate}</div>
-        </div>
-      </div>
-      <div style={{ display: 'flex', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
-        {cls && <Chip tone="outline" icon={<Diamond size={5} color={cls.color} />}>{cls.name}</Chip>}
-        {job.matchedKeywords.slice(0, 2).map(k => <Chip key={k} tone="outline">{k}</Chip>)}
-        {job.sme && <Chip tone="emerald">SME</Chip>}
-      </div>
-    </div>
-  );
-}
-
-// ── Feed Tab ──────────────────────────────────────────────────────────────────
-
-function FeedTab({ active, onClick, label, count, icon }: { active: boolean; onClick: () => void; label: string; count: number; icon: React.ReactNode }) {
-  return (
-    <button onClick={onClick} style={{ flex: 1, padding: '10px 12px', borderRadius: 8, border: 0, background: active ? 'var(--accent)' : 'transparent', color: active ? 'var(--ink-deep)' : 'var(--fg-mute)', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', transition: 'background 0.16s', whiteSpace: 'nowrap' }}>
-      <span style={{ flexShrink: 0 }}>{icon}</span>
-      <span style={{ flex: 1, fontSize: 13, fontWeight: active ? 700 : 600 }}>{label}</span>
-      <span className="p-mono" style={{ flexShrink: 0, fontSize: 10, padding: '1px 7px', borderRadius: 999, background: active ? 'rgba(14,13,11,0.20)' : 'var(--line)', fontWeight: 600 }}>{count}</span>
-    </button>
-  );
-}
-
-// ── CompanyMatchesCard ────────────────────────────────────────────────────────
-
-function CompanyMatchesCard({
-  cls,
-  jobs,
-  starred,
-  onStar,
-}: {
-  cls: BusinessClass;
-  jobs: PortalJob[];
-  starred: Set<string>;
-  onStar: (id: string) => void;
-}) {
-  const [expanded, setExpanded] = useState(false);
-  const starredCount = jobs.filter(j => starred.has(j.id)).length;
-  const urgentCount = jobs.filter(j => (j.daysLeft ?? 99) <= 5).length;
-
-  return (
-    <div className="p-card" style={{ padding: 0, overflow: 'hidden' }}>
-      <div
-        style={{
-          padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12,
-          cursor: 'pointer', borderLeft: `3px solid ${cls.color || 'var(--accent)'}`,
-          background: starredCount > 0 ? 'var(--gold-glow)' : 'var(--surface)',
-        }}
-        onClick={() => setExpanded(v => !v)}
-      >
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="p-display" style={{ fontSize: 16, lineHeight: 1.2 }}>{cls.companyName || cls.name}</div>
-          <div className="p-mono p-fg-dim" style={{ fontSize: 10.5, marginTop: 2, letterSpacing: '0.02em' }}>
-            {jobs.length} งานที่ตรง{urgentCount > 0 && <span style={{ color: 'var(--wine-soft)' }}> · {urgentCount} เร่งด่วน</span>}
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-          {starredCount > 0 && (
-            <span style={{ color: 'var(--accent)', fontSize: 13 }}>★ {starredCount}</span>
-          )}
-          <Chip tone={urgentCount > 0 ? 'wine' : 'gold'}>{jobs.length}</Chip>
-          <Icons.ChevronDown
-            size={14}
-            style={{ transform: expanded ? 'none' : 'rotate(-90deg)', transition: 'transform 0.15s', color: 'var(--fg-dim)' }}
-          />
-        </div>
-      </div>
-
-      {expanded && (
-        <div style={{ padding: '0 12px 12px', borderTop: '1px solid var(--line)' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 10 }}>
-            {jobs.map(job => <JobCard key={job.id} job={job} cls={cls} starred={starred.has(job.id)} onStar={() => onStar(job.id)} />)}
-          </div>
+      {job.deadline && (stage === 'bidding' || stage === 'prelim') && (
+        <div className="p-fg-dim" style={{ fontSize: 11, marginTop: 8 }}>
+          ยื่นซอง: {job.deadline}{job.deadline_time ? ` ${job.deadline_time}` : ''}
         </div>
       )}
     </div>
@@ -236,50 +133,34 @@ interface WorldClientProps {
   daysLeft: number;
   expiryLabel: string;
   classes: BusinessClass[];
-  jobs: PortalJob[];
-  initialStarred?: string[];
+  jobGroups: JobGroups;
 }
 
-export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, expiryLabel, classes, jobs, initialStarred = [] }: WorldClientProps) {
-  const [feedTab, setFeedTab] = useState<'bidding' | 'pretor'>('bidding');
-  const [starred, setStarred] = useState<Set<string>>(new Set(initialStarred));
+export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, expiryLabel, classes, jobGroups }: WorldClientProps) {
+  const allJobs = STAGE_META.flatMap(s => jobGroups[s.key]);
+  const [starred, setStarred] = useState<Set<string>>(
+    () => new Set(allJobs.filter(j => j.starred).map(j => j.project_id)),
+  );
 
-  const toggleStar = async (jobId: string) => {
-    const next = new Set(starred);
-    if (next.has(jobId)) next.delete(jobId); else next.add(jobId);
+  const toggleStar = async (projectId: string) => {
+    const prev = starred;
+    const next = new Set(prev);
+    if (next.has(projectId)) next.delete(projectId); else next.add(projectId);
     setStarred(next);
     try {
-      await fetch('/api/portal/save', {
+      await fetch('/api/portal/star', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ starred: Array.from(next) }),
+        body: JSON.stringify({ project_id: projectId }),
       });
-    } catch { /* non-critical */ }
+    } catch {
+      setStarred(prev); // revert on failure
+    }
   };
 
   const tier = TIERS.find(t => t.id === tierId) || TIERS[0];
-  const biddingJobs = jobs.filter(j => j.stage === 'bidding');
-  const pretorJobs = jobs.filter(j => j.stage === 'pretor');
-  const recentJobs = feedTab === 'pretor' ? pretorJobs.slice(0, 5) : [];
-
-  // Group bidding jobs by matched class
-  const jobsByClass = useMemo(() => {
-    const map = new Map<string, PortalJob[]>();
-    for (const j of biddingJobs) {
-      const key = j.matchedClassId ?? '__unmatched__';
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(j);
-    }
-    return map;
-  }, [biddingJobs]);
-
   const totalKeywords = classes.reduce((a, c) => a + c.keywords.length, 0);
-  const provincesSet = useMemo(() => {
-    const s = new Set<string>();
-    classes.forEach(c => c.geo.provinces.forEach(p => s.add(p)));
-    return s;
-  }, [classes]);
-
+  const provincesCount = new Set(classes.flatMap(c => c.geo.provinces)).size;
   const isUnlimited = chatQuota === -1;
   const quotaPct = isUnlimited ? 100 : Math.round(((chatQuota - chatUsed) / chatQuota) * 100);
 
@@ -316,7 +197,7 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
           {tier.id === 'trial' && (
             <>
               <div className="p-deadline-bar" style={{ marginTop: 14 }}>
-                <span style={{ width: `${(daysLeft / 30) * 100}%` }} />
+                <span style={{ width: `${Math.min(100, (daysLeft / 30) * 100)}%` }} />
               </div>
               <div className="p-mono p-fg-dim" style={{ fontSize: 10, marginTop: 6, letterSpacing: '0.06em', display: 'flex', justifyContent: 'space-between' }}>
                 <span>0 / 30 วัน</span><span>เหลือ {daysLeft}</span>
@@ -342,85 +223,54 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
         {/* Summary grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <SumCard icon={<Icons.Layers size={16} />} label="บริษัทของฉัน" value={classes.length} unit="บริษัท" href="/portal/classes" />
-          <SumCard icon={<Icons.Map size={16} />} label="พื้นที่ครอบคลุม" value={provincesSet.size} unit="จังหวัด" href="/portal/classes" />
+          <SumCard icon={<Icons.Map size={16} />} label="พื้นที่ครอบคลุม" value={provincesCount} unit="จังหวัด" href="/portal/classes" />
           <SumCard icon={<Icons.Tag size={16} />} label="Keywords" value={totalKeywords} unit="คำค้น" href="/portal/classes" />
-          <SumCard icon={<Icons.Bell size={16} />} label="งานวันนี้" value={jobs.length} unit="ที่ตรงเงื่อนไข" accent />
+          <SumCard icon={<Icons.Bell size={16} />} label="งานที่ติดตาม" value={allJobs.length} unit="งาน" accent />
           {starred.size > 0 && (
             <SumCard icon={<span style={{ fontSize: 16 }}>★</span>} label="งานที่สนใจ" value={starred.size} unit="งาน" />
           )}
         </div>
 
-        {/* Recent matches */}
-        <div style={{ marginTop: 22, marginBottom: 12 }}>
+        {/* Tracked jobs by stage */}
+        <div style={{ marginTop: 22 }}>
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 10 }}>
             <div>
-              <div className="p-smallcaps p-fg-mute">งานที่ Sebastian พบล่าสุด</div>
-              <div className="p-display" style={{ fontSize: 20, marginTop: 2 }}>Recent Matches</div>
+              <div className="p-smallcaps p-fg-mute">งานที่ท่านติดตาม</div>
+              <div className="p-display" style={{ fontSize: 20, marginTop: 2 }}>Tracked Bids</div>
             </div>
-            <Chip tone="gold" icon={<Diamond size={5} />}>{jobs.length} วันนี้</Chip>
+            <Chip tone="gold" icon={<Diamond size={5} />}>{allJobs.length} งาน</Chip>
           </div>
-          <div style={{ display: 'flex', gap: 4, padding: 4, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10 }}>
-            <FeedTab active={feedTab === 'bidding'} onClick={() => setFeedTab('bidding')} label="กำลังประมูล" count={biddingJobs.length} icon={<Icons.Bell size={12} />} />
-            <FeedTab active={feedTab === 'pretor'} onClick={() => setFeedTab('pretor')} label="Pre-TOR" count={pretorJobs.length} icon={<Icons.Doc size={12} />} />
-          </div>
-        </div>
 
-        {/* งานที่สนใจ */}
-        {starred.size > 0 && (
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <span style={{ color: 'var(--accent)', fontSize: 16 }}>★</span>
-              <div className="p-label" style={{ margin: 0 }}>งานที่สนใจ ({starred.size})</div>
-            </div>
-            {jobs.filter(j => starred.has(j.id)).map(job => (
-              <JobCard key={job.id} job={job}
-                cls={classes.find(c => c.id === job.matchedClassId)}
-                starred={true} onStar={() => toggleStar(job.id)} />
-            ))}
-          </div>
-        )}
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {feedTab === 'bidding' ? (
-            biddingJobs.length === 0 ? (
-              <div className="p-card" style={{ textAlign: 'center', padding: 28 }}>
-                <div className="p-serif p-fg-mute" style={{ fontStyle: 'italic', fontSize: 14 }}>ยังไม่พบงานในประเภทนี้ ผมจะแจ้งให้ทราบทันทีที่พบครับท่าน</div>
+          {allJobs.length === 0 ? (
+            <div className="p-card" style={{ textAlign: 'center', padding: 28 }}>
+              <div className="p-serif p-fg-mute" style={{ fontStyle: 'italic', fontSize: 14 }}>
+                ยังไม่มีงานที่ติดตาม — ระบบจะเพิ่มให้เมื่อเจองานตรงพื้นที่/หมวดของท่านครับ
               </div>
-            ) : (
-              <>
-                {/* Company grouped cards — collapsed by default */}
-                {classes.map(cls => {
-                  const clsJobs = jobsByClass.get(cls.id) ?? [];
-                  if (clsJobs.length === 0) return null;
-                  return <CompanyMatchesCard key={cls.id} cls={cls} jobs={clsJobs} starred={starred} onStar={toggleStar} />;
-                })}
-                {/* Unmatched jobs (no class) */}
-                {(jobsByClass.get('__unmatched__') ?? []).map(job => (
-                  <JobCard key={job.id} job={job} starred={starred.has(job.id)} onStar={() => toggleStar(job.id)} />
-                ))}
-              </>
-            )
+            </div>
           ) : (
-            recentJobs.length === 0 ? (
-              <div className="p-card" style={{ textAlign: 'center', padding: 28 }}>
-                <div className="p-serif p-fg-mute" style={{ fontStyle: 'italic', fontSize: 14 }}>ยังไม่พบงานในประเภทนี้ ผมจะแจ้งให้ทราบทันทีที่พบครับท่าน</div>
-              </div>
-            ) : (
-              recentJobs.map(job => <PretorCard key={job.id} job={job} cls={classes.find(c => c.id === job.matchedClassId)} />)
-            )
+            STAGE_META.map(({ key, label, icon }) => {
+              const jobs = jobGroups[key];
+              if (!jobs || jobs.length === 0) return null;
+              return (
+                <div key={key} style={{ marginBottom: 18 }}>
+                  <div className="p-label" style={{ margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>{icon}</span>{label} <span className="p-fg-dim">({jobs.length})</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {jobs.map(job => (
+                      <TrackedJobCard
+                        key={job.project_id}
+                        job={job}
+                        stage={key}
+                        starred={starred.has(job.project_id)}
+                        onStar={() => toggleStar(job.project_id)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })
           )}
-        </div>
-
-        {/* Butler note */}
-        <div style={{ marginTop: 18 }}>
-          <ButlerNote tone="gold">
-            {feedTab === 'bidding' ? (
-              <>ท่านครับ — วันนี้ผมพบงานที่กำลังประมูล <span className="p-mono" style={{ fontSize: 13 }}>{biddingJobs.length}</span> งาน
-              {biddingJobs.length > 0 && <> งานที่ปิดเร็วที่สุดเหลือ <span className="p-mono p-fg-accent" style={{ fontSize: 13, fontStyle: 'normal' }}>{Math.min(...biddingJobs.map(j => j.daysLeft ?? 99))} วัน</span> ขอแนะนำให้ดูก่อนนะครับ</>}</>
-            ) : (
-              <>นอกจากงานประมูลแล้ว ผมยังพบ <span className="p-mono" style={{ fontStyle: 'normal', fontSize: 13 }}>Pre-TOR {pretorJobs.length} ร่าง</span> — ท่านสามารถส่งความเห็นได้ก่อนประกาศจริง เพื่อเตรียมตัวล่วงหน้าครับ</>
-            )}
-          </ButlerNote>
         </div>
 
         {tier.id === 'trial' && (

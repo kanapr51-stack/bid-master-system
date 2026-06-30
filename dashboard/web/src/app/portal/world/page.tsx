@@ -2,7 +2,8 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { parseSessionCookie, COOKIE_NAME } from '@/lib/session';
 import { getCustomerByLineId } from '@/lib/customers';
-import { parsePortalNotes, getTierId, getTier, SEED_JOBS } from '@/lib/portal-data';
+import { parsePortalNotes, getTierId, getTier } from '@/lib/portal-data';
+import { getPortalJobs, type JobGroups } from '@/lib/portal-jobs';
 import { WorldClient } from './_client';
 
 export const dynamic = 'force-dynamic';
@@ -24,6 +25,11 @@ export default async function WorldPage() {
   const tierId = getTierId(customer ?? { status: 'trial', notes: '' });
   const tier = getTier(tierId);
   const classes = notes.classes ?? [];
+
+  let jobGroups: JobGroups = { won: [], prelim: [], bidding: [], pre: [], cancelled: [] };
+  try {
+    jobGroups = await getPortalJobs(session.lineUserId);
+  } catch { /* engine unavailable — show empty board */ }
 
   // Calculate trial days left
   let daysLeft = 30;
@@ -52,8 +58,7 @@ export default async function WorldPage() {
       daysLeft={daysLeft}
       expiryLabel={expiryLabel}
       classes={classes}
-      jobs={SEED_JOBS}
-      initialStarred={notes.starred ?? []}
+      jobGroups={jobGroups}
     />
   );
 }

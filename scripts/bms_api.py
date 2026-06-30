@@ -454,6 +454,7 @@ def _portal_jobs(user_id: str):
             lsn = (f["last_stage_notified"] if "last_stage_notified" in f.keys() else "") or ""
             job = {"project_id": pid, "name": ps["project_name"] or pid, "location": location,
                    "deadline": deadline, "deadline_time": deadline_time,
+                   "budget": budget,
                    "pred_lo": pr["area_price_lo"] if pr else None,
                    "pred_hi": pr["area_price_hi"] if pr else None,
                    "winner": None, "winner_price": None, "winner_disc": None, "competitors": [],
@@ -1540,3 +1541,18 @@ async def portal_upsert_customer(
                     )
 
     return {"ok": True, "is_new": is_new, "customer_id": cid}
+
+
+@app.get("/api/portal/jobs")
+async def portal_get_jobs(
+    line_user_id: str = Query(...),
+    x_bms_secret=Header(default=None),
+):
+    """งานที่ลูกค้าติดตามจริง (followed_jobs) จัดกลุ่ม stage — สำหรับบอร์ด Next.js."""
+    if x_bms_secret != BMS_INTERNAL_SECRET:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    empty = {"won": [], "prelim": [], "bidding": [], "pre": [], "cancelled": []}
+    groups = _portal_jobs(line_user_id)
+    if groups is None:
+        return {"ok": True, "jobs": empty}
+    return {"ok": True, "jobs": groups}

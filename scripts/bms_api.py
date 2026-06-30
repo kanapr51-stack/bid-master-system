@@ -24,6 +24,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 sys.path.insert(0, str(Path(__file__).parent))
 import follow_token  # noqa: E402
 import portal_views  # noqa: E402
+import job_matcher  # noqa: E402
 
 # -- Config -------------------------------------------------------------------
 
@@ -391,6 +392,43 @@ def _countdown_th(deadline_str: str) -> str:
     return f"เหลืออีก {days} วัน"
 
 
+def _job_location_deadline(conn, pid: str, prov: str):
+    """คืน (location, deadline, deadline_time) ของงาน 1 row.
+    location = 'ต.x อ.y จ.z' (เท่าที่ resolve ได้); deadline จาก project_locations → project_enrichments.
+    ใช้ร่วม _portal_jobs + discover (DRY)."""
+    try:
+        loc = conn.execute(
+            "SELECT moi_name, deadline, deadline_time FROM project_locations WHERE project_id=?", (pid,)).fetchone()
+    except sqlite3.OperationalError:
+        loc = None
+    moi = (loc["moi_name"] if loc and "moi_name" in loc.keys() else "") or ""
+    deadline = (loc["deadline"] if loc and "deadline" in loc.keys() else "") or ""
+    deadline_time = (loc["deadline_time"] if loc and "deadline_time" in loc.keys() else "") or ""
+    if not deadline or not deadline_time:
+        try:
+            er = conn.execute(
+                "SELECT bid_submit_date, bid_submit_time FROM project_enrichments WHERE project_id=?", (pid,)).fetchone()
+            if er:
+                if not deadline:
+                    deadline = (er["bid_submit_date"] or "") if "bid_submit_date" in er.keys() else ""
+                if not deadline_time:
+                    deadline_time = (er["bid_submit_time"] or "") if "bid_submit_time" in er.keys() else ""
+        except sqlite3.OperationalError:
+            pass
+    amphoe = ""
+    if moi and prov:
+        try:
+            import geo_reverse
+            _ams = geo_reverse.amphoes_of_tambon(prov, moi)
+            if len(_ams) == 1:
+                amphoe = _ams[0]
+        except Exception:
+            pass
+    location = ((f"ต.{moi} " if moi else "") + (f"อ.{amphoe} " if amphoe else "")
+                + (f"จ.{prov}" if prov else "")).strip()
+    return location, deadline, deadline_time
+
+
 def _portal_jobs(user_id: str):
     """งานที่ user ติดตาม (active+closed) จัดกลุ่ม stage. คืน {won,bidding,pre} | None (ไม่มี customer).
     won = มีผู้ชนะ (bid_results) หรือ announce W* · bidding = D0 ยังไม่มีผล · pre = อื่น (B*)."""
@@ -411,38 +449,8 @@ def _portal_jobs(user_id: str):
                 (pid,)).fetchone()
             if not ps:
                 continue
-            try:
-                loc = conn.execute(
-                    "SELECT moi_name, deadline, deadline_time FROM project_locations WHERE project_id=?", (pid,)).fetchone()
-            except sqlite3.OperationalError:
-                loc = None
-            moi = (loc["moi_name"] if loc and "moi_name" in loc.keys() else "") or ""
-            deadline = (loc["deadline"] if loc and "deadline" in loc.keys() else "") or ""
-            deadline_time = (loc["deadline_time"] if loc and "deadline_time" in loc.keys() else "") or ""
-            if not deadline or not deadline_time:
-                # fallback: งาน rss วัน+เวลายื่นซองอยู่ใน project_enrichments (ไม่ถูก copy ไป project_locations)
-                try:
-                    er = conn.execute(
-                        "SELECT bid_submit_date, bid_submit_time FROM project_enrichments WHERE project_id=?", (pid,)).fetchone()
-                    if er:
-                        if not deadline:
-                            deadline = (er["bid_submit_date"] or "") if "bid_submit_date" in er.keys() else ""
-                        if not deadline_time:
-                            deadline_time = (er["bid_submit_time"] or "") if "bid_submit_time" in er.keys() else ""
-                except sqlite3.OperationalError:
-                    pass
             prov = ps["province"] or ""
-            amphoe = ""
-            if moi and prov:
-                try:
-                    import geo_reverse
-                    _ams = geo_reverse.amphoes_of_tambon(prov, moi)
-                    if len(_ams) == 1:
-                        amphoe = _ams[0]
-                except Exception:
-                    pass
-            location = ((f"ต.{moi} " if moi else "") + (f"อ.{amphoe} " if amphoe else "")
-                        + (f"จ.{prov}" if prov else "")).strip()
+            location, deadline, deadline_time = _job_location_deadline(conn, pid, prov)
             budget = ps["budget"] or 0
             pr = conn.execute(
                 "SELECT area_price_lo, area_price_hi FROM price_predictions WHERE project_id=?", (pid,)).fetchone()
@@ -1585,6 +1593,68 @@ async def portal_get_jobs(
     if groups is None:
         return {"ok": True, "jobs": empty}
     return {"ok": True, "jobs": groups}
+
+
+@app.get("/api/portal/discover")
+async def portal_discover_jobs(
+    line_user_id: str = Query(...),
+    x_bms_secret=Header(default=None),
+):
+    """งานใหม่ที่แมตช์ (per-user keyword+พื้นที่+งบ) ที่ยังไม่ติดตาม — บอร์ด Next.js.
+    SCOPE: read-only discovery query เท่านั้น — ไม่แตะ LINE pipeline / global config."""
+    if x_bms_secret != BMS_INTERNAL_SECRET:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    import discovery_match
+    empty = {"biddable": [], "planning": []}
+    with get_conn() as conn:
+        cust = conn.execute("SELECT id, notes FROM customers WHERE line_user_id=?", (line_user_id,)).fetchone()
+        if not cust:
+            return {"ok": True, "jobs": empty}
+        cid = cust["id"]
+        provinces = [r["province"] for r in conn.execute(
+            "SELECT sp.province FROM subscription_provinces sp "
+            "JOIN subscriptions s ON s.id=sp.subscription_id WHERE s.customer_id=?", (cid,)).fetchall()]
+        pref = _classes_from_notes(cust["notes"] or "")
+        keywords = pref["keywords"]
+        if not provinces or not keywords:
+            return {"ok": True, "jobs": empty}
+        followed = {r["project_id"] for r in conn.execute(
+            "SELECT project_id FROM followed_jobs WHERE customer_id=?", (cid,)).fetchall()}
+        neg = job_matcher.load_config().get("negative_keywords", [])
+        qmarks = ",".join("?" * len(provinces))
+        rows = conn.execute(
+            f"SELECT project_id, project_name, announce_type, province, budget, first_seen_at "
+            f"FROM projects_seen WHERE province IN ({qmarks})", provinces).fetchall()
+        today = datetime.now(TZ_TH).date().isoformat()
+        biddable, planning = [], []
+        for r in rows:
+            pid = r["project_id"]
+            if pid in followed:
+                continue
+            matched, hits = discovery_match.match(
+                r["project_name"] or "", r["province"] or "", r["budget"] or 0,
+                provinces, keywords, pref["budget_min"], pref["budget_max"], neg)
+            if not matched:
+                continue
+            ann = (r["announce_type"] or "")
+            location, deadline, deadline_time = _job_location_deadline(conn, pid, r["province"] or "")
+            card = {"project_id": pid, "name": r["project_name"] or pid,
+                    "location": location, "province": r["province"] or "",
+                    "deadline": deadline, "deadline_time": deadline_time,
+                    "budget": r["budget"] or 0, "matched_keywords": hits}
+            if ann == "D0":
+                if job_matcher.tor_is_fresh(r["first_seen_at"], days=30):
+                    if not deadline or deadline >= today:
+                        card["stage"] = "biddable"
+                        biddable.append((deadline, card))
+            elif ann.startswith("B"):
+                if job_matcher.tor_is_fresh(r["first_seen_at"], days=14):
+                    card["stage"] = "planning"
+                    planning.append((r["first_seen_at"] or "", card))
+        biddable.sort(key=lambda x: x[0])              # deadline ใกล้สุดก่อน
+        planning.sort(key=lambda x: x[0], reverse=True)  # ใหม่สุดก่อน
+        out = {"biddable": [c for _, c in biddable[:30]], "planning": [c for _, c in planning[:30]]}
+    return {"ok": True, "jobs": out}
 
 
 @app.post("/api/portal/star")

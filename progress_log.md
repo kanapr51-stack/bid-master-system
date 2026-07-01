@@ -1619,3 +1619,59 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 - 5 ลูกค้า seeded (Ua0d90e8/Ucb1758f/Ua93a6f5/U9e2e34e/U574d245 ทั้งหมด นครพนม+บึงกาฬ)
 - verify endpoint จริง: ทุกคน discover → **12 biddable + 1 planning** matched_keywords ถูก ✅
 - หมายเหตุ: งาน "ซื้อ" โผล่ด้วย (discovery ไม่มี proc split — ตัดทีหลังได้ถ้าต้องการ); DB บน VPS มี notes ราย user แล้ว (ต่างจาก global config LINE pipeline ที่ยังเหมือนเดิม)
+
+## งานที่ N+182: ย้าย Harvest Node ไปเครื่องใหม่ (single-writer cutover) (2026-07-01)
+
+### สถานะ: ✅ เสร็จ — เครื่องใหม่เป็น writer เดียว, เครื่องเก่า task disabled (รอยืนยัน auto-run รอบถัดไป)
+
+### สิ่งที่ทำ
+- setup เครื่องใหม่ตาม `docs/setup_harvest_node.md` เฟส 1-4 ครบ (repo/py/pkg/chrome/.ssh/.env, แก้ bat/vbs python path, Phase 3 manual harvest ผ่าน token+scp, Task Scheduler 25 นาที + startup script)
+- ขนของลับ 2 ไฟล์ (`bms_vps`+`.env`) ผ่าน LAN http.server ชั่วคราว (เน็ตบ้านเดียวกัน IP เดียว) แทน USB — โค้ดดึงจาก GitHub
+- ตอบข้อกังวลเครื่องใหม่: (1) "bypass Turnstile" ไม่ถูก — โค้ดใช้ browser จริงที่ Turnstile ปล่อยผ่านเอง อ่าน token ที่เว็บแจก frontend (ดู `token_service.py:134`), ไม่ solve/forge อะไร (2) "ต้อง login" ผิด — profile เครื่องเก่ามี cookie แค่ 3 (Xsrf-Token+TS* WAF) ไม่มี login/cf_clearance → copy profile ไม่ช่วย, ผ่านด้วย network-trust สดทุกรอบ
+
+### Verify (ก่อนตัด)
+- VPS `token_state.json`: provider `chrome9222_warm` (เครื่องใหม่) สดกว่า local เครื่องเก่า (`chrome9222`) → พิสูจน์ push เครื่องใหม่ landed จริง
+- disable `BMS_TokenHarvest` เครื่องเก่า (Status: Disabled) → VPS token (158s) สดกว่า local เครื่องเก่า (812s แช่แข็ง) = ยืนยันเครื่องใหม่เป็น writer เดียว
+- ปิดช่อง LAN 8731 + ลบ secret ที่ staged; scheduler.py/dashboard เครื่องเก่าไม่ใช่ harvester (ไม่ refresh token)
+
+### Followup
+- ✅ **auto-run เครื่องใหม่ยืนยันแล้ว** — VPS token provider พลิก `chrome9222_warm`→`chrome9222` (Task Scheduler รัน Chrome9222Provider เองสำเร็จ) = harvest ย้าย 100%
+- ✅ ไข `chrome9222_warm` — เครื่องใหม่มี temp debug script `harvest_now.py` (ไม่อยู่ใน repo) ตั้ง label เอง แล้ว harvest_and_push reuse token valid → push label นั้นไป VPS; token ถูกต้อง cosmetic เท่านั้น
+- ✅ **RSS_Probe disabled** (ต้อง admin) — telemetry เขียน `rss_availability_log.ndjson` ที่ไม่มี consumer active (VPS ทำ RSS จริงผ่าน `bms-rss-scraper`); ไม่กระทบงานจริง
+
+### CGD decision: B (คง CGD ไว้เครื่องเก่าก่อน) — ดู [[project_cgd_api_blocks_datacenter]]
+- CGD (discovery 05:00 + winner_refresh 21:30 รายวัน) residential-only (VPS 403), **ยัง active** — คงไว้เครื่องเก่า
+- StartWhenAvailable=True → เครื่องเก่า**เปิดวันละครั้งตอนสะดวกพอ** (รันชดเชยรอบที่พลาด) ไม่ต้องเปิด 24 ชม.
+- 🔜 **ปลดเครื่องเก่าเต็ม (งานแยก ทีหลัง):** ขน `winner_history.db` **7.8GB** ไปเครื่องใหม่ผ่าน LAN + ตั้ง 2 task + **ต่อสาย sync ให้ auto** (`cgd_sync_to_vps.py --push` ตอนนี้ไม่มี task เรียก = manual/ค้าง)
+- เครื่องเก่าเหลือ non-BMS: `scheduler.py` + `dashboard/server.py` (แอปอื่น ไม่เกี่ยว BMS)
+
+## งานที่ N+183: CHECKPOINT — ก่อนเปลี่ยน session (2026-07-01)
+
+### สถานะ: ⏸ pause เปลี่ยน session
+
+### ✅ เสร็จ session นี้
+- **N+181 Phase 2 discovery** DEPLOYED (engine+web, origin+VPS=bfb0eff) + seed keyword 89 คำให้ลูกค้า 5 ราย → discovery board มีงานจริง 12+1
+- **สืบบั๊ก LINE "ค้างงานเดียว"**: พบ notification_queue หยุดตั้งแต่ 25 มิ.ย. — enrichment worker `match_job` cut งานเป็น `filtered_no_match` (ก่อสร้างบางงานหายผิด) + งานก่อสร้างทั้งจังหวัด batch เป็น `qualified_digest` ส่งรอบเดียว 23:00; backlog digest เห็นแค่งานที่เคย fail
+- **ปิด user Hong** (active=0) + **ส่ง LINE backlog** 2 รอบ (รอบ 2 = 70 ข้อความ **พัง ไม่มีชื่อ/ลิงก์** เพราะเรียก `format_notification` ดิบ ข้าม `_plain_text_body`+quick_reply — กัญจน์ตัดสินใจ "พลาดแล้วพลาดไป")
+- **บทเรียน** → memory [[feedback_never_bypass_send_path]]: อย่าประกอบข้อความ LINE เอง reuse canonical path + test-send ตัวเองก่อน broadcast + verify output ก่อนเคลม
+- **brainstorm + spec** พฤติกรรมแจ้งเตือนใหม่ (approved)
+
+### 🎯 NEXT ACTION (session หน้า): เขียน implementation plan สเตจ 1
+- **skill:** `superpowers:writing-plans` → อ่าน spec `docs/superpowers/specs/2026-07-01-notification-restore-design.md` (APPROVED) แตกเป็น task ย่อย TDD
+- **สเตจ 1 = คืนพฤติกรรมแจ้งเตือนแบบเดิม** (ก่อน phase-B category UI):
+  1. งาน D0 ทั้งจังหวัด (นครพนม+บึงกาฬ, **ไม่กรอง** รวมนอกสาย) → enrichment worker เลิก cut/digest → `enqueue_notifications()` ทุกงาน → line-sender ส่ง **instant เต็ม (ชื่อ+ลิงก์ดูประกาศ+ลิงก์ติดตาม)** อัตโนมัติ
+  2. followed jobs เลื่อนเฟส → ส่งทันที + ป้ายหัวข้อ (ประกาศวันยื่นซอง/สรุปราคาเบื้องต้น/ผู้ชนะ) — verify winner-poller labels
+  3. **23:00 = สรุปประจำวัน** (count วันนี้ + todo พรุ่งนี้ = งานยื่นซองพรุ่งนี้ **+ โน้ต job_notes/timeline due**) — แก้ `Sebastian_Daily_User_Summary.py`
+  4. ลบ seed 89-keyword
+- **priority: ไม่พลาดงาน** = ห้ามตัดทิ้งเงียบ, fail-loud
+- หลังเขียนแผน → execute (subagent-driven) → **shadow test** (log ปริมาณ/วัน) → deploy
+
+### ⚠️ Gate/gotcha
+- 🔴 **PREREQ ก่อน deploy instant: กัญจน์ต้องอัปเกรด LINE OA เป็น paid** (free 300/เดือน แต่ instant ทุกงาน ~400-500/เดือน) — เขียนแผน+โค้ด+shadow ได้ก่อน รอแค่ deploy-enforce. เช็ค quota: `/v2/bot/message/quota` (ตอนนี้ limited:300, ใช้ 91)
+- **reuse line-sender path** (enqueue → sender) ห้าม re-implement (บทเรียนวันนี้)
+- VPS: engine `/opt/bms/app/scripts/`, DB `/opt/bms/data/bms_customers.db` (BMS_DATA_DIR), รัน manual ต้อง `set -a && . ./.env && set +a`; git push ผ่าน `git -c credential.helper='!gh auth git-credential' push` (manager hang)
+- **phase-B (ทีหลัง):** ปุ่มติ๊กหมวด 5 หมวดบน Board B — spec `docs/superpowers/specs/2026-07-01-category-matching-design-DRAFT.md`
+
+### ค้าง/ระวัง
+- seed 89-keyword ยังอยู่ (ลบตอนทำสเตจ 1)
+- discovery ตอนนี้ 07/13/19; winner-poller 07:15/13:15/19:15/01:15 — กัญจน์เคยถามอยากได้ 07/12/18 (ปรับได้ทีหลัง)

@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { parseSessionCookie, COOKIE_NAME } from '@/lib/session';
 import { getCustomerByLineId } from '@/lib/customers';
 import { parsePortalNotes, getTierId, getTier } from '@/lib/portal-data';
-import { getPortalJobs, type JobGroups } from '@/lib/portal-jobs';
+import { getPortalJobs, getDiscoverJobs, type JobGroups, type DiscoverGroups } from '@/lib/portal-jobs';
 import { WorldClient } from './_client';
 
 export const dynamic = 'force-dynamic';
@@ -30,6 +30,11 @@ export default async function WorldPage() {
   try {
     jobGroups = await getPortalJobs(session.lineUserId);
   } catch { /* engine unavailable — show empty board */ }
+
+  let discoverGroups: DiscoverGroups = { biddable: [], planning: [] };
+  try {
+    discoverGroups = await getDiscoverJobs(session.lineUserId);
+  } catch { /* engine unavailable — show empty discovery */ }
 
   // Calculate trial days left
   let daysLeft = 30;
@@ -59,6 +64,7 @@ export default async function WorldPage() {
       expiryLabel={expiryLabel}
       classes={classes}
       jobGroups={jobGroups}
+      discoverGroups={discoverGroups}
     />
   );
 }

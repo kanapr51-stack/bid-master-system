@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { type BusinessClass, TIERS } from '@/lib/portal-data';
 import type { PortalProfile } from '@/lib/portal-data';
-import type { JobGroups, JobStage, TrackedJob } from '@/lib/portal-jobs';
+import type { JobGroups, JobStage, TrackedJob, DiscoverGroups, DiscoverJob } from '@/lib/portal-jobs';
 import { TopBar, Chip, Icons, Diamond } from '../_ui';
 
 // ── Quota Ring ────────────────────────────────────────────────────────────────
@@ -123,6 +123,59 @@ function TrackedJobCard({ job, stage, starred, onStar }: { job: TrackedJob; stag
   );
 }
 
+// ── Discover Card ─────────────────────────────────────────────────────────────
+
+function DiscoverCard({ job, following, onFollow, starred, onStar }: {
+  job: DiscoverJob; following: boolean; onFollow: () => void; starred: boolean; onStar: () => void;
+}) {
+  const dl = daysLeftOf(job.deadline);
+  const urgency = dl === null ? 'outline' : dl <= 5 ? 'wine' : dl <= 10 ? 'gold' : 'outline';
+  return (
+    <div className="p-card" style={{ padding: 14 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          {job.location && <div className="p-mono p-fg-mute" style={{ fontSize: 11, letterSpacing: '0.04em', marginBottom: 4 }}>{job.location}</div>}
+          <div className="p-display" style={{ fontSize: 15, lineHeight: 1.3 }}>{job.name}</div>
+        </div>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+          <button onClick={e => { e.stopPropagation(); onStar(); }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: starred ? 'var(--accent)' : 'var(--fg-dim)', fontSize: 18, padding: '0 2px', lineHeight: 1 }}>
+            {starred ? '★' : '☆'}
+          </button>
+          {job.stage === 'biddable' && dl !== null && (
+            <Chip tone={urgency} icon={<Icons.Clock size={11} />}>{dl} วัน</Chip>
+          )}
+          {job.stage === 'planning' && <Chip tone="outline">วางแผน</Chip>}
+        </div>
+      </div>
+      {job.matched_keywords.length > 0 && (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+          {job.matched_keywords.map(k => <Chip key={k} tone="gold" icon={<Icons.Tag size={10} />}>{k}</Chip>)}
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 16, marginTop: 10, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+        {job.budget > 0 && (
+          <div>
+            <div className="p-mono p-fg-dim" style={{ fontSize: 10, letterSpacing: '0.08em' }}>ราคากลาง</div>
+            <div className="p-serif" style={{ fontSize: 16, fontWeight: 500 }}>
+              <span className="p-fg-accent">{fmtBaht(job.budget)}</span> <span className="p-fg-dim" style={{ fontSize: 11 }}>บาท</span>
+            </div>
+          </div>
+        )}
+        <button className="p-btn p-btn-primary" disabled={following} onClick={onFollow}
+          style={{ height: 34, padding: '0 14px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Icons.Bell size={13} />{following ? 'ติดตามแล้ว' : 'ติดตาม'}
+        </button>
+      </div>
+      {job.deadline && job.stage === 'biddable' && (
+        <div className="p-fg-dim" style={{ fontSize: 11, marginTop: 8 }}>
+          ยื่นซอง: {job.deadline}{job.deadline_time ? ` ${job.deadline_time}` : ''}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── World Client ──────────────────────────────────────────────────────────────
 
 interface WorldClientProps {
@@ -134,9 +187,10 @@ interface WorldClientProps {
   expiryLabel: string;
   classes: BusinessClass[];
   jobGroups: JobGroups;
+  discoverGroups: DiscoverGroups;
 }
 
-export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, expiryLabel, classes, jobGroups }: WorldClientProps) {
+export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, expiryLabel, classes, jobGroups, discoverGroups }: WorldClientProps) {
   const allJobs = STAGE_META.flatMap(s => jobGroups[s.key]);
   const [starred, setStarred] = useState<Set<string>>(
     () => new Set(allJobs.filter(j => j.starred).map(j => j.project_id)),
@@ -155,6 +209,28 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
       });
     } catch {
       setStarred(prev); // revert on failure
+    }
+  };
+
+  const [discover, setDiscover] = useState<DiscoverGroups>(discoverGroups);
+  const [following, setFollowing] = useState<Set<string>>(new Set());
+
+  const handleFollow = async (projectId: string) => {
+    setFollowing(prev => new Set(prev).add(projectId));
+    try {
+      const r = await fetch('/api/portal/follow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_id: projectId }),
+      });
+      if (!r.ok) throw new Error('follow failed');
+      // ติดตามสำเร็จ → เอาออกจาก discovery (จะไปโผล่ tracked รอบหน้า)
+      setDiscover(prev => ({
+        biddable: prev.biddable.filter(j => j.project_id !== projectId),
+        planning: prev.planning.filter(j => j.project_id !== projectId),
+      }));
+    } catch {
+      setFollowing(prev => { const n = new Set(prev); n.delete(projectId); return n; });
     }
   };
 
@@ -269,6 +345,50 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
             })
           )}
         </div>
+
+        {/* Discovery: งานใหม่ที่แมตช์ */}
+        {(() => {
+          const discoverAll = [...discover.biddable, ...discover.planning];
+          const hasPrefs = provincesCount > 0 && totalKeywords > 0;
+          return (
+            <div style={{ marginTop: 26 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 10 }}>
+                <div>
+                  <div className="p-smallcaps p-fg-mute">งานใหม่ที่แมตช์</div>
+                  <div className="p-display" style={{ fontSize: 20, marginTop: 2 }}>✨ Matched For You</div>
+                </div>
+                {discoverAll.length > 0 && <Chip tone="gold" icon={<Diamond size={5} />}>{discoverAll.length} งาน</Chip>}
+              </div>
+              {!hasPrefs ? (
+                <div className="p-card" style={{ textAlign: 'center', padding: 28 }}>
+                  <div className="p-serif p-fg-mute" style={{ fontStyle: 'italic', fontSize: 14 }}>
+                    ตั้งค่าพื้นที่และคำค้นในหน้า &quot;บริษัทของฉัน&quot; เพื่อให้ระบบหางานที่ตรงให้ท่านครับ
+                  </div>
+                  <Link href="/portal/classes"><button className="p-btn p-btn-primary" style={{ marginTop: 12, height: 34, padding: '0 16px', fontSize: 13 }}>ไปตั้งค่า</button></Link>
+                </div>
+              ) : discoverAll.length === 0 ? (
+                <div className="p-card" style={{ textAlign: 'center', padding: 28 }}>
+                  <div className="p-serif p-fg-mute" style={{ fontStyle: 'italic', fontSize: 14 }}>
+                    ยังไม่มีงานใหม่ที่ตรงเกณฑ์วันนี้ — ระบบจะอัปเดตให้เมื่อมีงานเข้าครับ
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {discoverAll.map(job => (
+                    <DiscoverCard
+                      key={job.project_id}
+                      job={job}
+                      following={following.has(job.project_id)}
+                      onFollow={() => handleFollow(job.project_id)}
+                      starred={starred.has(job.project_id)}
+                      onStar={() => toggleStar(job.project_id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {tier.id === 'trial' && (
           <div style={{ marginTop: 18 }}>

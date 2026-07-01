@@ -1587,3 +1587,28 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 ### ค้าง/ระวัง (เล็ก)
 - Sebastian Chat quota ring (world) = ตัวเลขเฉยๆ แชตจริงใน LINE (ไม่ถึงกับหลอก)
 - Postgres (หน้าประวัติ) ยังแยกจาก SQLite engine
+
+## งานที่ N+181: Phase 2 บอร์ด B — section "งานใหม่ที่แมตช์" (discovery + per-user keyword matching) (2026-07-01)
+
+### สถานะ: ✅ DEPLOYED (engine+web) & VERIFIED — เหลือ git push (creds กัญจน์) + VPS git reconcile
+
+### สิ่งที่ทำ (SDD: brainstorm→spec→plan→6 tasks subagent-driven→final review opus)
+- spec `docs/superpowers/specs/2026-06-30-portal-discovery-design.md` · plan `docs/superpowers/plans/2026-06-30-portal-discovery.md`
+- **scope ปลอดภัย**: discovery board เท่านั้น — ไม่แตะ LINE pipeline / `config/matching_preferences.json` / `job_matcher.match_job` (final review ยืนยัน airtight)
+- engine: `discovery_match.py` (pure matcher: province AND + keyword OR reuse `job_matcher._kw_hit` guards + negative safety net + budget range, budget=0 ผ่าน) · `_classes_from_notes` (รวม keyword/งบ ราย user จาก notes.classes) · `GET /api/portal/discover` (2 กลุ่ม biddable D0 deadline≥today / planning B* tor_is_fresh≤14d, ตัด followed, sort+limit 30) · `POST /api/portal/follow` (reuse `_record_follow`) · extract `_job_location_deadline` (DRY จาก `_portal_jobs`)
+- web: `getDiscoverJobs` + relay route `/api/portal/follow` (secret server-side) · section "✨ งานใหม่ที่แมตช์" บน world + `DiscoverCard` (ชิป matched_keywords + งบ + countdown + ปุ่มติดตาม, ⭐ แยก) + 3 empty states
+
+### Verify (prod, real data)
+- engine scp `bms_api.py`+`discovery_match.py` → `/opt/bms/app/scripts/`, `bms-api.service` active
+- smoke: 403 (bad secret) ✓ · 200 envelope `{ok,jobs:{biddable,planning}}` ✓
+- กัญจน์ (Ua0d90e8): provinces=[นครพนม,บึงกาฬ] แต่ **keywords=[]** → discover คืนว่าง = empty-state ถูกต้อง (ยังไม่ตั้ง keyword หน้าเว็บ; matching LINE ใช้ global config)
+- **read-only simulation** (kws=คอนกรีต/ถนน/ท่อ/ก่อสร้าง/อาคาร บน 1,182 candidate 2 จว.) → **biddable=11 planning=1** matched_keywords/deadline/location ถูก → พิสูจน์ pipeline ครบ
+- web `vercel deploy --prod` READY, aliased `bid-master-dashboard.vercel.app`
+- tests เขียว 5/5: discovery_match, classes_from_notes, discover_api, follow_api, portal_jobs (regression)
+- SDD: 6 task ผ่าน review (Task 3&4 มี fix wave 1 รอบ: Task3 revert D0 ตาม spec + test hermetic; Task4 add 400 case) + final review opus = READY, 0 Critical/Important
+
+### Followup (ค้าง)
+- 🔴 **git push origin main** — sandbox นี้ push (write creds) ไม่ผ่าน → กัญจน์รัน `git push origin main` เอง (local HEAD=b23db16, origin ยัง b0cafa7)
+- 🔴 **VPS git reconcile** หลัง push: `cd /opt/bms/app && git stash -u && git pull --ff-only && git stash drop` (VPS มี scp'd bms_api.py + untracked discovery_match.py → ให้ git คุมหลัง push)
+- 🟡 **users ต้องตั้ง keyword หน้า "บริษัท"** ถึงจะเห็น discovery (ตอนนี้ทุกคน keywords=[] → เห็น empty-state prompt) — คือ value ของฟีเจอร์ขึ้นกับ user ตั้งค่า
+- Minor debt (จาก review): `_classes_from_notes` ไม่ guard non-dict JSON (latent, web เขียน dict เสมอ); `portal-jobs.ts` ไม่มี `server-only` guard; `&quot;` vs Thai curly quotes (cosmetic)

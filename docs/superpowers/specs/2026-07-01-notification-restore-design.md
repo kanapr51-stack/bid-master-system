@@ -29,6 +29,10 @@ Free plan = **300 ข้อความ/เดือน**. instant per-job × 4 
 - (ข) instant เฉพาะ **followed jobs + งานที่ผ่านหมวด** ส่วนงานทั้งจังหวัดอื่นๆ ยังรวม digest (ประนีประนอม quota)
 - (ค) instant ทุกงานแต่ยอมรับว่าพอ quota หมด = ส่งไม่ออกจนสิ้นเดือน (เสี่ยงพลาด — ขัด priority)
 
+### ✅ DECISION (กัญจน์ 2026-07-01): เลือก (ก) **อัปเกรด LINE เป็น paid plan**
+→ design "instant ทุกงาน" เดินเต็มที่ ไม่ต้องประนีประนอม
+→ **PREREQUISITE (กัญจน์ต้องทำเอง):** อัปเกรดแพ็กเกจใน LINE OA console (Developers/Manager) ก่อน deploy สเตจนี้ — ระบบเช็ค quota ได้จาก `/v2/bot/message/quota` (ตอนนี้ยัง `limited:300`). deploy instant enforce **หลัง** quota ขยายแล้วเท่านั้น (ไม่งั้นชนเพดานซ้ำ)
+
 ## สถาปัตยกรรม / Data flow (ใช้ทางส่งจริง — ไม่ประกอบเอง)
 ```
 discovery (07/13/19) → projects_seen (province_api, นครพนม/บึงกาฬ)

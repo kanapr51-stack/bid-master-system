@@ -1612,3 +1612,10 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 - 🔴 **VPS git reconcile** หลัง push: `cd /opt/bms/app && git stash -u && git pull --ff-only && git stash drop` (VPS มี scp'd bms_api.py + untracked discovery_match.py → ให้ git คุมหลัง push)
 - 🟡 **users ต้องตั้ง keyword หน้า "บริษัท"** ถึงจะเห็น discovery (ตอนนี้ทุกคน keywords=[] → เห็น empty-state prompt) — คือ value ของฟีเจอร์ขึ้นกับ user ตั้งค่า
 - Minor debt (จาก review): `_classes_from_notes` ไม่ guard non-dict JSON (latent, web เขียน dict เสมอ); `portal-jobs.ts` ไม่มี `server-only` guard; `&quot;` vs Thai curly quotes (cosmetic)
+
+### Followup ✅ SEED keyword ให้ลูกค้าเดิม (2026-07-01)
+- พบ: ลูกค้าทุกคน notes ว่าง (classes=0) — subscription_provinces มาจาก LINE onboarding ไม่ใช่เว็บ → discovery ว่าง + web gate ไม่ผ่าน
+- seed: สร้าง business class 1 อันต่อคน (shape ตรง `classes/_client.tsx:1033`) geo.provinces=subscription_provinces เดิม + keywords=global config `keywords` (89 คำ ก่อสร้าง/จ้าง) → notes. idempotent (เฉพาะ classes=0), online backup ก่อน (`/opt/bms/data/backups/bms_customers_pre_kwseed_20260701_071556.db`)
+- 5 ลูกค้า seeded (Ua0d90e8/Ucb1758f/Ua93a6f5/U9e2e34e/U574d245 ทั้งหมด นครพนม+บึงกาฬ)
+- verify endpoint จริง: ทุกคน discover → **12 biddable + 1 planning** matched_keywords ถูก ✅
+- หมายเหตุ: งาน "ซื้อ" โผล่ด้วย (discovery ไม่มี proc split — ตัดทีหลังได้ถ้าต้องการ); DB บน VPS มี notes ราย user แล้ว (ต่างจาก global config LINE pipeline ที่ยังเหมือนเดิม)

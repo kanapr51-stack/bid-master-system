@@ -235,7 +235,7 @@ def _province_epoch():
     return r[0] if r else None
 
 
-def qualify_province_api(store, log) -> int:
+def qualify_province_api(store, log, dsvc=None) -> int:
     """คืนจำนวน resolve สำเร็จ (RESOLVED) สำหรับ resolve heartbeat.
     province_api → notification: Epoch Gate (primary) → Deadline Gate (secondary) → fail-closed
     (ChatGPT+Claude converged 2026-05-30 — ดู memory/project_delivery_wiring_decision.md)
@@ -255,7 +255,8 @@ def qualify_province_api(store, log) -> int:
         log(f"Province qual: import deadline_service ล้มเหลว ({e}) — skip")
         return 0
     mode = os.environ.get("BMS_PROVINCE_NOTIFY_MODE", "preview")   # preview (go-live gate) | live
-    dsvc = DeadlineService(make_deadline_provider())               # doczip ถ้า env BMS_DEADLINE_PROVIDER set
+    if dsvc is None:
+        dsvc = DeadlineService(make_deadline_provider())           # doczip ถ้า env BMS_DEADLINE_PROVIDER set
     # matching layer (keyword + tambon) — shadow (log only) | enforce (กรองจริง) | off
     try:
         import job_matcher as jm
@@ -327,11 +328,6 @@ def qualify_province_api(store, log) -> int:
                 decision, mdet = jm.match_job(c.get("project_name") or "", c["province"],
                                               "", c.get("dept_name") or "", cfg=mcfg)
                 log(f"  match[tor:{mmode}] {pid}: {decision} ({mdet.get('reason')})")
-                if mmode == "enforce" and decision == "cut":
-                    with get_connection() as conn:
-                        conn.execute("UPDATE project_locations SET qualification_status='filtered_no_match' WHERE project_id=?", (pid,))
-                    stats["filtered"] += 1
-                    continue
                 if decision == "soft_include":
                     src_stage = "province_tor_review_soft"; stats["soft"] += 1
             if mode == "live":
@@ -402,7 +398,6 @@ def qualify_province_api(store, log) -> int:
         if res.outcome == DeadlineOutcome.RESOLVED and res.is_open():
             # matching layer (keyword + tambon + soft-include) — shadow log / enforce apply
             src_stage = "province_qualified"
-            is_digest = False   # whole-province ก่อสร้าง → พักเป็น digest (สรุปวันละครั้ง) แทนเด้งทีละงาน
             if jm is not None and mmode != "off":
                 # capture เต็มจาก getProcurementDetail (API call เท่าเดิม) — เก็บ raw location
                 # ให้ intel disambiguate ระดับตำบล/อำเภอ (MOI disambiguation Phase A)
@@ -426,23 +421,10 @@ def qualify_province_api(store, log) -> int:
                 decision, mdet = jm.match_job(c.get("project_name") or "", c["province"], tb,
                                               c.get("dept_name") or "", cfg=mcfg)
                 log(f"  match[{mmode}] {pid}: {decision} (tb={tb or '-'}, {mdet.get('reason')})")
-                if mmode == "enforce":
-                    if decision == "cut":
-                        with get_connection() as conn:
-                            conn.execute("UPDATE project_locations SET qualification_status='filtered_no_match' WHERE project_id=?", (pid,))
-                        stats["filtered"] += 1
-                        log(f"  → ✂️ FILTERED {pid} (ไม่ตรง: {mdet.get('reason')})")
-                        continue
-                    if decision == "soft_include":
-                        src_stage = "province_soft_location"
-                        stats["soft"] += 1
-                    elif decision == "send" and mdet.get("reason") == "whole_province_keyword":
-                        is_digest = True   # งานก่อสร้างทั่วจังหวัด → ไม่เด้งทีละงาน รวมในสรุป
-            if is_digest:
-                status = "qualified_digest"
-                stats["digest"] = stats.get("digest", 0) + 1
-                log(f"  → 📋 DIGEST {pid} {c['province']} (รวมในสรุปวันละครั้ง)")
-            elif mode == "live":
+                if decision == "soft_include":
+                    src_stage = "province_soft_location"
+                    stats["soft"] += 1
+            if mode == "live":
                 n = store.enqueue_notifications({
                     "project_id": pid, "province": c["province"],
                     "announce_type": c.get("announce_type") or "D0",

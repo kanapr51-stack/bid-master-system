@@ -15,13 +15,14 @@ tok = url.split("t=", 1)[1]
 v = ft.verify_token(tok, secret="test-secret-123")
 assert v is not None and v[0] == "Uabc" and v[1] == "P1", v
 
-# exception path: make_token raises → build_follow_link returns "" (ห้าม NameError/throw)
+# exception path (strict=False): make_token raises → build_follow_link returns "" (ห้าม NameError/throw)
+# strict=True (default) → raise; คุมโดย test_follow_link_guard.py (fail-loud, INC 2026-07-01)
 _orig = ft.make_token
 def _boom(*a, **k):
     raise RuntimeError("forced")
 snd.follow_token.make_token = _boom
 try:
-    assert snd.build_follow_link("Uabc", "P1") == "", "build_follow_link must return '' on token error"
+    assert snd.build_follow_link("Uabc", "P1", strict=False) == "", "strict=False ต้องคืน '' on token error"
 finally:
     snd.follow_token.make_token = _orig
 

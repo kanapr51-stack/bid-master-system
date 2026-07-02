@@ -661,11 +661,17 @@ git commit -m "feat(seed): clear_keyword_seed one-off — ลบ 89-keyword (ide
 
 1. **Prerequisite:** ยืนยันกับกัญจน์ว่า **อัปเกรด LINE OA เป็น paid plan แล้ว** — เช็ก quota: `GET https://api.line.me/v2/bot/message/quota` ต้องไม่ใช่ `{"type":"limited","value":300}`. ถ้ายัง free → **หยุด** (instant จะชน quota ซ้ำ 24 มิ.ย.).
 2. **Deploy code:** push origin → reconcile VPS (`/opt/bms/app/scripts/`) ตาม trick ใน [[project_resume_session]] (`git -c credential.helper='!gh auth git-credential' push origin main`; VPS `git stash` + `git pull --ff-only` **ห้าม `stash -u`**).
-3. **Shadow 1 รอบ:** ปล่อย enrichment รันปกติ 1 วัน ดู log `enqueued=N` ต่อรอบ → ยืนยันปริมาณจริง/วัน เทียบ quota ที่อัปเกรดแล้ว (Success criteria: instant ~400-500/เดือน < quota ใหม่).
-4. **Test-send ตัวเอง (บังคับก่อน broadcast):** เลือกงาน D0 จริง 1 งาน → ยืนยันข้อความเข้า LINE กัญจน์ มี **ชื่องาน + ลิงก์ดูประกาศ + ลิงก์ติดตาม** ครบ (เปิดกดจริง). บทเรียน 2026-07-01 [[feedback_never_bypass_send_path]].
-5. **Backup + ลบ seed:** บน VPS — `cp /opt/bms/data/bms_customers.db /opt/bms/data/backups/bms_customers_pre_clearseed_$(date +%Y%m%d_%H%M%S).db` → `BMS_DATA_DIR=/opt/bms/data /opt/bms/venv/bin/python3 /opt/bms/app/scripts/clear_keyword_seed.py --apply`.
-6. **ตั้ง 23:00 recap:** ยืนยัน cron/timer เรียก `Sebastian_Daily_User_Summary.py` เวลา 23:00 ไทย (เดิม 20:00 — ปรับเวลาตาม spec).
-7. **Sanity (Sophia):** dispatch Sophia ตรวจ `notification_queue`/`delivery_log` ว่างานเข้าครบ ไม่มี dup, ไม่มีงาน D0 พื้นที่เปิดค้าง `filtered_no_match`.
+3. **🔴 Backlog reset (บังคับ ก่อน shadow — completeness):** งานที่เปิดอยู่แต่ค้างสถานะเก่าจากระบอบ enforce (`qualified_digest`/`filtered_no_match`, ตั้งแต่ ~25 มิ.ย.) จะไม่ถูก candidate query หยิบ (เลือกแค่ `pending`) + digest reader ถูกลบแล้ว → ตกขอบเงียบ. **ต้อง backup ก่อน** (`cp .../bms_customers.db .../backups/bms_customers_pre_backlogreset_$(date +%Y%m%d_%H%M%S).db`) แล้วรีเซ็ต:
+   ```sql
+   UPDATE project_locations SET qualification_status='pending', enrichment_attempts=0
+   WHERE qualification_status IN ('qualified_digest','filtered_no_match') AND source='province_api';
+   ```
+   worker รอบถัดไปจะ re-resolve deadline → enqueue เฉพาะที่ยังเปิด, re-suppress ที่หมดอายุ (fail-closed เดิม). ⚠️ ปริมาณ backlog นี้บวกกับ shadow count ตอนประเมิน quota (ข้อ 4).
+4. **Shadow 1 รอบ:** ปล่อย enrichment รันปกติ 1 วัน ดู log `enqueued=N` ต่อรอบ (รวม backlog ที่เพิ่ง reset) → ยืนยันปริมาณจริง/วัน เทียบ quota ที่อัปเกรดแล้ว (Success criteria: instant ~400-500/เดือน < quota ใหม่).
+5. **Test-send ตัวเอง (บังคับก่อน broadcast):** เลือกงาน D0 จริง 1 งาน → ยืนยันข้อความเข้า LINE กัญจน์ มี **ชื่องาน + ลิงก์ดูประกาศ + ลิงก์ติดตาม** ครบ (เปิดกดจริง). บทเรียน 2026-07-01 [[feedback_never_bypass_send_path]].
+6. **Backup + ลบ seed:** บน VPS — `cp /opt/bms/data/bms_customers.db /opt/bms/data/backups/bms_customers_pre_clearseed_$(date +%Y%m%d_%H%M%S).db` → `BMS_DATA_DIR=/opt/bms/data /opt/bms/venv/bin/python3 /opt/bms/app/scripts/clear_keyword_seed.py --apply`.
+7. **ตั้ง 23:00 recap:** ยืนยัน cron/timer เรียก `Sebastian_Daily_User_Summary.py` เวลา 23:00 ไทย (เดิม 20:00 — ปรับเวลาตาม spec).
+8. **Sanity (Sophia) — fix+verify:** dispatch Sophia ตรวจ `notification_queue`/`delivery_log` ว่างานเข้าครบ ไม่มี dup, และ **ยืนยัน 0 งาน province_api ที่ยังเปิดอยู่ค้างสถานะ `qualified_digest`/`filtered_no_match`** (ถ้ายังเหลือ = backlog reset ข้อ 3 พลาด ต้องรีเซ็ตซ้ำ).
 
 ## Out of scope (→ phase-B)
 - ปุ่มติ๊กหมวดบน Board B (อาคาร/ถนน/ชลประทาน/วัสดุ/อื่นๆ) — `2026-07-01-category-matching-design-DRAFT.md`

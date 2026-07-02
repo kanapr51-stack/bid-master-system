@@ -104,11 +104,8 @@ def main():
         ).fetchall()
         targets = []
         for c in customers:
-            cnt = conn.execute(
-                "SELECT COUNT(*) FROM delivery_log WHERE customer_id=? AND status='sent' "
-                "AND COALESCE(is_test_data,0)=0 AND attempted_at LIKE ?",
-                (c["id"], today_th + "%")).fetchone()[0]
             today_jobs = fetch_today_sent(conn, c["id"], today_th)
+            cnt = len(today_jobs)   # นับ = จำนวนงาน distinct ที่ลิสต์ (header ตรงกับรายการ ไม่นับ retry ซ้ำ)
             tomorrow_jobs = bid_open.bid_open_for_customer(conn, c["id"], tomorrow_th)
             notes_due = fetch_notes_due(conn, c["id"], tomorrow_th)
             targets.append((c, cnt, today_jobs, tomorrow_jobs, notes_due))

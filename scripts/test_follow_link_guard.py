@@ -1,8 +1,8 @@
 """test_follow_link_guard.py — build_follow_link ต้อง fail-loud เมื่อประกอบลิงก์ไม่ได้."""
-import os, sys
+import os, sys, tempfile
 from pathlib import Path
-os.environ.pop("BMS_FOLLOW_SECRET", None)   # ทำให้ make_token พลาด (ต้องไม่มี secret)
-os.environ.setdefault("BMS_ENV", "dev")     # ให้ bms_paths resolve dev dir ได้ตอน import (ไม่งั้น import พัง)
+os.environ.pop("BMS_FOLLOW_SECRET", None)         # ทำให้ make_token พลาด (ต้องไม่มี secret)
+os.environ["BMS_DATA_DIR"] = tempfile.mkdtemp()   # tmpdir ก่อน import (กัน touch prod runtime) — suite convention
 sys.path.insert(0, str(Path(__file__).parent))
 sys.stdout.reconfigure(encoding="utf-8")
 import Sebastian_LINE_Sender as ls   # noqa: E402

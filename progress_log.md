@@ -1645,6 +1645,30 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 - 🔜 **ปลดเครื่องเก่าเต็ม (งานแยก ทีหลัง):** ขน `winner_history.db` **7.8GB** ไปเครื่องใหม่ผ่าน LAN + ตั้ง 2 task + **ต่อสาย sync ให้ auto** (`cgd_sync_to_vps.py --push` ตอนนี้ไม่มี task เรียก = manual/ค้าง)
 - เครื่องเก่าเหลือ non-BMS: `scheduler.py` + `dashboard/server.py` (แอปอื่น ไม่เกี่ยว BMS)
 
+## งานที่ N+184: Implementation plan — คืนพฤติกรรมแจ้งเตือน (สเตจ 1) (2026-07-02)
+
+### สถานะ: ✅ เสร็จ (แผน) — พร้อม subagent-driven execute
+
+### สิ่งที่ทำ
+- `superpowers:writing-plans` → `docs/superpowers/plans/2026-07-02-notification-restore.md` จาก spec APPROVED `2026-07-01-notification-restore-design.md`
+- สืบโค้ดจริงก่อนเขียน: cut/digest เกิดเฉพาะ `BMS_MATCHING_MODE=enforce` (บรรทัด 429-440 ใน `qualify_province_api`); shadow ไม่ตัด. production รัน enforce → นั่นคือสาเหตุ. labels lifecycle มีครบใน `Sebastian_LINE_Sender.format_notification` (bid_open/prelim/winner/cancelled). `build_follow_link` คืน `''` เงียบเมื่อ secret หาย = จุด silent-bypass
+
+### แผน = 5 task TDD (standalone `python scripts/test_*.py`)
+1. **Enrichment** — เพิ่ม param `dsvc=None` (inject test) + เลิก `is_digest` + เลิก enforce-cut (B0+D0) → งาน province เปิดอยู่ enqueue เสมอ, match_job ยัง shadow-log, soft label คงไว้
+2. **Verify labels** — test ล็อกป้าย 4 แบบ (คาดว่าไม่ต้องแก้ code)
+3. **Daily summary → recap** — `fetch_today_sent`+`fetch_notes_due`; build_message ใหม่ (นับวันนี้+รายการ+todo พรุ่งนี้+โน้ต due); ลบ digest wiring + `test_daily_digest.py`
+4. **follow-link fail-loud** — `build_follow_link(strict=True)` raise แทนคืน '' [[feedback_never_bypass_send_path]]
+5. **ลบ 89-keyword seed** — `clear_keyword_seed.py` idempotent, dry-run default, รันจริง (`--apply`) ใน Rollout หลัง backup
+
+### Self-review
+- API/schema ที่เทสต์อ้าง verify แล้วมีจริง (`add_subscription`, `format_notification`, `is_test_data` migration v1.6, `customers.notes`, `job_notes.entry_date`). ไม่มี placeholder. spec coverage ครบ 4 เป้า+6 component
+
+### Followup / Gate
+- 🔴 **prereq deploy คงเดิม: กัญจน์อัปเกรด LINE paid** ก่อน enforce instant (code+shadow ทำก่อนได้)
+- Rollout: push→VPS reconcile→shadow 1 วัน→test-send ตัวเอง→backup+ลบ seed→ตั้ง 23:00 recap→Sophia sanity
+
+---
+
 ## งานที่ N+183: CHECKPOINT — ก่อนเปลี่ยน session (2026-07-01)
 
 ### สถานะ: ⏸ pause เปลี่ยน session

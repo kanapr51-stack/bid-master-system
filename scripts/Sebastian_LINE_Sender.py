@@ -348,12 +348,16 @@ def _quick_reply_items(project_id: str, following: bool) -> list:
     return items
 
 
-def build_follow_link(line_user_id: str, project_id: str) -> str:
-    """ลิงก์ติดตามงาน (signed token, ต่อคน-ต่องาน). คืน '' ถ้า make_token พลาด (ห้ามทำ D0 พัง)."""
+def build_follow_link(line_user_id: str, project_id: str, strict: bool = True) -> str:
+    """ลิงก์ติดตามงาน (signed token, ต่อคน-ต่องาน).
+    strict=True (default) → raise RuntimeError ถ้าประกอบไม่ได้ (กันส่งข้อความลิงก์หายเงียบ —
+    บทเรียน INC 2026-07-01). strict=False → คืน '' (เดิม)."""
     try:
         return PUBLIC_BASE_URL.rstrip("/") + "/follow?t=" + \
             follow_token.make_token(line_user_id, project_id)
     except Exception as e:
+        if strict:
+            raise RuntimeError(f"build_follow_link ประกอบลิงก์ไม่ได้ (BMS_FOLLOW_SECRET?): {e}") from e
         print(f"[build_follow_link] follow_token error (ส่งต่อไม่มีลิงก์): {e}", file=sys.stderr)
         return ""
 

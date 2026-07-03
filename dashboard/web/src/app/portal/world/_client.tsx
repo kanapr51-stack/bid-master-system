@@ -7,6 +7,10 @@ import type { PortalProfile } from '@/lib/portal-data';
 import type { JobGroups, JobStage, TrackedJob, DiscoverGroups, DiscoverJob } from '@/lib/portal-jobs';
 import { TopBar, Chip, Icons, Diamond } from '../_ui';
 
+// Sebastian Chat ยังไม่มีของจริง (LINE เป็นเมนู keyword, ไม่มีตัวนับ chatUsed)
+// — ซ่อนการ์ด quota จนกว่าจะสร้างเสร็จ ค่อยเปิด flag นี้
+const SEBASTIAN_CHAT_LIVE = false;
+
 // ── Quota Ring ────────────────────────────────────────────────────────────────
 
 function QuotaRing({ pct, unlimited }: { pct: number; unlimited: boolean }) {
@@ -306,19 +310,21 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
           )}
         </div>
 
-        {/* Sebastian quota */}
-        <div className="p-card" style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 14 }}>
-          <QuotaRing pct={quotaPct} unlimited={isUnlimited} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="p-smallcaps p-fg-mute">Sebastian Chat</div>
-            <div className="p-display" style={{ fontSize: 22, marginTop: 2 }}>
-              {isUnlimited ? 'ไม่จำกัด' : <><span style={{ color: 'var(--accent)' }}>{chatQuota - chatUsed}</span> / {chatQuota}</>}
-            </div>
-            <div className="p-fg-dim" style={{ fontSize: 11.5, marginTop: 2 }}>
-              {isUnlimited ? 'ปรึกษา Sebastian ใน LINE ได้ตลอดเวลา' : `ใช้ไป ${chatUsed} ครั้งเดือนนี้`}
+        {/* Sebastian quota — ซ่อนจนกว่าฟีเจอร์แชทจะมีจริง (SEBASTIAN_CHAT_LIVE) */}
+        {SEBASTIAN_CHAT_LIVE && (
+          <div className="p-card" style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 14 }}>
+            <QuotaRing pct={quotaPct} unlimited={isUnlimited} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="p-smallcaps p-fg-mute">Sebastian Chat</div>
+              <div className="p-display" style={{ fontSize: 22, marginTop: 2 }}>
+                {isUnlimited ? 'ไม่จำกัด' : <><span style={{ color: 'var(--accent)' }}>{chatQuota - chatUsed}</span> / {chatQuota}</>}
+              </div>
+              <div className="p-fg-dim" style={{ fontSize: 11.5, marginTop: 2 }}>
+                {isUnlimited ? 'ปรึกษา Sebastian ใน LINE ได้ตลอดเวลา' : `ใช้ไป ${chatUsed} ครั้งเดือนนี้`}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Summary grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>

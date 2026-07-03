@@ -72,15 +72,16 @@ const STAGE_META: { key: JobStage; label: string; icon: string }[] = [
 
 // ── Tracked Job Card ──────────────────────────────────────────────────────────
 
-function TrackedJobCard({ job, stage, starred, onStar }: { job: TrackedJob; stage: JobStage; starred: boolean; onStar: () => void }) {
+function TrackedJobCard({ job, stage, starred, onStar, detailHref }: { job: TrackedJob; stage: JobStage; starred: boolean; onStar: () => void; detailHref?: string }) {
   const dl = daysLeftOf(job.deadline);
   const urgency = dl === null ? 'outline' : dl <= 5 ? 'wine' : dl <= 10 ? 'gold' : 'outline';
+  const title = <div className="p-display" style={{ fontSize: 15, lineHeight: 1.3 }}>{job.name}</div>;
   return (
     <div className="p-card" style={{ padding: 14, borderColor: starred ? 'var(--accent-deep)' : 'var(--border)', background: starred ? 'var(--gold-glow)' : 'var(--surface)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
         <div style={{ minWidth: 0, flex: 1 }}>
           {job.location && <div className="p-mono p-fg-mute" style={{ fontSize: 11, letterSpacing: '0.04em', marginBottom: 4 }}>{job.location}</div>}
-          <div className="p-display" style={{ fontSize: 15, lineHeight: 1.3 }}>{job.name}</div>
+          {detailHref ? <a href={detailHref} style={{ textDecoration: 'none', color: 'inherit' }}>{title}</a> : title}
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
           <button onClick={e => { e.stopPropagation(); onStar(); }}
@@ -107,6 +108,12 @@ function TrackedJobCard({ job, stage, starred, onStar }: { job: TrackedJob; stag
             <div className="p-serif" style={{ fontSize: 13 }}>{fmtBaht(job.pred_lo)}–{fmtBaht(job.pred_hi)}</div>
           </div>
         )}
+        {stage === 'prelim' && job.prelim_low != null && (
+          <div style={{ paddingLeft: 16, borderLeft: '1px solid var(--line)' }}>
+            <div className="p-mono p-fg-dim" style={{ fontSize: 10, letterSpacing: '0.08em' }}>ราคาต่ำสุดตอนนี้</div>
+            <div className="p-serif" style={{ fontSize: 13 }}>{fmtBaht(job.prelim_low)}{job.prelim_n > 0 && <span className="p-fg-dim"> · {job.prelim_n} ราย</span>}</div>
+          </div>
+        )}
         {stage === 'won' && job.winner && (
           <div style={{ paddingLeft: 16, borderLeft: '1px solid var(--line)' }}>
             <div className="p-mono p-fg-dim" style={{ fontSize: 10, letterSpacing: '0.08em' }}>ผู้ชนะ</div>
@@ -119,23 +126,29 @@ function TrackedJobCard({ job, stage, starred, onStar }: { job: TrackedJob; stag
           ยื่นซอง: {job.deadline}{job.deadline_time ? ` ${job.deadline_time}` : ''}
         </div>
       )}
+      {detailHref && (
+        <a href={detailHref} className="p-fg-accent" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12.5, marginTop: 10, textDecoration: 'none' }}>
+          ดูรายละเอียด · คู่แข่ง · โอกาสชนะ <Icons.ChevronRight size={12} />
+        </a>
+      )}
     </div>
   );
 }
 
 // ── Discover Card ─────────────────────────────────────────────────────────────
 
-function DiscoverCard({ job, following, onFollow, starred, onStar }: {
-  job: DiscoverJob; following: boolean; onFollow: () => void; starred: boolean; onStar: () => void;
+function DiscoverCard({ job, following, onFollow, starred, onStar, detailHref }: {
+  job: DiscoverJob; following: boolean; onFollow: () => void; starred: boolean; onStar: () => void; detailHref?: string;
 }) {
   const dl = daysLeftOf(job.deadline);
   const urgency = dl === null ? 'outline' : dl <= 5 ? 'wine' : dl <= 10 ? 'gold' : 'outline';
+  const title = <div className="p-display" style={{ fontSize: 15, lineHeight: 1.3 }}>{job.name}</div>;
   return (
     <div className="p-card" style={{ padding: 14 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
         <div style={{ minWidth: 0, flex: 1 }}>
           {job.location && <div className="p-mono p-fg-mute" style={{ fontSize: 11, letterSpacing: '0.04em', marginBottom: 4 }}>{job.location}</div>}
-          <div className="p-display" style={{ fontSize: 15, lineHeight: 1.3 }}>{job.name}</div>
+          {detailHref ? <a href={detailHref} style={{ textDecoration: 'none', color: 'inherit' }}>{title}</a> : title}
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
           <button onClick={e => { e.stopPropagation(); onStar(); }}
@@ -172,6 +185,11 @@ function DiscoverCard({ job, following, onFollow, starred, onStar }: {
           ยื่นซอง: {job.deadline}{job.deadline_time ? ` ${job.deadline_time}` : ''}
         </div>
       )}
+      {detailHref && (
+        <a href={detailHref} className="p-fg-accent" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12.5, marginTop: 10, textDecoration: 'none' }}>
+          ดูรายละเอียด · คู่แข่ง · โอกาสชนะ <Icons.ChevronRight size={12} />
+        </a>
+      )}
     </div>
   );
 }
@@ -188,9 +206,12 @@ interface WorldClientProps {
   classes: BusinessClass[];
   jobGroups: JobGroups;
   discoverGroups: DiscoverGroups;
+  detailBase: string;
 }
 
-export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, expiryLabel, classes, jobGroups, discoverGroups }: WorldClientProps) {
+export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, expiryLabel, classes, jobGroups, discoverGroups, detailBase }: WorldClientProps) {
+  const detailHrefOf = (projectId: string) =>
+    detailBase ? `${detailBase}&pid=${encodeURIComponent(projectId)}` : undefined;
   const allJobs = STAGE_META.flatMap(s => jobGroups[s.key]);
   const [starred, setStarred] = useState<Set<string>>(
     () => new Set([
@@ -343,6 +364,7 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
                         stage={key}
                         starred={starred.has(job.project_id)}
                         onStar={() => toggleStar(job.project_id)}
+                        detailHref={detailHrefOf(job.project_id)}
                       />
                     ))}
                   </div>
@@ -388,6 +410,7 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
                       onFollow={() => handleFollow(job.project_id)}
                       starred={starred.has(job.project_id)}
                       onStar={() => toggleStar(job.project_id)}
+                      detailHref={detailHrefOf(job.project_id)}
                     />
                   ))}
                 </div>

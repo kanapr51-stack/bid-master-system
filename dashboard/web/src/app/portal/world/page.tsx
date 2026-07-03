@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { parseSessionCookie, COOKIE_NAME } from '@/lib/session';
 import { getCustomerByLineId } from '@/lib/customers';
 import { parsePortalNotes, getTierId, getTier } from '@/lib/portal-data';
-import { getPortalJobs, getDiscoverJobs, type JobGroups, type DiscoverGroups } from '@/lib/portal-jobs';
+import { getPortalJobs, getDiscoverJobs, getJobDetailBase, type JobGroups, type DiscoverGroups } from '@/lib/portal-jobs';
 import { WorldClient } from './_client';
 
 export const dynamic = 'force-dynamic';
@@ -36,6 +36,11 @@ export default async function WorldPage() {
     discoverGroups = await getDiscoverJobs(session.lineUserId);
   } catch { /* engine unavailable — show empty discovery */ }
 
+  let detailBase = '';
+  try {
+    detailBase = await getJobDetailBase(session.lineUserId);
+  } catch { /* engine unavailable — cards render without detail links */ }
+
   // Calculate trial days left
   let daysLeft = 30;
   let expiryLabel = '';
@@ -65,6 +70,7 @@ export default async function WorldPage() {
       classes={classes}
       jobGroups={jobGroups}
       discoverGroups={discoverGroups}
+      detailBase={detailBase}
     />
   );
 }

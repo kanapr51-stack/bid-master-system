@@ -1595,6 +1595,19 @@ async def portal_get_jobs(
     return {"ok": True, "jobs": groups}
 
 
+@app.get("/api/portal/board-token")
+async def portal_board_token(
+    line_user_id: str = Query(...),
+    x_bms_secret=Header(default=None),
+):
+    """Mint portal token (p=None, canonical follow_token) ให้บอร์ด Next.js
+    ลิงก์การ์ดงานเข้าหน้า detail ของ engine (/portal/job?t=..&pid=..)."""
+    if x_bms_secret != BMS_INTERNAL_SECRET:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    token = follow_token.make_token(line_user_id, None)
+    return {"ok": True, "token": token, "base": PUBLIC_BASE_URL.rstrip("/")}
+
+
 @app.get("/api/portal/discover")
 async def portal_discover_jobs(
     line_user_id: str = Query(...),

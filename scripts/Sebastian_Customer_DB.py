@@ -318,6 +318,7 @@ def init_schema():
     _migrate_v135()
     _migrate_v136()
     _migrate_v137()
+    _migrate_v138()
     print(f"Schema v1.14 ready: {DB_PATH}")
 
 
@@ -441,6 +442,17 @@ def _migrate_v137():
                 conn.execute(f"ALTER TABLE customers ADD COLUMN {col} TEXT")
             except sqlite3.OperationalError:
                 pass  # already exists
+
+
+def _migrate_v138():
+    """customers +expires_at — วันหมดอายุแพ็กเกจจริง (ISO date) แอดมินตั้งผ่าน
+    set_customer_tier.py ตอนต่ออายุ/อัปเกรด. NULL = ยังไม่ตั้ง → bms_api fallback
+    created_at+30 วัน (trial policy เดิม). (2026-07-04)"""
+    with get_connection() as conn:
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN expires_at TEXT")
+        except sqlite3.OperationalError:
+            pass  # already exists
 
 
 def _migrate_v128():

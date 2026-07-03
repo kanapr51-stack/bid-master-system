@@ -1481,14 +1481,15 @@ async def portal_get_customer(
     with get_conn() as conn:
         row = conn.execute(
             "SELECT line_user_id, display_name, email, phone, tier, active, "
-            "created_at, updated_at, notes FROM customers WHERE line_user_id=?",
+            "created_at, updated_at, notes, expires_at FROM customers WHERE line_user_id=?",
             (line_user_id,),
         ).fetchone()
     if not row:
         return {"ok": True, "customer": None}
-    # trial policy: หมดอายุ created_at + 30 วัน (บอร์ดใช้คำนวณนับถอยหลัง)
-    expires_at = ""
-    if row["created_at"]:
+    # expires_at จริง (แอดมินตั้งผ่าน set_customer_tier.py) มาก่อน;
+    # ไม่ตั้ง → fallback trial policy created_at + 30 วัน (บอร์ดใช้คำนวณนับถอยหลัง)
+    expires_at = row["expires_at"] or ""
+    if not expires_at and row["created_at"]:
         try:
             expires_at = (datetime.fromisoformat(row["created_at"]) + timedelta(days=30)).isoformat(timespec="seconds")
         except ValueError:

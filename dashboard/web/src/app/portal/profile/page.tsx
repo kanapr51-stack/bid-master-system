@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { parseSessionCookie, COOKIE_NAME } from '@/lib/session';
 import { getCustomerByLineId } from '@/lib/customers';
-import { parsePortalNotes } from '@/lib/portal-data';
+import { parsePortalNotes, getTierId } from '@/lib/portal-data';
 import { ProfileClient } from './_client';
 
 export const dynamic = 'force-dynamic';
@@ -48,7 +48,7 @@ export default async function ProfilePage() {
       classes={notes.classes ?? []}
       classCount={notes.classes?.length ?? 0}
       registeredAt={customer?.registered_at?.slice(0, 10) ?? ''}
-      tierId={notes.tierId ?? (customer?.status === 'trial' ? 'trial' : 'standard')}
+      tierId={getTierId(customer ?? { status: 'trial', notes: '' })}
       daysLeft={daysLeft}
       expiryLabel={expiryLabel}
     />

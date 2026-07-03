@@ -258,7 +258,9 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
               <div className="p-mono" style={{ fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent)' }}>CURRENT TIER · {tier.name.toUpperCase()}</div>
               <div className="p-display" style={{ fontSize: 22, marginTop: 4 }}>{tier.id === 'trial' ? 'ทดลองใช้งาน' : tier.nameTh}</div>
               <div className="p-fg-mute" style={{ fontSize: 12.5, marginTop: 2 }}>
-                {tier.id === 'trial' ? `เหลือ ${daysLeft} วัน · หมดอายุ ${expiryLabel}` : `ต่ออายุอัตโนมัติ · ${expiryLabel}`}
+                {tier.id === 'trial'
+                  ? `เหลือ ${daysLeft} วัน · หมดอายุ ${expiryLabel}`
+                  : expiryLabel ? `ใช้ได้ถึง ${expiryLabel}` : 'ติดต่อแอดมินเรื่องรอบบิล'}
               </div>
             </div>
             <Link href="/portal/packages">

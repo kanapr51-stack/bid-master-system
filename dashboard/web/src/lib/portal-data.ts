@@ -204,11 +204,12 @@ export function encodePortalNotes(notes: PortalNotes): string {
   return JSON.stringify(notes);
 }
 
-export function getTierId(customer: { status: string; notes: string }): string {
+export function getTierId(customer: { tier?: string; status: string; notes: string }): string {
+  // customers.tier (engine DB) คือ source of truth — เดิม map status 'active'→'standard'
+  // ทำให้ลูกค้า trial ทุกคนขึ้นป้ายแพ็กเกจจ่ายเงิน (engine ไม่เคยส่ง status 'trial')
+  if (customer.tier && TIERS.some(t => t.id === customer.tier)) return customer.tier;
   const notes = parsePortalNotes(customer.notes);
-  if (notes.tierId) return notes.tierId;
-  if (customer.status === 'trial') return 'trial';
-  if (customer.status === 'active') return 'standard';
+  if (notes.tierId && TIERS.some(t => t.id === notes.tierId)) return notes.tierId;
   return 'trial';
 }
 

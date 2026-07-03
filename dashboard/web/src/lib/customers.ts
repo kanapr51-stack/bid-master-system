@@ -21,6 +21,7 @@ export interface Customer {
   จังหวัด: string;
   อำเภอ: string;
   keywords: string;
+  tier: string;
   status: string;
   registered_at: string;
   expires_at: string;
@@ -53,6 +54,7 @@ function toCustomer(e: EngineCustomer): Customer {
     จังหวัด: "",
     อำเภอ: "",
     keywords: "",
+    tier: e.tier ?? "",
     status: e.status ?? "trial",
     registered_at: e.registered_at ?? "",
     expires_at: e.expires_at ?? "",

@@ -1620,6 +1620,7 @@ async def portal_discover_jobs(
             return {"ok": True, "jobs": empty}
         followed = {r["project_id"] for r in conn.execute(
             "SELECT project_id FROM followed_jobs WHERE customer_id=?", (cid,)).fetchall()}
+        starred_ids = portal_views.starred_project_ids(conn, cid)
         neg = job_matcher.load_config().get("negative_keywords", [])
         qmarks = ",".join("?" * len(provinces))
         rows = conn.execute(
@@ -1641,7 +1642,8 @@ async def portal_discover_jobs(
             card = {"project_id": pid, "name": r["project_name"] or pid,
                     "location": location, "province": r["province"] or "",
                     "deadline": deadline, "deadline_time": deadline_time,
-                    "budget": r["budget"] or 0, "matched_keywords": hits}
+                    "budget": r["budget"] or 0, "matched_keywords": hits,
+                    "starred": pid in starred_ids}
             if ann == "D0":
                 if deadline and deadline >= today:
                     card["stage"] = "biddable"

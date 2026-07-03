@@ -46,6 +46,7 @@ export interface DiscoverJob {
   deadline_time: string;
   budget: number;
   matched_keywords: string[];
+  starred: boolean;
   stage: "biddable" | "planning";
 }
 

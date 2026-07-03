@@ -193,7 +193,11 @@ interface WorldClientProps {
 export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, expiryLabel, classes, jobGroups, discoverGroups }: WorldClientProps) {
   const allJobs = STAGE_META.flatMap(s => jobGroups[s.key]);
   const [starred, setStarred] = useState<Set<string>>(
-    () => new Set(allJobs.filter(j => j.starred).map(j => j.project_id)),
+    () => new Set([
+      ...allJobs.filter(j => j.starred).map(j => j.project_id),
+      // การ์ด discovery ก็ persist ดาวข้าม reload (engine ส่ง starred มาแล้ว)
+      ...[...discoverGroups.biddable, ...discoverGroups.planning].filter(j => j.starred).map(j => j.project_id),
+    ]),
   );
 
   const toggleStar = async (projectId: string) => {

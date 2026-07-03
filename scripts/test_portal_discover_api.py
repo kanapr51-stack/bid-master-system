@@ -42,6 +42,9 @@ def setup():
                       "VALUES (?,?,?,?,?,?)", (pid, 'test', 'success', FRESH, submit, "10:00"))
     c.execute("INSERT OR IGNORE INTO followed_jobs (customer_id,project_id,starred_at,starred_stage,last_stage_notified,status) "
               "VALUES (?,?,?,?,?,'active')", (cid, 'D_FOLLOWED', FRESH, 'D0', 'D0'))
+    # ดาว 'ที่สนใจ' บนงาน discovery → card ต้องส่ง starred=True กลับ (persist ข้าม reload)
+    c.execute("INSERT OR IGNORE INTO job_stars (customer_id,project_id,created_at) VALUES (?,?,?)",
+              (cid, 'D_MATCH', FRESH))
     c.commit()
 
 
@@ -63,6 +66,9 @@ async def main():
     assert plan_ids == {'B_FRESH'}, plan_ids
     j = next(x for x in r["jobs"]["biddable"] if x["project_id"] == 'D_MATCH')
     assert j["matched_keywords"] == ["คอนกรีต"] and j["stage"] == "biddable" and j["budget"] == 5000000, j
+    assert j["starred"] is True, j
+    p = next(x for x in r["jobs"]["planning"] if x["project_id"] == 'B_FRESH')
+    assert p["starred"] is False, p
     print("PASS test_portal_discover_api")
 
 

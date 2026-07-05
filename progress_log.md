@@ -514,7 +514,9 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 
 ### Deploy (2026-07-05 กัญจน์ confirm "push + deploy เลย")
 - push origin `331b775..19c681d` ✅
-- **VPS ดิสก์เต็ม 100% ตอน backup!** root cause: daily backup cron ก็อป DB 1.9G ทุกวัน ไม่มี retention (`/opt/bms/backups` 24G + `data/backups` 11G) → prune เหลือ daily เต็ม 3 วันล่าสุด (0701-0703) + predeploy_0702 + pre_kwseed_0701 → ดิสก์ 100%→61% (เหลือ 20G). ⚠️ daily 0704/0705 เป็นไฟล์ขาด (เขียนตอนดิสก์เต็ม) ลบทิ้งแล้ว
+- **VPS ดิสก์เต็ม 100% ตอน backup!** root cause จริง (แก้ 2026-07-06): backup_db.py **มี retention 14 วันอยู่แล้วและทำงานปกติ** แต่ DB โต 439MB→1.9GB หลัง backfill สกลนคร → 14 วัน ≈ 27GB + migration backups มือใน data/backups อีก 11G ล้นดิสก์ 52G. prune มือเหลือ daily เต็ม 3 วัน + predeploy → 100%→61%. daily 0704/0705 เป็นไฟล์ขาด (ก็อปตอนดิสก์เต็ม — เงียบ!) ลบทิ้ง
+- **fix ถาวร `4578031`:** RETAIN_DAYS 14→5 (~9.5G) + ตรวจขนาด backup เทียบต้นฉบับ ขาด→ลบ+exit 1 (กัน backup เสียเงียบ). verify จริงบน VPS: บันทึก 20260706 เต็ม 1.9G, prune 0701 อัตโนมัติ, ดิสก์นิ่ง 65%
+- **git push ค้างเงียบ:** GCM เปิด re-auth UI ที่ session กดไม่ได้ → ตั้ง repo-local `credential.helper=!gh auth git-credential` (push ปกติใช้ได้แล้ว ไม่ต้อง override) — ดู memory [[project_git_push_gcm_hang]]
 - VPS: backup pre_v138 → pull ff-only → restart bms-api → verify: expires_at column ✅ health 200 ✅ board-token 403 (no secret) ✅
 - Vercel: `vercel deploy --prod` READY, /portal/world → 307 login (ถูกต้อง)
 

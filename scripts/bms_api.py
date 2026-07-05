@@ -1752,3 +1752,111 @@ async def portal_upgrade_request(
         print(f"[upgrade-request] Discord notify failed: {e}", flush=True)
 
     return {"ok": True}
+
+
+# -- Portal job detail (JSON สำหรับหน้า detail ธีม Board B บน Next.js) ----------
+
+_NOTE_ACTIONS = ("add", "edit", "delete", "save_overview")
+
+
+def _job_detail_payload(conn, line_user_id: str, pid: str):
+    """job_detail เดิม + notes/overview/starred + href หน้าบริษัทธีม A (mint token ที่นี่
+    ให้ URL logic อยู่ฝั่ง engine ที่เดียว). คืน None ถ้าไม่พบงาน."""
+    from urllib.parse import quote
+    data = portal_views.job_detail(conn, pid)
+    if not data:
+        return None
+    cust = conn.execute("SELECT id FROM customers WHERE line_user_id=?", (line_user_id,)).fetchone()
+    cid = cust["id"] if cust else None
+    tok = follow_token.make_token(line_user_id, None)
+    base = PUBLIC_BASE_URL.rstrip("/")
+    for blk in data.get("company_tables") or []:
+        for c in blk.get("companies") or []:
+            if c.get("tin"):
+                ids = ",".join(str(p) for p in (c.get("project_ids") or []))
+                c["href"] = (f"{base}/portal/company?t={quote(tok)}&tin={quote(c['tin'])}"
+                             f"&area_ids={quote(ids)}&area_label={quote(blk['label'])}")
+    for bdr in data.get("bidders") or []:
+        if bdr.get("tin"):
+            bdr["href"] = (f"{base}/portal/company?t={quote(tok)}&tin={quote(bdr['tin'])}"
+                           f"&from={quote(str(pid))}")
+    data.pop("intel_lines", None)  # ใช้เฉพาะ LINE card
+    data["notes"] = portal_views.list_job_notes(conn, cid, pid)
+    data["overview"] = portal_views.get_job_overview(conn, cid, pid)
+    data["starred"] = pid in portal_views.starred_project_ids(conn, cid)
+    return data
+
+
+@app.get("/api/portal/job-detail")
+async def portal_job_detail_json(
+    line_user_id: str = Query(...),
+    pid: str = Query(...),
+    x_bms_secret=Header(default=None),
+):
+    """รายละเอียดงานสำหรับ /portal/job/<pid> (Board B) — โครงเดียวกับหน้า engine เดิม."""
+    if x_bms_secret != BMS_INTERNAL_SECRET:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    with get_conn() as conn:
+        data = _job_detail_payload(conn, line_user_id.strip(), pid.strip())
+    if data is None:
+        return {"ok": False, "error": "not_found"}
+    return {"ok": True, "data": data}
+
+
+@app.post("/api/portal/job-note")
+async def portal_job_note_json(
+    request: Request,
+    x_bms_secret=Header(default=None),
+):
+    """โน้ตไทม์ไลน์ + โน้ตภาพรวมจากหน้า detail ธีม Board B — คืน state ใหม่เลย
+    (reuse portal_views.add/edit/delete_job_note + save_job_overview เส้นเดียวกับหน้า A)."""
+    if x_bms_secret != BMS_INTERNAL_SECRET:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    body = await request.json()
+    line_user_id = (body.get("line_user_id") or "").strip()
+    pid = (body.get("pid") or "").strip()
+    action = (body.get("action") or "").strip()
+    if not line_user_id or not pid or action not in _NOTE_ACTIONS:
+        raise HTTPException(status_code=400, detail="line_user_id + pid + action required")
+    with get_conn() as conn:
+        cust = conn.execute("SELECT id FROM customers WHERE line_user_id=?", (line_user_id,)).fetchone()
+        if not cust:
+            raise HTTPException(status_code=404, detail="Customer not found")
+        cid = cust["id"]
+        if action == "add":
+            portal_views.add_job_note(conn, cid, pid, body.get("entry_date"), body.get("note"))
+        elif action == "edit":
+            portal_views.edit_job_note(conn, cid, body.get("note_id"), body.get("entry_date"), body.get("note"))
+        elif action == "delete":
+            portal_views.delete_job_note(conn, cid, body.get("note_id"))
+        elif action == "save_overview":
+            portal_views.save_job_overview(conn, cid, pid, body.get("note"))
+        notes = portal_views.list_job_notes(conn, cid, pid)
+        overview = portal_views.get_job_overview(conn, cid, pid)
+    return {"ok": True, "notes": notes, "overview": overview}
+
+
+@app.post("/api/portal/job-calc")
+async def portal_job_calc_json(
+    request: Request,
+    x_bms_secret=Header(default=None),
+):
+    """คำนวณโอกาสชนะเจาะจงคู่แข่ง (โมเดล Gates) จากหน้า detail ธีม Board B —
+    เส้นคำนวณเดียวกับหน้า A (job_detail + calc_params)."""
+    if x_bms_secret != BMS_INTERNAL_SECRET:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    body = await request.json()
+    line_user_id = (body.get("line_user_id") or "").strip()
+    pid = (body.get("pid") or "").strip()
+    if not line_user_id or not pid:
+        raise HTTPException(status_code=400, detail="line_user_id + pid required")
+    calc_params = {
+        "my_price": str(body.get("my_price") or ""),
+        "selected_names": [s for s in (body.get("selected_names") or []) if s],
+        "extra_names": [s.strip() for s in (body.get("extra_names") or []) if s and s.strip()],
+    }
+    with get_conn() as conn:
+        data = portal_views.job_detail(conn, pid, calc_params)
+    if not data:
+        return {"ok": False, "error": "not_found"}
+    return {"ok": True, "custom_calc": data.get("custom_calc")}

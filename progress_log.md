@@ -496,7 +496,7 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 
 ## งานที่ N+186: Board 2 (/portal/world) — เก็บฟีเจอร์หลอกให้เป็นของจริง (2026-07-04)
 
-### สถานะ: ✅ โค้ดเสร็จ + test ผ่านหมด (ยังไม่ push/deploy — รอกัญจน์ confirm)
+### สถานะ: ✅ เสร็จ + LIVE (push+deploy ครบ 2026-07-05)
 
 ### ที่มา
 กัญจน์สั่งไล่อ่านโค้ดบอร์ด 2 หา "ฟีเจอร์หลอก" แล้ว approve ลำดับแก้: tier ผิดคน → ดาว discovery → กดดูรายละเอียด → Sebastian Chat → expiry จริง (ทำ overnight autonomous)
@@ -512,8 +512,13 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 - test 18 ไฟล์ผ่านหมด (test_portal_* ทั้งชุด + winner_poller×3 + set_customer_tier ใหม่) + `tsc --noEmit` สะอาดทุก commit
 - **Sophia verdict: SAFE** — scope ตรงทุก commit, migration additive/idempotent, X-BMS-Secret ครบ, token p=None ไม่ leak ข้าม customer (ยืนยัน /portal/job ไม่ผูก pid กับ token), dry-run guard จริง, test รันบน tempdir ไม่แตะ prod
 
+### Deploy (2026-07-05 กัญจน์ confirm "push + deploy เลย")
+- push origin `331b775..19c681d` ✅
+- **VPS ดิสก์เต็ม 100% ตอน backup!** root cause: daily backup cron ก็อป DB 1.9G ทุกวัน ไม่มี retention (`/opt/bms/backups` 24G + `data/backups` 11G) → prune เหลือ daily เต็ม 3 วันล่าสุด (0701-0703) + predeploy_0702 + pre_kwseed_0701 → ดิสก์ 100%→61% (เหลือ 20G). ⚠️ daily 0704/0705 เป็นไฟล์ขาด (เขียนตอนดิสก์เต็ม) ลบทิ้งแล้ว
+- VPS: backup pre_v138 → pull ff-only → restart bms-api → verify: expires_at column ✅ health 200 ✅ board-token 403 (no secret) ✅
+- Vercel: `vercel deploy --prod` READY, /portal/world → 307 login (ถูกต้อง)
+
 ### ค้าง / defer
-- **push + deploy** (VPS: engine restart จะรัน migration v138 เอง; Vercel: web) — รอกัญจน์ตื่นมา confirm (กฎห้าม push โดยไม่ confirm)
 - **ตัดสินใจ Sebastian Chat:** สร้างจริง (LINE AI chat + ตัวนับ quota) หรือเอาออกจาก perks หน้า packages ด้วย — การ์ดซ่อนแล้วแต่ perks ใน TIERS ยังโฆษณาอยู่
 - **defer (ต้อง design):** matching ระดับอำเภอ/ตำบล/GPS (UI เก็บแล้ว engine ใช้แค่จังหวัด — เกี่ยว matching_design soft-include), isSME/isMIT/notifyTime เก็บแต่ไม่ใช้
 - หมายเหตุ: หน้า detail ที่ลิงก์ไปเป็นธีมเก่า (ฟ้า-ขาว) ไม่แมตช์ธีมทอง world — ถ้ากัญจน์ติดใจค่อยทำ detail ใน Next.js ทีหลัง

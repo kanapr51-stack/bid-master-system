@@ -67,17 +67,3 @@ export async function getDiscoverJobs(lineUserId: string): Promise<DiscoverGroup
   const data = (await res.json()) as { ok: boolean; jobs: DiscoverGroups };
   return data.jobs ?? EMPTY_DISCOVER;
 }
-
-/**
- * Base URL หน้า detail งานของ engine สำหรับ user นี้ — การ์ดต่อ `&pid=<id>` เอง
- * (engine mint token canonical ผ่าน follow_token; คืน '' ถ้า engine ล่ม → การ์ดไม่มีลิงก์)
- */
-export async function getJobDetailBase(lineUserId: string): Promise<string> {
-  if (!lineUserId) return "";
-  const url = `${BMS_API_URL}/api/portal/board-token?line_user_id=${encodeURIComponent(lineUserId)}`;
-  const res = await fetch(url, { headers: { "X-BMS-Secret": BMS_SECRET }, cache: "no-store" });
-  if (!res.ok) return "";
-  const data = (await res.json()) as { ok: boolean; token?: string; base?: string };
-  if (!data.token || !data.base) return "";
-  return `${data.base}/portal/job?t=${encodeURIComponent(data.token)}`;
-}

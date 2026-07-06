@@ -383,6 +383,32 @@
   margin-bottom: 6px;
 }
 
+/* ── Table (หน้า job detail) ── */
+[data-portal] .p-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+[data-portal] .p-table th {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--fg-mute);
+  font-weight: 500;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+  text-align: center;
+  white-space: nowrap;
+}
+[data-portal] .p-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  text-align: center;
+}
+[data-portal] .p-table tr:last-child td { border-bottom: none; }
+
 /* ── Scrollbar ── */
 [data-portal] ::-webkit-scrollbar { width: 4px; height: 4px; }
 [data-portal] ::-webkit-scrollbar-track { background: transparent; }

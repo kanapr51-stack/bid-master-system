@@ -85,7 +85,7 @@ function TrackedJobCard({ job, stage, starred, onStar, detailHref }: { job: Trac
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
         <div style={{ minWidth: 0, flex: 1 }}>
           {job.location && <div className="p-mono p-fg-mute" style={{ fontSize: 11, letterSpacing: '0.04em', marginBottom: 4 }}>{job.location}</div>}
-          {detailHref ? <a href={detailHref} style={{ textDecoration: 'none', color: 'inherit' }}>{title}</a> : title}
+          {detailHref ? <Link href={detailHref} style={{ textDecoration: 'none', color: 'inherit' }}>{title}</Link> : title}
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
           <button onClick={e => { e.stopPropagation(); onStar(); }}
@@ -131,9 +131,9 @@ function TrackedJobCard({ job, stage, starred, onStar, detailHref }: { job: Trac
         </div>
       )}
       {detailHref && (
-        <a href={detailHref} className="p-fg-accent" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12.5, marginTop: 10, textDecoration: 'none' }}>
+        <Link href={detailHref} className="p-fg-accent" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12.5, marginTop: 10, textDecoration: 'none' }}>
           ดูรายละเอียด · คู่แข่ง · โอกาสชนะ <Icons.ChevronRight size={12} />
-        </a>
+        </Link>
       )}
     </div>
   );
@@ -152,7 +152,7 @@ function DiscoverCard({ job, following, onFollow, starred, onStar, detailHref }:
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
         <div style={{ minWidth: 0, flex: 1 }}>
           {job.location && <div className="p-mono p-fg-mute" style={{ fontSize: 11, letterSpacing: '0.04em', marginBottom: 4 }}>{job.location}</div>}
-          {detailHref ? <a href={detailHref} style={{ textDecoration: 'none', color: 'inherit' }}>{title}</a> : title}
+          {detailHref ? <Link href={detailHref} style={{ textDecoration: 'none', color: 'inherit' }}>{title}</Link> : title}
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
           <button onClick={e => { e.stopPropagation(); onStar(); }}
@@ -190,9 +190,9 @@ function DiscoverCard({ job, following, onFollow, starred, onStar, detailHref }:
         </div>
       )}
       {detailHref && (
-        <a href={detailHref} className="p-fg-accent" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12.5, marginTop: 10, textDecoration: 'none' }}>
+        <Link href={detailHref} className="p-fg-accent" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12.5, marginTop: 10, textDecoration: 'none' }}>
           ดูรายละเอียด · คู่แข่ง · โอกาสชนะ <Icons.ChevronRight size={12} />
-        </a>
+        </Link>
       )}
     </div>
   );
@@ -210,12 +210,11 @@ interface WorldClientProps {
   classes: BusinessClass[];
   jobGroups: JobGroups;
   discoverGroups: DiscoverGroups;
-  detailBase: string;
 }
 
-export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, expiryLabel, classes, jobGroups, discoverGroups, detailBase }: WorldClientProps) {
-  const detailHrefOf = (projectId: string) =>
-    detailBase ? `${detailBase}&pid=${encodeURIComponent(projectId)}` : undefined;
+export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, expiryLabel, classes, jobGroups, discoverGroups }: WorldClientProps) {
+  // หน้า detail ธีม Board B ในเว็บเดียวกัน (เดิมเด้งไปหน้า engine ธีม A ผ่าน board-token)
+  const detailHrefOf = (projectId: string) => `/portal/job/${encodeURIComponent(projectId)}`;
   const allJobs = STAGE_META.flatMap(s => jobGroups[s.key]);
   const [starred, setStarred] = useState<Set<string>>(
     () => new Set([

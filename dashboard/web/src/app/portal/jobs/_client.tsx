@@ -11,9 +11,12 @@ const STAGE_LABEL: Record<SentJobStage, { icon: string; label: string; tone: 'go
   bidding: { icon: '🔵', label: 'ยื่นซองได้', tone: 'gold' },
   prelim: { icon: '🟡', label: 'รอผล', tone: 'outline' },
   won: { icon: '🏆', label: 'รู้ผลแล้ว', tone: 'emerald' },
-  pre: { icon: '⚪', label: 'ระยะวางแผน', tone: 'outline' },
+  pre: { icon: '⚪', label: 'รับฟังคำวิจารณ์', tone: 'outline' },
   cancelled: { icon: '❌', label: 'ยกเลิก', tone: 'wine' },
 };
+
+// ลำดับ chip กรอง phase — ตาม lifecycle เดียวกับ STAGE_META ของ world
+const STAGE_ORDER: SentJobStage[] = ['bidding', 'prelim', 'won', 'pre', 'cancelled'];
 
 function fmtBaht(n: number | null | undefined): string {
   if (!n) return '';
@@ -50,13 +53,29 @@ function SentJobCard({ job }: { job: SentJob }) {
 export function AllJobsClient({ data, engineDown }: { data: AllJobs | null; engineDown: boolean }) {
   const router = useRouter();
   const [q, setQ] = useState('');
+  // ติ๊กกรอง phase: ว่าง = เห็นทั้งหมด, ติ๊ก ≥1 = เฉพาะ stage ที่ติ๊ก (OR)
+  const [stages, setStages] = useState<Set<SentJobStage>>(new Set());
+
+  const stageCounts = useMemo(() => {
+    const counts = new Map<SentJobStage, number>();
+    for (const j of data?.jobs ?? []) counts.set(j.stage, (counts.get(j.stage) ?? 0) + 1);
+    return counts;
+  }, [data]);
+
+  const toggleStage = (s: SentJobStage) => setStages(prev => {
+    const next = new Set(prev);
+    if (next.has(s)) next.delete(s); else next.add(s);
+    return next;
+  });
 
   const jobs = useMemo(() => {
     const all = data?.jobs ?? [];
     const needle = q.trim().toLowerCase();
-    if (!needle) return all;
-    return all.filter(j => j.name.toLowerCase().includes(needle) || j.province.toLowerCase().includes(needle));
-  }, [data, q]);
+    return all.filter(j =>
+      (stages.size === 0 || stages.has(j.stage)) &&
+      (!needle || j.name.toLowerCase().includes(needle) || j.province.toLowerCase().includes(needle)));
+  }, [data, q, stages]);
+  const filtering = q.trim() !== '' || stages.size > 0;
 
   if (!data) {
     return (
@@ -102,6 +121,27 @@ export function AllJobsClient({ data, engineDown }: { data: AllJobs | null; engi
           />
         </div>
 
+        {/* ติ๊กกรอง phase */}
+        {data.jobs.length > 0 && (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+            {STAGE_ORDER.filter(s => (stageCounts.get(s) ?? 0) > 0).map(s => {
+              const meta = STAGE_LABEL[s];
+              const on = stages.has(s);
+              return (
+                <button
+                  key={s}
+                  onClick={() => toggleStage(s)}
+                  className={`p-chip ${on ? 'p-chip-gold' : 'p-chip-outline'}`}
+                  style={{ cursor: 'pointer', fontFamily: 'inherit' }}
+                  aria-pressed={on}
+                >
+                  {on && '✓ '}{meta.icon} {meta.label} <span style={{ opacity: 0.7 }}>{stageCounts.get(s)}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {data.jobs.length === 0 ? (
           <div className="p-card" style={{ textAlign: 'center', padding: 28 }}>
             <div className="p-serif p-fg-mute" style={{ fontStyle: 'italic', fontSize: 14 }}>
@@ -111,12 +151,12 @@ export function AllJobsClient({ data, engineDown }: { data: AllJobs | null; engi
         ) : jobs.length === 0 ? (
           <div className="p-card" style={{ textAlign: 'center', padding: 22 }}>
             <div className="p-serif p-fg-mute" style={{ fontStyle: 'italic', fontSize: 13.5 }}>
-              ไม่พบงานที่ตรงกับ &quot;{q}&quot;
+              {q.trim() ? <>ไม่พบงานที่ตรงกับ &quot;{q}&quot;</> : 'ไม่พบงานที่ตรงกับเงื่อนไขที่ติ๊กไว้'}
             </div>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {q.trim() && (
+            {filtering && (
               <div className="p-fg-dim" style={{ fontSize: 11.5 }}>พบ {jobs.length} จาก {data.jobs.length} งาน</div>
             )}
             {jobs.map(job => <SentJobCard key={job.project_id} job={job} />)}

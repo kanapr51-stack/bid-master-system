@@ -72,7 +72,7 @@ const STAGE_META: { key: JobStage; label: string; icon: string }[] = [
   { key: 'bidding', label: 'ยื่นซองได้', icon: '🔵' },
   { key: 'prelim', label: 'รอผล', icon: '🟡' },
   { key: 'won', label: 'รู้ผลแล้ว', icon: '🏆' },
-  { key: 'pre', label: 'ระยะวางแผน', icon: '⚪' },
+  { key: 'pre', label: 'รับฟังคำวิจารณ์', icon: '⚪' },
   { key: 'cancelled', label: 'ยกเลิก', icon: '❌' },
 ];
 

@@ -627,7 +627,7 @@ Tracked + Discovery เหลือเฉพาะงานติดดาว (�
 
 ## งานที่ N+190: การ์ด "งานทั้งหมด" + หน้า /portal/jobs — ทุกงานที่ส่ง LINE ขึ้น Board B (2026-07-07)
 
-### สถานะ: 🚧 ทำเสร็จ+test ผ่าน — รอ Sophia + confirm push+deploy
+### สถานะ: ✅ เสร็จ + LIVE (push `2e6e308..182dfa3`; VPS restart + all-jobs คืน 51 งานจริงของ Kan Kan; Vercel READY 53s, /portal/jobs เด้ง login ถูกต้อง)
 
 ### ที่มา
 กัญจน์: "ทุกงานที่ส่งต่อจากนี้ต้องขึ้น board B ด้วย + การ์ดใหม่ 'งานทั้งหมด' ดูง่ายๆ ไม่ต้องเลื่อน LINE"

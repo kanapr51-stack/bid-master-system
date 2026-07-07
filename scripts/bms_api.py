@@ -1890,3 +1890,61 @@ async def portal_company_detail_json(
             area = portal_views.area_portfolio(conn, profile["name"], ids)
     return {"ok": True, "data": {"profile": profile, "h2h": h2h, "won": won,
                                  "area": area, "area_label": area_label}}
+
+
+# stage ล่าสุดที่แจ้ง → กลุ่มป้ายบนบอร์ด (ชุดเดียวกับ STAGE_META ฝั่ง world)
+_ALLJOBS_STAGE = {"followed_winner": "won", "followed_prelim": "prelim",
+                  "followed_cancelled": "cancelled"}
+
+
+def _alljobs_stage(source_stage):
+    s = source_stage or ""
+    if s in _ALLJOBS_STAGE:
+        return _ALLJOBS_STAGE[s]
+    if s.startswith("province_tor_review"):
+        return "pre"
+    return "bidding"
+
+
+@app.get("/api/portal/all-jobs")
+async def portal_all_jobs_json(
+    line_user_id: str = Query(...),
+    limit: int = 500,
+    x_bms_secret=Header(default=None),
+):
+    """งานทั้งหมดที่เคยส่งแจ้งเตือนให้ลูกค้า (การ์ด 'งานทั้งหมด' Board B) — อ่าน
+    notification_queue ตรงๆ (sent เท่านั้น, dedup ต่อ project เอารอบล่าสุด) ใช้ snapshot
+    เป็นหลัก join projects_seen แค่เติม budget/ชื่อที่ snapshot ว่าง. read-only."""
+    if x_bms_secret != BMS_INTERNAL_SECRET:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    limit = max(1, min(int(limit or 500), 500))
+    with get_conn() as conn:
+        cust = conn.execute("SELECT id FROM customers WHERE line_user_id=?",
+                            (line_user_id.strip(),)).fetchone()
+        if not cust:
+            return {"ok": True, "count": 0, "jobs": []}
+        cid = cust["id"]
+        rows = conn.execute(
+            "SELECT nq.project_id, nq.project_name_snapshot, nq.province_snapshot, "
+            "       nq.source_stage, nq.created_at, ps.project_name, ps.province, ps.budget "
+            "FROM notification_queue nq "
+            "LEFT JOIN projects_seen ps ON ps.project_id = nq.project_id "
+            "WHERE nq.customer_id=? AND nq.status='sent' AND COALESCE(nq.is_test_data,0)=0 "
+            "ORDER BY nq.created_at DESC", (cid,)).fetchall()
+        starred_ids = portal_views.starred_project_ids(conn, cid)
+    jobs, seen = [], set()
+    for r in rows:  # เรียง DESC อยู่แล้ว → แถวแรกของแต่ละ project = รอบส่งล่าสุด
+        pid = r["project_id"]
+        if pid in seen:
+            continue
+        seen.add(pid)
+        jobs.append({
+            "project_id": pid,
+            "name": r["project_name_snapshot"] or r["project_name"] or pid,
+            "province": r["province_snapshot"] or r["province"] or "",
+            "budget": r["budget"] or 0,
+            "sent_at": r["created_at"],
+            "stage": _alljobs_stage(r["source_stage"]),
+            "starred": pid in starred_ids,
+        })
+    return {"ok": True, "count": len(jobs), "jobs": jobs[:limit]}

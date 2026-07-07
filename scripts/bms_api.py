@@ -1760,26 +1760,24 @@ _NOTE_ACTIONS = ("add", "edit", "delete", "save_overview")
 
 
 def _job_detail_payload(conn, line_user_id: str, pid: str):
-    """job_detail เดิม + notes/overview/starred + href หน้าบริษัทธีม A (mint token ที่นี่
-    ให้ URL logic อยู่ฝั่ง engine ที่เดียว). คืน None ถ้าไม่พบงาน."""
+    """job_detail เดิม + notes/overview/starred + href หน้าบริษัท (URL mint ฝั่ง engine
+    ที่เดียว). N+188: href เป็น relative ภายในเว็บ B (/portal/company/<tin>) — ไม่ใช้
+    follow_token แล้ว (เว็บ auth ด้วย session เอง). คืน None ถ้าไม่พบงาน."""
     from urllib.parse import quote
     data = portal_views.job_detail(conn, pid)
     if not data:
         return None
     cust = conn.execute("SELECT id FROM customers WHERE line_user_id=?", (line_user_id,)).fetchone()
     cid = cust["id"] if cust else None
-    tok = follow_token.make_token(line_user_id, None)
-    base = PUBLIC_BASE_URL.rstrip("/")
     for blk in data.get("company_tables") or []:
         for c in blk.get("companies") or []:
             if c.get("tin"):
                 ids = ",".join(str(p) for p in (c.get("project_ids") or []))
-                c["href"] = (f"{base}/portal/company?t={quote(tok)}&tin={quote(c['tin'])}"
-                             f"&area_ids={quote(ids)}&area_label={quote(blk['label'])}")
+                c["href"] = (f"/portal/company/{quote(c['tin'])}"
+                             f"?area_ids={quote(ids)}&area_label={quote(blk['label'])}")
     for bdr in data.get("bidders") or []:
         if bdr.get("tin"):
-            bdr["href"] = (f"{base}/portal/company?t={quote(tok)}&tin={quote(bdr['tin'])}"
-                           f"&from={quote(str(pid))}")
+            bdr["href"] = f"/portal/company/{quote(bdr['tin'])}?from={quote(str(pid))}"
     data.pop("intel_lines", None)  # ใช้เฉพาะ LINE card
     data["notes"] = portal_views.list_job_notes(conn, cid, pid)
     data["overview"] = portal_views.get_job_overview(conn, cid, pid)
@@ -1860,3 +1858,35 @@ async def portal_job_calc_json(
     if not data:
         return {"ok": False, "error": "not_found"}
     return {"ok": True, "custom_calc": data.get("custom_calc")}
+
+
+@app.get("/api/portal/company-detail")
+async def portal_company_detail_json(
+    line_user_id: str = Query(...),
+    tin: str = Query(...),
+    proc: str = "all",
+    area_ids: str = "",
+    area_label: str = "",
+    x_bms_secret=Header(default=None),
+):
+    """ประวัติบริษัทสำหรับ /portal/company/<tin> (Board B) — reuse ฟังก์ชันหน้า A ทั้งชุด
+    (company_profile/head_to_head/won_portfolio/area_portfolio). cgd_winners join ด้วยชื่อ
+    (winner_tin source เพี้ยน ~99% — N+157)."""
+    if x_bms_secret != BMS_INTERNAL_SECRET:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    tin = tin.strip()
+    with get_conn() as conn:
+        profile = portal_views.company_profile(conn, tin)
+        if not profile:
+            return {"ok": False, "error": "not_found"}
+        cust = conn.execute("SELECT company_tin FROM customers WHERE line_user_id=?",
+                            (line_user_id.strip(),)).fetchone()
+        our_tin = (cust["company_tin"] if cust and "company_tin" in cust.keys() else None) or None
+        h2h = portal_views.head_to_head(conn, our_tin, tin) if our_tin else None
+        won = portal_views.won_portfolio(conn, profile["name"], proc)
+        area = None
+        if area_ids:
+            ids = [p.strip() for p in area_ids.split(",") if p.strip()]
+            area = portal_views.area_portfolio(conn, profile["name"], ids)
+    return {"ok": True, "data": {"profile": profile, "h2h": h2h, "won": won,
+                                 "area": area, "area_label": area_label}}

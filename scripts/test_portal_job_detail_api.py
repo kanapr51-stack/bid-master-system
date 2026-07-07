@@ -45,13 +45,13 @@ async def main():
         except HTTPException as e:
             assert e.status_code == 403
 
-    # job-detail: โครงครบ + bidder ผู้ชนะขึ้นก่อน + href หน้าบริษัทธีม A + serialize เป็น JSON ได้
+    # job-detail: โครงครบ + bidder ผู้ชนะขึ้นก่อน + href หน้าบริษัทธีม B (relative, N+188) + serialize เป็น JSON ได้
     r = await bms_api.portal_job_detail_json(line_user_id='U1', pid=PID, x_bms_secret='t')
     assert r["ok"], r
     d = r["data"]
     assert d["job"]["project_id"] == PID and d["job"]["budget"] == 5000000, d["job"]
     assert len(d["bidders"]) == 2 and d["bidders"][0]["is_winner"], d["bidders"]
-    assert d["bidders"][0]["href"].startswith(bms_api.PUBLIC_BASE_URL.rstrip("/") + "/portal/company?t="), d["bidders"][0]
+    assert d["bidders"][0]["href"] == f"/portal/company/{d['bidders'][0]['tin']}?from={PID}", d["bidders"][0]
     assert d["notes"] == [] and d["overview"] == "" and d["starred"] is False, d
     assert "intel_lines" not in d
     json.dumps(d, ensure_ascii=False)  # ต้อง serialize ได้ทั้งก้อน

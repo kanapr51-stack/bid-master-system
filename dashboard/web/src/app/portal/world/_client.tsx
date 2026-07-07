@@ -32,12 +32,14 @@ function QuotaRing({ pct, unlimited }: { pct: number; unlimited: boolean }) {
 
 // ── Summary Card ──────────────────────────────────────────────────────────────
 
-function SumCard({ icon, label, value, unit, accent, href }: { icon: React.ReactNode; label: string; value: number | string; unit: string; accent?: boolean; href?: string }) {
+function SumCard({ icon, label, value, unit, accent, href, onClick, active }: { icon: React.ReactNode; label: string; value: number | string; unit: string; accent?: boolean; href?: string; onClick?: () => void; active?: boolean }) {
+  const lit = accent || active;
   const content = (
-    <div className="p-card" style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 8, padding: 16, borderColor: accent ? 'var(--accent-deep)' : 'var(--border)', background: accent ? 'var(--gold-glow)' : 'var(--surface)', width: '100%', cursor: href ? 'pointer' : 'default' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: accent ? 'var(--accent)' : 'var(--fg-mute)' }}>
+    <div className="p-card" onClick={onClick} style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 8, padding: 16, borderColor: lit ? 'var(--accent-deep)' : 'var(--border)', background: lit ? 'var(--gold-glow)' : 'var(--surface)', width: '100%', cursor: href || onClick ? 'pointer' : 'default' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: lit ? 'var(--accent)' : 'var(--fg-mute)' }}>
         {icon}
         {href && !accent && <Icons.ChevronRight size={14} />}
+        {onClick && (active ? <Icons.Check size={14} /> : <Icons.ChevronRight size={14} />)}
       </div>
       <div>
         <div className="p-fg-mute p-mono" style={{ fontSize: 11, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{label}</div>
@@ -243,6 +245,10 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
   const [discover, setDiscover] = useState<DiscoverGroups>(discoverGroups);
   const [following, setFollowing] = useState<Set<string>>(new Set());
 
+  // กดการ์ด "★ งานที่สนใจ" = กรองบอร์ดเหลือเฉพาะงานติดดาว (กดซ้ำ = เลิกกรอง)
+  const [starOnly, setStarOnly] = useState(false);
+  const filterOn = starOnly && starred.size > 0;
+
   const handleFollow = async (projectId: string) => {
     setFollowing(prev => new Set(prev).add(projectId));
     try {
@@ -332,7 +338,8 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
           <SumCard icon={<Icons.Tag size={16} />} label="Keywords" value={totalKeywords} unit="คำค้น" href="/portal/classes" />
           <SumCard icon={<Icons.Bell size={16} />} label="งานที่ติดตาม" value={allJobs.length} unit="งาน" accent />
           {starred.size > 0 && (
-            <SumCard icon={<span style={{ fontSize: 16 }}>★</span>} label="งานที่สนใจ" value={starred.size} unit="งาน" />
+            <SumCard icon={<span style={{ fontSize: 16 }}>★</span>} label="งานที่สนใจ" value={starred.size} unit="งาน"
+              active={filterOn} onClick={() => setStarOnly(v => !v)} />
           )}
         </div>
 
@@ -343,7 +350,9 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
               <div className="p-smallcaps p-fg-mute">งานที่ท่านติดตาม</div>
               <div className="p-display" style={{ fontSize: 20, marginTop: 2 }}>Tracked Bids</div>
             </div>
-            <Chip tone="gold" icon={<Diamond size={5} />}>{allJobs.length} งาน</Chip>
+            <Chip tone="gold" icon={<Diamond size={5} />}>
+              {filterOn ? `★ ${allJobs.filter(j => starred.has(j.project_id)).length} / ${allJobs.length} งาน` : `${allJobs.length} งาน`}
+            </Chip>
           </div>
 
           {allJobs.length === 0 ? (
@@ -352,10 +361,16 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
                 ยังไม่มีงานที่ติดตาม — ระบบจะเพิ่มให้เมื่อเจองานตรงพื้นที่/หมวดของท่านครับ
               </div>
             </div>
+          ) : filterOn && allJobs.every(j => !starred.has(j.project_id)) ? (
+            <div className="p-card" style={{ textAlign: 'center', padding: 22 }}>
+              <div className="p-serif p-fg-mute" style={{ fontStyle: 'italic', fontSize: 13.5 }}>
+                ไม่มีงานติดดาวในรายการติดตาม — ดาวของท่านอยู่ในส่วน &quot;งานใหม่ที่แมตช์&quot; ด้านล่างครับ
+              </div>
+            </div>
           ) : (
             STAGE_META.map(({ key, label, icon }) => {
-              const jobs = jobGroups[key];
-              if (!jobs || jobs.length === 0) return null;
+              const jobs = (jobGroups[key] || []).filter(j => !filterOn || starred.has(j.project_id));
+              if (jobs.length === 0) return null;
               return (
                 <div key={key} style={{ marginBottom: 18 }}>
                   <div className="p-label" style={{ margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -381,7 +396,8 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
 
         {/* Discovery: งานใหม่ที่แมตช์ */}
         {(() => {
-          const discoverAll = [...discover.biddable, ...discover.planning];
+          const discoverAll = [...discover.biddable, ...discover.planning]
+            .filter(j => !filterOn || starred.has(j.project_id));
           const hasPrefs = provincesCount > 0 && totalKeywords > 0;
           return (
             <div style={{ marginTop: 26 }}>
@@ -402,7 +418,9 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
               ) : discoverAll.length === 0 ? (
                 <div className="p-card" style={{ textAlign: 'center', padding: 28 }}>
                   <div className="p-serif p-fg-mute" style={{ fontStyle: 'italic', fontSize: 14 }}>
-                    ยังไม่มีงานใหม่ที่ตรงเกณฑ์วันนี้ — ระบบจะอัปเดตให้เมื่อมีงานเข้าครับ
+                    {filterOn
+                      ? 'ไม่มีงานติดดาวในส่วนนี้ครับ'
+                      : 'ยังไม่มีงานใหม่ที่ตรงเกณฑ์วันนี้ — ระบบจะอัปเดตให้เมื่อมีงานเข้าครับ'}
                   </div>
                 </div>
               ) : (

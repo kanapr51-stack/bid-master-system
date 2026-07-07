@@ -602,3 +602,23 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 ### Followup
 - ~~push + deploy (VPS engine + Vercel)~~ ✅ LIVE 2026-07-07
 - LINE links ยังเข้าหน้า A ตามตั้งใจ (เหมือน N+187)
+
+---
+
+## งานที่ N+189: การ์ด "★ งานที่สนใจ" กดกรองบอร์ดได้จริง (2026-07-07)
+
+### สถานะ: ✅ แก้เสร็จ — รอ confirm push+deploy
+
+### Root cause
+กัญจน์รายงาน "ปุ่มดูงานสนใจใช้ไม่ได้จริง" — การ์ด ★ ใน summary grid ของ `/portal/world`
+เป็น SumCard **ไม่มี href/onClick ตั้งแต่เกิด** (การ์ดอื่นในกริดกดได้หมด เลยดูเหมือนปุ่มหลอก).
+ประวัติ: section รายการงานติดดาวเคยมีในเวอร์ชันเก่า ถูกถอดตอน rework `3fc988a` เหลือแต่ตัวเลข
+
+### Fix (กัญจน์เลือก: กรองบอร์ดทันที ไม่สร้างหน้าใหม่)
+`world/_client.tsx`: SumCard รับ `onClick`+`active` → กดการ์ด ★ = toggle กรองทั้ง
+Tracked + Discovery เหลือเฉพาะงานติดดาว (การ์ดเรือง gold + ✓ ตอน active, chip โชว์ `★ n/รวม`),
+กดซ้ำ = กลับ; มี empty-state ทั้งสอง section ตอนกรองแล้วว่าง; ดาวหมด = ปิดกรองอัตโนมัติ
+
+### Verify
+- `npm run build` ผ่าน; SSR e2e (engine scratch + next start + follow/star U1 จริง) →
+  หน้า render ครบ การ์ด ★ โผล่ ไม่มี error boundary

@@ -565,7 +565,11 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 
 ## งานที่ N+188: หน้าบริษัทธีม Board B — /portal/company/[tin] ปิดชุดธีม B (2026-07-07)
 
-### สถานะ: 🚧 ทำเสร็จ+test ผ่าน — commit local, **รอกัญจน์ confirm push+deploy** (กัญจน์นอน)
+### สถานะ: ✅ เสร็จ + **LIVE (push+deploy ครบ 2026-07-07 กัญจน์ confirm "push + deploy เลย")**
+- push origin `cfc5dec..808e1e7` ✅
+- VPS `/opt/bms/app`: fetch รอบแรก timeout ถึง github (transient — รอบสองผ่าน) → ff-merge `808e1e7`
+  → restart bms-api → verify: health 200 ✅ company-detail ไร้ secret 403 ✅ หน้า A /portal/job + /portal/company ยัง 200 ✅
+- Vercel: deploy --prod READY (51s), `/portal/company/[tin]` อยู่ใน build; ไร้ session → 307 /portal/login ✅ error scan สะอาด ✅
 
 ### ที่มา
 กัญจน์: "ทำหน้าบริษัทธีม B ต่อเลยทำชุดเสร็จเลย เดี๋ยวฉันจะนอนแล้ว" — ปิด gap สุดท้ายจาก N+187
@@ -596,5 +600,5 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
   (local DB มี test customer เก่า 2 แถว pre-existing — ไม่เกี่ยว diff นี้)
 
 ### Followup
-- **push + deploy (VPS engine + Vercel) — รอกัญจน์ confirm ตอนตื่น**
+- ~~push + deploy (VPS engine + Vercel)~~ ✅ LIVE 2026-07-07
 - LINE links ยังเข้าหน้า A ตามตั้งใจ (เหมือน N+187)

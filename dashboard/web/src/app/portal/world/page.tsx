@@ -4,6 +4,7 @@ import { parseSessionCookie, COOKIE_NAME } from '@/lib/session';
 import { getCustomerByLineId } from '@/lib/customers';
 import { parsePortalNotes, getTierId, getTier } from '@/lib/portal-data';
 import { getPortalJobs, getDiscoverJobs, type JobGroups, type DiscoverGroups } from '@/lib/portal-jobs';
+import { getAllJobs } from '@/lib/portal-all-jobs';
 import { WorldClient } from './_client';
 
 export const dynamic = 'force-dynamic';
@@ -36,6 +37,11 @@ export default async function WorldPage() {
     discoverGroups = await getDiscoverJobs(session.lineUserId);
   } catch { /* engine unavailable — show empty discovery */ }
 
+  let allNotifiedCount = 0;
+  try {
+    allNotifiedCount = (await getAllJobs(session.lineUserId, 1)).count; // เอาแค่ count ให้การ์ด
+  } catch { /* engine unavailable — ซ่อนการ์ดงานทั้งหมด */ }
+
   // Calculate trial days left
   let daysLeft = 30;
   let expiryLabel = '';
@@ -65,6 +71,7 @@ export default async function WorldPage() {
       classes={classes}
       jobGroups={jobGroups}
       discoverGroups={discoverGroups}
+      allNotifiedCount={allNotifiedCount}
     />
   );
 }

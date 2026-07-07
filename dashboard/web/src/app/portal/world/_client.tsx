@@ -212,9 +212,10 @@ interface WorldClientProps {
   classes: BusinessClass[];
   jobGroups: JobGroups;
   discoverGroups: DiscoverGroups;
+  allNotifiedCount: number;
 }
 
-export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, expiryLabel, classes, jobGroups, discoverGroups }: WorldClientProps) {
+export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, expiryLabel, classes, jobGroups, discoverGroups, allNotifiedCount }: WorldClientProps) {
   // หน้า detail ธีม Board B ในเว็บเดียวกัน (เดิมเด้งไปหน้า engine ธีม A ผ่าน board-token)
   const detailHrefOf = (projectId: string) => `/portal/job/${encodeURIComponent(projectId)}`;
   const allJobs = STAGE_META.flatMap(s => jobGroups[s.key]);
@@ -337,6 +338,9 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
           <SumCard icon={<Icons.Map size={16} />} label="พื้นที่ครอบคลุม" value={provincesCount} unit="จังหวัด" href="/portal/classes" />
           <SumCard icon={<Icons.Tag size={16} />} label="Keywords" value={totalKeywords} unit="คำค้น" href="/portal/classes" />
           <SumCard icon={<Icons.Bell size={16} />} label="งานที่ติดตาม" value={allJobs.length} unit="งาน" accent />
+          {allNotifiedCount > 0 && (
+            <SumCard icon={<Icons.Doc size={16} />} label="งานทั้งหมด" value={allNotifiedCount} unit="งาน" href="/portal/jobs" />
+          )}
           {starred.size > 0 && (
             <SumCard icon={<span style={{ fontSize: 16 }}>★</span>} label="งานที่สนใจ" value={starred.size} unit="งาน"
               active={filterOn} onClick={() => setStarOnly(v => !v)} />

@@ -622,3 +622,32 @@ Tracked + Discovery เหลือเฉพาะงานติดดาว (�
 ### Verify
 - `npm run build` ผ่าน; SSR e2e (engine scratch + next start + follow/star U1 จริง) →
   หน้า render ครบ การ์ด ★ โผล่ ไม่มี error boundary
+
+---
+
+## งานที่ N+190: การ์ด "งานทั้งหมด" + หน้า /portal/jobs — ทุกงานที่ส่ง LINE ขึ้น Board B (2026-07-07)
+
+### สถานะ: 🚧 ทำเสร็จ+test ผ่าน — รอ Sophia + confirm push+deploy
+
+### ที่มา
+กัญจน์: "ทุกงานที่ส่งต่อจากนี้ต้องขึ้น board B ด้วย + การ์ดใหม่ 'งานทั้งหมด' ดูง่ายๆ ไม่ต้องเลื่อน LINE"
+ตัดสินใจ: รวมงานย้อนหลัง (มี ~51 งานใน queue อยู่แล้ว) + หน้าใหม่แยก
+
+### หลักการ (ไม่แตะระบบส่ง LINE เลย)
+notification_queue บันทึกทุกการส่งอยู่แล้ว (snapshot ชื่อ/จังหวัด + source_stage) →
+อ่านตรงจากตารางนี้: งานเก่าขึ้นทันที งานใหม่ขึ้นเอง
+
+### สิ่งที่ทำ
+1. spec `docs/superpowers/specs/2026-07-07-board-b-all-jobs-design.md`
+2. engine: `GET /api/portal/all-jobs` (read-only; sent+ไม่ใช่ test data, dedup ต่อ project
+   เอารอบล่าสุด, stage map followed_winner→won ฯลฯ, คืน count ไม่ติด limit) + test ใหม่
+3. web: `/portal/jobs` ธีม B (ค้นหา client-side, ป้าย stage ชุด STAGE_META, ลิงก์ detail,
+   ไฮไลต์งานติดดาว) + การ์ด "📋 งานทั้งหมด" บน world (href /portal/jobs, engine ล่ม=ซ่อน)
+
+### Verify
+- test all-jobs ใหม่ผ่าน + regression job-detail/company-detail/jobs_api/notes ผ่าน
+- `npm run build` ผ่าน (route /portal/jobs ขึ้น)
+- SSR e2e: seed queue 3 แถว (P1 ส่ง 2 รอบ) → dedup ถูก, ป้าย stage ถูก, การ์ด world โชว์,
+  ค้นหา/ลิงก์ครบ, ไม่มี error boundary
+- Sophia: **SAFE** — read-only ยืนยัน, ไฟล์ระบบส่ง LINE ไม่ถูกแตะ, test-data ถูกกรอง
+  (COALESCE(is_test_data,0)=0 ตรวจกับ DB จริงแล้ว), test scratch tempdir, เว็บไม่แตะ DB ตรง

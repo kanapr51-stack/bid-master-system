@@ -629,6 +629,34 @@ Tracked + Discovery เหลือเฉพาะงานติดดาว (�
 
 ### สถานะ: ✅ เสร็จ + LIVE (push `2e6e308..182dfa3`; VPS restart + all-jobs คืน 51 งานจริงของ Kan Kan; Vercel READY 53s, /portal/jobs เด้ง login ถูกต้อง)
 
+---
+
+## งานที่ N+191: CHECKPOINT — ก่อนเปลี่ยน session (2026-07-07)
+
+### สถานะ: ⏸ pause เปลี่ยน session
+
+### ✅ เสร็จแล้ว session นี้ (ทั้งหมด LIVE บน VPS+Vercel)
+- **N+188** หน้าบริษัทธีม Board B `/portal/company/[tin]` — ปิดชุดธีม B ครบเส้น world→job→company
+  (`a885229` spec · `bdafaf7` engine company-detail · `808e1e7` web · `86a6944` docs)
+- **N+189** การ์ด "★ งานที่สนใจ" กดกรองบอร์ดได้จริง — เดิมเป็นการ์ดตัวเลขเฉยๆ (`0684401`)
+- **N+190** การ์ด "📋 งานทั้งหมด" + หน้า `/portal/jobs` — ทุกงานที่เคยส่ง LINE (51 งานย้อนหลัง
+  + งานใหม่ขึ้นเอง, อ่าน notification_queue read-only ไม่แตะระบบส่ง) (`2e6e308`+`182dfa3`+`89284d4`)
+- เช็คข้อมูล Kan Kan หลังกัญจน์เผลอกดเล่น portal — ไม่มีอะไรเพี้ยน (จังหวัด/keyword/ดาวครบ)
+
+### 🎯 NEXT ACTION (session หน้า)
+- **ไม่มีงาน dev ค้างบังคับ** — รอกัญจน์สั่ง. งานใหญ่ถัดไปตามคิวเดิม = **phase-B category tick UI
+  บน Board B** (spec DRAFT `docs/superpowers/specs/2026-07-01-category-matching-design-DRAFT.md`,
+  UI decision accordion หมวดพับ+chip จดในดราฟต์แล้ว) — เริ่มด้วย superpowers:brainstorming ต่อยอด
+  ดราฟต์ให้ approve ก่อน แล้ว writing-plans
+- ⚠️ เช็คค้างจาก N+185: (1) กัญจน์ upgrade LINE OA เป็น paid หรือยัง (quota 300 จะตันกลาง ก.ค.
+  — เช็ค /v2/bot/message/quota) (2) `clear_keyword_seed --apply` ยังไม่รัน (3) cron recap 23:00 ตั้งหรือยัง
+
+### ค้าง/ระวัง
+- การ์ด Sebastian Chat ยังซ่อนอยู่ — **รอกัญจน์ตัดสินใจสร้างจริง/ตัดจาก perks packages**
+- LINE links ยังเข้าหน้าธีม A ตามตั้งใจ (ถ้าจะให้เข้าธีม B ต้องคิด login/LIFF ก่อน)
+- uncommitted ใน working tree = runtime data (cgd_discovery_seen/rss_log/settings.local +
+  db-shm/-wal จาก Sophia read-only) — ไม่ใช่งานค้าง อย่า git add -A
+
 ### ที่มา
 กัญจน์: "ทุกงานที่ส่งต่อจากนี้ต้องขึ้น board B ด้วย + การ์ดใหม่ 'งานทั้งหมด' ดูง่ายๆ ไม่ต้องเลื่อน LINE"
 ตัดสินใจ: รวมงานย้อนหลัง (มี ~51 งานใน queue อยู่แล้ว) + หน้าใหม่แยก

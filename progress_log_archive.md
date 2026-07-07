@@ -6582,3 +6582,135 @@ followup N+143 "ทางเลือก ข" — ตัด discovery จาก 
 - N+167 followup: ถ้า /portal/job ยังรู้สึกช้าอยู่ (ปัจจุบัน ~407ms) มีจุดต่อไปคือ `_resolve_tin` เรียกซ้ำต่อบริษัท
 
 ไม่มีอะไรเร่งด่วนต้องทำต่อทันที — ปิดเครื่องได้เลยครับ
+
+---
+
+## งานที่ N+169: Backfill สกลนคร เสร็จ + import VPS (2026-06-23)
+
+### สถานะ: ✅ เสร็จ
+
+### สิ่งที่ทำ
+- รีสตาร์ท `_backfill_home_fetch.py` (เครื่องบ้าน) resume จาก checkpoint 2,190/10,751 ที่ค้างไว้ตอนปิดเครื่องเดินทาง — รันต่อจนจบเอง: `DONE: stored=8455 empty=91 error=15, total_in_results=10,736`
+- import เข้า VPS `bid_results`: backup prod DB ก่อน (`bms_customers_pre_skn_backfill_import_20260623_063415.db`) → smoke test 5 sample (idempotent re-run ยืนยัน) → รันจริง `_backfill_home_import.py /tmp/skn_backfill_results.json` → **stored_projects=10,628, bid_rows=86,861**
+- `bid_results` รวม: 82,897 → **157,946 แถว** (+75,049) · `/health` OK หลังเสร็จ
+- ลบไฟล์ temp บน VPS แล้ว (`/tmp/skn_backfill_results.json`, `_backfill_home_import.py`)
+- คืนค่า `standby-timeout-dc` กลับ 15 นาที (ของเดิมก่อนปิด sleep กัน backfill ค้างตอน 2026-06-21) — เจอ bug เล็ก: `powercfg /change` รับหน่วยเป็น**นาที**ไม่ใช่วินาที ตอน revert รอบแรกใส่ 900 (ตั้งใจ=วินาที) กลายเป็น 900 นาที (15 ชม.) โดยไม่ตั้งใจ แก้เป็น `15` ถูกแล้ว
+
+### Followup
+- backfill นครพนม+บึงกาฬ + สกลนคร ครบทั้ง 3 จังหวัดแล้ว (bid_results coverage เพิ่มมาก)
+- ของค้างเดิมจาก N+164 ยังไม่แก้: FY2568 proc_type anomaly ของสกลนคร (label รวมไม่แยกประเภท) ก่อน wire เข้า default ของ `backfill_bidders.py --provinces`/daily timer
+- ยังไม่ลบไฟล์ local `data/_backfill_home/` (skn_* + เดิม) — ข้อมูลขึ้น DB ครบแล้ว รอกัญจน์ยืนยันก่อนเคลียร์
+
+## งานที่ N+170: เพิ่มอุดรธานีเป็นจังหวัดที่ 4 + เริ่ม backfill (2026-06-23)
+
+### สถานะ: 🚧 กำลังรัน background (เครื่องบ้าน residential)
+
+### สิ่งที่ทำ (ตามแบบ N+164 ทุกขั้น)
+- `_winner_history_build.py` PROVS += อุดรธานี, `cgd_sync_to_vps.py` TARGET += อุดรธานี (commit `12fb986`)
+- `_winner_history_build.py` bulk fetch CGD: โดน quota ครั้งเดียว (calls=700, ค้างที่ 2561 file6) → retry รอบ 2 ผ่านครบ **ไม่โดน quota ซ้ำ** (ต่างจาก สกลนคร ที่โดน 3 รอบ) — รวม winner_history ทั้ง 4 จังหวัด = 1,962,449 แถว (อุดรธานี เดี่ยว 657,184 แถว ปี 2558-2568)
+- `cgd_sync_to_vps.py --push` → VPS `cgd_winners` (local SSH client timeout 600s แต่ remote merge ทำงานต่อจนจบจริง — ยืนยันด้วย count ตรงกัน 1,962,449) → อุดรธานี = **753,882 แถว บน VPS**
+- 🐛 **เจอ anomaly เดิมซ้ำ**: FY2568 อุดรธานี ก็ proc_type label รวมไม่แยกประเภทเหมือนสกลนคร (ยืนยันเป็น CGD source-side ไม่ใช่ province-specific) → ใช้ scope FY2558-2567 (10 ปี) เหมือนเดิม
+- candidate generation **ต้องรันบน VPS** (backfill_bidders.py คิวรี cgd_winners จาก local bms_customers.db ของเครื่องที่รัน — เครื่องบ้านไม่มีข้อมูล cgd_winners เลย จึงต้อง query บน VPS แล้ว scp กลับ ไม่ใช่รัน local) → ได้ **14,111 candidates** (FY2558-2567)
+- เริ่ม residential fetch `_backfill_home_fetch.py ../data/_backfill_home/udt_backfill_cands.json ../data/_backfill_home/udt_backfill_results.json` กำลังรัน background
+
+### Followup
+- รอ fetch เสร็จ (คาด ~10-12 ชม. ตามขนาด 14,111 งาน) → import เข้า VPS `bid_results` (`_backfill_home_import.py` path arg เดิม) ตามแบบ N+169
+- ของค้างสะสม (ทั้งสกลนคร+อุดรธานี): ตัดสินใจ FY2568 proc_type anomaly ก่อน wire เข้า default `backfill_bidders.py --provinces`/daily timer
+
+
+## งานที่ N+169: winner-poller upsert cgd_winners + backfill orphans (2026-06-23)
+
+### สถานะ: ✅ เสร็จ + deploy VPS
+
+### Investigation (debug-mantra)
+กัญจน์รายงาน is_winner=0 + ไม่มี cgd_winners (งาน 69059453079). สืบแล้ว = **ไม่ใช่ bug** —
+eGP สด stepId=S01 + priceAgree=None ทุกราย → ผู้ชนะยังไม่ประกาศจริง. DB mirror ถูก. poller คุมงานนี้ (2 follower) จะ mark เมื่อ award ออก.
+
+### Gap จริงที่เจอ + Fix
+winner-poller mark bid_results.is_winner แต่ไม่เขียน cgd_winners → awarded jobs มองไม่เห็นในเครื่องคิด Win% จนกว่า CGD open-data sync ตามทัน (เดือน). เจอ 3 orphans (is_winner=1, ไม่มี cgd_winners).
+- เพิ่ม `SubscriptionStore.upsert_cgd_winner` + เรียกใน `poll_winners` (guard bidders≥2 + budget>0). winner_tin=None (เพี้ยน), proc_type=e-bidding, idempotent. TDD: test_winner_poller +1
+- merge main `4409644` → scp 2 ไฟล์ (Customer_DB, Winner_Poller) → restart bms-api · backup predeploy_20260623_192210
+- backfill 2/3 orphans (69059132412, 69059227331; ตัวที่ 3 ไม่มี budget ข้าม) → orphans 3→1
+
+### ผล
+ยศประทาน 159 งานใน pool เครื่องคิด · 69059227331 (จาก scope-selection bug เดิม) เข้า pool แล้ว
+
+## งานที่ N+170: lookup_company.py — competitor profiler 11 ปี (2026-06-23)
+
+### สถานะ: ✅ merged main (6bbfd5c) · tool รัน local
+
+### สิ่งที่ทำ
+tool ดึงโปรไฟล์คู่แข่งเชิงลึกจากประวัติชนะประมูล CGD ทั้งประเทศ 2558-2568 ด้วย q-sweep 96 resources
+(RID ปีเก่าใน data/_cgd_rids_*.json) — ไม่ต้อง sync ทั้งจังหวัด. compute_profile = pure (เทสต์แยก).
+สถิติ: ฐานจังหวัด/วิธีจัดซื้อ/หมวดงาน/%ลดแยก e-bidding-vs-เฉพาะเจาะจง/ขนาดงาน/trend. graceful 429.
+
+### ผลกับ หจก.หนองหว้า การก่อสร้าง
+25 งาน/11ปี · ฐาน=สระแก้ว(17) · มูลค่ารวม 19.4M · e-bidding median ลด 10.8% (3.6-17.7%) · เฉพาะเจาะจง 0%
+= ผู้รับเหมารายเล็กสระแก้ว ทำซ่อม/ปรับปรุงอาคารโรงเรียนเป็นหลัก แข่งไม่ดุ
+
+### หมายเหตุ
+ใช้: `python scripts/lookup_company.py "ชื่อบริษัท"` · ติด CGD quota 1000/วัน (~96 calls/ครั้ง) · ต้องมี OPEND_USER_TOKEN + _cgd_rids files (local)
+
+## งานที่ N+171: แก้ Discovery false-alarm "พลาด full sweep" (catch-up quiet retry) — DEPLOYED (2026-06-24)
+
+### สถานะ: ✅ เสร็จ + deploy VPS (commit 8ce6436) · debug-mantra ครบ 4 ขั้น
+
+### Root cause (ยืนยันจาก journalctl VPS 2026-06-23 12:30 UTC = 19:30 ไทย)
+กัญจน์เห็น Discord เด้ง "🔄 พลาด full sweep นครพนม รอบ 19:30 → รันให้ทันที" บ่อย (ไม่ได้ปิดเครื่อง).
+ไม่ใช่ WAF/token (เคยเดา) และไม่ใช่เครื่องบ้านปิด:
+- full sweep จังหวัดเดียว paginate เกิน rate budget → `หน้า 55 rate-limited — abort` → `partial_abort=True` → 378 active (จาก ~774)
+- partial → เงื่อนไขเดิม `not partial_abort` ตก → **ไม่เขียน marker** `last_fullsweep_480000.json`
+- catch-up (`discovery_catchup.py`) เช็คแค่ marker → ไม่เจอ → เด้ง "พลาด" + re-run ทุก harvest cycle (15m)
+- re-run บางรอบ window ว่าง → จบครบ 774 → เขียน marker. **ไม่มีงานหายจริง = false alarm** (incremental คุม freshness, full sweep = reconciliation safety-net)
+- ฝั่ง incremental มี throttle `CATCHUP_RETRY_SEC=20m` แต่ฝั่ง full-sweep ไม่มี (followup ค้างจาก N+131)
+
+### Fix (A: quiet retry — กัญจน์เลือก, surgical 2 ไฟล์)
+- `Sebastian_Province_Discovery.py`: เขียน marker **ทุกรอบ** (รวม partial) ติด flag `partial`; per-sweep report ใส่ป้าย `⚠️ partial (ชน rate limit)` เมื่อ partial_abort
+- `discovery_catchup.py`: full-sweep retry **เงียบ** (ไม่เด้ง "พลาด") + throttle 20m (ใช้ marker.ts) + **alert เฉพาะถ้า retry แล้วยัง partial ซ้ำ** (rate budget ตันจริง)
+- verify: py_compile (local+VPS venv) + logic-sim 5 เคสผ่าน (complete=skip, partial-recent=throttle quiet, stale/no-marker=run)
+
+### Deploy note (deploy debt)
+VPS `git pull` โดน block: 5 ไฟล์ (Customer_DB/Winner_Poller/bid_field/cgd_intel/portal_views) มี local diff สมมาตร ~3900± = **CRLF/LF noise** ไม่ใช่ content จริง ([[project_deploy_debt]]). 2 ไฟล์ fix สะอาด → deploy แบบ `git checkout origin/main -- <2 files>` เลี่ยง merge. **full migration ของ 5 ไฟล์ CRLF ยังค้าง** (แยกทำ)
+
+### Followup
+- ดูผล slot ถัดไป: นครพนม 07:30 / บึงกาฬ 08:30,20:30 ไทย — ควรเงียบ (ไม่มี "พลาด")
+- C (root, ไม่ทำตอนนี้): pagination resume ให้ full sweep จังหวัดเดียววิ่งจบรอบเดียวใน budget
+- จัดการ deploy-debt CRLF 5 ไฟล์บน VPS (renormalize .gitattributes)
+
+
+## งานที่ N+172: แจ้งงานยกเลิกโครงการ + แก้ Board (cancelled-project notification) (2026-06-25)
+
+### สถานะ: ✅ เสร็จ (local main, 4 commits) · ⏳ ยังไม่ deploy VPS · brainstorming→spec→plan→TDD ครบ
+
+### ที่มา
+พ่อกัญจน์เห็นงานที่ยกเลิกโครงการแล้วค้างอยู่ใน "สรุปราคาเบื้องต้น" บน Web Board + อยากให้แจ้งเตือนงานยกเลิก
+
+### Root cause
+lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage ยกเลิก** → Board group ตาม last_stage_notified
+งานเคยขึ้น PRELIM แล้วยกเลิกทีหลังค้างใน prelim ตลอด. legacy Sheets classifier ตรวจยกเลิกได้ แต่ไม่ถูกพอร์ตมาฝั่ง DB/Board/notification
+
+### Fix (4 task TDD, piggyback winner-poller ไม่สร้าง cron ใหม่)
+1. `Sebastian_Classifier.py`: extract `_cancel_note` + `is_cancelled()` (R / D1,W1 / B*) — classify_by_stepid พฤติกรรมเดิมคงเดิม (regression test ครอบ B*+winner→awarded)
+2. `Sebastian_Winner_Poller.py`: cancellation pass (param `resolve_status=None`) วนทุก active follow → get_project_detail → is_cancelled → enqueue `followed_cancelled` + mark `CANCELLED` + close + ข้าม poll winner; fail-safe error=ไม่ false-cancel
+3. `Sebastian_LINE_Sender.py`: `format_cancelled_notification` + dispatch block (re-derive note ตอน render เหมือน prelim) → ผ่าน queue→digest เดิม (ช่วง LINE quota เต็มจะรวมใน digest 1 ก.ค. เอง)
+4. `bms_api.py`: groups["cancelled"] เช็ค lsn=="CANCELLED" ก่อน prelim + chip + badge bx + render section
+
+### Verify (verifiable success criteria — ผ่านหมด)
+- test_is_cancelled (3 สัญญาณ + classify regression), test_winner_poller_cancel (enqueue+mark+close+skip+fail-safe+backward-compat), test_format_cancelled, test_portal_cancelled (PC=cancelled ไม่ใช่ prelim) — + regression test_winner_poller / test_portal_jobs เขียวหมด
+- backfill: ไม่ต้องเขียนแยก — งานยกเลิกค้างถูกจับในรอบ poll แรกหลัง deploy
+- commits: 3cccc8f / fbc2f02 / f382bea / 76bc055 · spec+plan ใน docs/superpowers/
+
+### Sophia sanity verdict: ✅ SAFE TO PROCEED
+- dedup ✅ (source_stage="followed_cancelled" UNIQUE 3-col ไม่ชน sibling), classify regression ✅ (B*+winner→awarded), fail-safe ✅ (verify ด้วยรันจริง), valid=False จาก getProjectDetail → is_cancelled("","","")=(False,"") ปลอดภัย, last_stage_notified="CANCELLED" ไม่ break code path ไหน (star_metrics/_STAGE_RANK ใช้ .get fallback)
+- ⚠️ verify live VPS queue schema ไม่ได้ (ไม่มี SSH key) — แต่ followed_prelim/winner LIVE ใช้ dedup 3-col เดียวกันอยู่แล้ว = migrate แล้วโดยปริยาย (low risk)
+- ⚠️ operational cost: getProjectDetail ทุก active follow/รอบ poller (~6ชม.) เพิ่มโหลด eGP ถ้า follow list โต — จับตา
+
+### ✅ DEPLOYED VPS (2026-06-25) — กัญจน์ confirm "deploy เลย"
+- push origin 066bbdd→97f19f8 (6 commits) · VPS `bash scripts/deploy.sh` ff-pull clean (CRLF debt reconciled แล้ว ไม่ค้าง) + init_schema v1.14 + bms-api restart → active
+- ssh key = `~/.ssh/bms_vps` (session แรก fail เพราะไม่ระบุ -i; Sophia ก็ fail เพราะงี้) · VPS `bms@45.76.156.166`
+- pre-deploy verify: live queue schema = `UNIQUE(customer_id,project_id,source_stage)` 3-col ✅ (Sophia unknown เคลียร์) · 6 test รัน venv prod เขียวครบ · poller+bms_api import OK
+- ผลทันที: Board กลุ่ม ❌ ยกเลิกโครงการ LIVE · winner-poller cancellation pass รอบถัดไป 12:15 UTC (19:15 ไทย) · การ์ดยกเลิก→queue→digest (LINE quota เต็ม รวมส่ง ~1 ก.ค.)
+- `bms-winner-poller.timer` enabled (รัน 06:15 + ~6ชม.)
+
+### Followup
+- จับตา operational cost: cancellation pass เรียก getProjectDetail ทุก active follow/รอบ — ถ้า follow list โตค่อยจำกัด stage/cache (ตอนนี้ follow น้อย ไม่มีปัญหา)

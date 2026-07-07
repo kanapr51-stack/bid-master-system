@@ -19,7 +19,7 @@ export interface JobBidder {
   is_winner: boolean;
   is_sme: boolean;
   discount: number | null;
-  href?: string; // หน้าบริษัทธีม A (engine) — absolute URL
+  href?: string; // หน้าบริษัทธีม B — relative /portal/company/<tin> (engine mint, N+188)
 }
 
 export interface CompanyRow {

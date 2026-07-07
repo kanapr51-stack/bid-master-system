@@ -557,6 +557,44 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
   pid 69000000001=0, note e2e=0 → **ปิดเป็น SAFE** (โค้ดยังไม่ deploy — เทสต์ทั้งหมดรัน scratch DB local เท่านั้น)
 
 ### Followup
-- **push + deploy (VPS engine + Vercel) — รอกัญจน์ confirm ตอนตื่น**
-- phase ถัดไป (ถ้าเอา): หน้าบริษัทธีม B (ตอนนี้ h2h/won portfolio อยู่หน้าธีม A)
+- ~~push + deploy (VPS engine + Vercel)~~ ✅ LIVE 2026-07-07
+- ~~phase ถัดไป (ถ้าเอา): หน้าบริษัทธีม B~~ → ทำแล้วใน N+188
 - LINE links ยังเข้าหน้า A ตามตั้งใจ — ถ้าอยากให้ LINE เข้าหน้า B ต้องคิดเรื่อง login/LIFF ก่อน
+
+---
+
+## งานที่ N+188: หน้าบริษัทธีม Board B — /portal/company/[tin] ปิดชุดธีม B (2026-07-07)
+
+### สถานะ: 🚧 ทำเสร็จ+test ผ่าน — commit local, **รอกัญจน์ confirm push+deploy** (กัญจน์นอน)
+
+### ที่มา
+กัญจน์: "ทำหน้าบริษัทธีม B ต่อเลยทำชุดเสร็จเลย เดี๋ยวฉันจะนอนแล้ว" — ปิด gap สุดท้ายจาก N+187
+(ชื่อบริษัทในหน้า job detail ธีม B ยังเด้งไปหน้าบริษัทธีม A)
+
+### สิ่งที่ทำ
+1. spec `docs/superpowers/specs/2026-07-07-board-b-company-page-design.md`
+2. **engine** (`bms_api.py`):
+   - `GET /api/portal/company-detail` ใหม่ (read-only ล้วน — reuse company_profile/head_to_head/
+     won_portfolio/area_portfolio ของหน้า A ทั้งชุด, guard secret เหมือนตัวอื่น)
+   - `_job_detail_payload()`: href บริษัทเปลี่ยนเป็น relative ธีม B `/portal/company/<tin>?from=..`
+     / `?area_ids=..&area_label=..` — เลิก mint follow_token (เว็บ auth ด้วย session)
+   - + `test_portal_company_detail_api.py` (ใหม่), อัปเดต assertion ใน test_portal_job_detail_api
+3. **web:** `/portal/company/[tin]` page+client ธีม B ครบเท่าหน้า A: หัวบริษัท+SME+stat 4 ช่อง /
+   ⚔️ h2h เทียบกับเรา / 📊 ยื่น–ชนะรายปี + 💸 histogram ส่วนลด (สีกราฟ #B8893A/#579E6A —
+   ผ่าน dataviz validator บน surface มืด) / 🏆 won portfolio + chips filter proc (server refetch) /
+   📍 ผลงานในพื้นที่ / ประวัติแยกรายปี — ทุกรายการงานลิงก์กลับ `/portal/job/<pid>` ธีม B
+4. หน้า A เดิมไม่แตะ: `portal_views.py` diff = 0
+
+### Sanity / verify
+- engine: test ใหม่ + test job-detail เดิม ผ่านทั้งคู่ (scratch DB tempdir)
+- web: `npm run build` ผ่าน — route `/portal/company/[tin]` ขึ้น
+- **e2e จริง:** uvicorn bms_api scratch :8123 + `next start` :3111 + session cookie จริง →
+  หน้า render ครบทุก section, proc filter กรองลิสต์ถูก (รายชื่องาน 2→1), ลิงก์บริษัทใน
+  job page เป็น `/portal/company/<tin>?from=<pid>`, ไม่เหลือลิงก์ `?t=` ธีม A, not-found การ์ดขึ้น
+- Sophia: **SAFE** — read-only ยืนยัน (ไม่มี write/migration), portal_views diff=0, secret guard ครบ,
+  ไม่มี silent error, token flow route อื่นไม่กระทบ, tsc สะอาด, test scratch DB ไม่แตะ DB จริง
+  (local DB มี test customer เก่า 2 แถว pre-existing — ไม่เกี่ยว diff นี้)
+
+### Followup
+- **push + deploy (VPS engine + Vercel) — รอกัญจน์ confirm ตอนตื่น**
+- LINE links ยังเข้าหน้า A ตามตั้งใจ (เหมือน N+187)

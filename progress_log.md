@@ -638,3 +638,39 @@ approve แล้วสั่ง "ทำให้หมดเลย เดี๋
 
 ### Followup
 - ตัดสินใจ: ต่อสาย quantile band ("ยื่นต่ำกว่า X ชนะ ~Y%") เข้าการ์ดราคา หรือทดลอง two-stage ก่อน — รอกัญจน์
+
+## งานที่ N+195: ML discount band บนหน้างาน Board B (2026-07-10 → 11)
+
+### สถานะ: ✅ โค้ดเสร็จ + commit แล้ว — ⏸ รอกัญจน์ confirm push+deploy
+
+### ที่มา
+กัญจน์เลือกทางเลือก 1 จาก N+194: ต่อสาย LightGBM quantile เข้าการ์ดราคา (ไม่ทำ two-stage ก่อน)
+ตำแหน่ง: หน้า detail Board B `/portal/job/[pid]` ใต้ตาราง B′ (ไม่ใส่ LINE — quota+แก้ไม่ได้ / ไม่ใส่ Board A — กำลังเลิกใช้)
+
+### สิ่งที่ทำ
+- `6b3197d` engine: migration v139 (price_predictions +ml_* 6 คอลัมน์ แยกจาก area_* ของ B′)
+  + `train_discount_band.py` (เทรน quantile p50/p80, refit ทั้งก้อนหลังหา best_iter, export data/models/ ~7MB เข้า git)
+  + `discount_band.py` inference (fail-open ทุกทาง, gate 4 จังหวัด, dept map eGP→CGD exact→prefix→missing)
+  + `save_ml_band` upsert เฉพาะ ml_* รับ conn caller ได้
+- `a3bc145` portal+web: job_detail คำนวณสด+persist (try แยกชั้น) + key `ml_band` → MlBandCard ธีม B
+  โชว์ได้แม้ไม่มีตาราง winrate (use case หลัก = งานที่ B′ ข้อมูลบาง)
+- deviation จาก v2: production ตัด mid_ratio (ไม่มีราคากลางเก็บ) + district (geocode เพี้ยน 85%) + เพิ่ม agency
+  → MAE ratio 0.922 (v2=0.886) แต่ **calibration ของคำที่ขึ้นการ์ดแม่น: bid@p80 → ชนะจริง 80.7%, bid@p50 → 50.8%**
+  worst-case dept ไม่ map → 82.2% (เพี้ยนทางระวังเกิน = ปลอดภัยต่อคำเคลม)
+
+### Sanity
+- test_discount_band ใหม่ 7 ชุด + regression (portal_views/job_detail_api/routes/audit/price_prediction) + tsc — เขียวหมด
+- Sophia ตรวจครึ่งแรก (ยืนยัน test ไม่เขียน DB จริง) แล้วโดน session limit — main thread ตรวจส่วนที่เหลือเอง:
+  migration v139 idempotent (init_schema 2 รอบบน temp DB, คอลัมน์เก่าครบ), models ไม่ติด gitignore,
+  write-on-read = single-row upsert ผ่าน conn caller บน WAL (pattern เดียวกับ notes)
+- smoke ตัวเลขตรง domain: อบต.ถนน p50~30% (ระบอบ local) / กรมทางหลวง ~0.1% (central ชิดเพดาน)
+
+### Deploy checklist (รอ confirm)
+1. push origin (2 commits: 6b3197d, a3bc145)
+2. VPS: `pip install lightgbm` (ใหม่!) → pull → migrate (v139) → restart bms-api → verify ml_band ใน /api/portal/job-detail
+3. Vercel: deploy --prod
+4. หลัง deploy: เปิดงานจริง 1-2 งานดูบรรทัดใหม่ + ตรวจ price_predictions.ml_* เริ่มมีค่า
+
+### Followup
+- closed-loop: พอ W0 มา actual_price เทียบ ml_price_p80 ได้เลย (คอลัมน์อยู่แถวเดียวกัน) — วัด calibration จริงหลังมีผลสัก 20-30 งาน
+- ML band เทรนจาก snapshot 2026-07-10 — ควร retrain เป็นรอบ (เช่น รายไตรมาส) ยังไม่ตั้งอัตโนมัติ (YAGNI จนกว่าจะพิสูจน์คุณค่า)

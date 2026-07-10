@@ -641,7 +641,11 @@ approve แล้วสั่ง "ทำให้หมดเลย เดี๋
 
 ## งานที่ N+195: ML discount band บนหน้างาน Board B (2026-07-10 → 11)
 
-### สถานะ: ✅ โค้ดเสร็จ + commit แล้ว — ⏸ รอกัญจน์ confirm push+deploy
+### สถานะ: ✅ **LIVE ครบ VPS+Vercel (2026-07-11 กัญจน์ confirm "push + deploy เลย")**
+- push origin `3b58dbc..003890e` ✅
+- VPS: backup pre_v139 (sqlite backup API 1.9G) → venv `pip install lightgbm` 4.6.0 → deploy.sh (pull ff → migrate v139 → restart bms-api active) ✅
+- verify จริง 3 งาน: ml_band sane (อาคาร 15M → p80 10.5% / ถนน 2.3M → 32.8% ระบอบ local / ไฟฟ้า → 21.4% **โดยงานนี้ไม่มีตาราง winrate** = use case หลักทำงาน) + persist ลง price_predictions.ml_* โดยแถว B′ เดิม (area_disc_lo) ไม่ถูกแตะ ✅ health 200 ✅
+- Vercel: deploy --prod ● Ready (build 49s) ✅
 
 ### ที่มา
 กัญจน์เลือกทางเลือก 1 จาก N+194: ต่อสาย LightGBM quantile เข้าการ์ดราคา (ไม่ทำ two-stage ก่อน)

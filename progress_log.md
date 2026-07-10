@@ -607,3 +607,34 @@ approve แล้วสั่ง "ทำให้หมดเลย เดี๋
 
 ### Followup
 - ไม่มีงานบังคับ — revisit หลัง bid_results backfill มี coverage พอ
+
+## งานที่ N+194: backfill bid_results → พบว่าเสร็จแล้ว 99% + LightGBM v2 PASS (2026-07-10)
+
+### สถานะ: ✅ เสร็จ
+
+### สิ่งที่ทำ / ค้นพบ
+- กัญจน์สั่ง "เริ่ม backfill bid_results" → ตรวจก่อนพบว่า**รอบ fetch 22-24 มิ.ย. ทำไว้ครบแล้ว**:
+  VPS bid_results = 240,727 แถว / 37,703 งาน ครอบคลุม competitive jobs ~99% ทั้ง 4 จังหวัด
+  (นครพนม 8,615/8,686 · บึงกาฬ 4,468/4,497 · สกลนคร 10,625/10,751 · อุดร 13,985/14,111)
+- เศษที่เหลือ ~340 งาน = error/empty เดิม (งานไม่ประกาศผล) — ไม่คุ้มไล่เก็บ
+- แก้ความเข้าใจ v1: winner_history ไม่ใช่ "ทั่วประเทศ" — คือ 4 จังหวัดนี้เอง (นคพ/บก/สกล/อุดร)
+- → ข้าม fetch, ทำ LightGBM v2 ทันที: export n_bidders/งาน จาก VPS (join ติด 99.3% ของ training set)
+  เพิ่ม feature 2 แบบ: expected_n (ประวัติ dept×work_type×province — รู้ก่อนยื่น, ใช้จริงได้)
+  vs n_bidders จริง (ceiling — leak, วัดเพดาน)
+
+### ผล (MAE test 5,496 งาน, time split เดิมจาก v1)
+| วิธี | MAE | MedAE | MAE 2 จว. |
+|---|---|---|---|
+| hier median (baseline) | 10.52 | 7.82 | 10.94 |
+| lgb v1 (ไม่มี competition) | 9.78 | 7.13 | 10.13 |
+| **lgb deployable (expected_n)** | **9.33** | **6.37** | **9.20** |
+| lgb ceiling (n จริง — leak) | 8.06 | 4.54 | 8.32 |
+
+- **deployable ratio = 0.886 ≤ 0.90 → PASS** (v1 = 0.929 FAIL) · ceiling 0.766
+- ยืนยัน hypothesis: ความเข้มการแข่งขันคือ feature ที่ขาด; ช่อง deployable→ceiling (MedAE 6.37→4.54)
+  = กำไรที่เหลือถ้าทำนาย "จำนวนคู่แข่ง" แม่นขึ้น (two-stage — งานถัดไปถ้าไปต่อ)
+- สคริปต์ `scripts/probe_lightgbm_discount_experiment_v2.py` → `data/lightgbm_discount_experiment_v2.json`
+  (n_bidders export: `data/_backfill_home/vps_n_bidders.csv` — ไม่ commit ตาม pattern โฟลเดอร์)
+
+### Followup
+- ตัดสินใจ: ต่อสาย quantile band ("ยื่นต่ำกว่า X ชนะ ~Y%") เข้าการ์ดราคา หรือทดลอง two-stage ก่อน — รอกัญจน์

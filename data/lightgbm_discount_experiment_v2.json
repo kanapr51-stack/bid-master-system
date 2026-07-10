@@ -1,0 +1,109 @@
+{
+  "n_rows": 27276,
+  "n_with_n_bidders": 27072,
+  "n_train": 21780,
+  "n_test": 5496,
+  "test_from_ym": 799,
+  "results": {
+    "hier_median": {
+      "mae_all": 10.524104803493449,
+      "medae_all": 7.819999999999999,
+      "mae_target_prov": 10.944037849310222
+    },
+    "lgb_v1": {
+      "mae_all": 9.779436497857747,
+      "medae_all": 7.133683784796768,
+      "mae_target_prov": 10.125175326526351
+    },
+    "lgb_deployable": {
+      "mae_all": 9.32514624129531,
+      "medae_all": 6.368930584335281,
+      "mae_target_prov": 9.200863373394112
+    },
+    "lgb_ceiling": {
+      "mae_all": 8.061077803720528,
+      "medae_all": 4.538570543768486,
+      "mae_target_prov": 8.319844950738863
+    }
+  },
+  "ratio_deployable": 0.8860750073678334,
+  "ratio_ceiling": 0.765963277089817,
+  "criteria": "lgb_deployable_mae <= 0.90 * hier_median_mae",
+  "verdict": "PASS",
+  "fi_deployable": [
+    [
+      "log_budget",
+      2566
+    ],
+    [
+      "ym",
+      2199
+    ],
+    [
+      "mid_ratio",
+      2063
+    ],
+    [
+      "dept",
+      1416
+    ],
+    [
+      "mm",
+      1100
+    ],
+    [
+      "expected_n",
+      850
+    ],
+    [
+      "district",
+      826
+    ],
+    [
+      "work_type",
+      234
+    ],
+    [
+      "province",
+      92
+    ]
+  ],
+  "fi_ceiling": [
+    [
+      "log_budget",
+      1832
+    ],
+    [
+      "ym",
+      1614
+    ],
+    [
+      "mid_ratio",
+      1511
+    ],
+    [
+      "dept",
+      1202
+    ],
+    [
+      "n_bidders",
+      1131
+    ],
+    [
+      "mm",
+      814
+    ],
+    [
+      "district",
+      678
+    ],
+    [
+      "work_type",
+      200
+    ],
+    [
+      "province",
+      70
+    ]
+  ]
+}

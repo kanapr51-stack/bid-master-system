@@ -553,7 +553,7 @@ notification_queue บันทึกทุกการส่งอยู่แ�
 
 ## งานที่ N+192: ติ๊กกรอง phase หน้า "งานทั้งหมด" + ป้าย "รับฟังคำวิจารณ์" (2026-07-08)
 
-### สถานะ: ✅ เสร็จ (commit `e103b78` push แล้ว — รอยืนยัน Vercel READY)
+### สถานะ: ✅ เสร็จ LIVE (commit `e103b78` — Vercel Production Ready ยืนยันแล้ว 2026-07-08)
 
 ### ที่มา
 กัญจน์: "อยากให้งานทั้งหมดใน board B ติ๊กได้ว่าอยู่ phase ไหน เช่น รับฟังคำวิจารณ์" —
@@ -576,4 +576,34 @@ approve แล้วสั่ง "ทำให้หมดเลย เดี๋
 - เกร็ดเครื่อง dev: uvicorn+websockets เวอร์ชันชนกัน (`ServerProtocol` import fail) → รัน `--ws none`
 
 ### Followup
-- ยืนยัน Vercel deployment READY (push แล้ว รอ auto-build)
+- ~~ยืนยัน Vercel deployment READY~~ ✅ Ready (Production) ยืนยัน 2026-07-08 เช้า
+
+## งานที่ N+193: ทดลอง LightGBM ทำนาย %ส่วนลดประมูล — backtest (2026-07-10)
+
+### สถานะ: ✅ เสร็จ (ผล: FAIL ตามเกณฑ์ที่ตั้งไว้ก่อนรัน — พับไว้ก่อน)
+
+### สิ่งที่ทำ
+- คุณกัญจน์เสนอไอเดียใช้ LightGBM ทำนายราคาที่ควรประมูล → ทำ offline backtest ก่อนตัดสิน (ไม่แตะ pipeline)
+- ข้อมูล: winner_history.db งาน e-bidding + ราคา valid = 27,766 แถว (clean เหลือ 27,276; ตัด discount <0 หรือ >70)
+- Time split จาก project_id prefix YYMM: train 21,780 (ก่อน ก.ค. 2566) / test 5,496 (หลัง)
+- เทียบ 3 วิธี: global median / hierarchical median (dept×work_type×province, min n=5) / LightGBM (MAE objective + quantile p20/p80)
+- สคริปต์: `scripts/probe_lightgbm_discount_experiment.py` → ผล `data/lightgbm_discount_experiment.json`
+
+### ผล (MAE บน test, หน่วย = จุด% ของส่วนลด)
+| วิธี | MAE | MedAE | MAE 2 จว.เป้าหมาย |
+|---|---|---|---|
+| global median | 13.24 | 12.74 | 13.43 |
+| hier median | 10.52 | 7.82 | 10.94 |
+| **LightGBM** | **9.78** | **7.13** | **10.13** |
+
+- เกณฑ์ตั้งก่อนรัน: lgb_mae ≤ 0.90 × hier_mae → ได้ ratio **0.929 = FAIL** (ดีกว่า baseline แค่ ~7%)
+- Quantile band p20-p80 กว้างเฉลี่ย 20 จุด% แต่ coverage แค่ 47.7% (เป้า 60%) — ช่วงที่ให้ยังใช้ตั้งราคาจริงไม่ได้
+- Feature importance: log_budget > ym(เวลา) > mid_ratio > dept — work_type/province แทบไม่ช่วย (work_type ว่างเป็นส่วนใหญ่ทั่วประเทศ)
+
+### บทเรียน / เหตุผลที่พับ
+- ความคลาดเคลื่อน ±7-10 จุด% ใหญ่กว่า median ส่วนลด (12.5%) — ทุกวิธียังหยาบเกินใช้เคาะราคาจริง
+- สอดคล้อง memory market-regime: ตัวขับส่วนลดจริงคือความเข้มการแข่งขัน/ระบอบหน่วยงาน ซึ่ง **ไม่มีใน feature set** (จำนวนผู้ยื่นอยู่ใน bid_results ที่ยัง coverage บาง)
+- ทางฟื้นคืนชีพ: (1) backfill bid_results → ได้ feature จำนวนผู้ยื่น (2) backfill work_type (3) two-stage: จำแนกระบอบก่อนค่อย regress — ค่อยทำหลัง bid_results backfill (ทิศทางเดียวกับ B′ อยู่แล้ว)
+
+### Followup
+- ไม่มีงานบังคับ — revisit หลัง bid_results backfill มี coverage พอ

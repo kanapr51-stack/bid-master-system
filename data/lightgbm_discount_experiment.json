@@ -1,0 +1,68 @@
+{
+  "n_raw": 27766,
+  "n_clean": 27276,
+  "n_train": 21780,
+  "n_test": 5496,
+  "test_from_ym": 799,
+  "n_test_target_prov": 2827,
+  "best_iteration": 357,
+  "results": {
+    "global_median": {
+      "mae_all": 13.242616448326057,
+      "medae_all": 12.74,
+      "mae_target_prov": 13.427615847187832,
+      "medae_target_prov": 12.74
+    },
+    "hier_median": {
+      "mae_all": 10.524104803493449,
+      "medae_all": 7.819999999999999,
+      "mae_target_prov": 10.944037849310222,
+      "medae_target_prov": 8.214999999999996
+    },
+    "lightgbm": {
+      "mae_all": 9.779436497857747,
+      "medae_all": 7.133683784796768,
+      "mae_target_prov": 10.125175326526351,
+      "medae_target_prov": 7.455504960136867
+    }
+  },
+  "quantile_p20_p80_coverage": 0.47652838427947597,
+  "quantile_band_width_pct": 20.028439845409505,
+  "feature_importance": [
+    [
+      "log_budget",
+      5943
+    ],
+    [
+      "ym",
+      4669
+    ],
+    [
+      "mid_ratio",
+      4247
+    ],
+    [
+      "dept",
+      2573
+    ],
+    [
+      "mm",
+      2379
+    ],
+    [
+      "district",
+      1724
+    ],
+    [
+      "work_type",
+      463
+    ],
+    [
+      "province",
+      136
+    ]
+  ],
+  "criteria": "lgb_mae <= 0.90 * hier_median_mae",
+  "ratio": 0.9292416486209343,
+  "verdict": "FAIL"
+}

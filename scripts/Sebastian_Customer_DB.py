@@ -319,6 +319,7 @@ def init_schema():
     _migrate_v136()
     _migrate_v137()
     _migrate_v138()
+    _migrate_v139()
     print(f"Schema v1.14 ready: {DB_PATH}")
 
 
@@ -453,6 +454,38 @@ def _migrate_v138():
             conn.execute("ALTER TABLE customers ADD COLUMN expires_at TEXT")
         except sqlite3.OperationalError:
             pass  # already exists
+
+
+def _migrate_v139():
+    """price_predictions +ml_* — แถบส่วนลด LightGBM quantile (p50/p80) จาก discount_band.py
+    แยกคอลัมน์จาก area_* ของ B′ (คนละโมเดล ห้ามทับกัน — closed-loop เทียบได้ทั้งคู่).
+    additive idempotent. (2026-07-10, ดู progress_log N+195)"""
+    with get_connection() as conn:
+        for col, typ in (("ml_disc_p50", "REAL"), ("ml_disc_p80", "REAL"),
+                         ("ml_price_p50", "INTEGER"), ("ml_price_p80", "INTEGER"),
+                         ("ml_version", "TEXT"), ("ml_predicted_at", "TEXT")):
+            try:
+                conn.execute(f"ALTER TABLE price_predictions ADD COLUMN {col} {typ}")
+            except sqlite3.OperationalError:
+                pass  # already exists
+
+
+def save_ml_band(project_id: str, band: dict, conn=None) -> None:
+    """เก็บแถบส่วนลด ML ของงาน — upsert เฉพาะ ml_* (ไม่แตะ area_*/actual ของ B′).
+    เรียกจาก portal job_detail ตอน render (คำนวณสด → persist ไว้ให้ closed-loop เทียบ).
+    conn: ใช้ของ caller ถ้าส่งมา (test-safe + transaction เดียวกับ view) — ไม่ส่ง → เปิดเอง."""
+    cols = ("ml_disc_p50", "ml_disc_p80", "ml_price_p50", "ml_price_p80", "ml_version")
+    sql = (f"INSERT INTO price_predictions (project_id, {','.join(cols)}, ml_predicted_at) "
+           f"VALUES (?,?,?,?,?,?,?) "
+           f"ON CONFLICT(project_id) DO UPDATE SET "
+           + ", ".join(f"{c}=excluded.{c}" for c in cols) + ", ml_predicted_at=excluded.ml_predicted_at")
+    params = ((project_id,) + tuple(band.get(c.replace("ml_", "")) for c in cols[:-1])
+              + (band.get("version"), _now()))
+    if conn is not None:
+        conn.execute(sql, params)
+    else:
+        with get_connection() as own:
+            own.execute(sql, params)
 
 
 def _migrate_v128():

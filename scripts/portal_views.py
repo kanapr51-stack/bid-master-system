@@ -137,6 +137,21 @@ def job_detail(conn, pid, calc_params=None):
             pred_hi = _to_float(pr["area_price_hi"])
     except sqlite3.OperationalError:
         pred_lo = pred_hi = None
+    ml_band = None
+    try:
+        # แถบส่วนลด ML (LightGBM quantile) — "ยื่น ≤ price_p80 → โอกาสชนะ ~80%".
+        # fail-open ใน predict_band เอง; persist ลง price_predictions (ml_* เท่านั้น) เพื่อ closed-loop
+        import discount_band as _db
+        ml_band = _db.predict_band((ps["project_name"] if ps else "") or "", budget,
+                                   dept_name, (ps["province"] if ps else "") or "", pid)
+    except Exception:
+        ml_band = None
+    if ml_band:
+        try:   # persist แยกชั้น — พังเงียบได้ (เช่น schema เก่า/DB test) แต่ display ต้องรอด
+            from Sebastian_Customer_DB import save_ml_band
+            save_ml_band(pid, ml_band, conn=conn)
+        except Exception:
+            pass
     bidders = []
     for r in rows:
         price = _to_float(r["price_proposal"])
@@ -152,7 +167,8 @@ def job_detail(conn, pid, calc_params=None):
                     "deadline_time": deadline_time,
                     "pred_lo": pred_lo, "pred_hi": pred_hi}, "bidders": bidders,
             "intel_lines": intel_lines, "company_tables": company_tables,
-            "winrate_table": winrate_table, "custom_calc": custom_calc}
+            "winrate_table": winrate_table, "custom_calc": custom_calc,
+            "ml_band": ml_band}
 
 
 # proc_type → กลุ่ม. _PROC_BID mirror cgd_intel.COMPETITIVE_SET (source of truth ของ "แข่งราคาจริง")

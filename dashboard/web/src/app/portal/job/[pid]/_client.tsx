@@ -112,6 +112,26 @@ function WinrateSection({ wt }: { wt: NonNullable<JobDetail['winrate_table']> })
   );
 }
 
+// ── ML band (แถบส่วนลดจากสถิติ LightGBM — โชว์ได้แม้ไม่มีตารางคู่แข่ง) ─────────
+
+function MlBandCard({ band }: { band: NonNullable<JobDetail['ml_band']> }) {
+  return (
+    <div className="p-card" style={{ padding: '12px 14px' }}>
+      <div style={{ fontSize: 13, lineHeight: 1.7 }}>
+        📈 <span className="p-fg-mute">สถิติงานลักษณะเดียวกันในพื้นที่:</span>{' '}
+        ยื่นลด ≥{band.disc_p80}% <span className="p-mono">(≈{fmtBaht(band.price_p80)} บ.)</span>
+        {' '}→ โอกาสชนะ <span className="p-fg-accent" style={{ fontWeight: 600 }}>~80%</span>
+        <span className="p-fg-dim"> · </span>
+        ลด ~{band.disc_p50}% <span className="p-mono">(≈{fmtBaht(band.price_p50)} บ.)</span>
+        {' '}→ <span className="p-fg-accent">~50%</span>
+      </div>
+      <div className="p-fg-dim" style={{ fontSize: 11, marginTop: 6, lineHeight: 1.5 }}>
+        จากประวัติผลประมูลจริงในภูมิภาคนี้ 27,000+ งาน — ตัวช่วยประกอบการตัดสินใจ ไม่ใช่ราคาแนะนำ
+      </div>
+    </div>
+  );
+}
+
 // ── Calculator (คำนวณโอกาสชนะเจาะจงคู่แข่ง) ───────────────────────────────────
 
 function CalcSection({ pid, tables }: { pid: string; tables: CompanyTable[] }) {
@@ -501,6 +521,16 @@ export function JobDetailClient({ pid, detail, engineDown }: { pid: string; deta
             <SectionHead smallcaps="Win Probability" title="💵 โอกาสชนะตามจำนวนผู้ยื่น"
               right={<Chip tone="gold" icon={<Diamond size={5} />}>งบ {fmtBaht(detail.winrate_table.budget)}</Chip>} />
             <WinrateSection wt={detail.winrate_table} />
+          </>
+        )}
+
+        {/* แถบส่วนลดจากสถิติ (ML) — มีหัวข้อเองเมื่อไม่มีตาราง winrate */}
+        {detail.ml_band && (
+          <>
+            {!detail.winrate_table && (
+              <SectionHead smallcaps="Win Probability" title="💵 โอกาสชนะจากสถิติพื้นที่" />
+            )}
+            <MlBandCard band={detail.ml_band} />
           </>
         )}
 

@@ -60,6 +60,14 @@ export interface CustomCalc {
   breakdown: CalcBreakdown[];
 }
 
+export interface MlBand {
+  disc_p50: number; // %ส่วนลดที่ ~50% ของผู้ชนะงานลักษณะนี้เคยลดถึง
+  disc_p80: number; // %ส่วนลดที่ ~80% ของผู้ชนะงานลักษณะนี้เคยลดถึง
+  price_p50: number;
+  price_p80: number;
+  version: string;
+}
+
 export interface JobDetail {
   job: {
     project_id: string;
@@ -74,6 +82,7 @@ export interface JobDetail {
   bidders: JobBidder[];
   company_tables?: CompanyTable[] | null;
   winrate_table?: WinrateTable | null;
+  ml_band?: MlBand | null;
   notes: JobNote[];
   overview: string;
   starred: boolean;

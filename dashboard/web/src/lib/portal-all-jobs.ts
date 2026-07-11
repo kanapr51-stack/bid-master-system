@@ -15,6 +15,7 @@ export interface SentJob {
   sent_at: string; // ISO — เวลาส่งแจ้งเตือนรอบล่าสุด
   stage: SentJobStage;
   starred: boolean;
+  followed: boolean;
 }
 
 export interface AllJobs {

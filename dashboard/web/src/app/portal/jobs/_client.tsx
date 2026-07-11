@@ -29,7 +29,7 @@ function fmtSentDate(s: string): string {
   return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
 }
 
-function SentJobCard({ job }: { job: SentJob }) {
+function SentJobCard({ job, followed, onFollow }: { job: SentJob; followed: boolean; onFollow: () => void }) {
   const meta = STAGE_LABEL[job.stage] ?? STAGE_LABEL.bidding;
   return (
     <Link href={`/portal/job/${encodeURIComponent(job.project_id)}`} style={{ textDecoration: 'none', color: 'inherit' }}>
@@ -44,6 +44,14 @@ function SentJobCard({ job }: { job: SentJob }) {
           {job.province && <span>📍 {job.province}</span>}
           {job.budget > 0 && <span>💰 {fmtBaht(job.budget)} บาท</span>}
           <span className="p-fg-dim">🔔 ส่งเมื่อ {fmtSentDate(job.sent_at)}</span>
+          <button
+            className={`p-btn ${followed ? 'p-btn-ghost' : 'p-btn-primary'}`}
+            disabled={followed}
+            onClick={e => { e.preventDefault(); e.stopPropagation(); onFollow(); }}
+            style={{ height: 30, padding: '0 12px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 5, marginLeft: 'auto' }}
+          >
+            <Icons.Bell size={12} />{followed ? 'ติดตามแล้ว' : 'ติดตาม'}
+          </button>
         </div>
       </div>
     </Link>
@@ -55,6 +63,23 @@ export function AllJobsClient({ data, engineDown }: { data: AllJobs | null; engi
   const [q, setQ] = useState('');
   // ติ๊กกรอง phase: ว่าง = เห็นทั้งหมด, ติ๊ก ≥1 = เฉพาะ stage ที่ติ๊ก (OR)
   const [stages, setStages] = useState<Set<SentJobStage>>(new Set());
+  // N+197: กดติดตามจากลิสต์ — optimistic add, revert เมื่อพลาด (pattern เดียวกับ world)
+  const [followed, setFollowed] = useState<Set<string>>(
+    () => new Set((data?.jobs ?? []).filter(j => j.followed).map(j => j.project_id)));
+
+  const handleFollow = async (projectId: string) => {
+    setFollowed(prev => new Set(prev).add(projectId));
+    try {
+      const r = await fetch('/api/portal/follow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_id: projectId }),
+      });
+      if (!r.ok) throw new Error('follow failed');
+    } catch {
+      setFollowed(prev => { const n = new Set(prev); n.delete(projectId); return n; });
+    }
+  };
 
   const stageCounts = useMemo(() => {
     const counts = new Map<SentJobStage, number>();
@@ -159,7 +184,14 @@ export function AllJobsClient({ data, engineDown }: { data: AllJobs | null; engi
             {filtering && (
               <div className="p-fg-dim" style={{ fontSize: 11.5 }}>พบ {jobs.length} จาก {data.jobs.length} งาน</div>
             )}
-            {jobs.map(job => <SentJobCard key={job.project_id} job={job} />)}
+            {jobs.map(job => (
+              <SentJobCard
+                key={job.project_id}
+                job={job}
+                followed={followed.has(job.project_id)}
+                onFollow={() => handleFollow(job.project_id)}
+              />
+            ))}
           </div>
         )}
       </div>

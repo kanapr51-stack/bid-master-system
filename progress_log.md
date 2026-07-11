@@ -681,7 +681,12 @@ approve แล้วสั่ง "ทำให้หมดเลย เดี๋
 
 ## งานที่ N+196: Auto-competitor win-rate — เดาคู่แข่งอัตโนมัติบน Board B (2026-07-12)
 
-### สถานะ: ✅ โค้ดเสร็จ + tests เขียว + Sophia SAFE — รอ confirm deploy VPS
+### สถานะ: ✅ **LIVE บน VPS (2026-07-12 กัญจน์ confirm "deploy เลย")**
+- push origin `afa62c3..b9ac36e` (7 commits) → VPS pull ff → restart bms-api active → health 200 ✅
+- verify งานจริง 6 งาน (live DB, ต้อง BMS_DATA_DIR=/opt/bms/data): ทำนายครบทุกงาน —
+  🟢 local 9-20 auctions + 🟡 อำเภอ 2 งาน, สนามใหญ่ p กระจายต่ำตามจริง (0.28-0.36), ไม่มี garbage ✅
+- end-to-end งาน 69079051288 (งบ 2.277M, ยื่น -15%): โอกาสรวม 15% สมเหตุผล (คู่แข่ง attend ~94%
+  beat-us 47-79%) + HTML มี string ใหม่ครบ ✅
 
 ### ที่มา
 กัญจน์ขอ: เครื่องคำนวณโอกาสชนะบน Board B ไม่ต้องติ๊กชื่อคู่แข่งเอง — ระบบเดาเองว่า

@@ -426,3 +426,55 @@ def p_beat(dist, my_discount):
         return None
     below = sum(w for d, w in dist if d < my_discount)
     return max(0.05, min(0.95, below / tot))
+
+
+def attendance_probs(conn, province, tokens, project_ids=None, cf=None, amphoe=None,
+                     threshold=0.15, cap=10):
+    """โอกาสบริษัทมายื่นสนามนี้ (auto-competitor N+196). ladder เดิมแบบ field_and_winrate:
+    price-scope (🟢) → อำเภอ (🟡) → จังหวัด (🟠) — ใช้ชั้นแรกที่ competitive auctions ≥ MIN_AUCTIONS.
+    p = Σw(auctions ที่บริษัทโผล่)/Σw(ทั้งหมด), w = recency_weight(fy ของ auction), นับ 1 ครั้ง/บริษัท/auction.
+    clamp [0.05,0.95] · แสดงเฉพาะ p ≥ threshold เรียงมาก→น้อย cap ราย. คืน
+    {"probs": {ชื่อ: p}, "conf": None|('🟡','อำเภอ')|('🟠','จังหวัด'), "n_auctions": n} · None ถ้าทุกชั้นบาง/error."""
+    import portal_views as _pv
+    try:
+        if project_ids is not None:
+            attempts = [_field_auctions(conn, province, tokens, project_ids=project_ids)]
+        else:
+            attempts = [_field_auctions(conn, province, tokens)]
+        if amphoe and cf is not None:
+            attempts.append(_field_auctions(conn, province, tokens,
+                            project_ids=_scope_ids(conn, province, tokens, cf, district=amphoe)))
+            attempts.append(_field_auctions(conn, province, tokens,
+                            project_ids=_scope_ids(conn, province, tokens, cf)))
+        for i, auc in enumerate(attempts):
+            auc = [a for a in auc if len(a) >= 2]        # สนามแข่งจริง (เกณฑ์เดียวกับ winrate)
+            if len(auc) < MIN_AUCTIONS:
+                continue
+            total_w, appear_w, disp = 0.0, defaultdict(float), {}
+            for a in auc:
+                fy = next((b[3] for b in a if len(b) > 3 and b[3]), None)
+                w = recency_weight(fy)
+                total_w += w
+                seen = set()
+                for b in a:
+                    core = _pv._norm_name(b[0])
+                    if not core or core in seen:
+                        continue
+                    seen.add(core)
+                    appear_w[core] += w
+                    disp.setdefault(core, b[0])
+            if total_w <= 0:
+                continue
+            ranked = []
+            for core, aw in appear_w.items():
+                p = max(0.05, min(0.95, aw / total_w))
+                if p >= threshold:
+                    ranked.append((disp[core], round(p, 2)))
+            if not ranked:
+                continue
+            ranked.sort(key=lambda kv: -kv[1])
+            return {"probs": dict(ranked[:cap]), "conf": _CONF.get(i), "n_auctions": len(auc)}
+        return None
+    except Exception:                                     # fail-open — ห้ามทำการ์ด/ฟอร์มพัง
+        _log.warning("attendance_probs failed", exc_info=True)
+        return None

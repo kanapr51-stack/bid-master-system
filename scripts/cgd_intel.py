@@ -865,10 +865,12 @@ def predict_lines(p: dict, basis: str = "ตำบล", contested: bool = False)
 
 
 def calc_custom_winrate(conn, province, tokens, project_name, dept_name, district,
-                        my_price, budget, selected_names, extra_names):
+                        my_price, budget, selected_names, extra_names, attend_probs=None):
     """คำนวณโอกาสชนะเจาะจงคู่แข่ง (rebuild 2026-06-23, Gates model).
     Pᵢ = โอกาสเราชนะคู่แข่ง i (จากประวัติยื่นจริงรายบริษัท กรอง subtype+agency เป็นชั้น,
     ไม่มีประวัติ → สนามทั่วไป). รวมด้วย Gates 1/(1+Σ(1-Pi)/Pi) แทนการคูณ (กัน collapse).
+    attend_probs {ชื่อ: p_attend} → ถ่วง P_eff = 1−p_attend×(1−P) ก่อนรวม Gates (N+196);
+    None/ชื่อนอก map = มาแน่ 1.0 (เดิมเป๊ะ).
     คืน None ถ้าราคา/budget ไม่ถูกต้อง หรือไม่มีคู่แข่ง/ไม่มีข้อมูลเลย. ดู spec 2026-06-23-winrate-calc-gates-model."""
     import portal_views as _pv
     import bid_field as _bf
@@ -889,6 +891,11 @@ def calc_custom_winrate(conn, province, tokens, project_name, dept_name, distric
             names.append(n)
     if not names:
         return None
+    amap = {}
+    for k, v in (attend_probs or {}).items():
+        core = _pv._norm_name(k)
+        if core:
+            amap[core] = v
     this_subtype = road_subtype(project_name) or water_subtype(project_name)
     this_market = agency_market(dept_name)
     pooled = _bf._pooled_dist(conn, province, tokens, district=district)
@@ -901,8 +908,10 @@ def calc_custom_winrate(conn, province, tokens, project_name, dept_name, distric
         p = _bf.p_beat(dist, my_discount_pct)
         if p is None:
             continue                                # ไม่มีข้อมูลแม้แต่ pooled → ข้ามราย
-        probs.append(p)
+        pa = amap.get(_pv._norm_name(nm))
+        probs.append(1.0 - pa * (1.0 - p) if pa is not None else p)
         breakdown.append({"name": nm, "win_pct_against": round((1 - p) * 100),
+                          "attend_pct": round(pa * 100) if pa is not None else None,
                           "source": source, "has_history": has_history})
     if not probs:
         return None

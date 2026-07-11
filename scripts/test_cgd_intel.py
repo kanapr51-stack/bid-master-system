@@ -514,6 +514,24 @@ def test_calc_custom_winrate_dedupe_and_invalid():
         assert ci.calc_custom_winrate(conn, "นครพนม", ["ถนน"], "x", "y", "นาทม", 700000, 0, ["หจก.ลึก"], []) is None
     print("✅ calc_custom_winrate dedupe + invalid")
 
+def test_calc_custom_winrate_attend_weighting():
+    """N+196: attend_probs ถ่วง P_eff = 1−p_attend×(1−P). attend=1.0 → invariant เท่าเดิมเป๊ะ."""
+    db = _seed_calc_db()
+    args = ("นครพนม", ["ถนน"], "ก่อสร้างถนนคอนกรีตเสริมเหล็ก องค์การบริหารส่วนตำบลนาทม",
+            "องค์การบริหารส่วนตำบลนาทม", "นาทม", 700000, 1000000, ["หจก.ลึก"], [])
+    with db.get_connection() as conn:
+        base = ci.calc_custom_winrate(conn, *args)
+        full = ci.calc_custom_winrate(conn, *args, attend_probs={"หจก.ลึก": 1.0})
+        low = ci.calc_custom_winrate(conn, *args, attend_probs={"หจก.ลึก": 0.2})
+    assert base["breakdown"][0]["attend_pct"] is None, base           # ไม่ส่ง map → มาแน่ (เดิม)
+    assert full["overall_win_pct"] == base["overall_win_pct"], (full, base)   # invariant
+    assert full["breakdown"][0]["attend_pct"] == 100, full
+    assert low["overall_win_pct"] > base["overall_win_pct"], (low, base)      # นานๆ มาที → กดน้อยลง
+    assert low["breakdown"][0]["attend_pct"] == 20, low
+    # conditional "ถ้ามา ชนะเรา" ไม่เปลี่ยนตาม attend (แสดงแยกกัน)
+    assert low["breakdown"][0]["win_pct_against"] == base["breakdown"][0]["win_pct_against"], low
+    print("✅ calc_custom_winrate attend weighting (invariant + low-attend)")
+
 
 if __name__ == "__main__":
     test_match_keywords()
@@ -544,4 +562,5 @@ if __name__ == "__main__":
     test_calc_custom_winrate_known_deep_competitor()
     test_calc_custom_winrate_gates_no_collapse()
     test_calc_custom_winrate_dedupe_and_invalid()
+    test_calc_custom_winrate_attend_weighting()
     print("ALL PASS (moi location disambiguation)")

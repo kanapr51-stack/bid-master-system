@@ -113,10 +113,24 @@ def test_attendance_graceful_bad_conn():
     print("✅ attendance graceful (no tables)")
 
 
+def test_build_intel_predicted_attendees():
+    """_build_intel แนบ predicted_attendees จากสนามเดียวกับที่คาดราคา (used_rows)."""
+    db = _db(); _seed_basic(db)
+    import cgd_intel as ci
+    with db.get_connection() as conn:
+        ctx = ci._build_intel(conn, "นครพนม", ["ถนน"], "นาทม", "นาทม", 1000000)
+    assert ctx is not None, "seed อ.นาทม ต้องประกอบ intel ได้"
+    pa = ctx.get("predicted_attendees")
+    assert pa and pa["probs"].get("หจก.ประจำ") == 0.95, pa
+    assert all("ขาจร" not in k for k in pa["probs"]), pa
+    print("✅ _build_intel แนบ predicted_attendees")
+
+
 if __name__ == "__main__":
     test_attendance_basic_threshold_clamp()
     test_attendance_recency_weighting()
     test_attendance_gate_and_ladder()
     test_attendance_cap10()
     test_attendance_graceful_bad_conn()
+    test_build_intel_predicted_attendees()
     print("ALL PASS (attendance)")

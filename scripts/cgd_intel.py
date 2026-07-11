@@ -662,9 +662,17 @@ def _build_intel(conn, province: str, tokens: list, tambon, amphoe, budget, subt
             if cmp["name"] not in _tin_cache:
                 _tin_cache[cmp["name"]] = _resolve_tin(conn, cmp["name"])
             cmp["tin"] = _tin_cache[cmp["name"]]
+    predicted = None
+    try:                                       # N+196: ทำนายคู่แข่งจาก population เดียวกับราคา
+        import bid_field as _bfa
+        _att_ids = [r["project_id"] for r in used_rows if r.get("project_id")]
+        predicted = _bfa.attendance_probs(conn, province, tokens, project_ids=_att_ids,
+                                          cf=cf, amphoe=amphoe)
+    except Exception:
+        _log.warning("attendance_probs wiring failed", exc_info=True)
     return {"lines": lines, "prediction": pred, "tambon": tambon, "amphoe": amphoe,
             "explain": explain, "company_tables": company_tables, "winrate_table": winrate_table,
-            "scope_rows": used_rows}
+            "scope_rows": used_rows, "predicted_attendees": predicted}
 
 
 def intel_context(province: str, project_name: str, dept_name: str = "",

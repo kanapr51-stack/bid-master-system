@@ -275,12 +275,13 @@ def test_job_detail_custom_calc():
                             "p25": 10.0, "p75": 20.0, "median": 15.0,
                             "companies": [{"name": "หจก.A", "tin": "1", "games": 3, "median": 12.0,
                                            "p25": 10.0, "p75": 15.0, "project_ids": ["K0"]}]}],
-        "winrate_table": None, "scope_rows": [], }
+        "winrate_table": None, "scope_rows": [],
+        "predicted_attendees": {"probs": {"หจก.A": 0.7}, "conf": None, "n_auctions": 8}, }
     captured = {}
     def fake_calc(conn, province, tokens, project_name, dept_name, district,
-                  my_price, budget, selected_names, extra_names):
+                  my_price, budget, selected_names, extra_names, attend_probs=None):
         captured.update(province=province, tokens=tokens, district=district,
-                        my_price=my_price, selected=selected_names)
+                        my_price=my_price, selected=selected_names, attend=attend_probs)
         return {"my_discount_pct": 10.0, "overall_win_pct": 55, "breakdown": []}
     cgd_intel.calc_custom_winrate = fake_calc
     try:
@@ -291,6 +292,8 @@ def test_job_detail_custom_calc():
         # job_detail ส่ง args ถูก: district จาก intel_ctx amphoe, my_price/selected จาก calc_params
         assert captured["district"] == "นาทม" and captured["my_price"] == "900000", captured
         assert captured["selected"] == ["หจก.A"], captured
+        assert captured["attend"] == {"หจก.A": 0.7}, captured
+        assert d["predicted_attendees"]["probs"] == {"หจก.A": 0.7}, d
         # ไม่ส่ง calc_params → ไม่เรียก calc, custom_calc None
         d2 = pv.job_detail(c, "69010000001")
         assert d2["custom_calc"] is None, d2
@@ -419,5 +422,48 @@ def test_render_company_page_area_section_above_timeline():
 
 test_area_portfolio_exact_match_only()
 test_render_company_page_area_section_above_timeline()
+
+
+# --- _render_custom_calc_form: auto-predict (N+196) ---
+def test_render_calc_form_auto_predict():
+    ct = [{"label": "x", "companies": [
+        {"name": "หจก.เอ", "games": 3, "median": 12.0},
+        {"name": "หจก.บี", "games": 2, "median": 8.0}]}]
+    pred = {"probs": {"หจก.เอ": 0.8}, "conf": None, "n_auctions": 8}
+    # GET แรก (prefill=None) → กลุ่มทำนาย pre-tick, กลุ่มรองไม่ tick
+    h = pv._render_custom_calc_form(ct, None, None, "TOK", "P1", pred)
+    assert "ระบบเดาคู่แข่งให้" in h, h
+    assert "โอกาสมา ~80%" in h, h
+    assert 'value="หจก.เอ" checked' in h, h
+    assert 'value="หจก.บี" checked' not in h and 'value="หจก.บี"' in h, h
+    assert "เจ้าอื่นในพื้นที่" in h, h
+    # หลัง submit ติ๊กออกหมด → ไม่ re-tick
+    h2 = pv._render_custom_calc_form(ct, None, {"my_price": "900000", "selected_names": [],
+                                                "extra_names": []}, "TOK", "P1", pred)
+    assert 'value="หจก.เอ" checked' not in h2, h2
+    # ทำนายไม่ได้ → header เดิม + note fallback
+    h3 = pv._render_custom_calc_form(ct, None, None, "TOK", "P1", None)
+    assert "ระบบเดารายชื่อไม่ได้" in h3 and "คำนวณโอกาสชนะเจาะจงคู่แข่ง" in h3, h3
+    assert "checked" not in h3, h3
+    # conf 🟡 → ป้ายบอก scope
+    h4 = pv._render_custom_calc_form(ct, None, None, "TOK", "P1",
+                                     {"probs": {"หจก.เอ": 0.8}, "conf": ("🟡", "อำเภอ"), "n_auctions": 6})
+    assert "🟡 คำทำนายอิงข้อมูลอำเภอ" in h4, h4
+    # ทำนายชื่อที่ไม่อยู่ใน company_tables (มาจาก bid_results ผู้แพ้) → render ได้ ไม่พัง
+    h5 = pv._render_custom_calc_form(ct, None, None, "TOK", "P1",
+                                     {"probs": {"หจก.นอกลิสต์": 0.6}, "conf": None, "n_auctions": 8})
+    assert 'value="หจก.นอกลิสต์" checked' in h5, h5
+    # breakdown แสดง "โอกาสมา X% · ถ้ามา ชนะคุณ ~Y%" / ไม่มี attend → conditional อย่างเดียว
+    cc = {"overall_win_pct": 62, "my_discount_pct": 12.0, "breakdown": [
+        {"name": "หจก.เอ", "win_pct_against": 55, "attend_pct": 80, "source": "", "has_history": True},
+        {"name": "หจก.ซี", "win_pct_against": 30, "attend_pct": None, "source": "สนามทั่วไป", "has_history": False}]}
+    h6 = pv._render_custom_calc_form(ct, cc, {"my_price": "880000", "selected_names": ["หจก.เอ"],
+                                              "extra_names": ["หจก.ซี"]}, "TOK", "P1", pred)
+    assert "โอกาสชนะของคุณรวม: 62%" in h6, h6
+    assert "โอกาสมา 80% · ถ้ามา ชนะคุณ ~55%" in h6, h6
+    assert "ถ้ามา ชนะคุณ ~30%" in h6 and "โอกาสมา 80% · ถ้ามา ชนะคุณ ~30%" not in h6, h6
+    print("OK render_calc_form_auto_predict")
+
+test_render_calc_form_auto_predict()
 
 print("OK test_portal_views")

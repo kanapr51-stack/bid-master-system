@@ -81,6 +81,7 @@ def job_detail(conn, pid, calc_params=None):
     company_tables = None
     winrate_table = None
     custom_calc = None
+    predicted_attendees = None
     try:
         import cgd_intel
         intel_ctx = cgd_intel.intel_context(
@@ -90,6 +91,7 @@ def job_detail(conn, pid, calc_params=None):
             intel_lines = intel_ctx["lines"]
             company_tables = intel_ctx.get("company_tables")
             winrate_table = intel_ctx.get("winrate_table")
+            predicted_attendees = intel_ctx.get("predicted_attendees")
             if calc_params and company_tables:
                 custom_calc = cgd_intel.calc_custom_winrate(
                     conn, (ps["province"] if ps else "") or "",
@@ -97,7 +99,8 @@ def job_detail(conn, pid, calc_params=None):
                     (ps["project_name"] if ps else "") or "", dept_name,
                     intel_ctx.get("amphoe"),
                     calc_params.get("my_price"), budget,
-                    calc_params.get("selected_names") or [], calc_params.get("extra_names") or [])
+                    calc_params.get("selected_names") or [], calc_params.get("extra_names") or [],
+                    attend_probs=(predicted_attendees or {}).get("probs"))
     except Exception:
         intel_lines = None
     loc, deadline, deadline_time = "", None, None
@@ -168,7 +171,7 @@ def job_detail(conn, pid, calc_params=None):
                     "pred_lo": pred_lo, "pred_hi": pred_hi}, "bidders": bidders,
             "intel_lines": intel_lines, "company_tables": company_tables,
             "winrate_table": winrate_table, "custom_calc": custom_calc,
-            "ml_band": ml_band}
+            "predicted_attendees": predicted_attendees, "ml_band": ml_band}
 
 
 # proc_type → กลุ่ม. _PROC_BID mirror cgd_intel.COMPETITIVE_SET (source of truth ของ "แข่งราคาจริง")
@@ -529,10 +532,13 @@ def _render_winrate_table(wt):
     return "".join(out)
 
 
-def _render_custom_calc_form(company_tables, custom_calc, prefill, tok, pid):
-    """ฟอร์มคำนวณโอกาสชนะเจาะจงคู่แข่ง (N+168) — checkbox จาก company_tables (dedupe ด้วยชื่อ
-    normalized) + textarea พิมพ์ชื่อเพิ่ม + ราคาที่จะยื่น. ไม่มี JS — submit จริงไปหลังบ้าน."""
+def _render_custom_calc_form(company_tables, custom_calc, prefill, tok, pid, predicted=None):
+    """ฟอร์มคำนวณโอกาสชนะเจาะจงคู่แข่ง (N+168, auto-predict N+196) — กลุ่ม "คาดว่าจะมายื่น"
+    pre-tick จาก attendance_probs + กลุ่มรองจาก company_tables + textarea + ราคา. ไม่มี JS.
+    prefill=None = GET แรก (pre-tick ตามทำนาย) · dict = หลัง submit (เคารพติ๊กของผู้ใช้)."""
+    initial = prefill is None
     prefill = prefill or {}
+    pred_probs = (predicted or {}).get("probs") or {}
     seen, opts = set(), []
     for blk in company_tables or []:
         for cmp_ in blk.get("companies") or []:
@@ -540,21 +546,44 @@ def _render_custom_calc_form(company_tables, custom_calc, prefill, tok, pid):
             if core and core not in seen:
                 seen.add(core)
                 opts.append(cmp_)
-    checked_names = set(prefill.get("selected_names") or [])
-    out = ["<div class=\"bidhead\">🎯 คำนวณโอกาสชนะเจาะจงคู่แข่ง</div>",
+    opt_by_core = {_norm_name(c["name"]): c for c in opts}
+    pred_items = sorted(pred_probs.items(), key=lambda kv: -kv[1])
+    pred_cores = {_norm_name(n) for n, _p in pred_items}
+    checked_names = (set(n for n, _p in pred_items) if initial
+                     else set(prefill.get("selected_names") or []))
+    header = "🎯 โอกาสชนะ (ระบบเดาคู่แข่งให้)" if pred_items else "🎯 คำนวณโอกาสชนะเจาะจงคู่แข่ง"
+    out = [f"<div class=\"bidhead\">{header}</div>",
            "<form class=\"calcform\" method=\"post\" action=\"/portal/job/calc\">",
            f"<input type=\"hidden\" name=\"t\" value=\"{tok}\">",
            f"<input type=\"hidden\" name=\"pid\" value=\"{_h.escape(str(pid))}\">"]
+
+    def _cb(name, label_extra):
+        nm = _h.escape(name)
+        chk = " checked" if name in checked_names else ""
+        return (f"<label><input type=\"checkbox\" name=\"competitors\" value=\"{nm}\"{chk}> "
+                f"{nm}{label_extra}</label>")
+
+    def _hist(cmp_):
+        if cmp_ and cmp_.get("median") is not None:
+            return f" (ชนะ {cmp_['games']} งาน, ลดเฉลี่ย {cmp_['median']:.0f}%)"
+        return ""
+
+    if pred_items:
+        out.append("<div class=\"meta\">คาดว่าจะมายื่น (ติ๊กออกได้ถ้ารู้ว่าไม่มา):</div>")
+        for name, p in pred_items:
+            out.append(_cb(name, f" — โอกาสมา ~{round(p * 100)}%" + _hist(opt_by_core.get(_norm_name(name)))))
+        if (predicted or {}).get("conf"):
+            emoji, scope_word = predicted["conf"]
+            out.append(f"<div class=\"meta\">{emoji} คำทำนายอิงข้อมูล{scope_word} (พื้นที่นี้ข้อมูลบาง)</div>")
+        out.append("<div class=\"meta\">เจ้าอื่นในพื้นที่ (นานๆ มาที — ติ๊กเพิ่มได้ = มาแน่):</div>")
+    else:
+        out.append("<div class=\"meta\">ข้อมูลสนามนี้ยังบาง — ระบบเดารายชื่อไม่ได้ เลือกเองได้ด้านล่าง</div>")
     for cmp_ in opts:
-        nm = _h.escape(cmp_["name"])
-        chk = " checked" if cmp_["name"] in checked_names else ""
-        if cmp_.get("median") is not None:
-            out.append(f"<label><input type=\"checkbox\" name=\"competitors\" value=\"{nm}\"{chk}> "
-                       f"{nm} (ชนะ {cmp_['games']} งาน, ลดเฉลี่ย {cmp_['median']:.0f}%)</label>")
-        else:
-            out.append(f"<label><input type=\"checkbox\" name=\"competitors\" value=\"{nm}\"{chk}> {nm}</label>")
+        if _norm_name(cmp_["name"]) in pred_cores:
+            continue
+        out.append(_cb(cmp_["name"], _hist(cmp_)))
     extra_pf = _h.escape("\n".join(prefill.get("extra_names") or []))
-    out.append("<label>หรือพิมพ์ชื่อบริษัทอื่นเพิ่ม (1 ชื่อ/บรรทัด):</label>"
+    out.append("<label>หรือพิมพ์ชื่อบริษัทอื่นเพิ่ม (1 ชื่อ/บรรทัด · ถือว่ามาแน่):</label>"
                f"<textarea name=\"extra_names\" rows=\"2\">{extra_pf}</textarea>")
     price_pf = _h.escape(str(prefill.get("my_price") or ""))
     out.append("<label>ราคาที่จะยื่น (บาท):</label>"
@@ -567,10 +596,12 @@ def _render_custom_calc_form(company_tables, custom_calc, prefill, tok, pid):
         for b in custom_calc["breakdown"]:
             src = b.get("source") or ""
             src_note = f" ({src})" if src else ""
+            att = b.get("attend_pct")
+            att_txt = f"โอกาสมา {att}% · " if att is not None else ""
             out.append(f"<div class=\"crow\"><span>{_h.escape(b['name'])}{src_note}</span>"
-                       f"<span>ชนะคุณ ~{b['win_pct_against']}%</span></div>")
-        out.append("<div class=\"note\">*โอกาส% ประเมินจากนิสัยการยื่นราคาของคู่แข่งในงานประเภท+หน่วยงาน"
-                   "แบบเดียวกัน (โมเดล Gates) — เป็นการประมาณ ไม่ใช่การรับประกัน</div></div>")
+                       f"<span>{att_txt}ถ้ามา ชนะคุณ ~{b['win_pct_against']}%</span></div>")
+        out.append("<div class=\"note\">*โอกาสมา = ความถี่ที่บริษัทโผล่ในสนามแบบนี้ · โอกาสชนะประเมินจาก"
+                   "นิสัยการยื่นราคาในงานประเภท+หน่วยงานแบบเดียวกัน (โมเดล Gates) — เป็นการประมาณ ไม่ใช่การรับประกัน</div></div>")
     elif custom_calc is None and prefill.get("my_price"):
         out.append("<div class=\"msg\">เลือกคู่แข่งอย่างน้อย 1 บริษัท หรือกรอกราคาให้ถูกต้อง</div>")
     return "".join(out)
@@ -610,7 +641,8 @@ def render_job_page(data, token, exp, notes=None, overview="", starred=False):
         b.append(_render_winrate_table(data["winrate_table"]))
     if data.get("company_tables"):
         b.append(_render_custom_calc_form(data["company_tables"], data.get("custom_calc"),
-                                          data.get("calc_prefill"), tok, j["project_id"]))
+                                          data.get("calc_prefill"), tok, j["project_id"],
+                                          data.get("predicted_attendees")))
     if not data["bidders"]:
         b.append("<div class=\"bidhead\">ยังไม่มีผู้ยื่น</div>")
         b.append("<div class=\"msg\">งานนี้ยังไม่มีข้อมูลผู้ยื่น — รอประมูล/ประกาศผล</div>")

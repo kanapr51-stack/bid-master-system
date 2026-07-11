@@ -725,3 +725,27 @@ approve แล้วสั่ง "ทำให้หมดเลย เดี๋
 
 ### Followup
 - closed-loop: พอ W0 มา เทียบรายชื่อที่ทำนาย vs ผู้ยื่นจริง (precision/recall) หลังมีผลสัก 20-30 งาน
+
+## งานที่ N+197: ปุ่มติดตามจากหน้า "งานทั้งหมด" /portal/jobs (2026-07-12)
+
+### สถานะ: ✅ LIVE ครบ VPS + Vercel
+
+### ที่มา
+กัญจน์: "ตรงดูงานทั้งหมด สามารถกดติดตามงานได้จากตรงนั้นเลย" — เดิมต้องเข้าหน้างานก่อน
+spec: docs/superpowers/specs/2026-07-12-follow-from-all-jobs-design.md (approved "โอเค")
+
+### สิ่งที่ทำ
+- `655cfd5` engine: /api/portal/all-jobs เพิ่ม flag `followed` (query followed_jobs status='active'
+  1 ครั้ง/request) + test seed followed active/unfollowed ใน test_portal_all_jobs_api.py
+- `40c2a70` web: SentJob.followed + ปุ่ม 🔔 ติดตาม/ติดตามแล้ว บน SentJobCard (preventDefault กันเด้ง
+  เข้า detail) + handleFollow optimistic Set + revert on fail (pattern world) — reuse POST /api/portal/follow เดิม
+- ไม่มีปุ่มยกเลิกติดตามจากลิสต์ (YAGNI — world ก็ไม่มี)
+
+### Sanity / Verify
+- test_portal_all_jobs_api + test_portal_jobs เขียว · tsc ผ่าน
+- deploy: VPS pull+restart health 200 · Vercel READY (build 57s, alias bid-master-dashboard.vercel.app)
+- verify จริงบน VPS: ลูกค้า top-follower มี 59 งานในลิสต์ → followed=true 7 งาน ตรง DB active 7 แถวเป๊ะ
+- เส้นกดติดตาม (POST /follow → _record_follow) เป็นของเดิมที่ live บน world อยู่แล้ว — ไม่ได้แตะ
+
+### Followup
+- (ไม่มี — feature ครบตาม spec)

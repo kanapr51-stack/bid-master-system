@@ -678,3 +678,23 @@ approve แล้วสั่ง "ทำให้หมดเลย เดี๋
 ### Followup
 - closed-loop: พอ W0 มา actual_price เทียบ ml_price_p80 ได้เลย (คอลัมน์อยู่แถวเดียวกัน) — วัด calibration จริงหลังมีผลสัก 20-30 งาน
 - ML band เทรนจาก snapshot 2026-07-10 — ควร retrain เป็นรอบ (เช่น รายไตรมาส) ยังไม่ตั้งอัตโนมัติ (YAGNI จนกว่าจะพิสูจน์คุณค่า)
+
+## งานที่ N+196: Auto-competitor win-rate — spec (2026-07-12)
+
+### สถานะ: 🚧 spec เสร็จ รอกัญจน์ review ก่อนเขียน implementation plan
+
+### ที่มา
+กัญจน์ขอ: เครื่องคำนวณโอกาสชนะบน Board B ไม่ต้องติ๊กชื่อคู่แข่งเอง — ระบบเดาเองว่า
+"บริษัทไหนจะมา กี่ %" แล้วรวมเป็นโอกาสชนะเลย (ยังติ๊กออก/เพิ่มชื่อได้)
+เลือกแนวทาง A: attendance-weighted Gates — P_eff = 1 − p_attend×(1−P_beat) เข้า gates_winrate เดิม
+
+### สิ่งที่ทำ
+- brainstorm + สำรวจโค้ด: form ปัจจุบัน `portal_views.py:532` → `calc_custom_winrate` (`cgd_intel.py:867`)
+- spec: `docs/superpowers/specs/2026-07-11-auto-competitor-winrate-design.md`
+  - p_attend = สัดส่วน auctions (recency-weighted) ที่บริษัทโผล่ จาก `_field_auctions` ladder เดิม (🟢→🟡→🟠)
+  - threshold ≥0.15 cap 10 · clamp [0.05,0.95] · ข้อมูล < MIN_AUCTIONS → fallback ฟอร์มเดิม
+  - ติ๊กจากกลุ่มทำนาย = ใช้ p ทำนาย · กลุ่มรอง/พิมพ์เพิ่ม = 1.0 · invariant: p_attend=1 ทุกตัว → เลขเดิมเป๊ะ
+  - แตะ 3 ไฟล์ engine เท่านั้น (bid_field/cgd_intel/portal_views) — web/bms_api ไม่แตะ
+
+### Followup
+- รอ review → writing-plans → implement + tests (test_winrate เดิมต้องเขียวหมด)

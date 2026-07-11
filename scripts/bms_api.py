@@ -1932,6 +1932,9 @@ async def portal_all_jobs_json(
             "WHERE nq.customer_id=? AND nq.status='sent' AND COALESCE(nq.is_test_data,0)=0 "
             "ORDER BY nq.created_at DESC", (cid,)).fetchall()
         starred_ids = portal_views.starred_project_ids(conn, cid)
+        followed_ids = {r["project_id"] for r in conn.execute(
+            "SELECT project_id FROM followed_jobs WHERE customer_id=? AND status='active'",
+            (cid,)).fetchall()}
     jobs, seen = [], set()
     for r in rows:  # เรียง DESC อยู่แล้ว → แถวแรกของแต่ละ project = รอบส่งล่าสุด
         pid = r["project_id"]
@@ -1946,5 +1949,6 @@ async def portal_all_jobs_json(
             "sent_at": r["created_at"],
             "stage": _alljobs_stage(r["source_stage"]),
             "starred": pid in starred_ids,
+            "followed": pid in followed_ids,
         })
     return {"ok": True, "count": len(jobs), "jobs": jobs[:limit]}

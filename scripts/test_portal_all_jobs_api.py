@@ -33,6 +33,11 @@ def seed():
         conn.execute(q, (1, 'P5', 'sent', '2026-07-07T08:00:00', 'นครพนม', 'งานที่ถูกยกเลิก', 'followed_cancelled', 0))
         # ดาว P1
         conn.execute("INSERT INTO job_stars (customer_id, project_id, created_at) VALUES (1,'P1','2026-07-05')")
+        # N+197: P1 ติดตามอยู่ (active) / P5 เคยติดตามแล้วเลิก (unfollowed) → followed ต้องเป็น false
+        conn.execute("INSERT INTO followed_jobs (customer_id,project_id,starred_at,starred_stage,last_stage_notified,status) "
+                     "VALUES (1,'P1','2026-07-05','D0','W0','active')")
+        conn.execute("INSERT INTO followed_jobs (customer_id,project_id,starred_at,starred_stage,last_stage_notified,status) "
+                     "VALUES (1,'P5','2026-07-06','D0','D0','unfollowed')")
 
 
 async def main():
@@ -51,6 +56,8 @@ async def main():
     byid = {j["project_id"]: j for j in jobs}
     assert byid['P1']["stage"] == 'won' and byid['P1']["sent_at"] == '2026-07-05T08:00:00', byid['P1']  # เอารอบล่าสุด
     assert byid['P1']["budget"] == 5000000 and byid['P1']["starred"] is True, byid['P1']
+    assert byid['P1']["followed"] is True, byid['P1']
+    assert byid['P2']["followed"] is False and byid['P5']["followed"] is False, byid
     assert byid['P2']["stage"] == 'pre' and byid['P2']["budget"] == 0 and byid['P2']["name"] == 'อาคารเรียนสองชั้น', byid['P2']
     assert byid['P5']["stage"] == 'cancelled' and byid['P5']["starred"] is False, byid['P5']
     json.dumps(r, ensure_ascii=False)

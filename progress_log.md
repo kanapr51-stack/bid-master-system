@@ -679,9 +679,9 @@ approve แล้วสั่ง "ทำให้หมดเลย เดี๋
 - closed-loop: พอ W0 มา actual_price เทียบ ml_price_p80 ได้เลย (คอลัมน์อยู่แถวเดียวกัน) — วัด calibration จริงหลังมีผลสัก 20-30 งาน
 - ML band เทรนจาก snapshot 2026-07-10 — ควร retrain เป็นรอบ (เช่น รายไตรมาส) ยังไม่ตั้งอัตโนมัติ (YAGNI จนกว่าจะพิสูจน์คุณค่า)
 
-## งานที่ N+196: Auto-competitor win-rate — spec (2026-07-12)
+## งานที่ N+196: Auto-competitor win-rate — เดาคู่แข่งอัตโนมัติบน Board B (2026-07-12)
 
-### สถานะ: 🚧 spec เสร็จ รอกัญจน์ review ก่อนเขียน implementation plan
+### สถานะ: ✅ โค้ดเสร็จ + tests เขียว + Sophia SAFE — รอ confirm deploy VPS
 
 ### ที่มา
 กัญจน์ขอ: เครื่องคำนวณโอกาสชนะบน Board B ไม่ต้องติ๊กชื่อคู่แข่งเอง — ระบบเดาเองว่า
@@ -696,5 +696,27 @@ approve แล้วสั่ง "ทำให้หมดเลย เดี๋
   - ติ๊กจากกลุ่มทำนาย = ใช้ p ทำนาย · กลุ่มรอง/พิมพ์เพิ่ม = 1.0 · invariant: p_attend=1 ทุกตัว → เลขเดิมเป๊ะ
   - แตะ 3 ไฟล์ engine เท่านั้น (bid_field/cgd_intel/portal_views) — web/bms_api ไม่แตะ
 
+### Implement (แผน: docs/superpowers/plans/2026-07-12-auto-competitor-winrate.md, commit a729278)
+- `03efa6e` bid_field: `attendance_probs()` — ladder 🟢→🟡→🟠, recency-weighted appearance share,
+  clamp [0.05,0.95], threshold ≥0.15, cap 10, fail-open → None + test_attendance.py 6 tests
+- `ed1f88e` cgd_intel: `calc_custom_winrate(..., attend_probs=None)` → P_eff = 1−pa×(1−P) ก่อน Gates
+  + breakdown key `attend_pct` · invariant attend=1.0 = เลขเดิมเป๊ะ (test บังคับ)
+- `7c8d82f` cgd_intel: `_build_intel` แนบ `predicted_attendees` (population เดียวกับคาดราคา)
+- `45fa77f` portal_views: job_detail ส่ง attend_probs + ฟอร์ม 2 กลุ่ม (คาดว่าจะมายื่น pre-tick +
+  เจ้าอื่นในพื้นที่) + breakdown "โอกาสมา X% · ถ้ามา ชนะคุณ ~Y%" + fallback ฟอร์มเดิมเมื่อข้อมูลบาง
+
+### Sanity
+- regression 7 ไฟล์เขียวหมด: test_attendance / test_cgd_intel / test_winrate / test_winrate_grid /
+  test_portal_views / test_portal_page / test_portal_jobs
+- Sophia audit → **SAFE**: read-only ล้วน ไม่มี write path ใหม่, tests isolate (tempdir/in-memory),
+  VPS live DB ไม่มีแถวเขียนใหม่หลัง N+195, invariant ยืนยันด้วยเทสจริง
+- ⚠️ local data/bms_customers.db stale (2026-05-29) + bid_results ว่าง → verify กับงานจริงทำได้เฉพาะ
+  บน VPS หลัง deploy (แบบเดียวกับ N+195)
+
+### Deploy checklist (รอ confirm)
+1. push origin (6 commits: spec/plan/4 code)
+2. VPS: pull ff → restart bms-api (ไม่มี migration/dependency ใหม่) · Vercel ไม่ต้อง deploy
+3. หลัง deploy: เปิดงานจริง 1-2 งานดูกลุ่ม "คาดว่าจะมายื่น" + กรอกราคาดู "โอกาสชนะรวม" + Σp_attend ≈ n_mean
+
 ### Followup
-- รอ review → writing-plans → implement + tests (test_winrate เดิมต้องเขียวหมด)
+- closed-loop: พอ W0 มา เทียบรายชื่อที่ทำนาย vs ผู้ยื่นจริง (precision/recall) หลังมีผลสัก 20-30 งาน

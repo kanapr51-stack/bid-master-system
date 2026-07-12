@@ -595,3 +595,28 @@ spec: docs/superpowers/specs/2026-07-12-unfollow-from-all-jobs-design.md
 
 ### Followup
 - (ไม่มี) — ครบชุด follow/unfollow ทุกจุดที่โชว์สถานะติดตาม (world tracked + งานทั้งหมด)
+
+## งานที่ N+198: "ไม่มีคีย์เวิร์ด = เห็นทั้งจังหวัด" + รัน clear_keyword_seed จริง (2026-07-12)
+
+### สถานะ: ✅ LIVE + apply แล้ว (ปิดหนี้ค้างจาก N+185)
+
+### ที่มา
+กัญจน์ถามว่า "งานใหม่ที่แมตช์" กรองจากไหนทั้งที่สั่งให้ตั้งไม่มีคีย์เวิร์ดแล้ว → ตรวจพบ
+`clear_keyword_seed --apply` ไม่เคยรันบน prod (ค้าง N+185) ทุกบัญชียังแบก seed 89 คำจาก N+181
+และรันเฉยๆ ไม่ได้เพราะโค้ด discover เดิม "ไม่มี keyword → คืนว่าง"
+
+### สิ่งที่ทำ
+- `a51b9cc` semantic ใหม่ (board discovery เท่านั้น): keywords ว่าง = ไม่บังคับคำ เห็นทั้งจังหวัด
+  (`discovery_match.py` gate เฉพาะเมื่อมีลิสต์ + `bms_api.py` เลิก short-circuit) — จังหวัด/negative/
+  งบ/followed/deadline กรองเหมือนเดิม; บัญชีมี keyword พฤติกรรมเดิมเป๊ะ
+- tests: no-keyword เห็นทั้งจังหวัด + negative/budget/province ยังตัด + UNOKW เคส endpoint เต็ม
+- ops: backup DB 1.86GB (/opt/bms/backups/bms_customers_pre_clear_seed_20260712_070329.db)
+  → dry-run 5 customer → `--apply` → classes ว่างครบทั้ง 4 บัญชี active
+
+### Verify
+- test_discovery_match / test_portal_discover_api / test_clear_keyword_seed / test_portal_all_jobs_api เขียว
+- VPS health 200 · discover ของ Kan Kan: biddable 3 + planning 6 ทั้งจังหวัด chips ว่าง
+  (มีงานไฟฟ้าเคเบิลใต้ดินที่ seed เดิมเคยตัด) · LINE pipeline ไม่ถูกแตะ
+
+### Followup
+- เหลือเช็คจาก N+185: LINE OA paid upgrade + cron recap 23:00 (clear_keyword_seed ปิดแล้ว)

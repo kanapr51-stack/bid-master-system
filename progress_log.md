@@ -672,3 +672,8 @@ discover endpoint ไม่ได้เช็ค SumCard/hasPrefs ฝั่ง c
 - แผน "phase-B category tick UI" (spec DRAFT 2026-07-01) **ตกยุคแล้ว** — ระบบบริษัท/หมวดถูกถอด
   ตามทิศทางใหม่ของกัญจน์ (ตั้งค่าแบน + default ทั้งจังหวัด)
 - จังหวัด read-only — เปิดให้ลูกค้าแก้เองเมื่อ product นิ่งขึ้น (ตอนนี้แจ้งผ่านแอดมิน)
+
+### N+199.1 (ต่อเนื่อง — กัญจน์ทดลองแล้วโอเค + ขอเพิ่ม)
+- `2b5a0a5` การ์ดที่ 4 ในหน้าตั้งค่า: Toggle SME / MIT + เวลาแจ้งเตือน (เก็บ notes root:
+  isSME/isMIT/notifyTime — ตัวแก้เดิมตายไปพร้อม classes/_client) + โปรไฟล์ filter hidden class
+  id='settings' ออกจากการ์ดบริษัท (กันโผล่เป็นบริษัทปลอม) — Vercel READY

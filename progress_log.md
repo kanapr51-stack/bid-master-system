@@ -677,3 +677,30 @@ discover endpoint ไม่ได้เช็ค SumCard/hasPrefs ฝั่ง c
 - `2b5a0a5` การ์ดที่ 4 ในหน้าตั้งค่า: Toggle SME / MIT + เวลาแจ้งเตือน (เก็บ notes root:
   isSME/isMIT/notifyTime — ตัวแก้เดิมตายไปพร้อม classes/_client) + โปรไฟล์ filter hidden class
   id='settings' ออกจากการ์ดบริษัท (กันโผล่เป็นบริษัทปลอม) — Vercel READY
+
+## งานที่ N+200: เวลาแจ้งเตือนมีผลจริง — daily recap ตาม notifyTime ของลูกค้า (2026-07-12)
+
+### สถานะ: ✅ LIVE (VPS + Vercel) — รอดูรอบส่งจริงคืนนี้ 20:00
+
+### ที่มา
+กัญจน์: "ต่อสายให้เลย ให้เวลาแจ้งเตือนมีผลจริง" — ช่องเวลาในหน้าตั้งค่า (N+199.1) เดิมเซฟได้
+แต่ recap ยิงเวลาเดียวทั้งระบบ (timer 23:00 ไทย ตัวเดียว)
+
+### สิ่งที่ทำ (`5ad6d16`)
+- schema v1.40: `daily_recap_log(customer_id, date_th, sent_at)` marker กันส่งซ้ำ
+- `Sebastian_Daily_User_Summary.py`: due-mode (default) — `is_due` = now ≥ notifyTime (จาก notes,
+  default 20:00) AND ยังไม่ mark วันนี้ → self-healing ถ้า timer พลาดรอบ; `--all` = manual ส่งทุกคน
+- **ฉบับเช้า** (notifyTime ก่อนเที่ยง): สรุปงาน "เมื่อวาน" + เปิดยื่นซอง/โน้ต "วันนี้"
+  (ฉบับเย็นเดิม: วันนี้ + พรุ่งนี้) — กันข้อความ "วันนี้ยังไม่มีงาน" ตอน 6 โมงเช้าที่ผิดกาล
+- timer: 23:00 เดียว → ทุก 15 นาที (OnCalendar *:00/15 Asia/Bangkok, Persistent)
+- web: default เวลาแจ้งเตือน 06:00 → 20:00 ทั้ง settings/profile/world (ตรง engine)
+
+### Verify
+- test_daily_recap 6 ชุดเขียว (notify_time parse / is_due+marker / morning variant) + regression
+- VPS: backup pre_v140 (1.86GB) → migrate → dry-run จริง: ลูกค้า 4 คน default 20:00, [14:54] due 0/4
+  ถูกต้อง · timer ใหม่ next fire 15:00 ไทย · health 200 · Vercel READY
+- ปิดหนี้ N+185 อีกข้อ: "cron recap 23:00" — แทนด้วยระบบ per-customer แล้ว
+
+### Followup
+- คืนนี้ 20:00 รอบส่งจริงรอบแรก — สคริปต์ Discord-notify เองอยู่แล้ว ("📋 Daily recap ... ส่ง X/Y")
+- เหลือจาก N+185: LINE OA paid upgrade (quota 300) อย่างเดียว

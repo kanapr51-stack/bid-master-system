@@ -12,6 +12,12 @@ import bms_api
 from fastapi import HTTPException
 
 
+class _req:
+    """mock Request มีแค่ .json() — สำหรับ endpoint ที่อ่าน body ตรง"""
+    def __init__(self, body): self._b = body
+    async def json(self): return self._b
+
+
 def seed():
     with bms_api.get_conn() as conn:
         conn.execute("INSERT INTO customers (line_user_id, display_name, tier, created_at, updated_at) "
@@ -69,6 +75,30 @@ async def main():
     # ลูกค้าไม่มี → ก้อนว่าง ไม่ crash
     r = await bms_api.portal_all_jobs_json(line_user_id='U9', x_bms_secret='t')
     assert r == {"ok": True, "count": 0, "jobs": []}, r
+
+    # N+197.1: unfollow → followed=false → follow กลับ → true (toggle roundtrip)
+    r = await bms_api.portal_unfollow_job_json(_req({"line_user_id": "U1", "project_id": "P1"}), x_bms_secret="t")
+    assert r == {"ok": True, "followed": False}, r
+    r = await bms_api.portal_all_jobs_json(line_user_id='U1', x_bms_secret='t')
+    assert {j["project_id"]: j["followed"] for j in r["jobs"]}['P1'] is False, r
+    with bms_api.get_conn() as conn:
+        st = conn.execute("SELECT status FROM followed_jobs WHERE customer_id=1 AND project_id='P1'").fetchone()[0]
+    assert st == 'unfollowed', st
+    r = await bms_api.portal_follow_job(_req({"line_user_id": "U1", "project_id": "P1"}), x_bms_secret="t")
+    assert r["ok"] is True, r
+    r = await bms_api.portal_all_jobs_json(line_user_id='U1', x_bms_secret='t')
+    assert {j["project_id"]: j["followed"] for j in r["jobs"]}['P1'] is True, r
+    # unfollow: 403 secret ผิด / 404 ลูกค้าไม่มี
+    try:
+        await bms_api.portal_unfollow_job_json(_req({"line_user_id": "U1", "project_id": "P1"}), x_bms_secret="bad")
+        assert False, "expected 403"
+    except HTTPException as e:
+        assert e.status_code == 403
+    try:
+        await bms_api.portal_unfollow_job_json(_req({"line_user_id": "U9", "project_id": "P1"}), x_bms_secret="t")
+        assert False, "expected 404"
+    except HTTPException as e:
+        assert e.status_code == 404
 
     print("PASS test_portal_all_jobs_api")
 

@@ -749,3 +749,27 @@ spec: docs/superpowers/specs/2026-07-12-follow-from-all-jobs-design.md (approved
 
 ### Followup
 - (ไม่มี — feature ครบตาม spec)
+
+## งานที่ N+197.1: ยกเลิกติดตามได้จากหน้า "งานทั้งหมด" (2026-07-12)
+
+### สถานะ: ✅ LIVE ครบ VPS + Vercel
+
+### ที่มา
+กัญจน์: "เมื่อกดติดตามได้แล้ว ก็อยากให้ยกเลิกติดตามได้ด้วย" — ต่อยอด N+197
+spec: docs/superpowers/specs/2026-07-12-unfollow-from-all-jobs-design.md
+
+### สิ่งที่ทำ
+- `729ed63` engine: POST /api/portal/unfollow (mirror follow, เรียก _record_unfollow เดิมของ Board A)
+  + test toggle roundtrip: unfollow → followed=false/DB unfollowed → follow กลับ → true/active + 403/404
+- `c35921b` web: relay route /api/portal/unfollow ใหม่ + ปุ่ม "ติดตามแล้ว" เลิก disabled →
+  handleToggle optimistic สองทิศ (revert on fail) — ไม่มี confirm dialog (misclick กู้ได้ด้วยกดซ้ำ)
+- เส้น follow เดิมไม่แตะ
+
+### Verify
+- test_portal_all_jobs_api เขียว · tsc ผ่าน · VPS health 200 · Vercel READY
+- roundtrip จริงบน VPS (ลูกค้าจริง, งานเก่าไม่เคย follow): follow → active → unfollow → unfollowed
+  ตรง DB ทุกขั้น (จบที่ unfollowed row เฉยๆ — ไม่กระทบ notification)
+- gotcha ระหว่าง verify: .env บน VPS อ่านใน python ต้อง strip \r (CRLF) ไม่งั้น secret เพี้ยน → 403
+
+### Followup
+- (ไม่มี)

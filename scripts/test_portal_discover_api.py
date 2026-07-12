@@ -22,6 +22,13 @@ def setup():
     c.execute("INSERT OR IGNORE INTO subscriptions (customer_id,active,created_at,updated_at) VALUES (?,1,?,?)", (cid, FRESH, FRESH))
     sid = c.execute("SELECT id FROM subscriptions WHERE customer_id=?", (cid,)).fetchone()[0]
     c.execute("INSERT OR IGNORE INTO subscription_provinces (subscription_id,province) VALUES (?,'นครพนม')", (sid,))
+    # N+198: ลูกค้าไม่มี keyword (classes ว่าง) = เห็นทั้งจังหวัด
+    c.execute("INSERT OR IGNORE INTO customers (line_user_id,display_name,tier,active,created_at,updated_at,notes) "
+              "VALUES ('UNOKW','y','trial',1,?,?,?)", (FRESH, FRESH, json.dumps({"classes": []})))
+    cid2 = c.execute("SELECT id FROM customers WHERE line_user_id='UNOKW'").fetchone()[0]
+    c.execute("INSERT OR IGNORE INTO subscriptions (customer_id,active,created_at,updated_at) VALUES (?,1,?,?)", (cid2, FRESH, FRESH))
+    sid2 = c.execute("SELECT id FROM subscriptions WHERE customer_id=? ", (cid2,)).fetchone()[0]
+    c.execute("INSERT OR IGNORE INTO subscription_provinces (subscription_id,province) VALUES (?,'นครพนม')", (sid2,))
     # งานในพื้นที่ + keyword + งบ → ควรเข้า
     rows = [
         ('D_MATCH', 'D0', 'นครพนม', 5000000, 'ก่อสร้างถนนคอนกรีตสาย 1'),     # biddable
@@ -69,6 +76,15 @@ async def main():
     assert j["starred"] is True, j
     p = next(x for x in r["jobs"]["planning"] if x["project_id"] == 'B_FRESH')
     assert p["starred"] is False, p
+
+    # N+198: ลูกค้าไม่มี keyword → เห็นทั้งจังหวัด (ทุก D0 ที่ยังไม่หมด deadline + B0 fresh)
+    # UNOKW ไม่ได้ follow อะไร → D_FOLLOWED ก็เห็น; ไม่ตั้งงบ → D_LOWBUDGET ก็เห็น; ชิปคำว่าง
+    r2 = await bms_api.portal_discover_jobs(line_user_id='UNOKW', x_bms_secret='t')
+    bid2 = {j["project_id"] for j in r2["jobs"]["biddable"]}
+    plan2 = {j["project_id"] for j in r2["jobs"]["planning"]}
+    assert bid2 == {'D_MATCH', 'D_FOLLOWED', 'D_NOKW', 'D_LOWBUDGET'}, bid2
+    assert plan2 == {'B_FRESH'}, plan2
+    assert all(j["matched_keywords"] == [] for j in r2["jobs"]["biddable"]), r2
     print("PASS test_portal_discover_api")
 
 

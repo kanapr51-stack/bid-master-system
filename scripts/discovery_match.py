@@ -21,8 +21,9 @@ def match(project_name, project_province, project_budget,
     - province AND: project_province ต้องอยู่ใน user_provinces
     - negative safety net: ชื่อมี neg_keyword ใด → ไม่ match
     - keyword OR: คำใน user_keywords ที่ _kw_hit(k, ชื่อ normalize) → เก็บใน matched_keywords
+      · user_keywords ว่าง = ไม่บังคับคำ — เห็นทั้งจังหวัด (N+198, hits=[])
     - budget: budget>0 + นอกช่วง [budget_min, budget_max] → ตัด (budget=0 = ไม่รู้ → ผ่าน)
-    matched = province✓ AND keyword≥1 AND ไม่ติด negative AND อยู่ในช่วงงบ
+    matched = province✓ AND (ไม่มี keyword หรือชน≥1) AND ไม่ติด negative AND อยู่ในช่วงงบ
     """
     name = normalize_thai(project_name or "")
     prov = (project_province or "").strip()
@@ -36,7 +37,7 @@ def match(project_name, project_province, project_budget,
         return False, []
 
     hits = [k for k in (user_keywords or []) if k and job_matcher._kw_hit(k, name)]
-    if not hits:
+    if (user_keywords or []) and not hits:
         return False, []
 
     b = project_budget or 0

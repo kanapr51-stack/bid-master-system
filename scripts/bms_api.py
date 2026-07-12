@@ -1630,7 +1630,8 @@ async def portal_discover_jobs(
             "JOIN subscriptions s ON s.id=sp.subscription_id WHERE s.customer_id=?", (cid,)).fetchall()]
         pref = _classes_from_notes(cust["notes"] or "")
         keywords = pref["keywords"]
-        if not provinces or not keywords:
+        # N+198: keywords ว่าง = เห็นทั้งจังหวัด (ไม่ short-circuit — discovery_match ไม่บังคับคำแล้ว)
+        if not provinces:
             return {"ok": True, "jobs": empty}
         followed = {r["project_id"] for r in conn.execute(
             "SELECT project_id FROM followed_jobs WHERE customer_id=?", (cid,)).fetchall()}

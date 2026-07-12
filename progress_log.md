@@ -733,5 +733,10 @@ timeline-reminder (07:30) ยิงเวลาตายตัว. เลือ�
 - test_notify_schedule (ใหม่ 3 ชุด) + test_timeline_reminder + test_bidopen_notify + test_daily_recap
   เขียวหมด · tsc ผ่าน · VPS migrate v141 + timers ใหม่เดิน · Vercel READY
 
+### N+201.1 (ต่อเนื่อง — กัญจน์ขอ)
+- `50c24a5` หน้าตั้งค่า section คำค้น: chips หมวดสำเร็จรูป 12 หมวด (DEFAULT_KEYWORDS_BY_CLASS
+  เดิมจากระบบบริษัท — ไม่เคยถูกลบ อยู่ใน portal-data.ts) กดหมวด = เพิ่มคำทั้งชุด / กดซ้ำ = เอาออก
+  — Vercel READY (web-only)
+
 ### Followup
 - พรุ่งนี้ 07:30 = รอบ per-customer แรกของแจ้งเตือนเช้า (recap คืนนี้ 23:00)

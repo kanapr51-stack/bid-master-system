@@ -701,6 +701,11 @@ discover endpoint ไม่ได้เช็ค SumCard/hasPrefs ฝั่ง c
   ถูกต้อง · timer ใหม่ next fire 15:00 ไทย · health 200 · Vercel READY
 - ปิดหนี้ N+185 อีกข้อ: "cron recap 23:00" — แทนด้วยระบบ per-customer แล้ว
 
+### N+200.1 (ต่อเนื่อง — กัญจน์ขอ)
+- `9501608` default เวลาสรุป 20:00 → **23:00 ทุกคน** (engine DEFAULT_NOTIFY + web fallback 3 หน้า)
+  — deploy VPS+Vercel แล้ว; timer อ่านสคริปต์สดทุกรอบ ไม่ต้อง restart อะไร
+
 ### Followup
-- คืนนี้ 20:00 รอบส่งจริงรอบแรก — สคริปต์ Discord-notify เองอยู่แล้ว ("📋 Daily recap ... ส่ง X/Y")
+- คืนนี้ 23:00 รอบส่งจริงรอบแรก (ทุกคน default 23:00 + กัญจน์ตั้งเอง 23:00) — สคริปต์
+  Discord-notify เองอยู่แล้ว ("📋 Daily recap ... ส่ง X/Y")
 - เหลือจาก N+185: LINE OA paid upgrade (quota 300) อย่างเดียว

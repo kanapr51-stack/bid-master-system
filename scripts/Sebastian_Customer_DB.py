@@ -321,6 +321,7 @@ def init_schema():
     _migrate_v138()
     _migrate_v139()
     _migrate_v140()
+    _migrate_v141()
     print(f"Schema v1.14 ready: {DB_PATH}")
 
 
@@ -334,6 +335,20 @@ def _migrate_v140():
                 date_th     TEXT NOT NULL,
                 sent_at     TEXT NOT NULL,
                 PRIMARY KEY (customer_id, date_th)
+            )""")
+
+
+def _migrate_v141():
+    """daily_notify_log — marker generic (kind) สำหรับแจ้งเตือนเช้า per-customer morningNotifyTime
+    (kind='bidopen'/'timeline' — N+201, 2026-07-12). recap ยังใช้ daily_recap_log เดิม."""
+    with get_connection() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS daily_notify_log (
+                kind        TEXT NOT NULL,
+                customer_id INTEGER NOT NULL,
+                date_th     TEXT NOT NULL,
+                sent_at     TEXT NOT NULL,
+                PRIMARY KEY (kind, customer_id, date_th)
             )""")
 
 

@@ -92,7 +92,8 @@ export interface PortalNotes {
   budgetMax?: number;
   isSME?: boolean;
   isMIT?: boolean;
-  notifyTime?: string;
+  notifyTime?: string;         // เวลาสรุปประจำวัน (default 23:00 — N+200)
+  morningNotifyTime?: string;  // เวลาแจ้งเตือนตอนเช้า: งานยื่นซองวันนี้ + แผนงานที่จด (default 07:30 — N+201)
   starred?: string[];
   documents?: Record<string, DocumentFile[]>;
   userName?: string;

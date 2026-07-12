@@ -30,13 +30,15 @@ assert "https://x/portal" in m, m
 print("OK build_morning_message")
 
 # --- สรุปเย็น: section พรุ่งนี้ ---
+# (fix N+201: assert เดิมค้าง copy เก่า "เจองานที่เกี่ยวกับคุณ/เปิดประมูล" — พังก่อนหน้านี้อยู่แล้ว
+#  ปรับให้ตรง copy จริงของ build_message ปัจจุบัน)
 s = summary.build_message("ก", 3, tomorrow_jobs=JOBS, link_fn=_link)
-assert "เจองานที่เกี่ยวกับคุณ 3 งาน" in s, s          # heartbeat เดิมคงอยู่
-assert "พรุ่งนี้มีงานเปิดประมูล 2 งาน" in s, s         # section ใหม่
+assert "ผมส่งงานในพื้นที่ของคุณไปแล้ว 3 งาน" in s, s   # heartbeat เดิมคงอยู่
+assert "พรุ่งนี้มีงานเปิดยื่นซอง 2 งาน" in s, s          # section พรุ่งนี้
 assert "ถนน A" in s and "ถนน B" in s, s
 # ไม่มีงานพรุ่งนี้ → ไม่มี section (backward-compat: เรียกแบบเดิมได้)
 s0 = summary.build_message("ก", 0)
-assert "พรุ่งนี้มีงานเปิดประมูล" not in s0, s0
+assert "มีงานเปิดยื่นซอง" not in s0, s0
 assert "ยังไม่มีงานใหม่" in s0, s0
 print("OK build_message tomorrow section")
 print("OK test_bidopen_notify")

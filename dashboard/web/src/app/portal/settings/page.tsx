@@ -32,6 +32,7 @@ export default async function SettingsPage() {
       initialIsSME={notes.isSME ?? false}
       initialIsMIT={notes.isMIT ?? false}
       initialNotifyTime={notes.notifyTime ?? '23:00'} // default ตรง engine (Sebastian_Daily_User_Summary.DEFAULT_NOTIFY)
+      initialMorningTime={notes.morningNotifyTime ?? '07:30'} // default ตรง engine (notify_schedule.DEFAULT_MORNING)
       notes={notes}
     />
   );

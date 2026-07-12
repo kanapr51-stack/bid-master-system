@@ -20,7 +20,7 @@ function toClasses(keywords: string[], budgetMin: number, budgetMax: number): Bu
   }];
 }
 
-export function SettingsClient({ provinces, initialKeywords, initialBudgetMin, initialBudgetMax, initialIsSME, initialIsMIT, initialNotifyTime, notes }: {
+export function SettingsClient({ provinces, initialKeywords, initialBudgetMin, initialBudgetMax, initialIsSME, initialIsMIT, initialNotifyTime, initialMorningTime, notes }: {
   provinces: string[];
   initialKeywords: string[];
   initialBudgetMin: number;
@@ -28,6 +28,7 @@ export function SettingsClient({ provinces, initialKeywords, initialBudgetMin, i
   initialIsSME: boolean;
   initialIsMIT: boolean;
   initialNotifyTime: string;
+  initialMorningTime: string;
   notes: PortalNotes;
 }) {
   const router = useRouter();
@@ -38,6 +39,7 @@ export function SettingsClient({ provinces, initialKeywords, initialBudgetMin, i
   const [isSME, setIsSME] = useState(initialIsSME);
   const [isMIT, setIsMIT] = useState(initialIsMIT);
   const [notifyTime, setNotifyTime] = useState(initialNotifyTime);
+  const [morningTime, setMorningTime] = useState(initialMorningTime);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
@@ -56,6 +58,7 @@ export function SettingsClient({ provinces, initialKeywords, initialBudgetMin, i
         ...notes,
         classes: toClasses(keywords, budgetMin, budgetMax),
         isSME, isMIT, notifyTime,
+        morningNotifyTime: morningTime,
       };
       const r = await fetch('/api/portal/save', {
         method: 'POST',
@@ -147,10 +150,17 @@ export function SettingsClient({ provinces, initialKeywords, initialBudgetMin, i
           <div style={{ borderBottom: '1px solid var(--line)' }}>
             <Toggle value={isMIT} onChange={setIsMIT} label="สินค้า Made in Thailand" hint="แสดงงานที่กำหนด MIT" />
           </div>
+          <div style={{ padding: '12px 0', borderBottom: '1px solid var(--line)' }}>
+            <div className="p-fg-mute" style={{ fontSize: 12, marginBottom: 4 }}>🌅 เวลาแจ้งเตือนตอนเช้า</div>
+            <input className="p-input" type="time" value={morningTime}
+              onChange={e => setMorningTime(e.target.value)} style={{ width: '100%' }} />
+            <div className="p-fg-dim" style={{ fontSize: 11, marginTop: 4 }}>งานที่ถึงกำหนดยื่นซองวันนี้ + แผนงานที่จดไว้สำหรับวันนี้</div>
+          </div>
           <div style={{ padding: '12px 0 14px' }}>
-            <div className="p-fg-mute" style={{ fontSize: 12, marginBottom: 4 }}>เวลาแจ้งเตือนสรุปประจำวัน</div>
+            <div className="p-fg-mute" style={{ fontSize: 12, marginBottom: 4 }}>🌙 เวลาสรุปประจำวัน</div>
             <input className="p-input" type="time" value={notifyTime}
               onChange={e => setNotifyTime(e.target.value)} style={{ width: '100%' }} />
+            <div className="p-fg-dim" style={{ fontSize: 11, marginTop: 4 }}>สรุปงานที่ส่งวันนี้ + งานเปิดยื่นซองพรุ่งนี้</div>
           </div>
         </div>
 

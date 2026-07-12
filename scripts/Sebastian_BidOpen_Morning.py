@@ -1,11 +1,16 @@
-"""Sebastian_BidOpen_Morning.py — แจ้งเตือนเช้า (07:00 ไทย): งานที่ยื่นซอง "วันนี้" ในพื้นที่ของ user.
+"""Sebastian_BidOpen_Morning.py — แจ้งเตือนเช้า: งานที่ยื่นซอง "วันนี้" ในพื้นที่ของ user.
+
+N+201 (2026-07-12): per-customer morningNotifyTime (notes, default 07:30) — timer ยิงทุก 15 นาที
+สคริปต์เช็คเองว่าใครถึงเวลา+ยังไม่ประมวลผลวันนี้ (marker daily_notify_log kind='bidopen';
+due แต่ไม่มีงาน = mark เฉยๆ ไม่ส่ง → พฤติกรรม one-shot/วัน เท่าเดิม แค่เวลาเลือกได้)
 
 scope = bid_open.bid_open_for_customer (งานที่ระบบ match ให้ลูกค้า = delivery_log non-test)
 ที่ bid_submit_date == วันนี้ (ไทย). ส่ง LINE เฉพาะ user ที่มี ≥1 งาน (0 งาน = ไม่ส่ง — เลี่ยง spam เช้า).
 
 Usage:
-    python scripts/Sebastian_BidOpen_Morning.py            # ส่งจริง
-    python scripts/Sebastian_BidOpen_Morning.py --dry-run  # preview เฉยๆ
+    python scripts/Sebastian_BidOpen_Morning.py            # ส่งเฉพาะคนที่ถึงเวลา (โหมด timer)
+    python scripts/Sebastian_BidOpen_Morning.py --all      # ส่งทุกคนทันที (manual)
+    python scripts/Sebastian_BidOpen_Morning.py --dry-run  # preview เฉยๆ (ไม่ mark)
 """
 import argparse
 import sys
@@ -48,39 +53,55 @@ def build_morning_message(name: str, jobs: list, link_fn=None, portal_link: str 
 
 def main():
     ap = argparse.ArgumentParser(description="Sebastian morning bid-open reminder (LINE)")
-    ap.add_argument("--dry-run", action="store_true", help="Preview เฉยๆ ไม่ส่งจริง")
+    ap.add_argument("--dry-run", action="store_true", help="Preview เฉยๆ ไม่ส่งจริง ไม่ mark")
+    ap.add_argument("--all", action="store_true", help="ส่งทุกคนทันที ข้ามเช็คเวลา/marker")
     args = ap.parse_args()
 
-    today_th = datetime.now(TZ_TH).strftime("%Y-%m-%d")
-    now_th = datetime.now(TZ_TH).strftime("%H:%M")
+    import notify_schedule as ns
+    now = datetime.now(TZ_TH)
+    today_th = now.strftime("%Y-%m-%d")
+    now_th = now.strftime("%H:%M")
+    now_iso = now.isoformat(timespec="seconds")
 
     with get_connection() as conn:
         customers = conn.execute(
-            "SELECT id, line_user_id, display_name FROM customers "
+            "SELECT id, line_user_id, display_name, notes FROM customers "
             "WHERE active=1 AND COALESCE(is_test_data,0)=0"
         ).fetchall()
-        targets = []
+        targets, no_jobs = [], []
         for c in customers:
+            t = ns.pref_time(c["notes"], "morningNotifyTime", ns.DEFAULT_MORNING)
+            if not args.all and not ns.is_due(conn, "bidopen", c["id"], t, now_th, today_th):
+                continue
             jobs = bid_open.bid_open_for_customer(conn, c["id"], today_th)
             if jobs:
-                targets.append((c, jobs))
+                targets.append((c, t, jobs))
+            else:
+                no_jobs.append(c["id"])
+        if not args.dry_run:
+            for cid in no_jobs:   # due แต่ไม่มีงาน → mark ว่าประมวลผลแล้ว (one-shot/วัน เท่าพฤติกรรมเดิม)
+                ns.mark_sent(conn, "bidopen", cid, today_th, now_iso)
 
-    print(f"[{now_th}] morning bid-open — {len(targets)} customers มีงานยื่นซองวันนี้ (today_th={today_th})", flush=True)
+    print(f"[{now_th}] morning bid-open — due {len(targets) + len(no_jobs)}/{len(customers)} · มีงาน {len(targets)} (today_th={today_th})", flush=True)
+    if not targets:
+        return
 
     token = None if args.dry_run else _load_line_token()
     ok = fail = 0
-    for c, jobs in targets:
+    for c, t, jobs in targets:
         name = c["display_name"] or c["line_user_id"][:10]
         link_fn = (lambda uid: lambda pid: build_follow_link(uid, pid))(c["line_user_id"])
         msg = build_morning_message(name, jobs, link_fn=link_fn, portal_link=_portal_link(c["line_user_id"]))
         if args.dry_run:
-            print(f"\n--- [{name}] {len(jobs)} งาน ---\n{msg}\n", flush=True)
+            print(f"\n--- [{name}] notify={t} {len(jobs)} งาน ---\n{msg}\n", flush=True)
             ok += 1
             continue
         success, error_type, error_msg = send_line_push(token, c["line_user_id"], msg)
         if success:
             ok += 1
-            print(f"  ✅ {name} ({len(jobs)} งาน)", flush=True)
+            with get_connection() as conn:
+                ns.mark_sent(conn, "bidopen", c["id"], today_th, now_iso)
+            print(f"  ✅ {name} (notify={t}, {len(jobs)} งาน)", flush=True)
         else:
             fail += 1
             print(f"  ❌ {name}: {error_type} {error_msg}", flush=True)

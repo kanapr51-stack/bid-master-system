@@ -50,7 +50,8 @@ def find_due_reminders(conn, today, tomorrow=None):
     users = {}
     for r in rows:
         uid = r["line_user_id"]
-        u = users.setdefault(uid, {"line_user_id": uid, "display_name": r["display_name"] or "",
+        u = users.setdefault(uid, {"line_user_id": uid, "customer_id": r["customer_id"],
+                                   "display_name": r["display_name"] or "",
                                    "today": today, "jobs": {}})
         pid = r["project_id"]
         job = u["jobs"].setdefault(pid, {"project_id": pid,
@@ -87,27 +88,52 @@ def _shadow_log(records):
 def main():
     ap = argparse.ArgumentParser(description="Timeline reminder (job_notes due today)")
     ap.add_argument("--live", action="store_true", help="ส่ง LINE จริง (ไม่ใส่ = shadow/dry-run)")
+    ap.add_argument("--all", action="store_true", help="ส่งทุกคนทันที ข้ามเช็คเวลา/marker (N+201)")
     ap.add_argument("--date", default=None, help="override วันที่ 'YYYY-MM-DD' (test)")
     args = ap.parse_args()
-    today = args.date or datetime.now(TZ_TH).date().isoformat()
+    import notify_schedule as ns
+    now = datetime.now(TZ_TH)
+    today = args.date or now.date().isoformat()
     tomorrow = (datetime.fromisoformat(today).date() + timedelta(days=1)).isoformat()
+    now_th = now.strftime("%H:%M")
+    now_iso = now.isoformat(timespec="seconds")
+    # N+201: gate per-customer morningNotifyTime (default 07:30) + marker kind='timeline'
     with get_connection() as conn:
-        groups = find_due_reminders(conn, today, tomorrow)
+        by_uid = {g["line_user_id"]: g for g in find_due_reminders(conn, today, tomorrow)}
+        customers = conn.execute(
+            "SELECT id, line_user_id, display_name, notes FROM customers "
+            "WHERE active=1 AND COALESCE(is_test_data,0)=0").fetchall()
+        due, no_notes = [], []
+        for c in customers:
+            t = ns.pref_time(c["notes"], "morningNotifyTime", ns.DEFAULT_MORNING)
+            if not args.all and not ns.is_due(conn, "timeline", c["id"], t, now_th, today):
+                continue
+            g = by_uid.get(c["line_user_id"])
+            if g:
+                due.append((c, g))
+            else:
+                no_notes.append(c["id"])
+        if args.live:
+            for cid in no_notes:   # due แต่ไม่มีโน้ตวันนี้ → mark ประมวลผลแล้ว (one-shot/วัน เท่าเดิม)
+                ns.mark_sent(conn, "timeline", cid, today, now_iso)
     mode = "LIVE" if args.live else "SHADOW"
-    print(f"[timeline_reminder] {mode} today={today} tomorrow={tomorrow} due_users={len(groups)}")
-    if not groups:
+    print(f"[timeline_reminder] {mode} today={today} tomorrow={tomorrow} due_users={len(due)} (no-notes={len(no_notes)})")
+    if not due:
         return
     token = None
     if args.live:
         from Sebastian_LINE_Sender import _load_line_token
         token = _load_line_token()
     shadow_records = []
-    for g in groups:
+    for c, g in due:
         text = build_reminder_text(g)
         n_items = sum(len(j["items"]) for j in g["jobs"])
         if args.live:
             from Sebastian_LINE_Sender import send_line_push
             ok, etype, emsg = send_line_push(token, g["line_user_id"], text)
+            if ok:
+                with get_connection() as conn:
+                    ns.mark_sent(conn, "timeline", c["id"], today, now_iso)
             print(f"  → {g['line_user_id'][:10]} sent={ok} items={n_items} {etype or ''}")
         else:
             print(f"  [SHADOW] {g['line_user_id'][:10]} would-send items={n_items}, jobs={len(g['jobs'])}")

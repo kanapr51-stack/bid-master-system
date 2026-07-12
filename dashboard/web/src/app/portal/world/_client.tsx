@@ -78,7 +78,7 @@ const STAGE_META: { key: JobStage; label: string; icon: string }[] = [
 
 // ── Tracked Job Card ──────────────────────────────────────────────────────────
 
-function TrackedJobCard({ job, stage, starred, onStar, detailHref }: { job: TrackedJob; stage: JobStage; starred: boolean; onStar: () => void; detailHref?: string }) {
+function TrackedJobCard({ job, stage, starred, onStar, detailHref, followed, onToggleFollow }: { job: TrackedJob; stage: JobStage; starred: boolean; onStar: () => void; detailHref?: string; followed: boolean; onToggleFollow: () => void }) {
   const dl = daysLeftOf(job.deadline);
   const urgency = dl === null ? 'outline' : dl <= 5 ? 'wine' : dl <= 10 ? 'gold' : 'outline';
   const title = <div className="p-display" style={{ fontSize: 15, lineHeight: 1.3 }}>{job.name}</div>;
@@ -132,11 +132,22 @@ function TrackedJobCard({ job, stage, starred, onStar, detailHref }: { job: Trac
           ยื่นซอง: {job.deadline}{job.deadline_time ? ` ${job.deadline_time}` : ''}
         </div>
       )}
-      {detailHref && (
-        <Link href={detailHref} className="p-fg-accent" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12.5, marginTop: 10, textDecoration: 'none' }}>
-          ดูรายละเอียด · คู่แข่ง · โอกาสชนะ <Icons.ChevronRight size={12} />
-        </Link>
-      )}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
+        {detailHref ? (
+          <Link href={detailHref} className="p-fg-accent" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12.5, textDecoration: 'none' }}>
+            ดูรายละเอียด · คู่แข่ง · โอกาสชนะ <Icons.ChevronRight size={12} />
+          </Link>
+        ) : <span />}
+        {/* N+197.2: ยกเลิกติดตามในที่ — การ์ดคงอยู่ ปุ่มสลับเป็น "ติดตาม" ให้กดกลับได้ (หายตอน reload) */}
+        <button
+          className={`p-btn ${followed ? 'p-btn-ghost' : 'p-btn-primary'}`}
+          title={followed ? 'กดเพื่อยกเลิกติดตาม' : 'กดเพื่อติดตาม'}
+          onClick={e => { e.stopPropagation(); onToggleFollow(); }}
+          style={{ height: 30, padding: '0 12px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}
+        >
+          <Icons.Bell size={12} />{followed ? 'ติดตามแล้ว' : 'ติดตาม'}
+        </button>
+      </div>
     </div>
   );
 }
@@ -245,6 +256,31 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
 
   const [discover, setDiscover] = useState<DiscoverGroups>(discoverGroups);
   const [following, setFollowing] = useState<Set<string>>(new Set());
+
+  // N+197.2: ยกเลิกติดตามจากบอร์ด tracked — optimistic สองทิศ, revert เมื่อพลาด (pattern /portal/jobs)
+  const [unfollowed, setUnfollowed] = useState<Set<string>>(new Set());
+  const handleTrackedToggle = async (projectId: string) => {
+    const wasFollowed = !unfollowed.has(projectId);
+    setUnfollowed(prev => {
+      const n = new Set(prev);
+      if (wasFollowed) n.add(projectId); else n.delete(projectId);
+      return n;
+    });
+    try {
+      const r = await fetch(wasFollowed ? '/api/portal/unfollow' : '/api/portal/follow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_id: projectId }),
+      });
+      if (!r.ok) throw new Error('toggle follow failed');
+    } catch {
+      setUnfollowed(prev => {
+        const n = new Set(prev);
+        if (wasFollowed) n.delete(projectId); else n.add(projectId);
+        return n;
+      });
+    }
+  };
 
   // กดการ์ด "★ งานที่สนใจ" = กรองบอร์ดเหลือเฉพาะงานติดดาว (กดซ้ำ = เลิกกรอง)
   const [starOnly, setStarOnly] = useState(false);
@@ -389,6 +425,8 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
                         starred={starred.has(job.project_id)}
                         onStar={() => toggleStar(job.project_id)}
                         detailHref={detailHrefOf(job.project_id)}
+                        followed={!unfollowed.has(job.project_id)}
+                        onToggleFollow={() => handleTrackedToggle(job.project_id)}
                       />
                     ))}
                   </div>

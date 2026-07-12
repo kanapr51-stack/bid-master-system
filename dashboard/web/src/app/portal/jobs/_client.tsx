@@ -29,7 +29,7 @@ function fmtSentDate(s: string): string {
   return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
 }
 
-function SentJobCard({ job, followed, onFollow }: { job: SentJob; followed: boolean; onFollow: () => void }) {
+function SentJobCard({ job, followed, onToggle }: { job: SentJob; followed: boolean; onToggle: () => void }) {
   const meta = STAGE_LABEL[job.stage] ?? STAGE_LABEL.bidding;
   return (
     <Link href={`/portal/job/${encodeURIComponent(job.project_id)}`} style={{ textDecoration: 'none', color: 'inherit' }}>
@@ -46,8 +46,8 @@ function SentJobCard({ job, followed, onFollow }: { job: SentJob; followed: bool
           <span className="p-fg-dim">🔔 ส่งเมื่อ {fmtSentDate(job.sent_at)}</span>
           <button
             className={`p-btn ${followed ? 'p-btn-ghost' : 'p-btn-primary'}`}
-            disabled={followed}
-            onClick={e => { e.preventDefault(); e.stopPropagation(); onFollow(); }}
+            title={followed ? 'กดเพื่อยกเลิกติดตาม' : 'กดเพื่อติดตาม'}
+            onClick={e => { e.preventDefault(); e.stopPropagation(); onToggle(); }}
             style={{ height: 30, padding: '0 12px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 5, marginLeft: 'auto' }}
           >
             <Icons.Bell size={12} />{followed ? 'ติดตามแล้ว' : 'ติดตาม'}
@@ -63,21 +63,30 @@ export function AllJobsClient({ data, engineDown }: { data: AllJobs | null; engi
   const [q, setQ] = useState('');
   // ติ๊กกรอง phase: ว่าง = เห็นทั้งหมด, ติ๊ก ≥1 = เฉพาะ stage ที่ติ๊ก (OR)
   const [stages, setStages] = useState<Set<SentJobStage>>(new Set());
-  // N+197: กดติดตามจากลิสต์ — optimistic add, revert เมื่อพลาด (pattern เดียวกับ world)
+  // N+197/197.1: toggle ติดตาม↔ยกเลิกจากลิสต์ — optimistic ทั้งสองทิศ, revert เมื่อพลาด
   const [followed, setFollowed] = useState<Set<string>>(
     () => new Set((data?.jobs ?? []).filter(j => j.followed).map(j => j.project_id)));
 
-  const handleFollow = async (projectId: string) => {
-    setFollowed(prev => new Set(prev).add(projectId));
+  const handleToggle = async (projectId: string) => {
+    const wasFollowed = followed.has(projectId);
+    setFollowed(prev => {
+      const n = new Set(prev);
+      if (wasFollowed) n.delete(projectId); else n.add(projectId);
+      return n;
+    });
     try {
-      const r = await fetch('/api/portal/follow', {
+      const r = await fetch(wasFollowed ? '/api/portal/unfollow' : '/api/portal/follow', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ project_id: projectId }),
       });
-      if (!r.ok) throw new Error('follow failed');
+      if (!r.ok) throw new Error('toggle follow failed');
     } catch {
-      setFollowed(prev => { const n = new Set(prev); n.delete(projectId); return n; });
+      setFollowed(prev => {
+        const n = new Set(prev);
+        if (wasFollowed) n.add(projectId); else n.delete(projectId);
+        return n;
+      });
     }
   };
 
@@ -189,7 +198,7 @@ export function AllJobsClient({ data, engineDown }: { data: AllJobs | null; engi
                 key={job.project_id}
                 job={job}
                 followed={followed.has(job.project_id)}
-                onFollow={() => handleFollow(job.project_id)}
+                onToggle={() => handleToggle(job.project_id)}
               />
             ))}
           </div>

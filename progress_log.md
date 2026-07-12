@@ -773,3 +773,20 @@ spec: docs/superpowers/specs/2026-07-12-unfollow-from-all-jobs-design.md
 
 ### Followup
 - (ไม่มี)
+
+## งานที่ N+197.2: ยกเลิกติดตามจากบอร์ด "งานที่ติดตาม" หน้า world (2026-07-12)
+
+### สถานะ: ✅ LIVE (Vercel — web-only, ไม่แตะ VPS)
+
+### สิ่งที่ทำ
+- `fb55d86` world/_client.tsx ไฟล์เดียว: TrackedJobCard เพิ่มปุ่ม "ติดตามแล้ว" แถวล่างขวา
+  → กด = unfollow แต่**การ์ดคงอยู่** ปุ่มสลับเป็น "ติดตาม" (undo ในที่ กันกดพลาดการ์ดวูบหาย)
+  → reload ครั้งถัดไปงานที่ unfollowed หายเอง (engine กรอง active อยู่แล้ว)
+- state `unfollowed` Set + handleTrackedToggle optimistic สองทิศ — reuse เส้น follow/unfollow N+197.1
+- spec: docs/superpowers/specs/2026-07-12-unfollow-world-tracked-design.md
+
+### Verify
+- tsc ผ่าน · Vercel READY (58s) · เส้นหลังบ้าน = ตัวที่ verify roundtrip จริงไปแล้วใน N+197.1
+
+### Followup
+- (ไม่มี) — ครบชุด follow/unfollow ทุกจุดที่โชว์สถานะติดตาม (world tracked + งานทั้งหมด)

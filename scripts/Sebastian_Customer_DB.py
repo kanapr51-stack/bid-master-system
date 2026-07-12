@@ -320,7 +320,21 @@ def init_schema():
     _migrate_v137()
     _migrate_v138()
     _migrate_v139()
+    _migrate_v140()
     print(f"Schema v1.14 ready: {DB_PATH}")
+
+
+def _migrate_v140():
+    """daily_recap_log — marker กันส่งสรุปประจำวันซ้ำ เมื่อ recap เปลี่ยนเป็น per-customer notifyTime
+    (timer ยิงทุก 15 นาที เช็คใครถึงเวลา+ยังไม่ได้รับวันนี้ — N+200, 2026-07-12)."""
+    with get_connection() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS daily_recap_log (
+                customer_id INTEGER NOT NULL,
+                date_th     TEXT NOT NULL,
+                sent_at     TEXT NOT NULL,
+                PRIMARY KEY (customer_id, date_th)
+            )""")
 
 
 def _migrate_v131():

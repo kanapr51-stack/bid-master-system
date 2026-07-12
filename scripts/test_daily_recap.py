@@ -55,7 +55,51 @@ def test_recap_message_has_all_sections():
     print("✅ recap message ครบ 4 ส่วน")
 
 
+def test_notify_time_parse():
+    import json
+    assert dus._notify_time(json.dumps({"notifyTime": "06:30"})) == "06:30"
+    assert dus._notify_time(json.dumps({"notifyTime": "25:99"})) == "20:00"   # format ผิด → default
+    assert dus._notify_time(json.dumps({"classes": []})) == "20:00"          # ไม่มี key
+    assert dus._notify_time("") == "20:00"
+    assert dus._notify_time("not-json") == "20:00"
+    print("✅ _notify_time parse + default 20:00")
+
+
+def test_is_due_and_marker():
+    cid = _seed()
+    with db.get_connection() as conn:
+        # ยังไม่ถึงเวลา → ไม่ due
+        assert not dus.is_due(conn, cid, "20:00", "19:59", TODAY)
+        # ถึงเวลา + ยังไม่ mark → due (รวมกรณีเลยเวลามานาน = self-healing)
+        assert dus.is_due(conn, cid, "20:00", "20:00", TODAY)
+        assert dus.is_due(conn, cid, "06:00", "23:00", TODAY)
+        # mark แล้ว → ไม่ due ซ้ำ (วันเดียวกัน) แต่วันใหม่ due ได้
+        dus.mark_recap_sent(conn, cid, TODAY, TODAY + "T20:00:05")
+        assert not dus.is_due(conn, cid, "20:00", "20:30", TODAY)
+        assert dus.is_due(conn, cid, "20:00", "20:30", TOMORROW)
+    print("✅ is_due + marker กันส่งซ้ำ")
+
+
+def test_morning_variant_message():
+    msg = dus.build_message(
+        "กัญจน์", 2,
+        today_jobs=[{"project_id": "P1", "name": "งานเมื่อวาน 1"}, {"project_id": "P2", "name": "งานเมื่อวาน 2"}],
+        tomorrow_jobs=[{"project_id": "P3", "name": "งานเปิดยื่นวันนี้"}],
+        notes_due=[{"project_id": "P1", "note": "ยื่นซองเช้านี้"}], morning=True)
+    assert "เมื่อวานผมส่งงาน" in msg and "2 งาน" in msg, msg
+    assert "วันนี้มีงานเปิดยื่นซอง" in msg, msg
+    assert "โน้ตที่ถึงกำหนดวันนี้" in msg, msg
+    assert "พรุ่งนี้" not in msg, msg
+    # ฉบับเช้า ไม่มีงานเมื่อวาน → copy ถูกกาล
+    msg0 = dus.build_message("กัญจน์", 0, morning=True)
+    assert "เมื่อวานยังไม่มีงานใหม่" in msg0, msg0
+    print("✅ morning variant (เมื่อวาน/วันนี้)")
+
+
 test_fetch_today_sent()
 test_fetch_notes_due()
 test_recap_message_has_all_sections()
+test_notify_time_parse()
+test_is_due_and_marker()
+test_morning_variant_message()
 print("ALL PASS daily_recap")

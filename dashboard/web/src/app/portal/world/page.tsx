@@ -69,6 +69,7 @@ export default async function WorldPage() {
       daysLeft={daysLeft}
       expiryLabel={expiryLabel}
       classes={classes}
+      subscribedProvinces={customer?.provinces ?? []}
       jobGroups={jobGroups}
       discoverGroups={discoverGroups}
       allNotifiedCount={allNotifiedCount}

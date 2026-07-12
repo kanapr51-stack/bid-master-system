@@ -1480,10 +1480,15 @@ async def portal_get_customer(
         raise HTTPException(status_code=403, detail="Forbidden")
     with get_conn() as conn:
         row = conn.execute(
-            "SELECT line_user_id, display_name, email, phone, tier, active, "
+            "SELECT id, line_user_id, display_name, email, phone, tier, active, "
             "created_at, updated_at, notes, expires_at FROM customers WHERE line_user_id=?",
             (line_user_id,),
         ).fetchone()
+        # N+198.1: จังหวัดที่ subscribe จริง (source of truth ของ "พื้นที่ครอบคลุม" — ไม่ใช่ notes.classes)
+        provinces = [r["province"] for r in conn.execute(
+            "SELECT sp.province FROM subscription_provinces sp "
+            "JOIN subscriptions s ON s.id=sp.subscription_id WHERE s.customer_id=?",
+            (row["id"],)).fetchall()] if row else []
     if not row:
         return {"ok": True, "customer": None}
     # expires_at จริง (แอดมินตั้งผ่าน set_customer_tier.py) มาก่อน;
@@ -1505,6 +1510,7 @@ async def portal_get_customer(
         "last_active_at": row["updated_at"] or "",
         "expires_at": expires_at,
         "notes": row["notes"] or "",
+        "provinces": provinces,
     }}
 
 

@@ -27,6 +27,7 @@ export interface Customer {
   expires_at: string;
   last_active_at: string;
   notes: string;
+  provinces: string[]; // จังหวัดที่ subscribe จริง (subscription_provinces — source of truth ของพื้นที่ครอบคลุม)
 }
 
 // Engine returns a subset; fill the rest with empty strings to keep the shape.
@@ -43,6 +44,7 @@ interface EngineCustomer {
   last_active_at?: string;
   expires_at?: string;
   notes?: string;
+  provinces?: string[];
 }
 
 function toCustomer(e: EngineCustomer): Customer {
@@ -60,6 +62,7 @@ function toCustomer(e: EngineCustomer): Customer {
     expires_at: e.expires_at ?? "",
     last_active_at: e.last_active_at ?? "",
     notes: e.notes ?? "",
+    provinces: e.provinces ?? [],
   };
 }
 

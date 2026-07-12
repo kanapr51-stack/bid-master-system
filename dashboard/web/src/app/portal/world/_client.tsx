@@ -221,12 +221,13 @@ interface WorldClientProps {
   daysLeft: number;
   expiryLabel: string;
   classes: BusinessClass[];
+  subscribedProvinces: string[];
   jobGroups: JobGroups;
   discoverGroups: DiscoverGroups;
   allNotifiedCount: number;
 }
 
-export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, expiryLabel, classes, jobGroups, discoverGroups, allNotifiedCount }: WorldClientProps) {
+export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, expiryLabel, classes, subscribedProvinces, jobGroups, discoverGroups, allNotifiedCount }: WorldClientProps) {
   // หน้า detail ธีม Board B ในเว็บเดียวกัน (เดิมเด้งไปหน้า engine ธีม A ผ่าน board-token)
   const detailHrefOf = (projectId: string) => `/portal/job/${encodeURIComponent(projectId)}`;
   const allJobs = STAGE_META.flatMap(s => jobGroups[s.key]);
@@ -307,7 +308,8 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
 
   const tier = TIERS.find(t => t.id === tierId) || TIERS[0];
   const totalKeywords = classes.reduce((a, c) => a + c.keywords.length, 0);
-  const provincesCount = new Set(classes.flatMap(c => c.geo.provinces)).size;
+  // N+198.1: พื้นที่ครอบคลุม = subscription จริง (แจ้งเตือนตามนี้) union กับที่ตั้งใน classes
+  const provincesCount = new Set([...subscribedProvinces, ...classes.flatMap(c => c.geo.provinces)]).size;
   const isUnlimited = chatQuota === -1;
   const quotaPct = isUnlimited ? 100 : Math.round(((chatQuota - chatUsed) / chatQuota) * 100);
 
@@ -440,7 +442,8 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
         {(() => {
           const discoverAll = [...discover.biddable, ...discover.planning]
             .filter(j => !filterOn || starred.has(j.project_id));
-          const hasPrefs = provincesCount > 0 && totalKeywords > 0;
+          // N+198: ไม่มี keyword = เห็นทั้งจังหวัด — มีพื้นที่ก็พอ ไม่บังคับคำค้น
+          const hasPrefs = provincesCount > 0;
           return (
             <div style={{ marginTop: 26 }}>
               <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 10 }}>

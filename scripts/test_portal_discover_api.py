@@ -85,6 +85,10 @@ async def main():
     assert bid2 == {'D_MATCH', 'D_FOLLOWED', 'D_NOKW', 'D_LOWBUDGET'}, bid2
     assert plan2 == {'B_FRESH'}, plan2
     assert all(j["matched_keywords"] == [] for j in r2["jobs"]["biddable"]), r2
+
+    # N+198.1: /api/portal/customer ส่ง provinces จาก subscription จริง (การ์ด "พื้นที่ครอบคลุม")
+    rc = await bms_api.portal_get_customer(line_user_id='UDISC', x_bms_secret='t')
+    assert rc["customer"]["provinces"] == ['นครพนม'], rc
     print("PASS test_portal_discover_api")
 
 

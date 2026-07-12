@@ -709,3 +709,29 @@ discover endpoint ไม่ได้เช็ค SumCard/hasPrefs ฝั่ง c
 - คืนนี้ 23:00 รอบส่งจริงรอบแรก (ทุกคน default 23:00 + กัญจน์ตั้งเอง 23:00) — สคริปต์
   Discord-notify เองอยู่แล้ว ("📋 Daily recap ... ส่ง X/Y")
 - เหลือจาก N+185: LINE OA paid upgrade (quota 300) อย่างเดียว
+
+## งานที่ N+201: เวลาแจ้งเตือนตอนเช้าตั้งเองได้ (bidopen + timeline) (2026-07-12)
+
+### สถานะ: ✅ LIVE (VPS + Vercel)
+
+### ที่มา
+กัญจน์: "พวกที่แจ้งเตือนตอน 7:30 อยากให้ตั้งค่าเวลาได้ด้วย" — เดิม bidopen-morning (07:00) +
+timeline-reminder (07:30) ยิงเวลาตายตัว. เลือกช่องเดียวคุมทั้งคู่ (approve "โอเค ลุยเลย")
+
+### สิ่งที่ทำ (`2894962`)
+- schema v1.41: `daily_notify_log(kind, customer_id, date_th)` marker generic
+- `notify_schedule.py` ใหม่ (helper กลาง): pref_time / is_due / mark_sent — DEFAULT_MORNING 07:30
+- BidOpen_Morning + timeline_reminder: due-mode per-customer `morningNotifyTime` + `--all`;
+  due แต่ไม่มี content = mark เฉยๆ (คง one-shot/วัน — ไม่มี late send แปลกๆ)
+- timers 2 ตัว → ทุก 15 นาที · settings เพิ่มช่อง 🌅 เวลาแจ้งเตือนตอนเช้า + 🌙 เวลาสรุป (มี hint)
+- **deploy-day guard:** seed marker วันนี้ให้ 4 ลูกค้า ×2 kinds ก่อนรอบ 15:30 — กันแจ้งซ้ำตอนบ่าย
+  (เช้านี้ timer เก่าส่งไปแล้ว) → dry-run ยืนยัน due 0/4 ทั้งคู่
+- fix แถม: test_bidopen_notify assert copy เก่า ("เจองานที่เกี่ยวกับคุณ/เปิดประมูล") พังค้างมาก่อน
+  — ปรับตรง copy จริง
+
+### Verify
+- test_notify_schedule (ใหม่ 3 ชุด) + test_timeline_reminder + test_bidopen_notify + test_daily_recap
+  เขียวหมด · tsc ผ่าน · VPS migrate v141 + timers ใหม่เดิน · Vercel READY
+
+### Followup
+- พรุ่งนี้ 07:30 = รอบ per-customer แรกของแจ้งเตือนเช้า (recap คืนนี้ 23:00)

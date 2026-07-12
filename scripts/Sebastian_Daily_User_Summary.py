@@ -1,7 +1,7 @@
 """Sebastian_Daily_User_Summary.py — heartbeat สรุปวันละครั้ง ส่ง LINE ให้ user (2026-06-01)
 
 N+200 (2026-07-12): per-customer notifyTime — timer ยิงทุก 15 นาที สคริปต์เช็คเองว่า
-ลูกค้าคนไหน "ถึงเวลาที่ตั้งไว้ (notes.notifyTime, default 20:00) แล้วยังไม่ได้รับวันนี้"
+ลูกค้าคนไหน "ถึงเวลาที่ตั้งไว้ (notes.notifyTime, default 23:00) แล้วยังไม่ได้รับวันนี้"
 (marker: daily_recap_log กันส่งซ้ำ + self-healing ถ้า timer พลาดรอบ จะส่งรอบถัดไป)
 - notifyTime ก่อนเที่ยง → ฉบับเช้า: สรุปงาน "เมื่อวาน" + งานเปิดยื่นซอง "วันนี้" + โน้ต due วันนี้
 - บ่าย/เย็น → ฉบับเดิม: งานวันนี้ + เปิดยื่นพรุ่งนี้ + โน้ต due พรุ่งนี้
@@ -49,7 +49,7 @@ def fetch_today_sent(conn, customer_id: int, today_th: str) -> list:
     return [{"project_id": r[0], "name": r[1] or r[0]} for r in rows]
 
 
-DEFAULT_NOTIFY = "20:00"
+DEFAULT_NOTIFY = "23:00"   # กัญจน์ 2026-07-12: เริ่มต้นทุกคน 5 ทุ่ม (ลูกค้าตั้งเองได้ที่ /portal/settings)
 
 
 def _notify_time(notes_str, default: str = DEFAULT_NOTIFY) -> str:

@@ -31,7 +31,7 @@ export default async function SettingsPage() {
       initialBudgetMax={cls?.budgetMaxBaht ?? 0}
       initialIsSME={notes.isSME ?? false}
       initialIsMIT={notes.isMIT ?? false}
-      initialNotifyTime={notes.notifyTime ?? '20:00'} // default ตรง engine (Sebastian_Daily_User_Summary.DEFAULT_NOTIFY)
+      initialNotifyTime={notes.notifyTime ?? '23:00'} // default ตรง engine (Sebastian_Daily_User_Summary.DEFAULT_NOTIFY)
       notes={notes}
     />
   );

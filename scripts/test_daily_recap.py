@@ -57,12 +57,13 @@ def test_recap_message_has_all_sections():
 
 def test_notify_time_parse():
     import json
+    assert dus.DEFAULT_NOTIFY == "23:00"                                      # กัญจน์ 2026-07-12
     assert dus._notify_time(json.dumps({"notifyTime": "06:30"})) == "06:30"
-    assert dus._notify_time(json.dumps({"notifyTime": "25:99"})) == "20:00"   # format ผิด → default
-    assert dus._notify_time(json.dumps({"classes": []})) == "20:00"          # ไม่มี key
-    assert dus._notify_time("") == "20:00"
-    assert dus._notify_time("not-json") == "20:00"
-    print("✅ _notify_time parse + default 20:00")
+    assert dus._notify_time(json.dumps({"notifyTime": "25:99"})) == "23:00"   # format ผิด → default
+    assert dus._notify_time(json.dumps({"classes": []})) == "23:00"          # ไม่มี key
+    assert dus._notify_time("") == "23:00"
+    assert dus._notify_time("not-json") == "23:00"
+    print("✅ _notify_time parse + default 23:00")
 
 
 def test_is_due_and_marker():

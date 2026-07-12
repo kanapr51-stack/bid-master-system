@@ -61,7 +61,7 @@ export default async function WorldPage() {
         budgetMax: notes.budgetMax ?? 50,
         isSME: notes.isSME ?? false,
         isMIT: notes.isMIT ?? false,
-        notifyTime: notes.notifyTime ?? '20:00',
+        notifyTime: notes.notifyTime ?? '23:00',
       }}
       tierId={tierId}
       chatUsed={notes.chatUsed ?? 0}

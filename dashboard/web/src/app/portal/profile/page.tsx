@@ -39,7 +39,7 @@ export default async function ProfilePage() {
         budgetMax: notes.budgetMax ?? 50,
         isSME: notes.isSME ?? false,
         isMIT: notes.isMIT ?? false,
-        notifyTime: notes.notifyTime ?? '20:00',
+        notifyTime: notes.notifyTime ?? '23:00',
         userName: notes.userName,
         userGmail: notes.userGmail,
         userPhone: notes.userPhone,

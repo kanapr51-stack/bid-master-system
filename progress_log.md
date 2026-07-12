@@ -647,3 +647,28 @@ discover endpoint ไม่ได้เช็ค SumCard/hasPrefs ฝั่ง c
 ### N+198.2 (ต่อเนื่อง — กัญจน์ขอ)
 - `77add25` การ์ด Keywords: ไม่มีคำค้น → โชว์ "ทั้งจังหวัด" แทนเลข 0 (+SumCard ย่อ font เมื่อ value เป็นคำ)
   — Vercel READY (web-only)
+
+## งานที่ N+199: หน้า "ตั้งค่า" แบน แทนระบบบริษัท (2026-07-12)
+
+### สถานะ: ✅ LIVE (Vercel — web-only)
+
+### ที่มา
+กัญจน์: แถบ "บริษัท" → "ตั้งค่า" + ถอดระบบบริษัท (เพิ่มขั้นตอนเกินจำเป็น; กดการ์ดพื้นที่ครอบคลุม
+แล้วเจอหน้าให้เพิ่มบริษัทก่อน = ใช้ไม่ได้)
+
+### สิ่งที่ทำ (`5444720` — ลบ 1,173 บรรทัด เพิ่ม 194)
+- หน้าใหม่ `/portal/settings`: พื้นที่ครอบคลุม (chips จาก customer.provinces, read-only + "แจ้ง
+  Sebastian เพื่อเปลี่ยน") · คำค้น (chips เพิ่ม/ลบ, ว่าง = ทั้งจังหวัด) · ช่วงงบ (บาท, 0 = ไม่จำกัด)
+- Data shape เดิม: เซฟเป็น hidden class เดียว `notes.classes[0]` (id='settings') — engine
+  `_classes_from_notes` อ่านต่อทันที ไม่แตะ matching; ว่างหมด → `classes: []`
+- nav "บริษัท"→"ตั้งค่า" (GearIcon) · world ตัดการ์ด "บริษัทของฉัน" + การ์ดพื้นที่/Keywords ชี้ settings
+- `/portal/classes` → redirect settings · ลบ classes/_client.tsx (1,138 บรรทัด) · company-stats ชี้ settings
+
+### Verify
+- tsc + next build ผ่าน (route ครบ) · Vercel READY · smoke: /portal/settings → 307 login (auth ทำงาน),
+  /portal/classes → 307 /portal/settings
+
+### Followup
+- แผน "phase-B category tick UI" (spec DRAFT 2026-07-01) **ตกยุคแล้ว** — ระบบบริษัท/หมวดถูกถอด
+  ตามทิศทางใหม่ของกัญจน์ (ตั้งค่าแบน + default ทั้งจังหวัด)
+- จังหวัด read-only — เปิดให้ลูกค้าแก้เองเมื่อ product นิ่งขึ้น (ตอนนี้แจ้งผ่านแอดมิน)

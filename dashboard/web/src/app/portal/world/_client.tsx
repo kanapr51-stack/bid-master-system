@@ -372,10 +372,10 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
 
         {/* Summary grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          <SumCard icon={<Icons.Layers size={16} />} label="บริษัทของฉัน" value={classes.length} unit="บริษัท" href="/portal/classes" />
-          <SumCard icon={<Icons.Map size={16} />} label="พื้นที่ครอบคลุม" value={provincesCount} unit="จังหวัด" href="/portal/classes" />
+          {/* N+199: ระบบบริษัทถูกถอด — การ์ดชี้หน้าตั้งค่าแบน */}
+          <SumCard icon={<Icons.Map size={16} />} label="พื้นที่ครอบคลุม" value={provincesCount} unit="จังหวัด" href="/portal/settings" />
           {/* N+198.2: ไม่มีคำค้น = เห็นทั้งจังหวัด — โชว์คำแทนเลข 0 (กัญจน์ 2026-07-12) */}
-          <SumCard icon={<Icons.Tag size={16} />} label="Keywords" value={totalKeywords > 0 ? totalKeywords : 'ทั้งจังหวัด'} unit={totalKeywords > 0 ? 'คำค้น' : ''} href="/portal/classes" />
+          <SumCard icon={<Icons.Tag size={16} />} label="Keywords" value={totalKeywords > 0 ? totalKeywords : 'ทั้งจังหวัด'} unit={totalKeywords > 0 ? 'คำค้น' : ''} href="/portal/settings" />
           <SumCard icon={<Icons.Bell size={16} />} label="งานที่ติดตาม" value={allJobs.length} unit="งาน" accent />
           {allNotifiedCount > 0 && (
             <SumCard icon={<Icons.Doc size={16} />} label="งานทั้งหมด" value={allNotifiedCount} unit="งาน" href="/portal/jobs" />
@@ -457,9 +457,9 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
               {!hasPrefs ? (
                 <div className="p-card" style={{ textAlign: 'center', padding: 28 }}>
                   <div className="p-serif p-fg-mute" style={{ fontStyle: 'italic', fontSize: 14 }}>
-                    ตั้งค่าพื้นที่และคำค้นในหน้า &quot;บริษัทของฉัน&quot; เพื่อให้ระบบหางานที่ตรงให้ท่านครับ
+                    ตั้งค่าพื้นที่ในหน้า &quot;ตั้งค่า&quot; เพื่อให้ระบบหางานที่ตรงให้ท่านครับ
                   </div>
-                  <Link href="/portal/classes"><button className="p-btn p-btn-primary" style={{ marginTop: 12, height: 34, padding: '0 16px', fontSize: 13 }}>ไปตั้งค่า</button></Link>
+                  <Link href="/portal/settings"><button className="p-btn p-btn-primary" style={{ marginTop: 12, height: 34, padding: '0 16px', fontSize: 13 }}>ไปตั้งค่า</button></Link>
                 </div>
               ) : discoverAll.length === 0 ? (
                 <div className="p-card" style={{ textAlign: 'center', padding: 28 }}>

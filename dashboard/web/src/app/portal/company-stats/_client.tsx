@@ -111,7 +111,7 @@ function CoverageCard({ cls, onEdit }: { cls: BusinessClass; onEdit: () => void 
           onClick={onEdit}
           style={{ width: '100%', marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
         >
-          <Icons.Edit size={14} />แก้ไขตั้งค่าใน &quot;บริษัท&quot;
+          <Icons.Edit size={14} />แก้ไขในหน้า &quot;ตั้งค่า&quot;
         </button>
       </div>
     </div>
@@ -285,7 +285,7 @@ export function CompanyStatsClient({ cls, allClasses }: Props) {
         <div style={{ marginBottom: 22 }}>
           <div className="p-mono p-fg-dim" style={{ fontSize: 10, letterSpacing: '0.08em', marginBottom: 4 }}>CONFIGURED COVERAGE</div>
           <div className="p-display" style={{ fontSize: 18, marginTop: 2, marginBottom: 10 }}>ขอบเขตที่ตั้งไว้</div>
-          <CoverageCard cls={cls} onEdit={() => router.push('/portal/classes')} />
+          <CoverageCard cls={cls} onEdit={() => router.push('/portal/settings')} />
         </div>
 
         <div style={{ marginTop: 22 }}>

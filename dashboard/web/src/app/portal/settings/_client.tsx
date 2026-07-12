@@ -1,0 +1,139 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { TopBar, Chip, Icons, ButlerNote } from '../_ui';
+import type { PortalNotes, BusinessClass } from '@/lib/portal-data';
+
+// N+199: ตั้งค่าแบน — เก็บเป็น hidden class เดียวใน notes.classes (engine อ่านรูปเดิม ไม่ต้องแก้ matching)
+function toClasses(keywords: string[], budgetMin: number, budgetMax: number): BusinessClass[] {
+  if (keywords.length === 0 && !budgetMin && !budgetMax) return []; // ว่างหมด = เห็นทั้งจังหวัด
+  return [{
+    id: 'settings',
+    name: 'ตั้งค่า',
+    color: '#B8893A',
+    geo: { mode: 'province', provinces: [], districts: [], tambons: [], gps: null, radiusKm: 30 },
+    keywords,
+    defaultKeywords: [],
+    ...(budgetMin > 0 ? { budgetMinBaht: budgetMin } : {}),
+    ...(budgetMax > 0 ? { budgetMaxBaht: budgetMax } : {}),
+  }];
+}
+
+export function SettingsClient({ provinces, initialKeywords, initialBudgetMin, initialBudgetMax, notes }: {
+  provinces: string[];
+  initialKeywords: string[];
+  initialBudgetMin: number;
+  initialBudgetMax: number;
+  notes: PortalNotes;
+}) {
+  const router = useRouter();
+  const [keywords, setKeywords] = useState<string[]>(initialKeywords);
+  const [kwInput, setKwInput] = useState('');
+  const [budgetMin, setBudgetMin] = useState(initialBudgetMin);
+  const [budgetMax, setBudgetMax] = useState(initialBudgetMax);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
+
+  const addKeyword = () => {
+    const k = kwInput.trim();
+    if (!k) return;
+    if (!keywords.includes(k)) setKeywords([...keywords, k]);
+    setKwInput('');
+  };
+
+  const save = async () => {
+    setSaving(true); setError(''); setSaved(false);
+    try {
+      const body: PortalNotes = { ...notes, classes: toClasses(keywords, budgetMin, budgetMax) };
+      const r = await fetch('/api/portal/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!r.ok) throw new Error('save failed');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2200);
+    } catch {
+      setError('บันทึกไม่สำเร็จ — ลองใหม่อีกครั้งครับ');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="p-enter">
+      <TopBar title="ตั้งค่า" subtitle="พื้นที่ · คำค้น · ช่วงงบ" onLeft={() => router.push('/portal/world')} />
+      <div className="p-page p-page-topbar" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+        {/* 📍 พื้นที่ครอบคลุม — subscription จริง (read-only) */}
+        <div className="p-card" style={{ padding: 16 }}>
+          <div className="p-smallcaps p-fg-mute" style={{ marginBottom: 10 }}>📍 พื้นที่ครอบคลุม</div>
+          {provinces.length > 0 ? (
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {provinces.map(p => <Chip key={p} tone="gold" icon={<Icons.Pin size={10} />}>จ.{p}</Chip>)}
+            </div>
+          ) : (
+            <div className="p-serif p-fg-mute" style={{ fontStyle: 'italic', fontSize: 13 }}>ยังไม่ได้กำหนดพื้นที่</div>
+          )}
+          <div className="p-fg-dim" style={{ fontSize: 11.5, marginTop: 10, lineHeight: 1.5 }}>
+            พื้นที่นี้ใช้ทั้งแจ้งเตือน LINE และงานบนบอร์ด — ต้องการเปลี่ยนพื้นที่ แจ้ง Sebastian ได้เลยครับ
+          </div>
+        </div>
+
+        {/* 🏷️ คำค้น */}
+        <div className="p-card" style={{ padding: 16 }}>
+          <div className="p-smallcaps p-fg-mute" style={{ marginBottom: 10 }}>🏷️ คำค้น</div>
+          {keywords.length > 0 ? (
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+              {keywords.map(k => (
+                <button key={k} onClick={() => setKeywords(keywords.filter(x => x !== k))}
+                  className="p-chip p-chip-gold" style={{ cursor: 'pointer', fontFamily: 'inherit' }}
+                  title="กดเพื่อลบคำนี้">
+                  {k} ✕
+                </button>
+              ))}
+            </div>
+          ) : (
+            <ButlerNote>ไม่ตั้งคำค้น = เห็นงานทุกประเภททั้งจังหวัด — เพิ่มคำเมื่ออยากจำกัดเฉพาะงานที่สนใจ เช่น &quot;ถนน&quot; &quot;อาคาร&quot;</ButlerNote>
+          )}
+          <div style={{ display: 'flex', gap: 8, marginTop: keywords.length > 0 ? 0 : 12 }}>
+            <input className="p-input" value={kwInput} onChange={e => setKwInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') addKeyword(); }}
+              placeholder="พิมพ์คำค้น เช่น ถนน" style={{ flex: 1 }} />
+            <button className="p-btn p-btn-ghost" onClick={addKeyword} style={{ height: 40, padding: '0 16px' }}>เพิ่ม</button>
+          </div>
+          {keywords.length > 0 && (
+            <div className="p-fg-dim" style={{ fontSize: 11.5, marginTop: 10 }}>กดที่คำเพื่อลบ — ลบหมด = กลับไปเห็นทั้งจังหวัด</div>
+          )}
+        </div>
+
+        {/* 💰 ช่วงงบ */}
+        <div className="p-card" style={{ padding: 16 }}>
+          <div className="p-smallcaps p-fg-mute" style={{ marginBottom: 10 }}>💰 ช่วงราคากลางที่สนใจ</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div>
+              <div className="p-fg-mute" style={{ fontSize: 12, marginBottom: 4 }}>งบต่ำสุด (บาท) — 0 = ไม่จำกัด</div>
+              <input className="p-input" type="number" step="100000" min="0" value={budgetMin || ''}
+                onChange={e => setBudgetMin(parseInt(e.target.value) || 0)} placeholder="ไม่จำกัด" style={{ width: '100%' }} />
+              {budgetMin > 0 && <div className="p-fg-dim" style={{ fontSize: 11, marginTop: 4 }}>= {(budgetMin / 1000000).toFixed(2)} ล้านบาท</div>}
+            </div>
+            <div>
+              <div className="p-fg-mute" style={{ fontSize: 12, marginBottom: 4 }}>งบสูงสุด (บาท) — 0 = ไม่จำกัด</div>
+              <input className="p-input" type="number" step="1000000" min="0" value={budgetMax || ''}
+                onChange={e => setBudgetMax(parseInt(e.target.value) || 0)} placeholder="ไม่จำกัด" style={{ width: '100%' }} />
+              {budgetMax > 0 && <div className="p-fg-dim" style={{ fontSize: 11, marginTop: 4 }}>= {(budgetMax / 1000000).toFixed(2)} ล้านบาท</div>}
+            </div>
+          </div>
+        </div>
+
+        {error && <div className="p-fg-mute" style={{ fontSize: 12.5, color: 'var(--wine, #a33)' }}>{error}</div>}
+        <button className="p-btn p-btn-primary" onClick={save} disabled={saving}
+          style={{ width: '100%', height: 48, fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          {saved ? <><Icons.Check size={16} />บันทึกเสร็จแล้ว</> : saving ? 'กำลังบันทึก…' : <><Icons.Check size={16} />บันทึกการตั้งค่า</>}
+        </button>
+      </div>
+    </div>
+  );
+}

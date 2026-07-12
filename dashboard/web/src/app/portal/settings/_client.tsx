@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { TopBar, Chip, Icons, ButlerNote, Toggle } from '../_ui';
-import type { PortalNotes, BusinessClass } from '@/lib/portal-data';
+import { DEFAULT_KEYWORDS_BY_CLASS, type PortalNotes, type BusinessClass } from '@/lib/portal-data';
 
 // N+199: ตั้งค่าแบน — เก็บเป็น hidden class เดียวใน notes.classes (engine อ่านรูปเดิม ไม่ต้องแก้ matching)
 function toClasses(keywords: string[], budgetMin: number, budgetMax: number): BusinessClass[] {
@@ -49,6 +49,15 @@ export function SettingsClient({ provinces, initialKeywords, initialBudgetMin, i
     if (!k) return;
     if (!keywords.includes(k)) setKeywords([...keywords, k]);
     setKwInput('');
+  };
+
+  // N+201.1: preset ต่อหมวด (ชุดเดิมจากระบบบริษัท) — กดหมวด = เพิ่มคำทั้งชุด / กดซ้ำ = เอาชุดนั้นออก
+  const presetSelected = (cat: string) =>
+    (DEFAULT_KEYWORDS_BY_CLASS[cat] || []).some(k => keywords.includes(k));
+  const togglePreset = (cat: string) => {
+    const preset = DEFAULT_KEYWORDS_BY_CLASS[cat] || [];
+    if (presetSelected(cat)) setKeywords(keywords.filter(k => !preset.includes(k)));
+    else setKeywords([...new Set([...keywords, ...preset])]);
   };
 
   const save = async () => {
@@ -111,10 +120,25 @@ export function SettingsClient({ provinces, initialKeywords, initialBudgetMin, i
           ) : (
             <ButlerNote>ไม่ตั้งคำค้น = เห็นงานทุกประเภททั้งจังหวัด — เพิ่มคำเมื่ออยากจำกัดเฉพาะงานที่สนใจ เช่น &quot;ถนน&quot; &quot;อาคาร&quot;</ButlerNote>
           )}
-          <div style={{ display: 'flex', gap: 8, marginTop: keywords.length > 0 ? 0 : 12 }}>
+          <div style={{ marginTop: keywords.length > 0 ? 0 : 12 }}>
+            <div className="p-fg-mute" style={{ fontSize: 12, marginBottom: 6 }}>เพิ่มเร็วจากหมวดสำเร็จรูป (กดเลือก · กดซ้ำเอาออก):</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+              {Object.keys(DEFAULT_KEYWORDS_BY_CLASS).map(cat => {
+                const on = presetSelected(cat);
+                return (
+                  <button key={cat} onClick={() => togglePreset(cat)}
+                    className={`p-chip ${on ? 'p-chip-gold' : 'p-chip-outline'}`}
+                    style={{ cursor: 'pointer', fontFamily: 'inherit' }} aria-pressed={on}>
+                    {on && '✓ '}{cat}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
             <input className="p-input" value={kwInput} onChange={e => setKwInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') addKeyword(); }}
-              placeholder="พิมพ์คำค้น เช่น ถนน" style={{ flex: 1 }} />
+              placeholder="หรือพิมพ์คำค้นเอง เช่น ถนน" style={{ flex: 1 }} />
             <button className="p-btn p-btn-ghost" onClick={addKeyword} style={{ height: 40, padding: '0 16px' }}>เพิ่ม</button>
           </div>
           {keywords.length > 0 && (

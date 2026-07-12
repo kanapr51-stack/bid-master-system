@@ -29,6 +29,9 @@ export default async function SettingsPage() {
       initialKeywords={keywords}
       initialBudgetMin={cls?.budgetMinBaht ?? 0}
       initialBudgetMax={cls?.budgetMaxBaht ?? 0}
+      initialIsSME={notes.isSME ?? false}
+      initialIsMIT={notes.isMIT ?? false}
+      initialNotifyTime={notes.notifyTime ?? '06:00'}
       notes={notes}
     />
   );

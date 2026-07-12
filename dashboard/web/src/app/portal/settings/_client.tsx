@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { TopBar, Chip, Icons, ButlerNote } from '../_ui';
+import { TopBar, Chip, Icons, ButlerNote, Toggle } from '../_ui';
 import type { PortalNotes, BusinessClass } from '@/lib/portal-data';
 
 // N+199: ตั้งค่าแบน — เก็บเป็น hidden class เดียวใน notes.classes (engine อ่านรูปเดิม ไม่ต้องแก้ matching)
@@ -20,11 +20,14 @@ function toClasses(keywords: string[], budgetMin: number, budgetMax: number): Bu
   }];
 }
 
-export function SettingsClient({ provinces, initialKeywords, initialBudgetMin, initialBudgetMax, notes }: {
+export function SettingsClient({ provinces, initialKeywords, initialBudgetMin, initialBudgetMax, initialIsSME, initialIsMIT, initialNotifyTime, notes }: {
   provinces: string[];
   initialKeywords: string[];
   initialBudgetMin: number;
   initialBudgetMax: number;
+  initialIsSME: boolean;
+  initialIsMIT: boolean;
+  initialNotifyTime: string;
   notes: PortalNotes;
 }) {
   const router = useRouter();
@@ -32,6 +35,9 @@ export function SettingsClient({ provinces, initialKeywords, initialBudgetMin, i
   const [kwInput, setKwInput] = useState('');
   const [budgetMin, setBudgetMin] = useState(initialBudgetMin);
   const [budgetMax, setBudgetMax] = useState(initialBudgetMax);
+  const [isSME, setIsSME] = useState(initialIsSME);
+  const [isMIT, setIsMIT] = useState(initialIsMIT);
+  const [notifyTime, setNotifyTime] = useState(initialNotifyTime);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
@@ -46,7 +52,11 @@ export function SettingsClient({ provinces, initialKeywords, initialBudgetMin, i
   const save = async () => {
     setSaving(true); setError(''); setSaved(false);
     try {
-      const body: PortalNotes = { ...notes, classes: toClasses(keywords, budgetMin, budgetMax) };
+      const body: PortalNotes = {
+        ...notes,
+        classes: toClasses(keywords, budgetMin, budgetMax),
+        isSME, isMIT, notifyTime,
+      };
       const r = await fetch('/api/portal/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -125,6 +135,22 @@ export function SettingsClient({ provinces, initialKeywords, initialBudgetMin, i
                 onChange={e => setBudgetMax(parseInt(e.target.value) || 0)} placeholder="ไม่จำกัด" style={{ width: '100%' }} />
               {budgetMax > 0 && <div className="p-fg-dim" style={{ fontSize: 11, marginTop: 4 }}>= {(budgetMax / 1000000).toFixed(2)} ล้านบาท</div>}
             </div>
+          </div>
+        </div>
+
+        {/* 🔔 คุณสมบัติบริษัท & การแจ้งเตือน (ย้ายจากหน้าโปรไฟล์/บริษัทเดิม — N+199.1) */}
+        <div className="p-card" style={{ padding: '0 16px' }}>
+          <div className="p-smallcaps p-fg-mute" style={{ padding: '14px 0 4px' }}>🔔 คุณสมบัติบริษัท & การแจ้งเตือน</div>
+          <div style={{ borderBottom: '1px solid var(--line)' }}>
+            <Toggle value={isSME} onChange={setIsSME} label="บริษัทเป็น SME" hint="แสดงงานที่กำหนด SME ได้ (แต้มต่อ +7.5%)" />
+          </div>
+          <div style={{ borderBottom: '1px solid var(--line)' }}>
+            <Toggle value={isMIT} onChange={setIsMIT} label="สินค้า Made in Thailand" hint="แสดงงานที่กำหนด MIT" />
+          </div>
+          <div style={{ padding: '12px 0 14px' }}>
+            <div className="p-fg-mute" style={{ fontSize: 12, marginBottom: 4 }}>เวลาแจ้งเตือนสรุปประจำวัน</div>
+            <input className="p-input" type="time" value={notifyTime}
+              onChange={e => setNotifyTime(e.target.value)} style={{ width: '100%' }} />
           </div>
         </div>
 

@@ -45,8 +45,8 @@ export default async function ProfilePage() {
         userPhone: notes.userPhone,
         userLineId: notes.userLineId,
       }}
-      classes={notes.classes ?? []}
-      classCount={notes.classes?.length ?? 0}
+      classes={(notes.classes ?? []).filter(c => c.id !== 'settings')} // N+199.1: ซ่อน hidden class ของหน้าตั้งค่า
+      classCount={(notes.classes ?? []).filter(c => c.id !== 'settings').length}
       registeredAt={customer?.registered_at?.slice(0, 10) ?? ''}
       tierId={getTierId(customer ?? { status: 'trial', notes: '' })}
       daysLeft={daysLeft}

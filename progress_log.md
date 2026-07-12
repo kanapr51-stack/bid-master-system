@@ -643,3 +643,7 @@ subscribe 2 จังหวัด + เงื่อนไข hasPrefs ยัง�
 ### Lesson
 เคลียร์ค่า config ที่ UI derive ต่อ — ต้อง grep ทุกจุดที่อ่านค่านั้นก่อน apply (คราวนี้เช็คแค่
 discover endpoint ไม่ได้เช็ค SumCard/hasPrefs ฝั่ง client)
+
+### N+198.2 (ต่อเนื่อง — กัญจน์ขอ)
+- `77add25` การ์ด Keywords: ไม่มีคำค้น → โชว์ "ทั้งจังหวัด" แทนเลข 0 (+SumCard ย่อ font เมื่อ value เป็นคำ)
+  — Vercel READY (web-only)

@@ -620,3 +620,26 @@ spec: docs/superpowers/specs/2026-07-12-unfollow-from-all-jobs-design.md
 
 ### Followup
 - เหลือเช็คจาก N+185: LINE OA paid upgrade + cron recap 23:00 (clear_keyword_seed ปิดแล้ว)
+
+## งานที่ N+198.1: fix regression — "พื้นที่ครอบคลุม = 0" หลังเคลียร์ seed (2026-07-12)
+
+### สถานะ: ✅ LIVE ครบ VPS + Vercel
+
+### Root cause
+กัญจน์เจอเอง: การ์ด "พื้นที่ครอบคลุม" หน้า world นับจังหวัดจาก notes.classes[].geo.provinces
+(ถูกเคลียร์เป็น [] ใน N+198) ไม่ใช่จาก subscription_provinces ที่แจ้งเตือนจริง → โชว์ 0 ทั้งที่
+subscribe 2 จังหวัด + เงื่อนไข hasPrefs ยังบังคับ totalKeywords>0 (ขัด semantic ใหม่ N+198
+— จะโชว์กล่อง "ไปตั้งค่า" แทนงาน)
+
+### Fix (`47fee58`)
+- engine /api/portal/customer เพิ่ม field `provinces` จาก subscription_provinces (source of truth)
+- web: Customer.provinces → world นับ provincesCount = union(subscription, classes) +
+  hasPrefs = มีพื้นที่ก็พอ (เลิกบังคับคำค้น)
+
+### Verify
+- test_portal_discover_api (+เคส provinces) + test_set_customer_tier เขียว · tsc ผ่าน
+- VPS: customer API ของ Kan Kan คืน provinces ['นครพนม','บึงกาฬ'] · Vercel READY
+
+### Lesson
+เคลียร์ค่า config ที่ UI derive ต่อ — ต้อง grep ทุกจุดที่อ่านค่านั้นก่อน apply (คราวนี้เช็คแค่
+discover endpoint ไม่ได้เช็ค SumCard/hasPrefs ฝั่ง client)

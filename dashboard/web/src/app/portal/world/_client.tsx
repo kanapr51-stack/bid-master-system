@@ -44,7 +44,7 @@ function SumCard({ icon, label, value, unit, accent, href, onClick, active }: { 
       <div>
         <div className="p-fg-mute p-mono" style={{ fontSize: 11, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{label}</div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 4 }}>
-          <span className="p-display" style={{ fontSize: 30, color: accent ? 'var(--accent)' : 'inherit', lineHeight: 1 }}>{value}</span>
+          <span className="p-display" style={{ fontSize: typeof value === 'string' ? 22 : 30, color: accent ? 'var(--accent)' : 'inherit', lineHeight: 1 }}>{value}</span>
           <span className="p-fg-dim" style={{ fontSize: 12 }}>{unit}</span>
         </div>
       </div>
@@ -374,7 +374,8 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <SumCard icon={<Icons.Layers size={16} />} label="บริษัทของฉัน" value={classes.length} unit="บริษัท" href="/portal/classes" />
           <SumCard icon={<Icons.Map size={16} />} label="พื้นที่ครอบคลุม" value={provincesCount} unit="จังหวัด" href="/portal/classes" />
-          <SumCard icon={<Icons.Tag size={16} />} label="Keywords" value={totalKeywords} unit="คำค้น" href="/portal/classes" />
+          {/* N+198.2: ไม่มีคำค้น = เห็นทั้งจังหวัด — โชว์คำแทนเลข 0 (กัญจน์ 2026-07-12) */}
+          <SumCard icon={<Icons.Tag size={16} />} label="Keywords" value={totalKeywords > 0 ? totalKeywords : 'ทั้งจังหวัด'} unit={totalKeywords > 0 ? 'คำค้น' : ''} href="/portal/classes" />
           <SumCard icon={<Icons.Bell size={16} />} label="งานที่ติดตาม" value={allJobs.length} unit="งาน" accent />
           {allNotifiedCount > 0 && (
             <SumCard icon={<Icons.Doc size={16} />} label="งานทั้งหมด" value={allNotifiedCount} unit="งาน" href="/portal/jobs" />

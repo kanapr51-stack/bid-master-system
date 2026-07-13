@@ -88,14 +88,20 @@ def send_to_user(line_user_id: str, title: str, body: str, url: str,
                     sent += 1
                 except WebPushException as e:
                     code = getattr(getattr(e, "response", None), "status_code", None)
-                    if code in (404, 410):  # เพิกถอน/ลบเบราว์เซอร์ → ปิดถาวร ไม่ยิงซ้ำ
-                        conn.execute("UPDATE push_subscriptions SET disabled_at=? WHERE id=?",
-                                     (_now(), s["id"]))
-                    _log(conn, s["id"], cid, project_id, source_stage, "failed", f"HTTP {code}: {e}")
+                    try:
+                        if code in (404, 410):  # เพิกถอน/ลบเบราว์เซอร์ → ปิดถาวร ไม่ยิงซ้ำ
+                            conn.execute("UPDATE push_subscriptions SET disabled_at=? WHERE id=?",
+                                         (_now(), s["id"]))
+                        _log(conn, s["id"], cid, project_id, source_stage, "failed", f"HTTP {code}: {e}")
+                    except Exception:
+                        pass  # log พังซ้ำ — อย่าให้ล้ม loop แล้ว rollback แถวของเครื่องก่อนหน้า
                     failed += 1
                 except Exception as e:  # payload/key เพี้ยน ฯลฯ — log แล้วไปต่อเครื่องถัดไป
-                    _log(conn, s["id"], cid, project_id, source_stage, "failed",
-                         f"{type(e).__name__}: {e}")
+                    try:
+                        _log(conn, s["id"], cid, project_id, source_stage, "failed",
+                             f"{type(e).__name__}: {e}")
+                    except Exception:
+                        pass  # log พังซ้ำ — อย่าให้ล้ม loop แล้ว rollback แถวของเครื่องก่อนหน้า
                     failed += 1
         return (sent, failed)
     except Exception:

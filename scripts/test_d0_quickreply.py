@@ -2,6 +2,7 @@
 ครอบ: is_following · _quick_reply_items · _text_message · send_line_push payload."""
 import os, tempfile, sys
 from pathlib import Path
+os.environ["BMS_WEBPUSH_DISABLED"] = "1"  # กัน mirror ยิงจริงใน test
 os.environ["BMS_DATA_DIR"] = tempfile.mkdtemp()
 sys.path.insert(0, str(Path(__file__).parent)); sys.stdout.reconfigure(encoding="utf-8")
 import Sebastian_Customer_DB as db; db.init_schema()

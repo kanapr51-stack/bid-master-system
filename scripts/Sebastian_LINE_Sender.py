@@ -30,6 +30,7 @@ from Sebastian_Customer_DB import (
     SubscriptionStore, init_schema, worker_id, _now,
 )
 import follow_token  # noqa: E402
+import webpush_send  # noqa: E402 — mirror ทุก LINE push → browser (best-effort)
 
 if sys.stdout and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -362,38 +363,55 @@ def build_follow_link(line_user_id: str, project_id: str, strict: bool = True) -
         return ""
 
 
-def send_line_push(token: str, line_user_id: str, text: str, quick_reply=None) -> tuple[bool, str, str]:
+def _mirror_webpush(line_user_id: str, text: str, ctx: dict | None) -> None:
+    """Mirror ข้อความเข้า web push — กลืน error ทั้งหมด ห้ามกระทบ LINE path."""
+    try:
+        c = ctx or {}
+        webpush_send.mirror_text(line_user_id, text,
+                                 c.get("project_id", ""), c.get("source_stage", ""))
+    except Exception:
+        pass
+
+
+def send_line_push(token: str, line_user_id: str, text: str, quick_reply=None,
+                   webpush_ctx=None) -> tuple[bool, str, str]:
     """
     Returns (success, error_type, error_msg).
     error_type: '' | 'retryable' | 'terminal'
     quick_reply: list ของ quick-reply action items (None = ข้อความเปล่า เหมือนเดิม).
+    webpush_ctx: {"project_id","source_stage"} → mirror เข้า web push (None = mirror แบบไม่มี ctx)
     """
-    try:
-        r = req_lib.post(
-            LINE_PUSH_URL,
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Content-Type": "application/json",
-            },
-            json={"to": line_user_id, "messages": [_text_message(text, quick_reply)]},
-            timeout=10,
-        )
-        if r.status_code == 200:
-            return True, "", ""
+    def _attempt() -> tuple[bool, str, str]:
         try:
-            detail = r.json().get("message", r.text[:120])
-        except Exception:
-            detail = r.text[:120]
-        if r.status_code == 429:
-            return False, "retryable", f"HTTP 429 rate_limit: {detail}"
-        if r.status_code >= 500:
-            return False, "retryable", f"HTTP {r.status_code}: {detail}"
-        # 400/403 — invalid user ID, blocked, unlinked
-        return False, "terminal", f"HTTP {r.status_code}: {detail}"
-    except req_lib.Timeout:
-        return False, "retryable", "timeout"
-    except Exception as e:
-        return False, "retryable", str(e)[:200]
+            r = req_lib.post(
+                LINE_PUSH_URL,
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type": "application/json",
+                },
+                json={"to": line_user_id, "messages": [_text_message(text, quick_reply)]},
+                timeout=10,
+            )
+            if r.status_code == 200:
+                return True, "", ""
+            try:
+                detail = r.json().get("message", r.text[:120])
+            except Exception:
+                detail = r.text[:120]
+            if r.status_code == 429:
+                return False, "retryable", f"HTTP 429 rate_limit: {detail}"
+            if r.status_code >= 500:
+                return False, "retryable", f"HTTP {r.status_code}: {detail}"
+            # 400/403 — invalid user ID, blocked, unlinked
+            return False, "terminal", f"HTTP {r.status_code}: {detail}"
+        except req_lib.Timeout:
+            return False, "retryable", "timeout"
+        except Exception as e:
+            return False, "retryable", str(e)[:200]
+
+    result = _attempt()
+    _mirror_webpush(line_user_id, text, webpush_ctx)
+    return result
 
 
 def _fmt_baht(v) -> str:
@@ -595,31 +613,36 @@ def _round2_market_disc(ctx):
 
 
 def send_line_flex(token: str, line_user_id: str, alt_text: str,
-                   flex_contents: dict) -> tuple[bool, str, str]:
+                   flex_contents: dict, webpush_ctx=None) -> tuple[bool, str, str]:
     """ส่ง flex message. Returns (success, error_type, error_msg). โครงเดียวกับ send_line_push"""
-    try:
-        r = req_lib.post(
-            LINE_PUSH_URL,
-            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-            json={"to": line_user_id,
-                  "messages": [{"type": "flex", "altText": alt_text[:400], "contents": flex_contents}]},
-            timeout=10,
-        )
-        if r.status_code == 200:
-            return True, "", ""
+    def _attempt() -> tuple[bool, str, str]:
         try:
-            detail = r.json().get("message", r.text[:120])
-        except Exception:
-            detail = r.text[:120]
-        if r.status_code == 429:
-            return False, "retryable", f"HTTP 429 rate_limit: {detail}"
-        if r.status_code >= 500:
-            return False, "retryable", f"HTTP {r.status_code}: {detail}"
-        return False, "terminal", f"HTTP {r.status_code}: {detail}"
-    except req_lib.Timeout:
-        return False, "retryable", "timeout"
-    except Exception as e:
-        return False, "retryable", f"{type(e).__name__}: {e}"
+            r = req_lib.post(
+                LINE_PUSH_URL,
+                headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+                json={"to": line_user_id,
+                      "messages": [{"type": "flex", "altText": alt_text[:400], "contents": flex_contents}]},
+                timeout=10,
+            )
+            if r.status_code == 200:
+                return True, "", ""
+            try:
+                detail = r.json().get("message", r.text[:120])
+            except Exception:
+                detail = r.text[:120]
+            if r.status_code == 429:
+                return False, "retryable", f"HTTP 429 rate_limit: {detail}"
+            if r.status_code >= 500:
+                return False, "retryable", f"HTTP {r.status_code}: {detail}"
+            return False, "terminal", f"HTTP {r.status_code}: {detail}"
+        except req_lib.Timeout:
+            return False, "retryable", "timeout"
+        except Exception as e:
+            return False, "retryable", f"{type(e).__name__}: {e}"
+
+    result = _attempt()
+    _mirror_webpush(line_user_id, alt_text, webpush_ctx)
+    return result
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -698,7 +721,9 @@ def main():
                                        status="failed", error="dry_run", error_type="retryable")
             log("=== LINE Sender done (prelim dry-run) ===")
             return
-        success, error_type, error_msg = send_line_push(token, item["line_user_id"], text, quick_reply=None)
+        success, error_type, error_msg = send_line_push(
+            token, item["line_user_id"], text, quick_reply=None,
+            webpush_ctx={"project_id": item["project_id"], "source_stage": item.get("source_stage", "")})
         store.mark_delivery_result(item["id"], item["customer_id"], item["project_id"],
                                    status="sent" if success else "failed",
                                    error=error_msg, error_type=error_type)
@@ -740,7 +765,9 @@ def main():
                                        status="failed", error="dry_run", error_type="retryable")
             log("=== LINE Sender done (winner dry-run) ===")
             return
-        success, error_type, error_msg = send_line_push(token, item["line_user_id"], text, quick_reply=None)
+        success, error_type, error_msg = send_line_push(
+            token, item["line_user_id"], text, quick_reply=None,
+            webpush_ctx={"project_id": item["project_id"], "source_stage": item.get("source_stage", "")})
         store.mark_delivery_result(item["id"], item["customer_id"], item["project_id"],
                                    status="sent" if success else "failed",
                                    error=error_msg, error_type=error_type)
@@ -771,7 +798,9 @@ def main():
                                        status="failed", error="dry_run", error_type="retryable")
             log("=== LINE Sender done (cancelled dry-run) ===")
             return
-        success, error_type, error_msg = send_line_push(token, item["line_user_id"], text, quick_reply=None)
+        success, error_type, error_msg = send_line_push(
+            token, item["line_user_id"], text, quick_reply=None,
+            webpush_ctx={"project_id": item["project_id"], "source_stage": item.get("source_stage", "")})
         store.mark_delivery_result(item["id"], item["customer_id"], item["project_id"],
                                    status="sent" if success else "failed",
                                    error=error_msg, error_type=error_type)
@@ -918,7 +947,8 @@ def main():
         link = build_follow_link(item["line_user_id"], item["project_id"])
         link_block = ("\n\n⭐ ติดตามงานนี้:\n" + link) if link else ""
         success, error_type, error_msg = send_line_push(
-            token, item["line_user_id"], body + ann_block + link_block, quick_reply=None)
+            token, item["line_user_id"], body + ann_block + link_block, quick_reply=None,
+            webpush_ctx={"project_id": item["project_id"], "source_stage": item.get("source_stage", "")})
     else:
         _auth = _feedback_authority_ids()
         _with_fb = (not _auth) or (item["customer_id"] in _auth)
@@ -930,7 +960,9 @@ def main():
             with_feedback=_with_fb,
         )
         alt_text = (full_name + " | " + text)[:400]
-        success, error_type, error_msg = send_line_flex(token, item["line_user_id"], alt_text, flex)
+        success, error_type, error_msg = send_line_flex(
+            token, item["line_user_id"], alt_text, flex,
+            webpush_ctx={"project_id": item["project_id"], "source_stage": item.get("source_stage", "")})
 
     # Step 6: mark result
     store.mark_delivery_result(

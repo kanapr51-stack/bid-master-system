@@ -6910,3 +6910,147 @@ lifecycle ฝั่ง DB/Board = B0→D0→PRELIM→W0 **ไม่มี stage 
 - Sebastian Chat quota ring (world) = ตัวเลขเฉยๆ (แชตจริงใน LINE) — ยังคงไว้ (ไม่ถึงกับหลอก แค่ข้อมูล)
 - keyword/งบ/รัศมี เซฟได้แต่ engine match แค่จังหวัด (Phase 2 keyword matching)
 - section discovery "งานใหม่ที่แมตช์" (Phase 2)
+
+
+## งานที่ N+180: CHECKPOINT — ก่อนเปลี่ยน session (2026-06-30)
+
+### สถานะ: ⏸ pause เปลี่ยน session
+
+### ✅ เสร็จแล้ว session นี้ (บอร์ด B = bid-master-dashboard.vercel.app/portal/world เป็นตัวหลัก)
+- N+176 customer store เว็บ→engine SQLite (เลิก Sheets/googleapis), cold start 9s→1.2s
+- N+177 บอร์ดโชว์งานติดตามจริง (GET /api/portal/jobs reuse _portal_jobs) + ⭐→job_stars + expires_at=created+30
+- N+178 LINE Login จริง (LINE_LOGIN_* บน Vercel, provider เดียวกับบอท) เลิก dev-mock → กัญจน์ login เห็น 15 งาน
+- N+179 เก็บของหลอก: หน้าแพ็กเกจ PAYMENT SUCCESS/QR/Demo → "แจ้งความสนใจ"→Discord admin (POST /api/portal/upgrade-request); ซ่อนปุ่มกระดิ่ง/COMING SOON/เร็วๆนี้
+- HEAD=5ca5317, VPS git=origin สะอาด, sanity เขียว (5 ราย/0 ซ้ำ)
+
+### 🎯 NEXT ACTION (session หน้า): Phase 2 บอร์ด B
+**ยังไม่มี spec/plan — ต้อง brainstorm ก่อน** (superpowers:brainstorming)
+2 งานหลัก (เรียงตามคุณค่า):
+1. **keyword matching ราย user** — ตอนนี้ engine match แค่จังหวัด (subscription_provinces). keyword/งบ/รัศมีที่ลูกค้าตั้งในหน้า "บริษัท" (notes.classes) เซฟได้แต่ยังไม่กรองงาน → ทำให้ keyword/งบ มีผลจริงกับการ match/แจ้งเตือน. ดู [[project_matching_design]] [[project_matching_per_tenant_debt]]
+2. **section discovery "งานใหม่ที่แมตช์"** — บอร์ดโชว์งานใหม่ในพื้นที่/keyword ที่ลูกค้ายังไม่ติดตาม (ตอนนี้โชว์เฉพาะ followed_jobs). ต้องสร้าง matching query บน projects_seen (จังหวัด+keyword). spec เดิม 2026-06-30-portal-real-jobs-design.md ระบุ discovery เป็น Phase 2
+
+### ⚠️ Gate/gotcha สำคัญ (zero-context ต้องรู้)
+- **บอร์ด 2 ตัว**: A=`api.butler-bms.com/portal` (HTML จากลิงก์ LINE, มีอยู่เดิม) · B=`bid-master-dashboard.vercel.app/portal/world` (Next.js, ตัวหลักใหม่). งานทำกับ B
+- **deploy B**: engine scp `scripts/bms_api.py`→VPS root@45.76.156.166 (`~/.ssh/bms_vps`, user bms, restart `bms-api.service`) + web `cd dashboard/web && vercel deploy --prod --yes`
+- **VPS git reconcile หลัง scp+push**: ต้อง stash+ff-pull (CRLF diff หลอก — ใช้ `git diff --ignore-cr-at-eol`); ดู [[project_deploy_debt]]
+- **vercel env add ห้ามผ่าน PowerShell pipe** (ใส่ BOM) → ใช้ bash printf
+- **secret**: BMS_INTERNAL_SECRET ตั้งแล้วทั้ง VPS .env + Vercel (ค่า A0W4kkq8... — ดูใน scratchpad/bms_secret.txt ถ้าต้อง)
+- engine test: asyncio direct + scratch DB copy (BMS_DATA_DIR) ห้ามแตะ prod
+- ลูกค้าจริงมี follow: Ua0d90e8(กัญจน์ 15), ณฐมน 7, Mr.suvit 8
+
+### ค้าง/ระวัง (เล็ก)
+- Sebastian Chat quota ring (world) = ตัวเลขเฉยๆ แชตจริงใน LINE (ไม่ถึงกับหลอก)
+- Postgres (หน้าประวัติ) ยังแยกจาก SQLite engine
+
+## งานที่ N+181: Phase 2 บอร์ด B — section "งานใหม่ที่แมตช์" (discovery + per-user keyword matching) (2026-07-01)
+
+### สถานะ: ✅ DEPLOYED (engine+web) & VERIFIED — เหลือ git push (creds กัญจน์) + VPS git reconcile
+
+### สิ่งที่ทำ (SDD: brainstorm→spec→plan→6 tasks subagent-driven→final review opus)
+- spec `docs/superpowers/specs/2026-06-30-portal-discovery-design.md` · plan `docs/superpowers/plans/2026-06-30-portal-discovery.md`
+- **scope ปลอดภัย**: discovery board เท่านั้น — ไม่แตะ LINE pipeline / `config/matching_preferences.json` / `job_matcher.match_job` (final review ยืนยัน airtight)
+- engine: `discovery_match.py` (pure matcher: province AND + keyword OR reuse `job_matcher._kw_hit` guards + negative safety net + budget range, budget=0 ผ่าน) · `_classes_from_notes` (รวม keyword/งบ ราย user จาก notes.classes) · `GET /api/portal/discover` (2 กลุ่ม biddable D0 deadline≥today / planning B* tor_is_fresh≤14d, ตัด followed, sort+limit 30) · `POST /api/portal/follow` (reuse `_record_follow`) · extract `_job_location_deadline` (DRY จาก `_portal_jobs`)
+- web: `getDiscoverJobs` + relay route `/api/portal/follow` (secret server-side) · section "✨ งานใหม่ที่แมตช์" บน world + `DiscoverCard` (ชิป matched_keywords + งบ + countdown + ปุ่มติดตาม, ⭐ แยก) + 3 empty states
+
+### Verify (prod, real data)
+- engine scp `bms_api.py`+`discovery_match.py` → `/opt/bms/app/scripts/`, `bms-api.service` active
+- smoke: 403 (bad secret) ✓ · 200 envelope `{ok,jobs:{biddable,planning}}` ✓
+- กัญจน์ (Ua0d90e8): provinces=[นครพนม,บึงกาฬ] แต่ **keywords=[]** → discover คืนว่าง = empty-state ถูกต้อง (ยังไม่ตั้ง keyword หน้าเว็บ; matching LINE ใช้ global config)
+- **read-only simulation** (kws=คอนกรีต/ถนน/ท่อ/ก่อสร้าง/อาคาร บน 1,182 candidate 2 จว.) → **biddable=11 planning=1** matched_keywords/deadline/location ถูก → พิสูจน์ pipeline ครบ
+- web `vercel deploy --prod` READY, aliased `bid-master-dashboard.vercel.app`
+- tests เขียว 5/5: discovery_match, classes_from_notes, discover_api, follow_api, portal_jobs (regression)
+- SDD: 6 task ผ่าน review (Task 3&4 มี fix wave 1 รอบ: Task3 revert D0 ตาม spec + test hermetic; Task4 add 400 case) + final review opus = READY, 0 Critical/Important
+
+### Followup (ค้าง)
+- 🔴 **git push origin main** — sandbox นี้ push (write creds) ไม่ผ่าน → กัญจน์รัน `git push origin main` เอง (local HEAD=b23db16, origin ยัง b0cafa7)
+- 🔴 **VPS git reconcile** หลัง push: `cd /opt/bms/app && git stash -u && git pull --ff-only && git stash drop` (VPS มี scp'd bms_api.py + untracked discovery_match.py → ให้ git คุมหลัง push)
+- 🟡 **users ต้องตั้ง keyword หน้า "บริษัท"** ถึงจะเห็น discovery (ตอนนี้ทุกคน keywords=[] → เห็น empty-state prompt) — คือ value ของฟีเจอร์ขึ้นกับ user ตั้งค่า
+- Minor debt (จาก review): `_classes_from_notes` ไม่ guard non-dict JSON (latent, web เขียน dict เสมอ); `portal-jobs.ts` ไม่มี `server-only` guard; `&quot;` vs Thai curly quotes (cosmetic)
+
+### Followup ✅ SEED keyword ให้ลูกค้าเดิม (2026-07-01)
+- พบ: ลูกค้าทุกคน notes ว่าง (classes=0) — subscription_provinces มาจาก LINE onboarding ไม่ใช่เว็บ → discovery ว่าง + web gate ไม่ผ่าน
+- seed: สร้าง business class 1 อันต่อคน (shape ตรง `classes/_client.tsx:1033`) geo.provinces=subscription_provinces เดิม + keywords=global config `keywords` (89 คำ ก่อสร้าง/จ้าง) → notes. idempotent (เฉพาะ classes=0), online backup ก่อน (`/opt/bms/data/backups/bms_customers_pre_kwseed_20260701_071556.db`)
+- 5 ลูกค้า seeded (Ua0d90e8/Ucb1758f/Ua93a6f5/U9e2e34e/U574d245 ทั้งหมด นครพนม+บึงกาฬ)
+- verify endpoint จริง: ทุกคน discover → **12 biddable + 1 planning** matched_keywords ถูก ✅
+- หมายเหตุ: งาน "ซื้อ" โผล่ด้วย (discovery ไม่มี proc split — ตัดทีหลังได้ถ้าต้องการ); DB บน VPS มี notes ราย user แล้ว (ต่างจาก global config LINE pipeline ที่ยังเหมือนเดิม)
+
+## งานที่ N+182: ย้าย Harvest Node ไปเครื่องใหม่ (single-writer cutover) (2026-07-01)
+
+### สถานะ: ✅ เสร็จ — เครื่องใหม่เป็น writer เดียว, เครื่องเก่า task disabled (รอยืนยัน auto-run รอบถัดไป)
+
+### สิ่งที่ทำ
+- setup เครื่องใหม่ตาม `docs/setup_harvest_node.md` เฟส 1-4 ครบ (repo/py/pkg/chrome/.ssh/.env, แก้ bat/vbs python path, Phase 3 manual harvest ผ่าน token+scp, Task Scheduler 25 นาที + startup script)
+- ขนของลับ 2 ไฟล์ (`bms_vps`+`.env`) ผ่าน LAN http.server ชั่วคราว (เน็ตบ้านเดียวกัน IP เดียว) แทน USB — โค้ดดึงจาก GitHub
+- ตอบข้อกังวลเครื่องใหม่: (1) "bypass Turnstile" ไม่ถูก — โค้ดใช้ browser จริงที่ Turnstile ปล่อยผ่านเอง อ่าน token ที่เว็บแจก frontend (ดู `token_service.py:134`), ไม่ solve/forge อะไร (2) "ต้อง login" ผิด — profile เครื่องเก่ามี cookie แค่ 3 (Xsrf-Token+TS* WAF) ไม่มี login/cf_clearance → copy profile ไม่ช่วย, ผ่านด้วย network-trust สดทุกรอบ
+
+### Verify (ก่อนตัด)
+- VPS `token_state.json`: provider `chrome9222_warm` (เครื่องใหม่) สดกว่า local เครื่องเก่า (`chrome9222`) → พิสูจน์ push เครื่องใหม่ landed จริง
+- disable `BMS_TokenHarvest` เครื่องเก่า (Status: Disabled) → VPS token (158s) สดกว่า local เครื่องเก่า (812s แช่แข็ง) = ยืนยันเครื่องใหม่เป็น writer เดียว
+- ปิดช่อง LAN 8731 + ลบ secret ที่ staged; scheduler.py/dashboard เครื่องเก่าไม่ใช่ harvester (ไม่ refresh token)
+
+### Followup
+- ✅ **auto-run เครื่องใหม่ยืนยันแล้ว** — VPS token provider พลิก `chrome9222_warm`→`chrome9222` (Task Scheduler รัน Chrome9222Provider เองสำเร็จ) = harvest ย้าย 100%
+- ✅ ไข `chrome9222_warm` — เครื่องใหม่มี temp debug script `harvest_now.py` (ไม่อยู่ใน repo) ตั้ง label เอง แล้ว harvest_and_push reuse token valid → push label นั้นไป VPS; token ถูกต้อง cosmetic เท่านั้น
+- ✅ **RSS_Probe disabled** (ต้อง admin) — telemetry เขียน `rss_availability_log.ndjson` ที่ไม่มี consumer active (VPS ทำ RSS จริงผ่าน `bms-rss-scraper`); ไม่กระทบงานจริง
+- ✅ **ลบ harvest startup เครื่องเก่า** — `BMS_HarvestOnLogon.vbs` ใน Startup folder รัน harvest_and_push ตอน login → เปิด Chrome 9222 (Chrome เด้งทุก boot). ปิด task อย่างเดียวไม่พอ (คนละตัว). ย้ายออก backup ที่ `backups/BMS_HarvestOnLogon.vbs.disabled_*` → เครื่องเก่าไม่เปิด Chrome harvest ตอน boot อีก (เครื่องใหม่ยังต้องมี startup นี้)
+
+### CGD decision: B (คง CGD ไว้เครื่องเก่าก่อน) — ดู [[project_cgd_api_blocks_datacenter]]
+- CGD (discovery 05:00 + winner_refresh 21:30 รายวัน) residential-only (VPS 403), **ยัง active** — คงไว้เครื่องเก่า
+- StartWhenAvailable=True → เครื่องเก่า**เปิดวันละครั้งตอนสะดวกพอ** (รันชดเชยรอบที่พลาด) ไม่ต้องเปิด 24 ชม.
+- 🔜 **ปลดเครื่องเก่าเต็ม (งานแยก ทีหลัง):** ขน `winner_history.db` **7.8GB** ไปเครื่องใหม่ผ่าน LAN + ตั้ง 2 task + **ต่อสาย sync ให้ auto** (`cgd_sync_to_vps.py --push` ตอนนี้ไม่มี task เรียก = manual/ค้าง)
+- เครื่องเก่าเหลือ non-BMS: `scheduler.py` + `dashboard/server.py` (แอปอื่น ไม่เกี่ยว BMS)
+
+## งานที่ N+184: Implementation plan — คืนพฤติกรรมแจ้งเตือน (สเตจ 1) (2026-07-02)
+
+### สถานะ: ✅ เสร็จ (แผน) — พร้อม subagent-driven execute
+
+### สิ่งที่ทำ
+- `superpowers:writing-plans` → `docs/superpowers/plans/2026-07-02-notification-restore.md` จาก spec APPROVED `2026-07-01-notification-restore-design.md`
+- สืบโค้ดจริงก่อนเขียน: cut/digest เกิดเฉพาะ `BMS_MATCHING_MODE=enforce` (บรรทัด 429-440 ใน `qualify_province_api`); shadow ไม่ตัด. production รัน enforce → นั่นคือสาเหตุ. labels lifecycle มีครบใน `Sebastian_LINE_Sender.format_notification` (bid_open/prelim/winner/cancelled). `build_follow_link` คืน `''` เงียบเมื่อ secret หาย = จุด silent-bypass
+
+### แผน = 5 task TDD (standalone `python scripts/test_*.py`)
+1. **Enrichment** — เพิ่ม param `dsvc=None` (inject test) + เลิก `is_digest` + เลิก enforce-cut (B0+D0) → งาน province เปิดอยู่ enqueue เสมอ, match_job ยัง shadow-log, soft label คงไว้
+2. **Verify labels** — test ล็อกป้าย 4 แบบ (คาดว่าไม่ต้องแก้ code)
+3. **Daily summary → recap** — `fetch_today_sent`+`fetch_notes_due`; build_message ใหม่ (นับวันนี้+รายการ+todo พรุ่งนี้+โน้ต due); ลบ digest wiring + `test_daily_digest.py`
+4. **follow-link fail-loud** — `build_follow_link(strict=True)` raise แทนคืน '' [[feedback_never_bypass_send_path]]
+5. **ลบ 89-keyword seed** — `clear_keyword_seed.py` idempotent, dry-run default, รันจริง (`--apply`) ใน Rollout หลัง backup
+
+### Self-review
+- API/schema ที่เทสต์อ้าง verify แล้วมีจริง (`add_subscription`, `format_notification`, `is_test_data` migration v1.6, `customers.notes`, `job_notes.entry_date`). ไม่มี placeholder. spec coverage ครบ 4 เป้า+6 component
+
+### Followup / Gate
+- 🔴 **prereq deploy คงเดิม: กัญจน์อัปเกรด LINE paid** ก่อน enforce instant (code+shadow ทำก่อนได้)
+- Rollout: push→VPS reconcile→shadow 1 วัน→test-send ตัวเอง→backup+ลบ seed→ตั้ง 23:00 recap→Sophia sanity
+
+---
+
+## งานที่ N+183: CHECKPOINT — ก่อนเปลี่ยน session (2026-07-01)
+
+### สถานะ: ⏸ pause เปลี่ยน session
+
+### ✅ เสร็จ session นี้
+- **N+181 Phase 2 discovery** DEPLOYED (engine+web, origin+VPS=bfb0eff) + seed keyword 89 คำให้ลูกค้า 5 ราย → discovery board มีงานจริง 12+1
+- **สืบบั๊ก LINE "ค้างงานเดียว"**: พบ notification_queue หยุดตั้งแต่ 25 มิ.ย. — enrichment worker `match_job` cut งานเป็น `filtered_no_match` (ก่อสร้างบางงานหายผิด) + งานก่อสร้างทั้งจังหวัด batch เป็น `qualified_digest` ส่งรอบเดียว 23:00; backlog digest เห็นแค่งานที่เคย fail
+- **ปิด user Hong** (active=0) + **ส่ง LINE backlog** 2 รอบ (รอบ 2 = 70 ข้อความ **พัง ไม่มีชื่อ/ลิงก์** เพราะเรียก `format_notification` ดิบ ข้าม `_plain_text_body`+quick_reply — กัญจน์ตัดสินใจ "พลาดแล้วพลาดไป")
+- **บทเรียน** → memory [[feedback_never_bypass_send_path]]: อย่าประกอบข้อความ LINE เอง reuse canonical path + test-send ตัวเองก่อน broadcast + verify output ก่อนเคลม
+- **brainstorm + spec** พฤติกรรมแจ้งเตือนใหม่ (approved)
+
+### 🎯 NEXT ACTION (session หน้า): เขียน implementation plan สเตจ 1
+- **skill:** `superpowers:writing-plans` → อ่าน spec `docs/superpowers/specs/2026-07-01-notification-restore-design.md` (APPROVED) แตกเป็น task ย่อย TDD
+- **สเตจ 1 = คืนพฤติกรรมแจ้งเตือนแบบเดิม** (ก่อน phase-B category UI):
+  1. งาน D0 ทั้งจังหวัด (นครพนม+บึงกาฬ, **ไม่กรอง** รวมนอกสาย) → enrichment worker เลิก cut/digest → `enqueue_notifications()` ทุกงาน → line-sender ส่ง **instant เต็ม (ชื่อ+ลิงก์ดูประกาศ+ลิงก์ติดตาม)** อัตโนมัติ
+  2. followed jobs เลื่อนเฟส → ส่งทันที + ป้ายหัวข้อ (ประกาศวันยื่นซอง/สรุปราคาเบื้องต้น/ผู้ชนะ) — verify winner-poller labels
+  3. **23:00 = สรุปประจำวัน** (count วันนี้ + todo พรุ่งนี้ = งานยื่นซองพรุ่งนี้ **+ โน้ต job_notes/timeline due**) — แก้ `Sebastian_Daily_User_Summary.py`
+  4. ลบ seed 89-keyword
+- **priority: ไม่พลาดงาน** = ห้ามตัดทิ้งเงียบ, fail-loud
+- หลังเขียนแผน → execute (subagent-driven) → **shadow test** (log ปริมาณ/วัน) → deploy
+
+### ⚠️ Gate/gotcha
+- 🔴 **PREREQ ก่อน deploy instant: กัญจน์ต้องอัปเกรด LINE OA เป็น paid** (free 300/เดือน แต่ instant ทุกงาน ~400-500/เดือน) — เขียนแผน+โค้ด+shadow ได้ก่อน รอแค่ deploy-enforce. เช็ค quota: `/v2/bot/message/quota` (ตอนนี้ limited:300, ใช้ 91)
+- **reuse line-sender path** (enqueue → sender) ห้าม re-implement (บทเรียนวันนี้)
+- VPS: engine `/opt/bms/app/scripts/`, DB `/opt/bms/data/bms_customers.db` (BMS_DATA_DIR), รัน manual ต้อง `set -a && . ./.env && set +a`; git push ผ่าน `git -c credential.helper='!gh auth git-credential' push` (manager hang)
+- **phase-B (ทีหลัง):** ปุ่มติ๊กหมวด 5 หมวดบน Board B — spec `docs/superpowers/specs/2026-07-01-category-matching-design-DRAFT.md`
+
+### ค้าง/ระวัง
+- seed 89-keyword ยังอยู่ (ลบตอนทำสเตจ 1)
+- discovery ตอนนี้ 07/13/19; winner-poller 07:15/13:15/19:15/01:15 — กัญจน์เคยถามอยากได้ 07/12/18 (ปรับได้ทีหลัง)

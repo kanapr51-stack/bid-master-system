@@ -280,6 +280,34 @@ def init_schema():
                 ON delivery_log(customer_id, project_id);
             CREATE INDEX IF NOT EXISTS idx_prov_province
                 ON subscription_provinces(province);
+
+            -- Web Push (บอร์ด B) — spec 2026-07-13-web-push-notification-design.md
+            -- 1 ลูกค้ามีได้หลายเครื่อง; disabled_at = เพิกถอน (404/410) ไม่ยิงซ้ำ
+            CREATE TABLE IF NOT EXISTS push_subscriptions (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                customer_id INTEGER NOT NULL REFERENCES customers(id),
+                endpoint    TEXT NOT NULL UNIQUE,
+                p256dh      TEXT NOT NULL,
+                auth        TEXT NOT NULL,
+                user_agent  TEXT,
+                created_at  TEXT NOT NULL,
+                last_ok_at  TEXT,
+                disabled_at TEXT
+            );
+
+            -- log ผลส่ง webpush — จงใจแยกจาก delivery_log (backlog digest อ่านตารางนั้น)
+            CREATE TABLE IF NOT EXISTS webpush_delivery_log (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                subscription_id INTEGER NOT NULL REFERENCES push_subscriptions(id),
+                customer_id     INTEGER NOT NULL,
+                project_id      TEXT NOT NULL DEFAULT '',
+                source_stage    TEXT NOT NULL DEFAULT '',
+                status          TEXT NOT NULL CHECK(status IN ('sent','failed')),
+                error           TEXT,
+                attempted_at    TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_webpush_log_customer
+                ON webpush_delivery_log(customer_id, attempted_at);
         """)
     _migrate_v1_to_v11()
     _migrate_v12()

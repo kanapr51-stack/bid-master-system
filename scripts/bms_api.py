@@ -25,6 +25,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 import follow_token  # noqa: E402
 import portal_views  # noqa: E402
 import job_matcher  # noqa: E402
+import webpush_send  # noqa: E402
 
 # -- Config -------------------------------------------------------------------
 
@@ -1979,3 +1980,68 @@ async def portal_all_jobs_json(
             "followed": pid in followed_ids,
         })
     return {"ok": True, "count": len(jobs), "jobs": jobs[:limit]}
+
+
+@app.post("/api/portal/push-subscribe")
+async def portal_push_subscribe(request: Request, x_bms_secret=Header(default=None)):
+    """ลงทะเบียนเครื่องรับ web push จากบอร์ด — upsert ด้วย endpoint (ซ้ำ = update key + re-enable)."""
+    if x_bms_secret != BMS_INTERNAL_SECRET:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    body = await request.json()
+    line_user_id = (body.get("line_user_id") or "").strip()
+    endpoint = (body.get("endpoint") or "").strip()
+    p256dh = (body.get("p256dh") or "").strip()
+    auth = (body.get("auth") or "").strip()
+    user_agent = (body.get("user_agent") or "")[:200]
+    if not line_user_id or not endpoint or not p256dh or not auth:
+        raise HTTPException(status_code=400, detail="line_user_id + endpoint + p256dh + auth required")
+    from datetime import datetime, timezone, timedelta
+    now = datetime.now(timezone(timedelta(hours=7))).isoformat(timespec="seconds")
+    with get_conn() as conn:
+        cust = conn.execute("SELECT id FROM customers WHERE line_user_id=?", (line_user_id,)).fetchone()
+        if not cust:
+            raise HTTPException(status_code=404, detail="Customer not found")
+        conn.execute(
+            "INSERT INTO push_subscriptions (customer_id, endpoint, p256dh, auth, user_agent, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT(endpoint) DO UPDATE SET "
+            "customer_id=excluded.customer_id, p256dh=excluded.p256dh, auth=excluded.auth, "
+            "user_agent=excluded.user_agent, disabled_at=NULL",
+            (cust["id"], endpoint, p256dh, auth, user_agent, now))
+    return {"ok": True}
+
+
+@app.post("/api/portal/push-unsubscribe")
+async def portal_push_unsubscribe(request: Request, x_bms_secret=Header(default=None)):
+    """ปิดรับ web push ของเครื่องนั้น (soft — ตั้ง disabled_at)."""
+    if x_bms_secret != BMS_INTERNAL_SECRET:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    body = await request.json()
+    line_user_id = (body.get("line_user_id") or "").strip()
+    endpoint = (body.get("endpoint") or "").strip()
+    if not line_user_id or not endpoint:
+        raise HTTPException(status_code=400, detail="line_user_id + endpoint required")
+    from datetime import datetime, timezone, timedelta
+    now = datetime.now(timezone(timedelta(hours=7))).isoformat(timespec="seconds")
+    with get_conn() as conn:
+        conn.execute(
+            "UPDATE push_subscriptions SET disabled_at=? "
+            "WHERE endpoint=? AND customer_id=(SELECT id FROM customers WHERE line_user_id=?)",
+            (now, endpoint, line_user_id))
+    return {"ok": True}
+
+
+@app.post("/api/portal/push-test")
+async def portal_push_test(request: Request, x_bms_secret=Header(default=None)):
+    """ส่งข้อความทดสอบไปทุกเครื่องของ user (ปุ่ม 'ส่งทดสอบ' บนบอร์ด)."""
+    if x_bms_secret != BMS_INTERNAL_SECRET:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    body = await request.json()
+    line_user_id = (body.get("line_user_id") or "").strip()
+    if not line_user_id:
+        raise HTTPException(status_code=400, detail="line_user_id required")
+    sent, failed = webpush_send.send_to_user(
+        line_user_id, "🔔 ทดสอบแจ้งเตือน BMS Bid Board",
+        "ถ้าเห็นข้อความนี้ = เครื่องนี้พร้อมรับแจ้งเตือนงานแล้ว",
+        webpush_send.job_url(""))
+    return {"ok": True, "sent": sent, "failed": failed}

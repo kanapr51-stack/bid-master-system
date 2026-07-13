@@ -6,6 +6,7 @@ import { type BusinessClass, TIERS } from '@/lib/portal-data';
 import type { PortalProfile } from '@/lib/portal-data';
 import type { JobGroups, JobStage, TrackedJob, DiscoverGroups, DiscoverJob } from '@/lib/portal-jobs';
 import { TopBar, Chip, Icons, Diamond } from '../_ui';
+import PushNotifyCard from '@/components/PushNotifyCard';
 
 // Sebastian Chat ยังไม่มีของจริง (LINE เป็นเมนู keyword, ไม่มีตัวนับ chatUsed)
 // — ซ่อนการ์ด quota จนกว่าจะสร้างเสร็จ ค่อยเปิด flag นี้
@@ -324,6 +325,8 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
       />
 
       <div className="p-page p-page-topbar">
+        <PushNotifyCard />
+
         {/* Tier banner */}
         <div className="p-gilt" style={{ marginBottom: 14 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>

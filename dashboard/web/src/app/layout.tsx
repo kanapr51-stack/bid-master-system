@@ -16,6 +16,7 @@ const thai = IBM_Plex_Sans_Thai({
 export const metadata: Metadata = {
   title: "Bid Master Dashboard",
   description: "ระบบมอนิเตอร์ pipeline งานประมูล eGP — Bid Master System",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({

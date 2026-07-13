@@ -367,6 +367,8 @@ def _mirror_webpush(line_user_id: str, text: str, ctx: dict | None) -> None:
     """Mirror ข้อความเข้า web push — กลืน error ทั้งหมด ห้ามกระทบ LINE path."""
     try:
         c = ctx or {}
+        if c.get("suppress"):
+            return  # retry รอบ 2+ ของคิว — mirror ไปแล้วรอบแรก กันเด้งซ้ำ
         webpush_send.mirror_text(line_user_id, text,
                                  c.get("project_id", ""), c.get("source_stage", ""))
     except Exception:
@@ -723,7 +725,8 @@ def main():
             return
         success, error_type, error_msg = send_line_push(
             token, item["line_user_id"], text, quick_reply=None,
-            webpush_ctx={"project_id": item["project_id"], "source_stage": item.get("source_stage", "")})
+            webpush_ctx={"project_id": item["project_id"], "source_stage": item.get("source_stage", ""),
+                         "suppress": (item.get("retry_count") or 0) > 0})
         store.mark_delivery_result(item["id"], item["customer_id"], item["project_id"],
                                    status="sent" if success else "failed",
                                    error=error_msg, error_type=error_type)
@@ -767,7 +770,8 @@ def main():
             return
         success, error_type, error_msg = send_line_push(
             token, item["line_user_id"], text, quick_reply=None,
-            webpush_ctx={"project_id": item["project_id"], "source_stage": item.get("source_stage", "")})
+            webpush_ctx={"project_id": item["project_id"], "source_stage": item.get("source_stage", ""),
+                         "suppress": (item.get("retry_count") or 0) > 0})
         store.mark_delivery_result(item["id"], item["customer_id"], item["project_id"],
                                    status="sent" if success else "failed",
                                    error=error_msg, error_type=error_type)
@@ -800,7 +804,8 @@ def main():
             return
         success, error_type, error_msg = send_line_push(
             token, item["line_user_id"], text, quick_reply=None,
-            webpush_ctx={"project_id": item["project_id"], "source_stage": item.get("source_stage", "")})
+            webpush_ctx={"project_id": item["project_id"], "source_stage": item.get("source_stage", ""),
+                         "suppress": (item.get("retry_count") or 0) > 0})
         store.mark_delivery_result(item["id"], item["customer_id"], item["project_id"],
                                    status="sent" if success else "failed",
                                    error=error_msg, error_type=error_type)
@@ -948,7 +953,8 @@ def main():
         link_block = ("\n\n⭐ ติดตามงานนี้:\n" + link) if link else ""
         success, error_type, error_msg = send_line_push(
             token, item["line_user_id"], body + ann_block + link_block, quick_reply=None,
-            webpush_ctx={"project_id": item["project_id"], "source_stage": item.get("source_stage", "")})
+            webpush_ctx={"project_id": item["project_id"], "source_stage": item.get("source_stage", ""),
+                         "suppress": (item.get("retry_count") or 0) > 0})
     else:
         _auth = _feedback_authority_ids()
         _with_fb = (not _auth) or (item["customer_id"] in _auth)
@@ -962,7 +968,8 @@ def main():
         alt_text = (full_name + " | " + text)[:400]
         success, error_type, error_msg = send_line_flex(
             token, item["line_user_id"], alt_text, flex,
-            webpush_ctx={"project_id": item["project_id"], "source_stage": item.get("source_stage", "")})
+            webpush_ctx={"project_id": item["project_id"], "source_stage": item.get("source_stage", ""),
+                         "suppress": (item.get("retry_count") or 0) > 0})
 
     # Step 6: mark result
     store.mark_delivery_result(

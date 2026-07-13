@@ -44,4 +44,20 @@ with patch.object(ls, "req_lib") as rq, patch.object(ls, "_mirror_webpush") as m
     assert ok is True
     mw.assert_called_once_with("U1", "alt สรุปงาน", {"project_id": "P2", "source_stage": "province_qualified"})
 
+# 5) retry รอบ 2+ (suppress) → ไม่ mirror ซ้ำ
+with patch.object(ls, "req_lib") as rq, patch.object(ls.webpush_send, "mirror_text") as mt:
+    rq.post.return_value = _resp(429)
+    ok, et, em = ls.send_line_push("tok", "U1", "hi",
+                                   webpush_ctx={"project_id": "P1", "source_stage": "api_enriched",
+                                                "suppress": True})
+    assert ok is False
+    mt.assert_not_called()
+
+# 6) suppress=False (รอบแรก) → mirror ปกติ
+with patch.object(ls, "req_lib") as rq, patch.object(ls.webpush_send, "mirror_text") as mt:
+    rq.post.return_value = _resp(200)
+    ls.send_line_push("tok", "U1", "hi\nb", webpush_ctx={"project_id": "P1", "source_stage": "x",
+                                                          "suppress": False})
+    mt.assert_called_once_with("U1", "hi\nb", "P1", "x")
+
 print("PASS test_webpush_mirror")

@@ -616,3 +616,26 @@ timeline-reminder (07:30) ยิงเวลาตายตัว. เลือ�
 ### Followup
 - เขียน implementation plan (writing-plans) → implement
 - หมายเหตุ session: มีการแก้ bms_api.py all-jobs filter (sent→sent+failed) แล้ว revert ตามคำสั่งกัญจน์ — ทางแก้นั้นถูกแทนด้วยแผน Web Push นี้
+
+## งานที่ N+203: Web Push แจ้งเตือนผ่าน browser บอร์ด B — LIVE (2026-07-14)
+
+### สถานะ: ✅ deploy ครบ / 🚧 รอ E2E มือกัญจน์ + นับ 3 วันเสถียร
+
+### สิ่งที่ทำ (Subagent-Driven, 11 commits b8b6bb2..69f2fcf, ทุก task ผ่านรีวิว)
+- ตาราง `push_subscriptions` + `webpush_delivery_log` (แยกจาก delivery_log เด็ดขาด — backlog digest ไม่กระทบ)
+- `scripts/webpush_send.py` ไม่ raise เด็ดขาด, 404/410 → disable อัตโนมัติ, kill switch `BMS_WEBPUSH_DISABLED=1`
+- Mirror ที่ choke point `send_line_push/flex` → ทุกข้อความ (รวม BidOpen_Morning/Daily_User_Summary/timeline/Backlog ที่ยิงตรง) ได้ browser push อัตโนมัติ **รวมตอน LINE 429**; LINE logic byte-identical
+- Engine: `POST /api/portal/push-subscribe|push-unsubscribe|push-test` (X-BMS-Secret)
+- บอร์ด: `/sw.js` + manifest + icons + การ์ด 🔔 บน /portal/world + relay routes (allowlist ช่วงทดลอง = กัญจน์ Ua0d90e8…)
+- Final review (fable): READY TO DEPLOY หลังแก้ H1 — **กัน browser เด้งซ้ำตอนคิว retry** (mirror เฉพาะ retry_count=0, `b34ab64`)
+- Deploy-time fix: Basic Auth middleware บล็อก /sw.js (401) → ยกเว้น sw.js/manifest/icons ใน matcher (`69f2fcf`)
+
+### Deploy + sanity
+- VPS `69f2fcf` synced, pywebpush ใน venv, VAPID keys ใน .env, init_schema แล้ว (ตารางขึ้นครบ), bms-api + line-sender.timer active, sender log สะอาด
+- Vercel prod READY + env NEXT_PUBLIC_VAPID_PUBLIC_KEY + PUSH_ALLOWLIST; sw.js/manifest/icons = 200 สาธารณะ
+- Sanity: queue duplicates=0, delivery_log 465 rows (LINE เท่านั้น ไม่มีอะไรใหม่แตะ), webpush subs/log = 0 (รอ subscribe แรก)
+
+### Followup
+- กัญจน์: เปิด https://bid-master-dashboard.vercel.app/portal/world (มือถือ+คอม) → กดการ์ด 🔔 → "ส่งทดสอบ" ต้องเด้ง ~5 วิ
+- เกณฑ์เสถียร 3 วัน: ทุก queue item ของ user ที่มี subscription ต้องมีแถว webpush_delivery_log (เทียบ customer+project+วัน) = 0 งานหลุด → ค่อยชวนลูกค้า (แก้ PUSH_ALLOWLIST) → ค่อยตัด LINE (เฟสหลัง)
+- Minor debt (final review: defer ได้): sw.js ไม่มี skipWaiting, push-test blocking ใน async (พอ scale), negative test cross-customer unsubscribe

@@ -639,3 +639,15 @@ timeline-reminder (07:30) ยิงเวลาตายตัว. เลือ�
 - กัญจน์: เปิด https://bid-master-dashboard.vercel.app/portal/world (มือถือ+คอม) → กดการ์ด 🔔 → "ส่งทดสอบ" ต้องเด้ง ~5 วิ
 - เกณฑ์เสถียร 3 วัน: ทุก queue item ของ user ที่มี subscription ต้องมีแถว webpush_delivery_log (เทียบ customer+project+วัน) = 0 งานหลุด → ค่อยชวนลูกค้า (แก้ PUSH_ALLOWLIST) → ค่อยตัด LINE (เฟสหลัง)
 - Minor debt (final review: defer ได้): sw.js ไม่มี skipWaiting, push-test blocking ใน async (พอ scale), negative test cross-customer unsubscribe
+
+## งานที่ N+203.1: หน้า "งานทั้งหมด" จัดกลุ่มต่อวัน (2026-07-15)
+
+### สถานะ: ✅ เสร็จ
+
+### สิ่งที่ทำ
+- กัญจน์ขอ: แยกงานเป็นช่วงต่อวัน (วันนี้ / เมื่อวาน / วันเก่า) ให้กวาดตาง่าย — เลือกแบบ "หัวข้อคั่นวัน" จาก mockup 2 แบบ
+- `dashboard/web/src/app/portal/jobs/_client.tsx`: จัดกลุ่มด้วย sent_at (เวลาไทย, en-CA key), หัวข้อ 📅 วันนี้/เมื่อวาน/วันที่ไทย + จำนวนงาน + เส้นคั่น; ทำงานร่วมค้นหา+ติ๊กกรอง stage เดิม (กรองก่อนแล้วค่อยจัดกลุ่ม); client-side ล้วน ไม่แตะ API
+- tsc + build ผ่าน
+
+### Followup
+- (ยังค้างจาก N+203) E2E web push มือกัญจน์ + 3 วันเสถียร

@@ -29,6 +29,25 @@ function fmtSentDate(s: string): string {
   return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
 }
 
+// จัดกลุ่มต่อวัน (เวลาไทย) — key = YYYY-MM-DD ใช้เทียบวันนี้/เมื่อวาน
+const BKK_TZ = 'Asia/Bangkok';
+
+function dayKey(s: string): string {
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return 'unknown';
+  return d.toLocaleDateString('en-CA', { timeZone: BKK_TZ });
+}
+
+function dayLabel(key: string, todayKey: string, yesterdayKey: string): string {
+  if (key === 'unknown') return 'ไม่ระบุวัน';
+  const thai = new Date(`${key}T00:00:00+07:00`).toLocaleDateString('th-TH', {
+    day: 'numeric', month: 'short', year: '2-digit', timeZone: BKK_TZ,
+  });
+  if (key === todayKey) return `วันนี้ · ${thai}`;
+  if (key === yesterdayKey) return `เมื่อวาน · ${thai}`;
+  return thai;
+}
+
 function SentJobCard({ job, followed, onToggle }: { job: SentJob; followed: boolean; onToggle: () => void }) {
   const meta = STAGE_LABEL[job.stage] ?? STAGE_LABEL.bidding;
   return (
@@ -110,6 +129,17 @@ export function AllJobsClient({ data, engineDown }: { data: AllJobs | null; engi
       (!needle || j.name.toLowerCase().includes(needle) || j.province.toLowerCase().includes(needle)));
   }, [data, q, stages]);
   const filtering = q.trim() !== '' || stages.size > 0;
+
+  // กลุ่มต่อวัน — jobs เรียงใหม่→เก่าจาก API อยู่แล้ว Map จึงคงลำดับวันให้เอง
+  const dayGroups = useMemo(() => {
+    const m = new Map<string, SentJob[]>();
+    for (const j of jobs) {
+      const k = dayKey(j.sent_at);
+      const arr = m.get(k);
+      if (arr) arr.push(j); else m.set(k, [j]);
+    }
+    return [...m.entries()];
+  }, [jobs]);
 
   if (!data) {
     return (
@@ -193,14 +223,29 @@ export function AllJobsClient({ data, engineDown }: { data: AllJobs | null; engi
             {filtering && (
               <div className="p-fg-dim" style={{ fontSize: 11.5 }}>พบ {jobs.length} จาก {data.jobs.length} งาน</div>
             )}
-            {jobs.map(job => (
-              <SentJobCard
-                key={job.project_id}
-                job={job}
-                followed={followed.has(job.project_id)}
-                onToggle={() => handleToggle(job.project_id)}
-              />
-            ))}
+            {(() => {
+              const todayKey = new Date().toLocaleDateString('en-CA', { timeZone: BKK_TZ });
+              const yesterdayKey = new Date(Date.now() - 86400000).toLocaleDateString('en-CA', { timeZone: BKK_TZ });
+              return dayGroups.map(([key, dayJobs]) => (
+                <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ marginTop: 8 }}>
+                    <div className="p-display" style={{ fontSize: 13.5 }}>
+                      📅 {dayLabel(key, todayKey, yesterdayKey)}{' '}
+                      <span className="p-fg-dim" style={{ fontWeight: 400 }}>— {dayJobs.length} งาน</span>
+                    </div>
+                    <div style={{ borderBottom: '1px solid var(--border)', marginTop: 6 }} />
+                  </div>
+                  {dayJobs.map(job => (
+                    <SentJobCard
+                      key={job.project_id}
+                      job={job}
+                      followed={followed.has(job.project_id)}
+                      onToggle={() => handleToggle(job.project_id)}
+                    />
+                  ))}
+                </div>
+              ));
+            })()}
           </div>
         )}
       </div>

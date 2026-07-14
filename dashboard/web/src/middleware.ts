@@ -59,8 +59,9 @@ export function middleware(req: NextRequest) {
 //   - /signup, /customer/* (public customer-facing pages)
 //   - /portal/* (customer-facing portal — uses session cookie auth)
 //   - _next/static, _next/image, favicon.ico (static assets)
+//   - sw.js, manifest.json, icon-*.png (web push service worker + PWA — ลูกค้าต้องโหลดได้ไม่ติด Basic Auth)
 export const config = {
   matcher: [
-    "/((?!api/snapshot|api/revalidate|api/line|api/auth/line|api/portal|signup|customer|portal|_next/static|_next/image|favicon.ico).*)",
+    "/((?!api/snapshot|api/revalidate|api/line|api/auth/line|api/portal|signup|customer|portal|_next/static|_next/image|favicon.ico|sw.js|manifest.json|icon-192.png|icon-512.png).*)",
   ],
 };

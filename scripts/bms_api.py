@@ -1444,8 +1444,8 @@ def _provinces_from_notes(notes_str: str) -> list[str]:
 
 def _classes_from_notes(notes_str: str) -> dict:
     """รวม preference ราย user จาก notes.classes[] → {keywords, budget_min, budget_max}.
-    keywords ใช้ customer_keywords.keywords_from_notes (single source ร่วมกับ enqueue_notifications
-    keyword_gate — กันสองที่แกะเองคนละ policy แบบที่เคยเกิด N+206);
+    keywords ใช้ customer_keywords.keywords_from_notes (single source ร่วมกับ Sebastian_LINE_Sender
+    should_notify gate — N+207 — กันสองที่แกะเองคนละ policy);
     budget_min = min ของ budgetMinBaht ที่ >0; budget_max = max ของ budgetMaxBaht ที่ >0.
     provinces ไม่ดึงที่นี่ — ใช้ subscription_provinces (source of truth) แทน."""
     from customer_keywords import keywords_from_notes
@@ -1634,8 +1634,7 @@ async def portal_discover_jobs(
             "JOIN subscriptions s ON s.id=sp.subscription_id WHERE s.customer_id=?", (cid,)).fetchall()]
         pref = _classes_from_notes(cust["notes"] or "")
         keywords = pref["keywords"]
-        # N+206: keywords ว่าง = discovery_match คืน False ทุกงาน (ไม่ short-circuit ที่นี่ —
-        # ปล่อยให้ loop ด้านล่างว่างเปล่าไปเอง ผลลัพธ์เหมือนกัน โค้ดสั้นกว่า)
+        # N+198: keywords ว่าง = เห็นทั้งจังหวัด (ไม่ short-circuit — discovery_match ไม่บังคับคำแล้ว)
         if not provinces:
             return {"ok": True, "jobs": empty}
         followed = {r["project_id"] for r in conn.execute(

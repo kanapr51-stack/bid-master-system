@@ -1,15 +1,12 @@
 """test_province_no_cut.py — งาน province ที่ resolve เปิดอยู่ enqueue เสมอ
-แม้ match_job (คำกลาง config/matching_preferences.json) ตัดสินว่า 'cut' หรือ whole_province
-(เลิก digest + เลิก enforce-cut ต่อ match_job — N+184). ทุกลูกค้า test ตั้ง personal keyword
-เอง (N+206 keyword_gate) ให้ตรงชื่องาน เพื่อแยกให้ชัดว่าที่ enqueueได้เพราะ personal keyword
-ผ่าน ไม่ใช่เพราะ match_job (คำกลาง) ตัดสิน — คนละ gate กัน.
+แม้ match_job ตัดสินว่า 'cut' หรือ whole_province (เลิก digest + เลิก enforce-cut).
 
 3 cases:
   1. test_digest_removed          — whole_province_keyword (เดิม trigger digest) → ยัง enqueue (D0)
   2. test_d0_cut_removed          — purchasing_excluded → decision='cut' จริง → ยัง enqueue (D0)
   3. test_b0_cut_removed          — purchasing_excluded → decision='cut' จริง → ยัง enqueue (B0/tor_review)
 """
-import os, json, tempfile, sys
+import os, tempfile, sys
 from datetime import date, timedelta
 from pathlib import Path
 os.environ["BMS_DATA_DIR"] = tempfile.mkdtemp()
@@ -44,13 +41,6 @@ class _FakeDsvc:
     def resolve(self, pid): return _FakeRes()
 
 
-def _set_keywords(cid, keywords):
-    """N+206: keyword_gate ต้องมี personal keyword ตั้งเอง ไม่งั้นไม่ enqueue เลย"""
-    with db.get_connection() as c:
-        c.execute("UPDATE customers SET notes=? WHERE id=?",
-                  (json.dumps({"classes": [{"keywords": keywords}]}), cid))
-
-
 # งานชื่อนี้ยืนยันแล้วว่า match_job คืน decision='send' (reason='whole_province_keyword' — เดิม trigger digest)
 DIGEST_NAME = "จ้างเหมาบริการทำความสะอาดอาคาร"
 # งานชื่อนี้ยืนยันแล้วว่า match_job คืน decision='cut' (reason='purchasing_excluded') — ดู task-1-report.md
@@ -62,7 +52,6 @@ def test_digest_removed():
     s = db.SubscriptionStore()
     cid = s.add_customer("Uxx", "พ่อ")
     s.add_subscription(cid, ["นครพนม"])   # ลูกค้ารับจังหวัดนี้ (enqueue fan-out ถึงจะนับ)
-    _set_keywords(cid, ["อาคาร"])          # N+206: ต้องตั้ง personal keyword เองก่อนถึงจะ enqueue
     disc.ingest([{"project_id": "J1", "project_status": "", "announce_type": "D0",
                   "province": "นครพนม", "budget": 300000,
                   "project_name": DIGEST_NAME,
@@ -81,7 +70,6 @@ def test_d0_cut_removed():
     s = db.SubscriptionStore()
     cid = s.add_customer("Uyy", "แม่")
     s.add_subscription(cid, ["นครพนม"])
-    _set_keywords(cid, ["คอมพิวเตอร์"])
     disc.ingest([{"project_id": "J2", "project_status": "", "announce_type": "D0",
                   "province": "นครพนม", "budget": 150000,
                   "project_name": CUT_NAME,
@@ -102,7 +90,6 @@ def test_b0_cut_removed():
     s = db.SubscriptionStore()
     cid = s.add_customer("Uzz", "ป้า")
     s.add_subscription(cid, ["นครพนม"], announce_types=["D0", "B0"])  # default subscription=D0 เท่านั้น — ต้องเปิด B0 ด้วยถึงจะ fan-out
-    _set_keywords(cid, ["คอมพิวเตอร์"])
     disc.ingest([{"project_id": "J3", "project_status": "", "announce_type": "B0",
                   "province": "นครพนม", "budget": 150000,
                   "project_name": CUT_NAME,

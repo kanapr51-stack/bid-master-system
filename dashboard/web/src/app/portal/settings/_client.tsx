@@ -118,7 +118,7 @@ export function SettingsClient({ provinces, initialKeywords, initialBudgetMin, i
               ))}
             </div>
           ) : (
-            <ButlerNote>ยังไม่ตั้งคำค้น = จะยังไม่มีงานขึ้นให้เลย — ติ๊กเลือกจากหมวดด้านล่าง หรือพิมพ์เอง เช่น &quot;ถนน&quot; &quot;อาคาร&quot; เพื่อเริ่มเห็นงานที่ตรงกับท่าน</ButlerNote>
+            <ButlerNote>ไม่ตั้งคำค้น = ได้รับแจ้งเตือนงานทุกประเภททั้งจังหวัด — เพิ่มคำเมื่ออยากจำกัดเฉพาะงานที่สนใจ เช่น &quot;ถนน&quot; &quot;อาคาร&quot;</ButlerNote>
           )}
           <div style={{ marginTop: keywords.length > 0 ? 0 : 12 }}>
             <div className="p-fg-mute" style={{ fontSize: 12, marginBottom: 6 }}>เพิ่มเร็วจากหมวดสำเร็จรูป (กดเลือก · กดซ้ำเอาออก):</div>
@@ -142,7 +142,7 @@ export function SettingsClient({ provinces, initialKeywords, initialBudgetMin, i
             <button className="p-btn p-btn-ghost" onClick={addKeyword} style={{ height: 40, padding: '0 16px' }}>เพิ่ม</button>
           </div>
           {keywords.length > 0 && (
-            <div className="p-fg-dim" style={{ fontSize: 11.5, marginTop: 10 }}>กดที่คำเพื่อลบ — ลบหมด = จะไม่มีงานขึ้นให้จนกว่าจะเพิ่มคำใหม่</div>
+            <div className="p-fg-dim" style={{ fontSize: 11.5, marginTop: 10 }}>กดที่คำเพื่อลบ — ลบหมด = กลับไปได้รับแจ้งเตือนทุกงานในพื้นที่</div>
           )}
         </div>
 

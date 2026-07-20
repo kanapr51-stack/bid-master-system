@@ -697,6 +697,17 @@ def main():
         f"customer={item['customer_id']} retry={item['retry_count']}"
     )
 
+    # N+207: personal keyword gate — เฉพาะงาน "ค้นพบใหม่" (ไม่ใช่ followed_* opt-in)
+    # ไม่ตั้ง keyword = แจ้งทุกงาน (ปกติ); ตั้งแล้วไม่ตรง = ข้ามเงียบๆ (ยัง enqueue ให้บอร์ด
+    # "งานทั้งหมด" เห็น แค่ไม่ยิง LINE/web push) ดู customer_keywords.should_notify
+    from customer_keywords import should_notify
+    if not should_notify(item.get("source_stage") or "", item.get("project_name") or "",
+                          item.get("notes") or ""):
+        store.mark_keyword_skip(item["id"])
+        log(f"🔇 SKIP (personal keyword ไม่ตรง) {item['project_id']} cust{item['customer_id']}")
+        log("=== LINE Sender done (keyword skip) ===")
+        return
+
     # 📊 prelim notification (followed_prelim): Round 1 — ราคาเบื้องต้น (ยังไม่ทางการ)
     # (source_stage-gated → inert กับ notification อื่นทั้งหมด)
     if item.get("source_stage") == "followed_prelim":

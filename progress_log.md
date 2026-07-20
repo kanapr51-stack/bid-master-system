@@ -767,3 +767,38 @@ N+184 (ก.ค. 2026) เคยถอด "enforce-cut" (global keyword ตัด
 
 ### Followup
 - แก้บั๊ก `tor_is_fresh` timezone boundary เสร็จแล้ว (แยกงาน, ไม่เร่งด่วน — เกิดเฉพาะช่วง 00:00-07:00 เวลาไทย)
+
+## งานที่ N+207: พลิกกลับ N+206 อีกรอบ — ย้าย keyword gate ไปตอนส่งจริงแทน enqueue (2026-07-21)
+
+### สถานะ: ✅ เสร็จ (แก้ local, Sophia SAFE — รอ deploy)
+
+### บริบท (กัญจน์แก้ spec ให้ชัดหลังทดสอบ N+206 จริง)
+หลัง deploy N+206 กัญจน์อธิบายสเปกที่ต้องการจริงๆ ชัดกว่าเดิม:
+1. **ไม่ตั้ง personal keyword** → แจ้งเตือน (LINE+web push) **ทุกงาน** ในพื้นที่ (ตรงข้ามกับ N+206 ที่เพิ่ง deploy ไป — กลับไปเหมือน N+198 เดิม)
+2. **ตั้ง keyword แล้ว** → แจ้งเฉพาะงานที่ตรง
+3. **หน้า "งานทั้งหมด"** → ต้องอัปเดตครบทุกงานเสมอไม่ว่าจะตั้ง keyword หรือไม่ — งานที่ personal keyword กรองออกต้องยัง "อัปเดตเงียบๆ" ในลิสต์ (ไม่แจ้งเตือน แต่ยังโชว์)
+
+ข้อ 3 คือจุดที่ N+206 ทำผิด — gate ที่ enqueue ปิดกั้นไม่ให้แถวเข้า `notification_queue` เลย ซึ่งเป็นตารางเดียวกับที่ N+205 ใช้เลี้ยงบอร์ด "งานทั้งหมด" → บอร์ดเลยหยุดอัปเดตไปด้วย ขัดกับข้อ 3
+
+### Fix: ย้าย gate จาก "enqueue" ไป "ส่งจริง"
+- **Revert เกือบทั้งหมดของ N+206 กลับ N+198:** `discovery_match.py::match()` (ว่าง=match ทุกงาน), `Sebastian_Customer_DB.py::enqueue_notifications()` (ลบ `keyword_gate` param ทิ้ง — enqueue ให้ทุก subscriber เสมอเหมือนเดิม), `Sebastian_Enrichment_Worker.py` (ลบ `keyword_gate=True` ทั้ง 4 จุด), frontend copy + `hasPrefs` logic กลับเดิม
+- **เพิ่มใหม่ (gate ตอนส่งจริง):**
+  - `scripts/customer_keywords.py::should_notify(source_stage, project_name, notes_str)` — pure function: `source_stage` ขึ้นต้น `followed_` (opt-in ติดตามเอง) → True เสมอ; ไม่มี personal keyword → True; มี keyword → เช็ค `job_matcher._kw_hit` (reuse guard เดิม)
+  - `Sebastian_Customer_DB.py::acquire_batch()` เพิ่ม `c.notes` เข้า SELECT
+  - `Sebastian_Customer_DB.py::mark_keyword_skip(queue_id)` (ใหม่) — mark `status='skipped'`, ไม่ retry, **ไม่เขียน delivery_log** (ไม่ใช่ LINE attempt จริง กัน pollute metrics)
+  - `Sebastian_LINE_Sender.py::main()` — เช็ค `should_notify()` ทันทีหลัง acquire item **ก่อน** ทุก branch `followed_*` → ถ้า False `mark_keyword_skip` แล้ว `return` ทันที (ไม่เรียก `send_line_push`/`send_line_flex` เลย = webpush mirror ที่ choke point ในนั้นไม่ทำงานอัตโนมัติ ไม่ต้องแก้แยก)
+
+### Test (Sophia รันซ้ำยืนยัน PASS ครบ)
+- ใหม่: `test_mark_keyword_skip.py` (seed queue row → mark_keyword_skip → status='skipped', ไม่ retry, ไม่เขียน delivery_log, ยังขึ้น `/api/portal/all-jobs` จริง), เพิ่ม 7 เคส `should_notify` ใน `test_customer_keywords.py`
+- Revert: `test_discovery_match.py`, `test_portal_discover_api.py`, `test_province_no_cut.py` กลับ assertion N+198; ลบ `test_keyword_gate_no_personal_kw.py` ทิ้ง (test ของ behavior ที่ revert แล้ว)
+- สแกน `test_*.py` ทั้ง repo — ไม่มีตัวไหนพังใหม่ (มีแค่ `test_tor_click.py` เดิมที่ต้องมี Chrome debug port จริง ไม่เกี่ยว)
+
+### Sophia audit → SAFE
+- grep `keyword_gate` ทั้ง repo เหลือ 0 hit ในโค้ด (ลบครบ)
+- gate ใหม่อยู่ก่อนทุก branch `followed_*` จริง (บรรทัด 700-709 ก่อน 713/750/795)
+- webpush mirror choke point (`_mirror_webpush` ใน `send_line_push`/`send_line_flex`) ไม่มีทาง leak เพราะ gate return ก่อนเรียกฟังก์ชันเหล่านี้เสมอ
+- `mark_keyword_skip` ไม่ชนกับ `recover_stuck_sending` (mark 'skipped' ทันที ไม่ผ่านช่วง 'sending' ค้าง)
+- **ยืนยันสดบน VPS ก่อน deploy:** `notification_queue` = **0 แถวใหม่เลย** ตั้งแต่ N+206 deploy (02:34:27) — ยืนยัน blast radius ตรงตามที่คุณกัญจน์อธิบาย (บอร์ด+LINE หยุดสนิททั้งคู่)
+
+### Followup
+- ยังไม่ deploy — รอ push+VPS+Vercel

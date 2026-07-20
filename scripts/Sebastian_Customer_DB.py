@@ -1223,8 +1223,7 @@ class SubscriptionStore:
 
     def enqueue_notifications(self, project: dict,
                                min_confidence: str = "high",
-                               is_test_data: int = 0,
-                               keyword_gate: bool = False) -> int:
+                               is_test_data: int = 0) -> int:
         """
         Match project against subscriptions → insert pending items into notification_queue.
         Returns count of new queue items created.
@@ -1240,11 +1239,9 @@ class SubscriptionStore:
           'medium' → high + medium
           'low'    → all (no gate)
 
-        keyword_gate (N+206): True = ต้องเช็ค personal keyword ของลูกค้าแต่ละคน
-        (customers.notes.classes[].keywords) ก่อน enqueue — ไม่ตั้ง keyword เอง = ไม่ enqueue
-        เลย (เห็นได้ตาม project_name เท่านั้น, ไม่ใช่ cfg กลาง). ใช้เฉพาะ path "ค้นพบงานใหม่"
-        (province_qualified/tor_review/api_enriched) — ห้ามใช้กับ enqueue_for_customer
-        (followed_* ที่ลูกค้ากดติดตามเองแล้ว ไม่ต้องเช็ค keyword ซ้ำ).
+        N+207: personal keyword ไม่ gate ตรงนี้อีกแล้ว (ย้ายไปกรองตอนส่งจริงใน
+        Sebastian_LINE_Sender.py แทน — ยังคง enqueue ให้ทุก subscriber เสมอ เพื่อให้
+        บอร์ด "งานทั้งหมด" เห็นครบทุกงานที่สแกนได้ แม้จะไม่ได้ถูกแจ้งเตือนจริงก็ตาม).
 
         Snapshot semantics: province_snapshot, project_name_snapshot, dept_name_snapshot
         are copied into notification_queue at INSERT time.
@@ -1267,16 +1264,10 @@ class SubscriptionStore:
         if _CONFIDENCE_RANK.get(confidence, 0) < _CONFIDENCE_RANK.get(min_confidence, 2):
             return 0
 
-        if keyword_gate:
-            import job_matcher
-            from text_normalize import normalize_thai
-            from customer_keywords import keywords_from_notes
-            normalized_name = normalize_thai(project_name or "")
-
         with get_connection() as conn:
             rows = conn.execute("""
                 SELECT s.customer_id, s.announce_types, s.min_budget, c.line_user_id,
-                       c.tier, c.is_test_data, c.notes
+                       c.tier, c.is_test_data
                 FROM subscriptions s
                 JOIN customers c ON c.id = s.customer_id
                 JOIN subscription_provinces sp ON sp.subscription_id = s.id
@@ -1290,12 +1281,6 @@ class SubscriptionStore:
                     continue
                 if budget < row["min_budget"]:
                     continue
-                if keyword_gate:
-                    cust_kws = keywords_from_notes(row["notes"] or "")
-                    if not cust_kws:
-                        continue  # ไม่ตั้ง keyword เอง → ไม่ enqueue (N+206)
-                    if not any(job_matcher._kw_hit(k, normalized_name) for k in cust_kws if k):
-                        continue
                 cur = conn.execute(
                     "INSERT OR IGNORE INTO notification_queue "
                     "(customer_id, project_id, status, created_at, "
@@ -1323,7 +1308,7 @@ class SubscriptionStore:
             rows = conn.execute("""
                 SELECT q.id, q.customer_id, q.project_id, q.retry_count,
                        q.is_backfill, q.source_stage, q.is_test_data,
-                       c.line_user_id, c.tier,
+                       c.line_user_id, c.tier, c.notes,
                        q.province_snapshot     AS province,
                        q.project_name_snapshot AS project_name,
                        q.dept_name_snapshot    AS dept_name,
@@ -1439,6 +1424,21 @@ class SubscriptionStore:
                 "(customer_id, project_id, channel, status, error_type, attempted_at, is_test_data) "
                 "VALUES (?,?,?,?,?,?,?)",
                 (customer_id, project_id, "line", status, error_type or None, now, is_test),
+            )
+
+    def mark_keyword_skip(self, queue_id: int) -> None:
+        """N+207: personal keyword ของลูกค้าไม่ตรงชื่องาน — ไม่ใช่ LINE delivery attempt จริง
+        (ไม่เคยเรียก LINE API เลย) จึงไม่เขียน delivery_log (กัน pollute metrics channel='line').
+        mark เป็น terminal เงียบๆ ให้บอร์ด "งานทั้งหมด" ยังเห็น (N+205: status!='cancelled')
+        แต่ไม่ retry ไม่แจ้งเตือน."""
+        with get_connection() as conn:
+            conn.execute(
+                "UPDATE notification_queue "
+                "SET status='skipped', processed_at=?, sending_at=NULL, worker_id=NULL, "
+                "    last_error='personal keyword ไม่ตรง — ข้ามการแจ้งเตือน', "
+                "    last_error_type='keyword_no_match' "
+                "WHERE id=?",
+                (_now(), queue_id),
             )
 
     def already_sent(self, customer_id: int, project_id: str) -> bool:

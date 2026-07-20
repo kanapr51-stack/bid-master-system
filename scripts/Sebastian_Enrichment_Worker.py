@@ -336,7 +336,7 @@ def qualify_province_api(store, log, dsvc=None) -> int:
                     "budget": int(c.get("budget") or 0), "project_name": c.get("project_name") or "",
                     "dept_name": c.get("dept_name") or "", "extraction_confidence": "high",
                     "is_backfill": False, "source_stage": src_stage,
-                }, min_confidence="high", keyword_gate=True)
+                }, min_confidence="high")
                 status = "enqueued" if n > 0 else "enqueued_dedup"
                 if n > 0:
                     stats["enqueued"] += 1
@@ -433,7 +433,7 @@ def qualify_province_api(store, log, dsvc=None) -> int:
                     "dept_name": c.get("dept_name") or "",
                     "extraction_confidence": "high", "is_backfill": False,
                     "source_stage": src_stage,
-                }, min_confidence="high", keyword_gate=True)
+                }, min_confidence="high")
                 status = "enqueued" if n > 0 else "enqueued_dedup"
                 if n > 0:
                     stats["enqueued"] += 1
@@ -732,7 +732,7 @@ def main():
                         "extraction_confidence": "high",
                         "is_backfill":          False,
                         "source_stage":         "api_enriched",
-                    }, min_confidence="high", keyword_gate=True)
+                    }, min_confidence="high")
 
                     if n > 0:
                         stats["enqueued"] += 1
@@ -796,7 +796,7 @@ def main():
                 "extraction_confidence": "high",
                 "is_backfill":           False,
                 "source_stage":          "repair_pass2",
-            }, min_confidence="high", keyword_gate=True)
+            }, min_confidence="high")
             if n > 0:
                 repaired += 1
         log(f"  repaired={repaired}/{len(orphans)}")

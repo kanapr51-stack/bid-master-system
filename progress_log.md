@@ -726,6 +726,17 @@ N+184 (ก.ค. 2026) เคยถอด "enforce-cut" (global keyword ตัด
 - นับจริง VPS: **4/4 active customers = 0 keyword ตั้งไว้** (ตรงตัวเลขที่อ้าง) → deploy แล้วทุกคนจะไม่ได้รับแจ้งเตือนจนตั้ง keyword เอง
 - py_compile + tsc ผ่านหมด, แก้คอมเมนต์ตกค้าง `bms_api.py:1637` (เดิมยังอ้าง N+198)
 
+### Deploy — ✅ ครบ (commit c614252)
+- push origin/main สำเร็จ, VPS pull fast-forward f45971d→c614252, restart bms-api (active, /health 200)
+- bms-enrichment-worker.service เป็น `oneshot` — รอบถัดไปอ่านโค้ดใหม่เองอัตโนมัติ ไม่ต้อง restart
+- Vercel deploy --prod → READY
+- Verify จริงบน VPS: `/api/portal/discover` customer กัญจน์ (ไม่มี keyword) → `{biddable: [], planning: []}` ตรงตามคาด
+
+### 🐛 พบบั๊กแยกต่างหาก (ไม่เกี่ยว N+206, ยังไม่แก้)
+รัน test บน VPS ตอน deploy พบ `test_portal_discover_api.py` fail ที่ assertion B0/planning (`plan_ids == {'B_FRESH'}` ได้ `set()`) — สืบแล้วเป็นบั๊ก **timezone boundary ใน `job_matcher.tor_is_fresh()`**: ใช้ `date.today()` (system, UTC บน VPS) เทียบกับ timestamp ที่ระบบ stamp เป็นเวลาไทย (+07:00) — ช่วง 17:00-23:59 UTC ทุกวัน (=00:00-06:59 เวลาไทย) วันที่ไทยจะ "ล้ำหน้า" UTC ไป 1 วัน ทำให้ `tor_is_fresh` คำนวณ diff ติดลบ → ถือว่า "ไม่ fresh" ทั้งที่เพิ่งประกาศวันนี้จริง
+- **ผลกระทบจริง:** งาน B0 (รับฟังคำวิจารณ์) ที่เพิ่งประกาศ จะหายจาก section "งานใหม่ที่แมตช์" (planning) ในช่วงเวลาดังกล่าวทุกวัน (ไม่กระทบ D0/biddable)
+- **ไม่ได้แก้ในรอบนี้** (นอก scope N+206, ไม่ได้แตะโค้ดจุดนี้เลย) — บันทึกไว้เป็นบั๊กแยกรอ priority ถัดไป
+
 ### Followup
-- ยังไม่ deploy — รอ push+VPS+Vercel
-- **สำคัญ:** หลัง deploy ต้องแจ้ง Mr.suvit/ณฐมน/อัญธิญาน์ (LINE reply ฟรีไม่ติด quota) ให้เข้าไปตั้ง keyword ที่ `/portal/settings` เอง ไม่งั้นจะไม่ได้รับแจ้งเตือนอะไรเลย
+- **สำคัญ:** ต้องแจ้ง Mr.suvit/ณฐมน/อัญธิญาน์ (LINE reply ฟรีไม่ติด quota) ให้เข้าไปตั้ง keyword ที่ `/portal/settings` เอง ไม่งั้นจะไม่ได้รับแจ้งเตือนอะไรเลยตั้งแต่วันนี้เป็นต้นไป
+- แก้บั๊ก `tor_is_fresh` timezone boundary (แยกงาน, ไม่เร่งด่วน — เกิดเฉพาะช่วง 00:00-07:00 เวลาไทย)

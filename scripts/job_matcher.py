@@ -58,10 +58,15 @@ _PROC_METHOD_PREFIXES = ("ประกวดราคาอิเล็กทร
 def tor_is_fresh(announce_date: str, today=None, days: int = 14) -> bool:
     """B0 รับฟังคำวิจารณ์ freshness gate: True ถ้า announce_date อยู่ใน N วันล่าสุด.
     กัน backlog blast (B0 เก่าหลายร้อยงาน first_seen=วันนี้) + ตรงช่วง comment period สั้น.
-    parse ไม่ได้/ว่าง → False (conservative — ไม่ส่งดีกว่า blast)."""
+    parse ไม่ได้/ว่าง → False (conservative — ไม่ส่งดีกว่า blast).
+
+    today default ต้องเป็นวันที่ไทย (+07:00) ไม่ใช่ system local — announce_date/first_seen_at
+    ทั้งระบบ stamp เป็นเวลาไทย, VPS system timezone=UTC → ช่วง 17:00-23:59 UTC (=00:00-06:59 น.
+    ไทย) วันที่ไทย "ล้ำหน้า" UTC 1 วัน ถ้าใช้ date.today() (UTC) จะได้ diff ติดลบ → fresh=False
+    ผิดทั้งที่งานเพิ่งประกาศวันนี้จริง (เจอจาก test_portal_discover_api.py fail บน VPS 2026-07-21)."""
     import datetime as _dt
     if today is None:
-        today = _dt.date.today()
+        today = _dt.datetime.now(_dt.timezone(_dt.timedelta(hours=7))).date()
     try:
         ad = _dt.date.fromisoformat((announce_date or "")[:10])
     except (ValueError, TypeError):

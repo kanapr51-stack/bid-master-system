@@ -739,4 +739,30 @@ N+184 (ก.ค. 2026) เคยถอด "enforce-cut" (global keyword ตัด
 
 ### Followup
 - **สำคัญ:** ต้องแจ้ง Mr.suvit/ณฐมน/อัญธิญาน์ (LINE reply ฟรีไม่ติด quota) ให้เข้าไปตั้ง keyword ที่ `/portal/settings` เอง ไม่งั้นจะไม่ได้รับแจ้งเตือนอะไรเลยตั้งแต่วันนี้เป็นต้นไป
-- แก้บั๊ก `tor_is_fresh` timezone boundary (แยกงาน, ไม่เร่งด่วน — เกิดเฉพาะช่วง 00:00-07:00 เวลาไทย)
+
+## งานที่ N+206.1: fix `tor_is_fresh` timezone boundary bug (2026-07-21)
+
+### สถานะ: ✅ เสร็จ
+
+### Debug mantra (reproduce → fail path → falsify → breadcrumb)
+- **Repro:** `test_portal_discover_api.py` PASS บน local (~02:00 ไทย) แต่ FAIL บน VPS ตอน deploy N+206 (assertion B0/planning `plan_ids=={'B_FRESH'}` ได้ `set()`) — เวลานั้น VPS = 19:37 UTC (=02:37 ไทย)
+- **Fail path:** source trace `job_matcher.tor_is_fresh()` → `today = _dt.date.today()` (system local, ไม่ผูก timezone) เทียบกับ `announce_date`/`first_seen_at` ที่ระบบ stamp เป็นเวลาไทย (+07:00) เสมอ
+- **Root cause:** VPS OS timezone = `Etc/UTC` (ยืนยันด้วย `timedatectl`) — ช่วง 17:00-23:59 UTC ทุกวัน (=00:00-06:59 น. ไทย) วันที่ไทย "ล้ำหน้า" UTC 1 วัน → `(today_UTC - announce_date_ไทย).days` ติดลบ → `tor_is_fresh` คืน False ผิด ทั้งที่งานประกาศวันนี้จริง
+- **Falsify:** คำนวณมือยืนยัน (`today_UTC=2026-07-20, ad=2026-07-21` → diff=-1 → False) + ยืนยันด้วย fix (Thai-tz aware) → diff=0 → True — ตรงสมมติฐาน 100%
+- **Disprove จริง:** เขียน `test_tor_is_fresh_timezone.py` (mock `datetime.datetime`+`datetime.date` จำลอง VPS) → `git stash` revert fix ชั่วคราว → test FAIL ตามคาด (AssertionError) → restore fix → PASS. พิสูจน์ว่า test จับบั๊กได้จริง ไม่ใช่ test หลอกผ่าน
+
+### Fix
+- `scripts/job_matcher.py::tor_is_fresh()`: default `today` resolution เปลี่ยนจาก `_dt.date.today()` → `_dt.datetime.now(_dt.timezone(_dt.timedelta(hours=7))).date()` (Thai-aware) — signature เดิมไม่เปลี่ยน, caller ที่ inject `today` เอง (`test_job_matcher.py`) ไม่กระทบ
+- ผลต่อ production: `bms_api.py:1672` (`/api/portal/discover` B0 freshness) + `Sebastian_Enrichment_Worker.py:321` (province_qualify B0 path, cron `bms-enrichment-worker.timer` รันทุก **2 นาที**) — ไม่ได้แก้ 2 ไฟล์นี้เลย แค่ default value เปลี่ยนพฤติกรรม
+
+### Sophia audit → SAFE
+- รัน test ครบ 6 ไฟล์ที่เกี่ยวข้องเองยืนยัน PASS จริง, grep ทั้ง repo ไม่มี caller อื่นตกหล่น (มีแค่ 2 production caller)
+- ยืนยัน timer cadence จริง (`bms-enrichment-worker.timer` ทุก 2 นาที) + VPS timezone จริง (`Etc/UTC`) + ยืนยัน remote ยังเป็นโค้ดเก่า (บั๊กยัง active ก่อน deploy)
+- ตรวจ mock logic ละเอียด ไม่มี false-pass path
+
+### Deploy — ✅ ครบ
+- push origin/main, VPS pull fast-forward + restart bms-api, verify /health 200
+- bms-enrichment-worker.service = oneshot → รอบถัดไปอ่านโค้ดใหม่เองอัตโนมัติ
+
+### Followup
+- แก้บั๊ก `tor_is_fresh` timezone boundary เสร็จแล้ว (แยกงาน, ไม่เร่งด่วน — เกิดเฉพาะช่วง 00:00-07:00 เวลาไทย)

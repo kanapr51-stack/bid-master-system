@@ -685,6 +685,12 @@ timeline-reminder (07:30) ยิงเวลาตายตัว. เลือ�
 - ตัวเลขจริง VPS customer_id=2: เดิม (sent) 58 งาน → ใหม่ (!=cancelled) **74 งาน** (+16 จาก failed ที่ค้างมาตั้งแต่ 24 มิ.ย.)
 - พบ 1 แถว `status='cancelled'` จริงบน VPS (id=54, ไม่มี writer โค้ดไหนตั้งค่านี้ในระบบ — คาดว่าถูกแก้มือครั้งเดียว) ไม่กระทบ filter ใหม่
 
+### Deploy — ✅ ครบ (commit f45971d)
+- push origin/main สำเร็จ
+- VPS: git pull fast-forward 69f2fcf→f45971d, restart bms-api (active, /health 200)
+  verify in-process: `portal_all_jobs_json` customer_id=2 คืน **count=74** จริง (รวม 3 งาน 07-19/20 ที่เคย failed)
+- Vercel: `npx vercel deploy --prod` → READY, alias bid-master-dashboard.vercel.app
+
 ### Followup
-- ยังไม่ deploy ขึ้น VPS/Vercel — รอ commit+push+deploy
 - decision "เปลี่ยนไปใช้ board ล้วน" (ลดพึ่ง LINE) — บันทึกไว้เป็นทิศทางใหม่ ยังไม่ได้ตัด LINE จริง (LINE quota คาดรีเซ็ต ~1 ส.ค.)
+- แนะนำกัญจน์เปิด `/portal/jobs` เช็คด้วยตาว่าจำนวนงานเพิ่มขึ้นจริงตามที่คาด (74 งาน)

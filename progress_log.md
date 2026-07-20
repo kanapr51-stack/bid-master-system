@@ -800,5 +800,12 @@ N+184 (ก.ค. 2026) เคยถอด "enforce-cut" (global keyword ตัด
 - `mark_keyword_skip` ไม่ชนกับ `recover_stuck_sending` (mark 'skipped' ทันที ไม่ผ่านช่วง 'sending' ค้าง)
 - **ยืนยันสดบน VPS ก่อน deploy:** `notification_queue` = **0 แถวใหม่เลย** ตั้งแต่ N+206 deploy (02:34:27) — ยืนยัน blast radius ตรงตามที่คุณกัญจน์อธิบาย (บอร์ด+LINE หยุดสนิททั้งคู่)
 
+### Deploy — ✅ ครบ (commit 2cf611f)
+- push origin/main สำเร็จ, VPS pull fast-forward 8481d6f→2cf611f, restart bms-api (active, /health 200)
+- Vercel deploy --prod → READY
+- **verify สด:** `/api/portal/discover` customer กัญจน์ (ไม่มี keyword) กลับมาเห็นงาน **15 biddable + 8 planning** (จากเดิม 0 ตอน N+206) — ยืนยันพลิกกลับสำเร็จจริง
+- รัน test suite ครบบน VPS ผ่านหมด (`test_customer_keywords`, `test_discovery_match`, `test_mark_keyword_skip`, `test_province_no_cut`, `test_portal_discover_api`, `test_portal_all_jobs_api`)
+
 ### Followup
-- ยังไม่ deploy — รอ push+VPS+Vercel
+- นโยบายสุดท้าย (N+207) ใช้งานจริงแล้ว: ไม่ตั้ง keyword=แจ้งทุกงาน, ตั้งแล้ว=กรองเฉพาะที่ตรง, บอร์ด"งานทั้งหมด"อัปเดตครบเสมอ (งานที่กรองออกอัปเดตเงียบๆ)
+- บทเรียน session นี้: policy กลับไปกลับมา 3 รอบ (N+198→N+206→N+207≈N+198+send-time gate) — ครั้งหน้าถ้ามีคนขอเปลี่ยน matching policy ให้ถามละเอียดเรื่อง "งานทั้งหมด" กับ "แจ้งเตือน" แยกกันชัดๆ ก่อนเริ่มแก้โค้ด

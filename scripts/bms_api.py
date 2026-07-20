@@ -1444,28 +1444,25 @@ def _provinces_from_notes(notes_str: str) -> list[str]:
 
 def _classes_from_notes(notes_str: str) -> dict:
     """รวม preference ราย user จาก notes.classes[] → {keywords, budget_min, budget_max}.
-    keywords = union ของ classes[].keywords + defaultKeywords (unique, รักษาลำดับ);
+    keywords ใช้ customer_keywords.keywords_from_notes (single source ร่วมกับ enqueue_notifications
+    keyword_gate — กันสองที่แกะเองคนละ policy แบบที่เคยเกิด N+206);
     budget_min = min ของ budgetMinBaht ที่ >0; budget_max = max ของ budgetMaxBaht ที่ >0.
     provinces ไม่ดึงที่นี่ — ใช้ subscription_provinces (source of truth) แทน."""
-    out = {"keywords": [], "budget_min": 0, "budget_max": 0}
+    from customer_keywords import keywords_from_notes
+    out = {"keywords": keywords_from_notes(notes_str), "budget_min": 0, "budget_max": 0}
     if not notes_str:
         return out
     try:
         data = json.loads(notes_str)
     except (ValueError, TypeError):
         return out
-    kws, mins, maxs = [], [], []
+    mins, maxs = [], []
     for cls in (data.get("classes") or []):
-        for k in list(cls.get("keywords") or []) + list(cls.get("defaultKeywords") or []):
-            k = (k or "").strip()
-            if k and k not in kws:
-                kws.append(k)
         bmin, bmax = cls.get("budgetMinBaht"), cls.get("budgetMaxBaht")
         if isinstance(bmin, (int, float)) and bmin > 0:
             mins.append(int(bmin))
         if isinstance(bmax, (int, float)) and bmax > 0:
             maxs.append(int(bmax))
-    out["keywords"] = kws
     out["budget_min"] = min(mins) if mins else 0
     out["budget_max"] = max(maxs) if maxs else 0
     return out
@@ -1637,7 +1634,8 @@ async def portal_discover_jobs(
             "JOIN subscriptions s ON s.id=sp.subscription_id WHERE s.customer_id=?", (cid,)).fetchall()]
         pref = _classes_from_notes(cust["notes"] or "")
         keywords = pref["keywords"]
-        # N+198: keywords ว่าง = เห็นทั้งจังหวัด (ไม่ short-circuit — discovery_match ไม่บังคับคำแล้ว)
+        # N+206: keywords ว่าง = discovery_match คืน False ทุกงาน (ไม่ short-circuit ที่นี่ —
+        # ปล่อยให้ loop ด้านล่างว่างเปล่าไปเอง ผลลัพธ์เหมือนกัน โค้ดสั้นกว่า)
         if not provinces:
             return {"ok": True, "jobs": empty}
         followed = {r["project_id"] for r in conn.execute(

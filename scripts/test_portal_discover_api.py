@@ -22,7 +22,7 @@ def setup():
     c.execute("INSERT OR IGNORE INTO subscriptions (customer_id,active,created_at,updated_at) VALUES (?,1,?,?)", (cid, FRESH, FRESH))
     sid = c.execute("SELECT id FROM subscriptions WHERE customer_id=?", (cid,)).fetchone()[0]
     c.execute("INSERT OR IGNORE INTO subscription_provinces (subscription_id,province) VALUES (?,'นครพนม')", (sid,))
-    # N+198: ลูกค้าไม่มี keyword (classes ว่าง) = เห็นทั้งจังหวัด
+    # N+206 (พลิกกลับ N+198): ลูกค้าไม่มี keyword (classes ว่าง) = ไม่เห็นงานอะไรเลย
     c.execute("INSERT OR IGNORE INTO customers (line_user_id,display_name,tier,active,created_at,updated_at,notes) "
               "VALUES ('UNOKW','y','trial',1,?,?,?)", (FRESH, FRESH, json.dumps({"classes": []})))
     cid2 = c.execute("SELECT id FROM customers WHERE line_user_id='UNOKW'").fetchone()[0]
@@ -77,14 +77,9 @@ async def main():
     p = next(x for x in r["jobs"]["planning"] if x["project_id"] == 'B_FRESH')
     assert p["starred"] is False, p
 
-    # N+198: ลูกค้าไม่มี keyword → เห็นทั้งจังหวัด (ทุก D0 ที่ยังไม่หมด deadline + B0 fresh)
-    # UNOKW ไม่ได้ follow อะไร → D_FOLLOWED ก็เห็น; ไม่ตั้งงบ → D_LOWBUDGET ก็เห็น; ชิปคำว่าง
+    # N+206 (พลิกกลับ N+198): ลูกค้าไม่มี keyword → ไม่เห็นงานอะไรเลยแม้พื้นที่/งบจะตรง
     r2 = await bms_api.portal_discover_jobs(line_user_id='UNOKW', x_bms_secret='t')
-    bid2 = {j["project_id"] for j in r2["jobs"]["biddable"]}
-    plan2 = {j["project_id"] for j in r2["jobs"]["planning"]}
-    assert bid2 == {'D_MATCH', 'D_FOLLOWED', 'D_NOKW', 'D_LOWBUDGET'}, bid2
-    assert plan2 == {'B_FRESH'}, plan2
-    assert all(j["matched_keywords"] == [] for j in r2["jobs"]["biddable"]), r2
+    assert r2["jobs"]["biddable"] == [] and r2["jobs"]["planning"] == [], r2
 
     # N+198.1: /api/portal/customer ส่ง provinces จาก subscription จริง (การ์ด "พื้นที่ครอบคลุม")
     rc = await bms_api.portal_get_customer(line_user_id='UDISC', x_bms_secret='t')

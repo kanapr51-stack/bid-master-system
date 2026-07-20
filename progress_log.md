@@ -694,3 +694,38 @@ timeline-reminder (07:30) ยิงเวลาตายตัว. เลือ�
 ### Followup
 - decision "เปลี่ยนไปใช้ board ล้วน" (ลดพึ่ง LINE) — บันทึกไว้เป็นทิศทางใหม่ ยังไม่ได้ตัด LINE จริง (LINE quota คาดรีเซ็ต ~1 ส.ค.)
 - แนะนำกัญจน์เปิด `/portal/jobs` เช็คด้วยตาว่าจำนวนงานเพิ่มขึ้นจริงตามที่คาด (74 งาน)
+
+## งานที่ N+206: พลิกกลับ N+198 — ไม่ตั้ง keyword ส่วนตัว = ไม่มีงานแมตช์เลย (2026-07-21)
+
+### สถานะ: ✅ เสร็จ (แก้ local, Sophia SAFE — รอ deploy)
+
+### บริบท (สืบจากคำถามกัญจน์ "ทำไมมันแมตช์งานทั้งที่ไม่ได้ใส่ keyword")
+- อธิบายผิดรอบแรกว่า global keyword config (`config/matching_preferences.json`, ~90 คำ, whole_provinces mode ตั้งไว้ 27 มิ.ย.) คือของตั้งใจ — กัญจน์แก้ความเข้าใจ: คำกลางมีไว้ให้ **ติ๊กเลือกเป็น personal keyword** ไม่ใช่ auto-apply ทุกคน
+- สืบพบ 2 ระบบแยกกัน: (A) `/api/portal/discover` (per-user, อ่าน `customers.notes.classes[].keywords` จริง) (B) `/api/portal/all-jobs`+LINE queue (global config, ไม่อ่าน personal keyword เลย) — ทั้งคู่มี policy เดิม (N+198) "ไม่ตั้ง keyword = เห็นทั้งจังหวัด" เหมือนกัน
+- กัญจน์ยืนยันชัดเจน (ถามย้ำก่อนแก้เพราะกระทบผู้ใช้จริง): **ต้องการพลิกเป็น "ไม่ตั้ง keyword = ไม่มีงานแมตช์เลย" ทั้งระบบ** แม้รู้ว่าลูกค้า active ทั้ง 4 คน (กัญจน์/ณฐมน/Mr.suvit/อัญธิญาน์) **ไม่มีใครตั้ง keyword ไว้เลย** → ผลคือทุกคนจะไม่ได้รับแจ้งเตือนจนกว่าจะเข้าไปตั้งเอง
+
+### ⚠️ ประวัติสำคัญที่ต้องแยกให้ชัด (กันสับสนกับ N+184)
+N+184 (ก.ค. 2026) เคยถอด "enforce-cut" (global keyword ตัดสิน cut แล้วไม่ enqueue) ออกเพราะเป็นสาเหตุอินซิเดนต์ใหญ่ (งานก่อสร้างจริงหายเงียบหลายสัปดาห์) — งานรอบนี้**ไม่ได้แตะ enforce-cut/match_job เดิมเลย**, เป็น gate ใหม่คนละชั้น (personal keyword ต่อลูกค้า) `test_province_no_cut.py` ยัง PASS ยืนยันว่า global cut ไม่กระทบ enqueue เหมือนเดิม
+
+### Fix (TDD, Sophia sanity audit ก่อน commit)
+- `scripts/customer_keywords.py` (ใหม่): `keywords_from_notes()` — single source parse personal keyword จาก `customers.notes.classes[]` (เดิมมี logic ซ้ำกันคนละที่ระหว่าง bms_api.py/discovery_match.py จนพฤติกรรมไม่ตรงกัน)
+- `scripts/discovery_match.py::match()`: ว่าง keywords → return False ทันที (เดิม return True/match ทุกอย่าง)
+- `scripts/Sebastian_Customer_DB.py::enqueue_notifications()`: เพิ่ม param `keyword_gate=False` (default ไม่เปลี่ยนพฤติกรรมเดิม) — `True` เพิ่ม `c.notes` เข้า SELECT + เช็คทีละลูกค้า ไม่มี keyword หรือไม่ hit ชื่องาน → skip ไม่ enqueue
+- `scripts/Sebastian_Enrichment_Worker.py`: เปิด `keyword_gate=True` 4 จุด (TOR/B0, province_qualified, RSS Pass1 `api_enriched`, RSS Pass2 `repair_pass2`) — **ไม่แตะ** `Sebastian_Winner_Poller.py`'s `enqueue_for_customer()` (followed_winner/prelim/cancelled = opt-in follow อยู่แล้ว ไม่ควรมี gate)
+- `scripts/bms_api.py::_classes_from_notes`: refactor ให้เรียก `customer_keywords.keywords_from_notes()` (ลด duplicate)
+- Frontend (`portal/settings/_client.tsx`, `portal/world/_client.tsx`): แก้ copy เดิมที่บอก "ไม่ตั้งคำค้น=เห็นทั้งจังหวัด" ให้ตรง policy ใหม่ + `hasPrefs` ต้องมี `totalKeywords>0` ด้วย
+
+### Test (7/7 PASS — Sophia รันซ้ำเองยืนยัน)
+- ใหม่: `test_customer_keywords.py`, `test_keyword_gate_no_personal_kw.py` (3 เคส: ไม่ตั้ง→ไม่ enqueue / ตั้งไม่ตรง→ไม่ enqueue / ตั้งตรง→ enqueue)
+- แก้: `test_discovery_match.py`, `test_portal_discover_api.py` (พลิก assertion policy เก่า), `test_province_no_cut.py` (เพิ่ม `_set_keywords()` แยก gate ใหม่ออกจาก enforce-cut เดิม)
+
+### Sophia audit → SAFE
+- `enqueue_notifications(` ทั้ง repo = 4 call sites ครบทุกจุดมี `keyword_gate=True`; `seed_self_notify.py` (เรียกไม่มี gate) ยืนยันเป็น dev harness ไม่ใช่ prod cron path
+- `enqueue_for_customer()` แยกโค้ดจริง ไม่ได้ถูกแตะ (Winner_Poller 3 จุดยังทำงานปกติ)
+- `job_matcher._kw_hit` guard เดียวกันทั้ง global/personal keyword (กัน "ท่อ" ชน "ท่องเที่ยว" เหมือนเดิม)
+- นับจริง VPS: **4/4 active customers = 0 keyword ตั้งไว้** (ตรงตัวเลขที่อ้าง) → deploy แล้วทุกคนจะไม่ได้รับแจ้งเตือนจนตั้ง keyword เอง
+- py_compile + tsc ผ่านหมด, แก้คอมเมนต์ตกค้าง `bms_api.py:1637` (เดิมยังอ้าง N+198)
+
+### Followup
+- ยังไม่ deploy — รอ push+VPS+Vercel
+- **สำคัญ:** หลัง deploy ต้องแจ้ง Mr.suvit/ณฐมน/อัญธิญาน์ (LINE reply ฟรีไม่ติด quota) ให้เข้าไปตั้ง keyword ที่ `/portal/settings` เอง ไม่งั้นจะไม่ได้รับแจ้งเตือนอะไรเลย

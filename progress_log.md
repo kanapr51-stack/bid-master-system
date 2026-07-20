@@ -760,9 +760,10 @@ N+184 (ก.ค. 2026) เคยถอด "enforce-cut" (global keyword ตัด
 - ยืนยัน timer cadence จริง (`bms-enrichment-worker.timer` ทุก 2 นาที) + VPS timezone จริง (`Etc/UTC`) + ยืนยัน remote ยังเป็นโค้ดเก่า (บั๊กยัง active ก่อน deploy)
 - ตรวจ mock logic ละเอียด ไม่มี false-pass path
 
-### Deploy — ✅ ครบ
-- push origin/main, VPS pull fast-forward + restart bms-api, verify /health 200
+### Deploy — ✅ ครบ (commit 8481d6f)
+- push origin/main, VPS pull fast-forward c614252→8481d6f + restart bms-api, verify /health 200
 - bms-enrichment-worker.service = oneshot → รอบถัดไปอ่านโค้ดใหม่เองอัตโนมัติ
+- **verify สดตอน 20:23 UTC (ยังอยู่ในช่วงเวลาที่เคยพัง 17:00-23:59 UTC พอดี):** รัน `test_job_matcher.py`/`test_tor_is_fresh_timezone.py`/`test_portal_discover_api.py` บน VPS ตรงๆ → PASS ทั้งหมด — ยืนยัน fix ใช้งานได้จริง ไม่ใช่แค่ทฤษฎี
 
 ### Followup
 - แก้บั๊ก `tor_is_fresh` timezone boundary เสร็จแล้ว (แยกงาน, ไม่เร่งด่วน — เกิดเฉพาะช่วง 00:00-07:00 เวลาไทย)

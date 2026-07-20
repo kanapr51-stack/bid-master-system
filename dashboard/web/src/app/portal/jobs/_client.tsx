@@ -62,7 +62,7 @@ function SentJobCard({ job, followed, onToggle }: { job: SentJob; followed: bool
         <div className="p-fg-mute" style={{ fontSize: 12, marginTop: 8, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
           {job.province && <span>📍 {job.province}</span>}
           {job.budget > 0 && <span>💰 {fmtBaht(job.budget)} บาท</span>}
-          <span className="p-fg-dim">🔔 ส่งเมื่อ {fmtSentDate(job.sent_at)}</span>
+          <span className="p-fg-dim">🔔 พบเมื่อ {fmtSentDate(job.sent_at)}</span>
           <button
             className={`p-btn ${followed ? 'p-btn-ghost' : 'p-btn-primary'}`}
             title={followed ? 'กดเพื่อยกเลิกติดตาม' : 'กดเพื่อติดตาม'}
@@ -165,7 +165,7 @@ export function AllJobsClient({ data, engineDown }: { data: AllJobs | null; engi
     <div className="p-enter">
       <TopBar
         title="งานทั้งหมด"
-        subtitle="ทุกงานที่ระบบเคยส่งให้ท่าน"
+        subtitle="ทุกงานที่ระบบพบและจับคู่ให้ท่าน"
         onLeft={() => router.push('/portal/world')}
         right={<Chip tone="gold" icon={<Diamond size={5} />}>{data.count} งาน</Chip>}
       />
@@ -209,7 +209,7 @@ export function AllJobsClient({ data, engineDown }: { data: AllJobs | null; engi
         {data.jobs.length === 0 ? (
           <div className="p-card" style={{ textAlign: 'center', padding: 28 }}>
             <div className="p-serif p-fg-mute" style={{ fontStyle: 'italic', fontSize: 14 }}>
-              ยังไม่มีงานที่ระบบส่งให้ — เมื่อมีงานใหม่ตรงเงื่อนไข จะขึ้นที่นี่พร้อมแจ้งใน LINE ครับ
+              ยังไม่มีงานที่ตรงเงื่อนไข — เมื่อระบบพบงานใหม่ที่ตรงกับท่าน จะขึ้นที่นี่พร้อมแจ้งเตือนครับ
             </div>
           </div>
         ) : jobs.length === 0 ? (

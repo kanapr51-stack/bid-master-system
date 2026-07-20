@@ -1940,9 +1940,10 @@ async def portal_all_jobs_json(
     limit: int = 500,
     x_bms_secret=Header(default=None),
 ):
-    """งานทั้งหมดที่เคยส่งแจ้งเตือนให้ลูกค้า (การ์ด 'งานทั้งหมด' Board B) — อ่าน
-    notification_queue ตรงๆ (sent เท่านั้น, dedup ต่อ project เอารอบล่าสุด) ใช้ snapshot
-    เป็นหลัก join projects_seen แค่เติม budget/ชื่อที่ snapshot ว่าง. read-only."""
+    """งานทั้งหมดที่ระบบสแกน+จับคู่ให้ลูกค้าแล้ว (การ์ด 'งานทั้งหมด' Board B) — อ่าน
+    notification_queue ตรงๆ (ทุกสถานะยกเว้น cancelled — ไม่ผูกกับผลส่ง LINE, dedup ต่อ
+    project เอารอบล่าสุด) ใช้ snapshot เป็นหลัก join projects_seen แค่เติม budget/ชื่อที่
+    snapshot ว่าง. read-only."""
     if x_bms_secret != BMS_INTERNAL_SECRET:
         raise HTTPException(status_code=403, detail="Forbidden")
     limit = max(1, min(int(limit or 500), 500))
@@ -1957,7 +1958,7 @@ async def portal_all_jobs_json(
             "       nq.source_stage, nq.created_at, ps.project_name, ps.province, ps.budget "
             "FROM notification_queue nq "
             "LEFT JOIN projects_seen ps ON ps.project_id = nq.project_id "
-            "WHERE nq.customer_id=? AND nq.status='sent' AND COALESCE(nq.is_test_data,0)=0 "
+            "WHERE nq.customer_id=? AND nq.status!='cancelled' AND COALESCE(nq.is_test_data,0)=0 "
             "ORDER BY nq.created_at DESC", (cid,)).fetchall()
         starred_ids = portal_views.starred_project_ids(conn, cid)
         followed_ids = {r["project_id"] for r in conn.execute(

@@ -1,6 +1,6 @@
 /**
- * portal-all-jobs.ts — งานทั้งหมดที่เคยส่งแจ้งเตือนให้ลูกค้า (การ์ด "งานทั้งหมด" Board B)
- * อ่านจาก engine /api/portal/all-jobs (notification_queue, dedup ต่อ project เอารอบล่าสุด)
+ * portal-all-jobs.ts — งานทั้งหมดที่ระบบสแกน+จับคู่ให้ลูกค้าแล้ว (การ์ด "งานทั้งหมด" Board B)
+ * อ่านจาก engine /api/portal/all-jobs (notification_queue, ไม่ผูกผลส่ง LINE, dedup ต่อ project เอารอบล่าสุด)
  */
 const BMS_API_URL = process.env.BMS_API_URL ?? "https://api.butler-bms.com";
 const BMS_SECRET = process.env.BMS_INTERNAL_SECRET ?? "";
@@ -12,7 +12,7 @@ export interface SentJob {
   name: string;
   province: string;
   budget: number;
-  sent_at: string; // ISO — เวลาส่งแจ้งเตือนรอบล่าสุด
+  sent_at: string; // ISO — เวลาสแกน+จับคู่รอบล่าสุด (ไม่ใช่เวลาส่งสำเร็จ)
   stage: SentJobStage;
   starred: boolean;
   followed: boolean;

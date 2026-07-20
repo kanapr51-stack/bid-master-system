@@ -651,3 +651,40 @@ timeline-reminder (07:30) ยิงเวลาตายตัว. เลือ�
 
 ### Followup
 - (ยังค้างจาก N+203) E2E web push มือกัญจน์ + 3 วันเสถียร
+
+## งานที่ N+204: E2E web push ผ่าน — เริ่มนับ 3 วันเสถียร (2026-07-21)
+
+### สถานะ: ✅ E2E ผ่าน / 🚧 เริ่มนับ 3 วันเสถียร
+
+### สิ่งที่ทำ
+- กัญจน์กดการ์ด 🔔 บน `/portal/world` (iPhone Safari, iOS 18.7) → อนุญาต notification → กด "ส่งทดสอบ"
+- ตรวจ VPS DB ตรงๆ ยืนยันไม่ใช่แค่เห็นแจ้งเตือนเฉยๆ:
+  - `push_subscriptions`: 1 แถว, customer_id=2, created_at 2026-07-21T01:27:06+07:00, last_ok_at 01:27:10 (ไม่มี disabled_at)
+  - `webpush_delivery_log`: 1 แถว, status=`sent`, attempted_at 01:27:10, ไม่มี error
+- สรุป: subscribe + ส่งทดสอบสำเร็จจริงทั้งสาย (browser → engine → VPS DB)
+
+### Followup
+- นับ 3 วันเสถียรตั้งแต่ 2026-07-21: ทุก queue item ของ customer_id=2 ต้องมีแถวคู่กันใน `webpush_delivery_log` ครบ (0 งานหลุด) ก่อนเปิด `PUSH_ALLOWLIST` ให้ลูกค้าอื่น + ค่อยพิจารณาตัด LINE
+- Minor debt เดิมยังไม่แก้ (defer ได้): sw.js ไม่มี skipWaiting, push-test blocking ใน async, negative test cross-customer unsubscribe
+
+## งานที่ N+205: บอร์ด "งานทั้งหมด" เลิกผูกกับผลส่ง LINE — รับตรงจากสแกน+จับคู่ (2026-07-21)
+
+### สถานะ: ✅ เสร็จ (แก้ local, Sophia SAFE — รอ deploy)
+
+### Root cause (สืบจากคำถามกัญจน์ "ทำไม board ไม่เพิ่มงาน")
+- ตรวจ VPS DB พบ `/api/portal/all-jobs` filter เดิม `nq.status='sent'` เท่านั้น → บอร์ดค้างที่แถวสำเร็จล่าสุดของกัญจน์ (customer_id=2) = **2026-07-13T17:15:45** พอดี ตรงกับวันที่ LINE โควต้าเต็ม (300/300) — ตั้งแต่นั้น queue เข้าปกติทุกวันแต่ `status='failed'` (429 rate_limit) หมด บอร์ดเลยไม่โชว์อะไรใหม่เลย ทั้งที่ discovery/matching ทำงานถูกต้อง (ยืนยันแยกกับคำถามก่อนหน้าเรื่อง egp ปิดปรับปรุง 18-19 ก.ค.)
+- กัญจน์สั่ง: แก้ให้บอร์ดรับจากการสแกนงานโดยตรง ไม่ผูกกับ LINE, จะเปลี่ยนไปพึ่งบอร์ดเป็นช่องหลักแทน
+
+### Fix (subagent-driven: Sophia sanity audit หลังแก้)
+- `scripts/bms_api.py` `portal_all_jobs_json`: `nq.status='sent'` → `nq.status!='cancelled'` (โชว์ sent+failed, กันเฉพาะ queue row ที่ถูก dedup/invalidate ทิ้งจริง — คนละความหมายกับ `source_stage='followed_cancelled'`)
+- `scripts/test_portal_all_jobs_api.py`: เพิ่มเคส P6 (`status='cancelled'` → ไม่ขึ้น), แก้ P3 (`failed` → ต้องขึ้น) — PASS
+- `dashboard/web` `_client.tsx` + `portal-all-jobs.ts`: แก้ copy "ส่งเมื่อ"/"ระบบเคยส่งให้"/"ส่งใน LINE" → "พบเมื่อ"/"ระบบพบและจับคู่ให้" (timestamp ไม่ได้แปลว่าส่งสำเร็จอีกต่อไป) — tsc ผ่าน
+
+### Sophia audit → SAFE
+- customer scoping/dedup ไม่พัง, test_data 0 แถวทั้ง DB (ไม่มีหลุด), ไม่มี `pending` ค้าง, ไม่มี endpoint อื่นพึ่ง query เดิมตกหล่น
+- ตัวเลขจริง VPS customer_id=2: เดิม (sent) 58 งาน → ใหม่ (!=cancelled) **74 งาน** (+16 จาก failed ที่ค้างมาตั้งแต่ 24 มิ.ย.)
+- พบ 1 แถว `status='cancelled'` จริงบน VPS (id=54, ไม่มี writer โค้ดไหนตั้งค่านี้ในระบบ — คาดว่าถูกแก้มือครั้งเดียว) ไม่กระทบ filter ใหม่
+
+### Followup
+- ยังไม่ deploy ขึ้น VPS/Vercel — รอ commit+push+deploy
+- decision "เปลี่ยนไปใช้ board ล้วน" (ลดพึ่ง LINE) — บันทึกไว้เป็นทิศทางใหม่ ยังไม่ได้ตัด LINE จริง (LINE quota คาดรีเซ็ต ~1 ส.ค.)

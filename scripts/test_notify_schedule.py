@@ -35,6 +35,23 @@ def test_is_due_marker_per_kind():
     print("✅ is_due + marker แยกต่อ kind/ลูกค้า/วัน")
 
 
+def test_webpush_ctx_suppresses_retry():
+    """N+208: LINE retry ทุก 15 นาทีตอน fail (quota เต็ม ฯลฯ) ต้อง mirror webpush แค่ครั้งแรก/วัน/kind."""
+    with db.get_connection() as conn:
+        # ครั้งแรกที่ due วันนี้ → mirror ปกติ (None) แม้ LINE จะยังไม่รู้ผล
+        assert ns.webpush_ctx(conn, "bidopen", 10, TODAY, TODAY + "T07:30:05") is None
+        # รอบ retry ถัดไป (LINE ยัง fail อยู่) → suppress กันเด้งซ้ำ
+        assert ns.webpush_ctx(conn, "bidopen", 10, TODAY, TODAY + "T07:45:07") == {"suppress": True}
+        assert ns.webpush_ctx(conn, "bidopen", 10, TODAY, TODAY + "T08:00:03") == {"suppress": True}
+        # คนละ kind / ลูกค้า / วัน → ยังนับเป็นครั้งแรก (mirror ปกติ)
+        assert ns.webpush_ctx(conn, "timeline", 10, TODAY, TODAY + "T07:45:07") is None
+        assert ns.webpush_ctx(conn, "bidopen", 11, TODAY, TODAY + "T07:45:07") is None
+        assert ns.webpush_ctx(conn, "bidopen", 10, TOMORROW, TOMORROW + "T07:30:00") is None
+        # ไม่ชนกับ marker LINE เดิม (daily_notify_log kind='bidopen' ของ customer 1 จาก test ก่อนหน้า)
+        assert not ns.sent_today(conn, "bidopen", 10, TODAY)   # LINE เอง (คนละ kind กับ 'bidopen_webpush') ยังไม่ mark
+    print("✅ webpush_ctx: suppress ตั้งแต่รอบ 2 เป็นต้นไป ต่อ kind/ลูกค้า/วัน")
+
+
 def test_graceful_no_table():
     import sqlite3
     empty = sqlite3.connect(":memory:")
@@ -44,5 +61,6 @@ def test_graceful_no_table():
 
 test_pref_time()
 test_is_due_marker_per_kind()
+test_webpush_ctx_suppresses_retry()
 test_graceful_no_table()
 print("ALL PASS notify_schedule")

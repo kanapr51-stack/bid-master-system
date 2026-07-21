@@ -130,7 +130,9 @@ def main():
         n_items = sum(len(j["items"]) for j in g["jobs"])
         if args.live:
             from Sebastian_LINE_Sender import send_line_push
-            ok, etype, emsg = send_line_push(token, g["line_user_id"], text)
+            with get_connection() as conn:
+                wp_ctx = ns.webpush_ctx(conn, "timeline", c["id"], today, now_iso)
+            ok, etype, emsg = send_line_push(token, g["line_user_id"], text, webpush_ctx=wp_ctx)
             if ok:
                 with get_connection() as conn:
                     ns.mark_sent(conn, "timeline", c["id"], today, now_iso)

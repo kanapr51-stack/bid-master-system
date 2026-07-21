@@ -27,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 if sys.stdout and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
+import notify_schedule as ns
 from Sebastian_Customer_DB import get_connection
 from Sebastian_LINE_Sender import _load_line_token, send_line_push
 
@@ -177,11 +178,14 @@ def main():
             print(f"\n--- [{name}] notify={nt} {'เช้า' if morning else 'เย็น'} งาน={cnt} เปิดยื่น={len(next_jobs)} โน้ต={len(notes_due)} ---\n{msg}\n", flush=True)
             ok += 1
             continue
-        success, error_type, error_msg = send_line_push(token, c["line_user_id"], msg)
+        now_iso = now.isoformat(timespec="seconds")
+        with get_connection() as conn:
+            wp_ctx = ns.webpush_ctx(conn, "daily_recap", c["id"], today_th, now_iso)
+        success, error_type, error_msg = send_line_push(token, c["line_user_id"], msg, webpush_ctx=wp_ctx)
         if success:
             ok += 1
             with get_connection() as conn:
-                mark_recap_sent(conn, c["id"], today_th, now.isoformat(timespec="seconds"))
+                mark_recap_sent(conn, c["id"], today_th, now_iso)
             print(f"  ✅ {name} (notify={nt}, งาน={cnt})", flush=True)
         else:
             fail += 1

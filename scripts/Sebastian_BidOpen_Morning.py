@@ -96,7 +96,9 @@ def main():
             print(f"\n--- [{name}] notify={t} {len(jobs)} งาน ---\n{msg}\n", flush=True)
             ok += 1
             continue
-        success, error_type, error_msg = send_line_push(token, c["line_user_id"], msg)
+        with get_connection() as conn:
+            wp_ctx = ns.webpush_ctx(conn, "bidopen", c["id"], today_th, now_iso)
+        success, error_type, error_msg = send_line_push(token, c["line_user_id"], msg, webpush_ctx=wp_ctx)
         if success:
             ok += 1
             with get_connection() as conn:

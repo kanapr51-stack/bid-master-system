@@ -41,3 +41,15 @@ def mark_sent(conn, kind: str, customer_id: int, date_th: str, sent_at: str) -> 
 def is_due(conn, kind: str, customer_id: int, notify_hhmm: str, now_hhmm: str, date_th: str) -> bool:
     """ถึงเวลา (now >= เวลาที่ตั้ง) และยังไม่ประมวลผลวันนี้ — self-healing ถ้า timer พลาดรอบ."""
     return now_hhmm >= notify_hhmm and not sent_today(conn, kind, customer_id, date_th)
+
+
+def webpush_ctx(conn, kind: str, customer_id: int, date_th: str, sent_at: str) -> dict | None:
+    """webpush_ctx สำหรับ send_line_push — กันเด้งซ้ำตอน LINE retry (bug 2026-07-22, N+208):
+    LINE ค้าง retry ทุก 15 นาทีเมื่อ fail (quota เต็ม ฯลฯ) จนกว่าจะสำเร็จ, แต่ mirror เข้า web push
+    ควรยิงแค่ครั้งเดียว/วัน/kind ไม่ว่า LINE จะสำเร็จหรือไม่ (ครั้งแรก mirror ไปแล้วเสมอ ไม่ต้องรอ LINE).
+    ครั้งแรกที่ due วันนี้ → mark แล้วคืน None (mirror ปกติ); รอบ retry ถัดไป → คืน {"suppress": True}."""
+    webpush_kind = kind + "_webpush"
+    if sent_today(conn, webpush_kind, customer_id, date_th):
+        return {"suppress": True}
+    mark_sent(conn, webpush_kind, customer_id, date_th, sent_at)
+    return None

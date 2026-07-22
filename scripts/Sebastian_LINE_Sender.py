@@ -235,7 +235,8 @@ def format_notification(project_id: str, province: str = "",
                          deliver_day: int = 0, report_date: str = "",
                          bid_submit_date: str = "", bid_submit_time: str = "",
                          is_backfill: bool = False,
-                         source_stage: str = "api_enriched") -> str:
+                         source_stage: str = "api_enriched",
+                         record_prediction: bool = True) -> str:
     """
     v2 Mobile-first format — optimize สำหรับ 3-second decision scan
     ลำดับ: geography → project → money → agency → DEADLINE → timeline → announced
@@ -291,7 +292,9 @@ def format_notification(project_id: str, province: str = "",
         lines.append(f"📅 ประกาศ {report_date}")
 
     # competitive intel — closed-loop prediction logging ยังทำเหมือนเดิม (resolve ไว้ข้างบนแล้ว)
-    if intel_ctx:
+    # record_prediction=False: ใช้ตอน reconstruct ข้อความเก่ามาโชว์ (เช่น Sebastian chat feed)
+    # — ห้ามเขียน price_predictions ซ้ำทุกครั้งที่ลูกค้าเปิดดูประวัติ
+    if intel_ctx and record_prediction:
         if intel_ctx.get("prediction") and project_id:   # เก็บคำทำนายไว้เทียบตอนประกาศผล (closed-loop)
             try:
                 from Sebastian_Customer_DB import save_prediction

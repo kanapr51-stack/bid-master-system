@@ -958,12 +958,12 @@ def main():
         # ลิงก์อยู่ในเนื้อข้อความ → เลื่อนกดงานเก่าได้ไม่หาย (แทน quick-reply ที่หายเมื่อหลายงาน).
         # N+108 follow-link. กัญจน์เลือก 2026-06-08
         body = _plain_text_body(text, full_name)
-        ann = pdf_url or _announcement_url(item["project_id"])      # ลิงก์ประกาศ (RSS pdf หรือ public eGP)
-        ann_block = ("\n\n📄 ดูประกาศ:\n" + ann) if ann else ""
+        # N+209 (2026-07-23): ตัดลิงก์ประกาศออกจากข้อความไปก่อน — กิน budget 180 ตัวอักษรของ web push
+        # จน deadline/เหลือกี่วันโดนตัดหายก่อนถึง (ดู progress_log N+208/209); กดแจ้งเตือนยังพาไปหน้า job ที่มีลิงก์ครบอยู่แล้ว
         link = build_follow_link(item["line_user_id"], item["project_id"])
         link_block = ("\n\n⭐ ติดตามงานนี้:\n" + link) if link else ""
         success, error_type, error_msg = send_line_push(
-            token, item["line_user_id"], body + ann_block + link_block, quick_reply=None,
+            token, item["line_user_id"], body + link_block, quick_reply=None,
             webpush_ctx={"project_id": item["project_id"], "source_stage": item.get("source_stage", ""),
                          "suppress": (item.get("retry_count") or 0) > 0})
     else:

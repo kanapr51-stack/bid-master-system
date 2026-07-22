@@ -855,3 +855,29 @@ push origin/main → VPS `git pull --ff-only` (2cf611f→f30cc4d) fast-forward �
 
 ### Followup
 - LINE quota ยังไม่รีเซ็ต (คาด ~1 ส.ค.) — ปัญหาแยกต่างหาก ไม่กระทบ fix นี้ (web push ยังส่งได้ปกติแม้ LINE ตัน)
+- ตรวจสอบ "ข้อมูลแจ้งเตือนครบมั้ย" ต่อ (คุณกัญจน์ถาม 2026-07-23) → พบเรื่องใหม่แยกออกไป ดู N+209 ด้านล่าง
+
+## งานที่ N+209: ตัดลิงก์ประกาศ PDF ออกจากข้อความ D0/TOR-review ชั่วคราว (2026-07-23)
+
+### สถานะ: ✅ แก้แล้ว + deploy ครบ (Sophia SAFE) — **ยังไม่แก้ปัญหา deadline โดนตัดสมบูรณ์**
+
+### บริบท
+คุณกัญจน์ถามให้ตรวจว่า "ข้อมูลที่แจ้งเตือนมาครบถ้วนและครบมั้ย" — ตรวจพบว่า `webpush_send.py` ตัด body ที่ 180 ตัวอักษร (`BODY_MAX=180`) ทำให้งานชื่อยาว (ปกติของหน่วยงานราชการ) โดน ⏰ deadline / ⌛ เหลือกี่วัน / ลิงก์ดูประกาศ / ลิงก์ติดตามงาน หลุดจากตัวแจ้งเตือนที่ผู้ใช้เห็นจริง — ทดสอบด้วยงานจริงเมื่อวาน (69079432355 บึงกาฬ, deadline 3 ส.ค.) พบ body ตัดที่ "🏢 ที่ท..." ก่อนถึง deadline เลย. คลิกแจ้งเตือนยังพาไปหน้า job ถูกต้อง (url แยกจาก body, ไม่โดนตัด) — ปัญหาคือแค่ preview text ในตัวแจ้งเตือนเอง
+
+คุณกัญจน์สั่ง: "เอาช่องเอกสารไปก่อน" = ตัด "📄 ดูประกาศ" ออกจากข้อความ
+
+### Fix
+`scripts/Sebastian_LINE_Sender.py::main()` ใน branch `_is_plain_text_stage(item)` (D0 + province_tor_review* เท่านั้น, บรรทัด ~956-968): ลบ `ann`/`ann_block` (ลิงก์ PDF ประกาศ), เหลือแค่ `body + link_block` (ยังเก็บ "⭐ ติดตามงานนี้" ไว้). `pdf_url`/`_announcement_url` ไม่ orphan — ยังใช้ที่ PDF enrichment (บรรทัด ~896) กับปุ่ม flex message ของ stage อื่น (บรรทัด ~976) เหมือนเดิม
+
+### ⚠️ สำคัญ — fix นี้ยังไม่ครบ (พบระหว่างทดสอบเอง, Sophia ยืนยันตรง)
+`ann_block` เดิมอยู่**ท้ายสุด**ของข้อความ (หลัง project_id ซึ่งอยู่หลัง deadline อยู่แล้ว) — ลบมันคืน budget แค่ตรง**ท้ายข้อความ** ไม่ได้แย่งที่ deadline โดยตรง. ทดสอบซ้ำงาน 69079432355 (ชื่อยาว ~120 ตัวอักษร) หลังแก้ → ยังตัดที่ "🏢 ที่ทำการปกครองอำเภอเมืองบึง..." เหมือนเดิม ไม่ทันถึง ⏰ deadline. **แก้นี้ช่วยเฉพาะงานชื่อสั้น/กลาง** — ถ้าจะให้ deadline โผล่ครบทุกกรณีต้องเรียงลำดับใหม่ (เช่น deadline ขึ้นก่อนชื่อโครงการเต็ม) ซึ่งยังไม่ได้ทำ รอคุณกัญจน์ตัดสินใจว่าจะทำต่อหรือพอแค่นี้ก่อน
+
+### Test + Sophia audit → SAFE
+รันผ่านหมด: `test_d0_quickreply`, `test_deadline_time`, `test_lifecycle_labels`, `test_cgd_intel`, `test_announcement_link`, `test_webpush_mirror` (ทั้ง local + VPS venv). Sophia ยืนยัน diff surgical ตรง scope, ไม่กระทบ flex-branch/stage อื่น, ไม่มี test พัง
+
+### Deploy — ✅ ครบ (commit 7681f3f)
+push origin/main → VPS `git pull --ff-only` (f30cc4d→7681f3f) — ไม่ต้อง restart (LINE_Sender เป็น oneshot script)
+
+### Followup
+- **ยังไม่ได้แก้เรื่องเรียงลำดับ** — deadline ยังหายสำหรับงานชื่อยาว รอคุณกัญจน์สั่งว่าจะทำต่อไหม
+- `scripts/resend_d0_jobs.py:75-79` (manual resend script, นอก pipeline หลัก) ยังมี `ann_block` แบบเก่า — ไม่ sync กับ fix นี้ ถ้าใช้สคริปต์นี้ resend มือ ข้อความจะยังมีลิงก์ประกาศอยู่ (ไม่ใช่บั๊ก แค่ไม่ได้อยู่ใน scope ที่สั่ง)

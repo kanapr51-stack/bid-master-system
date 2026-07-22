@@ -809,3 +809,49 @@ N+184 (ก.ค. 2026) เคยถอด "enforce-cut" (global keyword ตัด
 ### Followup
 - นโยบายสุดท้าย (N+207) ใช้งานจริงแล้ว: ไม่ตั้ง keyword=แจ้งทุกงาน, ตั้งแล้ว=กรองเฉพาะที่ตรง, บอร์ด"งานทั้งหมด"อัปเดตครบเสมอ (งานที่กรองออกอัปเดตเงียบๆ)
 - บทเรียน session นี้: policy กลับไปกลับมา 3 รอบ (N+198→N+206→N+207≈N+198+send-time gate) — ครั้งหน้าถ้ามีคนขอเปลี่ยน matching policy ให้ถามละเอียดเรื่อง "งานทั้งหมด" กับ "แจ้งเตือน" แยกกันชัดๆ ก่อนเริ่มแก้โค้ด
+
+## งานที่ N+208: web push ถี่ผิดปกติ — retry LINE ที่ fail ยัง mirror webpush ซ้ำทุก 15 นาที (2026-07-21→22)
+
+### สถานะ: ✅ แก้แล้ว + deploy + verify สดครบ (Sophia SAFE)
+
+### บริบท
+คุณกัญจน์ถามว่าวันนี้บอร์ดแจ้งเตือนถี่ผิดปกติ แจ้งอะไรบ้าง และมีงานใหม่จริงไหม (ใช้ debug-mantra ตรวจ). ต่อ SSH เข้า VPS ตรง (DB จริงอยู่ `/opt/bms/data/bms_customers.db` — local `data/bms_customers.db` ค้างตั้งแต่ 30 มิ.ย. อย่าใช้เช็คของจริง).
+
+### Root cause (2 เรื่องซ้อนกัน)
+1. **LINE Push monthly quota เต็มอีกรอบ** (429 `You have reached your monthly limit.`) — ครั้งที่ 3 ต่อจาก 24 มิ.ย./13 ก.ค. (ดู [[project_line_push_quota_exhausted]]). journal `bms-bidopen-morning` ทุกรอบตั้งแต่ 07:30 วันนี้ยัน "due 4/4" + fail rate_limit ทั้ง 4 คนทุกครั้ง (264 ครั้งรวมทั้งวัน)
+2. **`send_line_push()`** (`scripts/Sebastian_LINE_Sender.py:414-415`) เรียก `_mirror_webpush()` **เสมอ ไม่เช็คว่า `_attempt()` สำเร็จหรือไม่** (`result = _attempt(); _mirror_webpush(...); return result`) — `bms-bidopen-morning` (เตือนงานยื่นซองวันนี้) กับ `bms-daily-user-summary` (สรุปวันเมื่อถึง notifyTime, ของ Kan Kan=23:00) retry ทุก 15 นาทีเมื่อ LINE fail (retryable) แต่ mirror webpush ไม่เคยถูก gate ตาม → ข้อความเดิมถูกส่งซ้ำเข้า browser ทุก 15 นาทีทั้งวัน
+
+### หลักฐาน
+- `webpush_delivery_log` (VPS) วันนี้ให้ customer_id=2 (Kan Kan): **73 แถว**, มีแค่ 1 แถว (id=26, 13:04:26) ที่มี project_id จริง (69079432355) — ที่เหลือ 72 แถว project_id/source_stage ว่างหมด, ทุก ~15 นาทีตรงตาม timer `bms-bidopen-morning`/`bms-daily-user-summary` (`*:00/15:00`); หลัง 23:00 (notifyTime Kan Kan) กลายเป็น 2 แถวซ้อนต่อรอบ (bidopen-morning + daily-user-summary ยิงพร้อมกัน)
+- `notification_queue` วันนี้ (ทุก customer รวม): **แค่ 5 แถว** = งานใหม่จริง 2 รายการ — `69079432355` (บึงกาฬ ท่อร้อยสายใต้ดิน สะพานมิตรภาพ 5, province_qualified 13:00:53, ส่งให้ 4 คนรวม Kan Kan) + `69069197520` (นครพนม บ้านไทโส้, followed_prelim 19:15:12, เฉพาะ Mr.suvit) — ทั้งคู่ status='failed' (LINE fail แต่ webpush mirror ของอันแรกสำเร็จตอน 13:04)
+- `projects_seen` ทั่วประเทศวันนี้: 96 โครงการใหม่ (ส่วนใหญ่นอกพื้นที่/ประเภทที่สนใจ) — ยืนยันว่า "ไม่มีงานใหม่เลย" ไม่จริง แต่ก็ไม่ใช่ 73 แจ้งเตือนจริงอย่างที่รู้สึก
+
+### สรุปคำตอบคุณกัญจน์
+- **แจ้งอะไรบ้างวันนี้:** งานใหม่จริง 1 งาน (บึงกาฬ ท่อร้อยสายใต้ดิน, ~13:04) ที่เหลือคือ "เตือนงานยื่นซองวันนี้" (4 งานเดิม) + "สรุปประจำวัน" ที่ retry LINE ไม่สำเร็จ (โควต้าเต็ม) แต่หลุด mirror ไป push ซ้ำทุก 15 นาที
+- **ไม่มีงานใหม่จริงไหม:** ไม่จริง มี 1 งานใหม่ที่ตรงเงื่อนไข (ระบบทั่วประเทศเจอ 96 งานแต่ผ่านตัวกรองแค่นี้)
+
+### Fix (คุณกัญจน์สั่ง "แก้ให้เลย กัน mirror ไม่ให้ยิงซ้ำตอน retry fail")
+- **`scripts/notify_schedule.py`** เพิ่ม `webpush_ctx(conn, kind, customer_id, date_th, sent_at)` — reuse ตาราง `daily_notify_log` เดิม (PK `kind,customer_id,date_th`, ไม่ต้อง migrate) ด้วย kind ต่อท้าย `_webpush`: ครั้งแรกที่ due วันนี้ → mark แล้วคืน `None` (mirror ปกติ ไม่ว่า LINE จะสำเร็จหรือไม่); รอบ retry ถัดไปวันเดียวกัน → คืน `{"suppress": True}` (reuse suppress mechanism เดิมใน `_mirror_webpush` ที่มีอยู่แล้วสำหรับ retry คิว)
+- ผูกเข้า 3 จุดเรียก `send_line_push` ตรง (ไม่ผ่าน queue): `Sebastian_BidOpen_Morning.py:99-101`, `Sebastian_Daily_User_Summary.py` (เพิ่ม `import notify_schedule as ns`, บรรทัด ~181-184), `timeline_reminder.py:133-135` (ยังไม่โดนบั๊กจริงเพราะ due_users=0 วันนั้น แต่ pattern เดียวกัน แก้ป้องกันไว้ด้วย)
+- **ไม่กระทบ LINE retry logic เลย** — marker เดิม (`bidopen`/`timeline` kind ใน `daily_notify_log`, `daily_recap_log`) ยัง mark เฉพาะตอน LINE สำเร็จเหมือนเดิม, LINE ยัง retry ทุก 15 นาทีตามปกติจนกว่าจะสำเร็จ/quota reset — แค่ mirror webpush ที่ถูก gate
+
+### Test
+- เพิ่ม `test_webpush_ctx_suppresses_retry()` ใน `test_notify_schedule.py` — assert รอบแรก `None`, รอบ 2+ `{"suppress": True}`, แยกต่อ kind/customer/วันถูกต้อง, ไม่ชนกับ marker LINE เดิม
+- รันผ่านหมดทั้ง local และ VPS venv: `test_notify_schedule`, `test_webpush_mirror`, `test_bidopen_notify`, `test_timeline_reminder`, `test_daily_recap`
+
+### Sophia audit → SAFE
+ตรวจ diff 4 ไฟล์จริง ยืนยัน logic ถูกต้อง, ไม่ชน mechanism เดิม (queue-based suppress คนละตาราง/คนละจุดเรียก), ไม่มี key collision ใน `daily_notify_log`, ไม่กระทบ `daily_recap_log`, scope surgical ตรงบั๊กจริง
+
+### Deploy — ✅ ครบ (commit f30cc4d)
+push origin/main → VPS `git pull --ff-only` (2cf611f→f30cc4d) fast-forward สำเร็จ — สคริปต์พวกนี้เป็น oneshot ผ่าน systemd timer ไม่ใช่ persistent service เลยไม่ต้อง restart อะไร (รอบถัดไปของ timer ใช้โค้ดใหม่อัตโนมัติ)
+
+### ✅ Verify สดวันถัดไป (2026-07-22) — พิสูจน์ชัดเจนสุด
+วันนี้ LINE quota ยังไม่รีเซ็ต เกิดสถานการณ์ retry ยาวพอดีให้เห็นผลจริง:
+- **bidopen-morning**: "due 4/4" + Kan Kan fail 429 **ทุก 15 นาที 66 ครั้ง** (07:30-23:30) แต่ `webpush_delivery_log` มีแค่ **1 แถว** (07:30:03) — suppress ทำงาน 100%
+- **daily-user-summary**: "due 4/4" ตั้งแต่ 23:00 (notifyTime Kan Kan) fail 429 ต่อเนื่อง 3 ครั้ง (23:00-23:30, ยังดำเนินอยู่) แต่ webpush มีแค่ **1 แถว** (23:00:04)
+- งานใหม่จริงวันนี้ (`69079334631`, TOR review) ผ่าน queue mechanism เดิม (N+207) — retry LINE 3 ครั้ง (MAX_RETRIES), webpush mirror แค่ 1 ครั้งเหมือนเดิม (ไม่ใช่ของ fix นี้ แต่ยืนยันว่ายังทำงานถูกต้องไม่ชนกัน)
+- **รวมวันนี้ Kan Kan ได้ web push แค่ 3 ครั้ง** (เทียบเมื่อวานก่อนแก้ 73 ครั้ง) — ถ้าไม่แก้วันนี้จะโดนซ้ำ 66+ ครั้งจาก bidopen อย่างเดียว
+- ไม่มี systemd unit failed, bms-api /health 200 ปกติ
+
+### Followup
+- LINE quota ยังไม่รีเซ็ต (คาด ~1 ส.ค.) — ปัญหาแยกต่างหาก ไม่กระทบ fix นี้ (web push ยังส่งได้ปกติแม้ LINE ตัน)

@@ -120,3 +120,5 @@ dashboard/parents/.vercel
 data/ongoing_capture_state.json
 data/ongoing_capture_seen_cgd.json
 data/ongoing_capture_live_tries.json
+
+.worktrees/

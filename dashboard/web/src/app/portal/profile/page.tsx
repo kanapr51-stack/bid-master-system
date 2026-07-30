@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { parseSessionCookie, COOKIE_NAME } from '@/lib/session';
 import { getCustomerByLineId } from '@/lib/customers';
 import { parsePortalNotes, getTierId } from '@/lib/portal-data';
+import { nextOnboardingPath } from '@/lib/onboarding';
 import { ProfileClient } from './_client';
 
 export const dynamic = 'force-dynamic';
@@ -19,6 +20,8 @@ export default async function ProfilePage() {
   try { customer = await getCustomerByLineId(session.lineUserId); } catch { /* ignore */ }
 
   const notes = parsePortalNotes(customer?.notes ?? '');
+  const nextStep = nextOnboardingPath(customer);
+  const isOnboarding = nextStep === '/portal/profile';
 
   let daysLeft = 30;
   let expiryLabel = '';
@@ -31,6 +34,8 @@ export default async function ProfilePage() {
   return (
     <ProfileClient
       lineUserId={session.lineUserId}
+      notes={notes}
+      isOnboarding={isOnboarding}
       initialProfile={{
         companyName: customer?.display_name || session.displayName || '',
         phone: customer?.phone || '',

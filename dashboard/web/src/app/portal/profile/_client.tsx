@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { TopBar, Chip, Icons, Crest, Modal, DividerOrnate, ButlerNote, Field } from '../_ui';
-import type { PortalProfile, BusinessClass } from '@/lib/portal-data';
+import type { PortalProfile, PortalNotes, BusinessClass } from '@/lib/portal-data';
 
 // ── CompanyContactCard ────────────────────────────────────────────────────────
 
@@ -98,6 +98,8 @@ function Stat({ label, value, valueColor }: { label: string; value: string | num
 
 interface Props {
   lineUserId: string;
+  notes: PortalNotes;
+  isOnboarding: boolean;
   initialProfile: PortalProfile;
   classes: BusinessClass[];
   classCount: number;
@@ -109,6 +111,8 @@ interface Props {
 
 export function ProfileClient({
   lineUserId,
+  notes,
+  isOnboarding,
   initialProfile,
   classes,
   classCount,
@@ -125,13 +129,20 @@ export function ProfileClient({
 
   const update = (patch: Partial<PortalProfile>) => setProfile(p => ({ ...p, ...patch }));
 
+  const canSubmit = !isOnboarding || (
+    profile.userName?.trim() && profile.userGmail?.trim()
+    && profile.userPhone?.trim() && profile.userLineId?.trim()
+  );
+
   const handleSave = async () => {
+    if (!canSubmit) return;
     setSaving(true);
     try {
       await fetch('/api/portal/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          ...notes,
           userName: profile.userName,
           userGmail: profile.userGmail,
           userPhone: profile.userPhone,
@@ -143,6 +154,10 @@ export function ProfileClient({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ display_name: profile.companyName, phone: profile.phone, email: profile.email }),
       });
+      if (isOnboarding) {
+        router.push('/portal/settings');
+        return;
+      }
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } finally {
@@ -176,6 +191,9 @@ export function ProfileClient({
         {/* Personal Info */}
         <DividerOrnate label="ข้อมูลส่วนตัว" />
         <ButlerNote>ข้อมูลนี้ใช้เพื่อการแจ้งเตือนและการติดต่อกลับจาก Sebastian ครับท่าน</ButlerNote>
+        {isOnboarding && (
+          <ButlerNote>กรุณากรอกข้อมูลส่วนตัวให้ครบก่อนเริ่มใช้งานนะครับท่าน — ใช้เวลาไม่ถึงนาที</ButlerNote>
+        )}
 
         <Field label="ชื่อ-นามสกุล">
           <input className="p-input" value={profile.userName ?? ''} onChange={e => update({ userName: e.target.value })} placeholder="ชื่อ-นามสกุลของท่าน" />
@@ -194,10 +212,13 @@ export function ProfileClient({
         <button
           className="p-btn p-btn-primary"
           onClick={handleSave}
-          disabled={saving}
+          disabled={saving || !canSubmit}
           style={{ width: '100%', height: 44, fontSize: 14, marginTop: 4, marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
         >
-          {saved ? <><Icons.Check2 size={16} />บันทึกเสร็จแล้ว</> : saving ? 'กำลังบันทึก…' : <><Icons.Check size={16} />บันทึกข้อมูลส่วนตัว</>}
+          {saved ? <><Icons.Check2 size={16} />บันทึกเสร็จแล้ว</>
+            : saving ? 'กำลังบันทึก…'
+            : isOnboarding ? <><Icons.Check size={16} />บันทึกและดำเนินการต่อ</>
+            : <><Icons.Check size={16} />บันทึกข้อมูลส่วนตัว</>}
         </button>
 
         {/* Per-company contacts */}

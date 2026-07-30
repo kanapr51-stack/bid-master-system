@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { parseSessionCookie, COOKIE_NAME } from '@/lib/session';
 import { getCustomerByLineId } from '@/lib/customers';
 import { parsePortalNotes } from '@/lib/portal-data';
+import { nextOnboardingPath } from '@/lib/onboarding';
 import { SettingsClient } from './_client';
 
 export const dynamic = 'force-dynamic';
@@ -20,11 +21,15 @@ export default async function SettingsPage() {
   try { customer = await getCustomerByLineId(session.lineUserId); } catch { /* engine unavailable */ }
 
   const notes = parsePortalNotes(customer?.notes ?? '');
+  const nextStep = nextOnboardingPath(customer);
+  if (nextStep === '/portal/profile') redirect('/portal/profile'); // ยังกรอกโปรไฟล์ไม่ครบ ห้ามข้ามมาตั้งค่า
+  const isOnboarding = nextStep === '/portal/settings';
   const cls = (notes.classes ?? [])[0];
   const keywords = [...new Set([...(cls?.keywords ?? []), ...(cls?.defaultKeywords ?? [])])];
 
   return (
     <SettingsClient
+      isOnboarding={isOnboarding}
       provinces={customer?.provinces ?? []}
       initialKeywords={keywords}
       initialBudgetMin={cls?.budgetMinBaht ?? 0}

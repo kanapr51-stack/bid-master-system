@@ -20,7 +20,8 @@ function toClasses(keywords: string[], budgetMin: number, budgetMax: number): Bu
   }];
 }
 
-export function SettingsClient({ provinces, initialKeywords, initialBudgetMin, initialBudgetMax, initialIsSME, initialIsMIT, initialNotifyTime, initialMorningTime, notes }: {
+export function SettingsClient({ isOnboarding, provinces, initialKeywords, initialBudgetMin, initialBudgetMax, initialIsSME, initialIsMIT, initialNotifyTime, initialMorningTime, notes }: {
+  isOnboarding: boolean;
   provinces: string[];
   initialKeywords: string[];
   initialBudgetMin: number;
@@ -68,6 +69,7 @@ export function SettingsClient({ provinces, initialKeywords, initialBudgetMin, i
         classes: toClasses(keywords, budgetMin, budgetMax),
         isSME, isMIT, notifyTime,
         morningNotifyTime: morningTime,
+        settingsConfirmedAt: new Date().toISOString(),
       };
       const r = await fetch('/api/portal/save', {
         method: 'POST',
@@ -75,6 +77,10 @@ export function SettingsClient({ provinces, initialKeywords, initialBudgetMin, i
         body: JSON.stringify(body),
       });
       if (!r.ok) throw new Error('save failed');
+      if (isOnboarding) {
+        router.push('/portal/notifications');
+        return;
+      }
       setSaved(true);
       setTimeout(() => setSaved(false), 2200);
     } catch {
@@ -88,6 +94,10 @@ export function SettingsClient({ provinces, initialKeywords, initialBudgetMin, i
     <div className="p-enter">
       <TopBar title="ตั้งค่า" subtitle="พื้นที่ · คำค้น · ช่วงงบ" onLeft={() => router.push('/portal/world')} />
       <div className="p-page p-page-topbar" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+        {isOnboarding && (
+          <ButlerNote>ตั้งค่าคร่าวๆ ก่อนได้ครับ — ไม่ใส่อะไรเลยก็ได้ (แปลว่ารับแจ้งเตือนทุกงานในจังหวัดที่ท่านสมัคร) แก้ทีหลังได้เสมอ</ButlerNote>
+        )}
 
         {/* 📍 พื้นที่ครอบคลุม — subscription จริง (read-only) */}
         <div className="p-card" style={{ padding: 16 }}>
@@ -191,7 +201,10 @@ export function SettingsClient({ provinces, initialKeywords, initialBudgetMin, i
         {error && <div className="p-fg-mute" style={{ fontSize: 12.5, color: 'var(--wine, #a33)' }}>{error}</div>}
         <button className="p-btn p-btn-primary" onClick={save} disabled={saving}
           style={{ width: '100%', height: 48, fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-          {saved ? <><Icons.Check size={16} />บันทึกเสร็จแล้ว</> : saving ? 'กำลังบันทึก…' : <><Icons.Check size={16} />บันทึกการตั้งค่า</>}
+          {saved ? <><Icons.Check size={16} />บันทึกเสร็จแล้ว</>
+            : saving ? 'กำลังบันทึก…'
+            : isOnboarding ? <><Icons.Check size={16} />บันทึกและดำเนินการต่อ</>
+            : <><Icons.Check size={16} />บันทึกการตั้งค่า</>}
         </button>
       </div>
     </div>

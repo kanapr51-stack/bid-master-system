@@ -898,3 +898,50 @@ push origin/main → VPS `git pull --ff-only` (f30cc4d→7681f3f) — ไม่�
 
 ### Deploy — ✅ ครบ (commit 45f0c43)
 push origin/main → `vercel --prod` build 35s, deploy READY, alias `bid-master-dashboard.vercel.app` อัปเดตแล้ว
+
+## งานที่ N+211: ไล่ debug "discovery ไม่เจองานใหม่ตั้งแต่ 24-27 ก.ค." (2026-07-30)
+
+### สถานะ: ✅ วินิจฉัยจบ — **ไม่ใช่ bug ในโค้ด BMS**
+
+### บริบท
+คุณกัญจน์สังเกตว่าไม่มีงานใหม่แจ้งเข้ามาตั้งแต่ 24 ก.ค. ตรวจสดบน VPS (`ssh bms_vps`) ด้วย debug-mantra
+
+### สิ่งที่ตรวจ (breadcrumb ledger)
+1. `notification_queue` ว่างสนิทตั้งแต่ 24 ก.ค. (6 วัน)
+2. `projects_seen`/`project_locations` (unique PK ทั้งคู่) หยุดโตสนิทตั้งแต่ **2026-07-27T22:58:53+07:00** — ค้างที่ 4519 แถวถ้วน, `project_locations` ไม่มีแถว `pending` เหลือเลย (มีแค่ `success`/`failed`) → enrichment worker "0 pending" ถูกต้องแล้ว ไม่ใช่ค้าง
+3. `bms-rss-notifier` ทุก run ตั้งแต่ 27 ก.ค.เย็น: `new_pending=0` แม้ `rss_queue.json` D0-eligible เพิ่ม (3259→3317) — เพิ่มเพราะ RSS feed re-broadcast id เดิมซ้ำ ไม่ใช่ id ใหม่จริง (INSERT OR IGNORE บน PK เดิมใน `project_locations` ยืนยัน)
+4. province-discovery (นครพนม/บึงกาฬ ผ่าน process5 API, token เครื่องบ้าน) ยังตอบ 200 OK ปกติทุกรอบ — ตัวเลข total (451/238/916/492) เคย**ค่อยๆขยับ**ทุกวันจนถึง 27 ก.ค. (449→451 เป็นต้น) แล้ว**หยุดนิ่งสนิท**ตั้งแต่นั้น = ยืนยันจากฝั่ง backend เองว่าไม่มี record ใหม่จริง ไม่ใช่แค่ scraper เรา miss
+5. RSS host หลัก (`process.gprocurement.go.th/EPROCRssFeedWeb/egpannouncerss.xml`) timeout สนิท (curl exit 28, connect+TLS+ส่ง request สำเร็จ แต่รอ response 0 byte) — ทดสอบจาก **3 network อิสระ**: เครื่องบ้าน (residential), VPS (datacenter Vultr SG), และ WebFetch (Anthropic infra) → ทั้ง 3 timeout เหมือนกัน → ตัด hypothesis "โดนบล็อก IP เรา" ทิ้ง (ถ้าบล็อกจะได้ 403/challenge ไม่ใช่เงียบสนิท 0 byte ทั้ง 3 จุด). `process5` (API คนละ host ที่ province-discovery ใช้) ตอบ 200 ปกติทุกรอบในเวลาเดียวกัน — ปัญหาเจาะจงที่ host RSS เท่านั้น
+
+### Root cause (2 เรื่องซ้อนกัน คนละสาเหตุ)
+- **เรื่องที่ 1 (อธิบาย "ไม่มีงานใหม่" ทั้งหมด):** คุณกัญจน์ทักถูก — **28-30 ก.ค. 2569 เป็นวันหยุดราชการเต็ม 3 วัน** (28=วันเฉลิมพระชนมพรรษา ร.10, 29=อาสาฬหบูชา, 30=เข้าพรรษา — เช็คยืนยันจริงแล้ว) หน่วยงานราชการหยุดโพสต์ประกาศประมูล ตรงกับจุดที่ catalog หยุดโต (คืนวันจันทร์ 27 ก.ค. ก่อนวันหยุดเริ่ม)
+- **เรื่องที่ 2 (แยกกัน, ไม่กระทบสาเหตุหลัก):** RSS host เจอ timeout ต่อเนื่องตั้งแต่ 30 ก.ค. 01:06 UTC ยังไม่ฟื้น ณ เวลาตรวจ (14:22 ไทย) — น่าจะเป็นเซิร์ฟเวอร์ RSS ฝั่ง eGP เองค้าง/crash และไม่มีคนแก้เพราะช่วงวันหยุด (backend อื่น `process5` ยังทำงานปกติ แปลว่าไม่ใช่ทั้งระบบ egp ล่ม แค่ RSS host เฉพาะ)
+
+### สรุป: pipeline BMS (dedup/enrichment/notifier) ทำงานถูกต้องทุกจุด — ไม่มีอะไรต้องแก้โค้ด
+รอวันทำการถัดไปหลังวันหยุด (คาด 31 ก.ค. หรือ 3 ส.ค.) แล้วดูว่า catalog กลับมาโตปกติไหม + RSS host ฟื้นเองไหม (ถ้ายังค้างหลังวันหยุดจบค่อยสงสัย bug จริง)
+
+### Followup
+- แก้ Discord notify ก่อนหน้า (N+211 นี้) ที่แจ้งว่า "เจอ bug" — เป็น false alarm บางส่วน, ส่ง correction แล้ว
+
+## งานที่ N+212: Portal Onboarding Flow (โปรไฟล์→ตั้งค่า→เปิดแจ้งเตือน) — Task 1-7 เสร็จ, merge เข้า main แล้ว (2026-07-31)
+
+### สถานะ: ✅ Task 1-7 เสร็จ + review สะอาด, merge local แล้ว — 🚧 รอ Task 8 (deploy) confirm
+
+### บริบท / สิ่งที่ทำ
+brainstorming → spec (`docs/superpowers/specs/2026-07-30-portal-onboarding-flow-design.md`) → plan (`docs/superpowers/plans/2026-07-30-portal-onboarding-flow.md`) → subagent-driven-development ใน worktree แยก (`portal-onboarding-flow`) ทีละ task พร้อม review ทุก task + final whole-branch review
+
+บังคับ onboarding 3 ขั้นหลัง LINE login (รวมบัญชีเก่า ไม่ grandfather): กรอกโปรไฟล์ครบ → ยืนยันตั้งค่า → เปิด/ข้ามแจ้งเตือน ก่อนใช้หน้าอื่นของ `/portal` ได้ทั้งหมด
+
+**บั๊กที่แก้ระหว่างทาง (สำคัญ):** ปุ่ม "บันทึกข้อมูลส่วนตัว" เดิม POST ไป `/api/portal/save` แค่ 4 ฟิลด์ — endpoint นี้ overwrite `notes` column ทั้งคอลัมน์ไม่ merge → **ล้าง keyword/SME-MIT/เวลาแจ้งเตือนที่เคยตั้งไว้ทุกครั้งที่กดบันทึกโปรไฟล์** แก้แล้วโดย spread `...notes` ก่อนเสมอ (ทุกจุดที่เขียน `/api/portal/save` — profile/settings/notifications)
+
+### Fix / ผล
+- 6 code tasks: backend `has_push_subscription` field, `lib/onboarding.ts` (nextOnboardingPath/requireOnboarding), หน้า `/portal/notifications` ใหม่, gate ครบ 11 หน้าของ `/portal`
+- final whole-branch review เจอ 2 จุด แก้ครบ: (1) แผน Task 8 เดิมลืม deploy backend VPS แยกจาก Vercel — เพิ่ม Step 2.5 แล้ว (2) `settings`/`notifications` page ไม่ fail-open เหมือน `requireOnboarding` ตอน engine ล่ม — แก้แล้ว scoped re-review ผ่าน
+- Task 7 (manual E2E, local mock login + local backend สะอาด ไม่แตะ prod): 9/9 checklist ผ่าน
+- merge เข้า `main` local แล้ว (fast-forward, 8 commits, HEAD `a99e21d`) — **ยังไม่ push origin**
+- เจอบั๊กเก่าแยกต่างหาก (นอกสโคป, บันทึกไว้เฉยๆ): `POST /api/line/customer` คาด `line_user_id` ใน JSON body แต่ ProfileClient ส่งเป็น query string เท่านั้น — น่าจะ 400 เงียบทุกครั้งที่บันทึกโปรไฟล์ (ช่อง company name/phone/email ฝั่งบริษัทอาจไม่เคยเซฟจริง)
+
+### Followup
+- Task 8 ค้าง — รอ confirm คุณกัญจน์: push origin → deploy Vercel → deploy VPS backend (`bash scripts/deploy.sh`, เพิ่งเพิ่มเข้าแผน) → E2E บน prod ด้วยบัญชีคุณกัญจน์ก่อน → confirm รอบสองก่อนเคลียร์ `PUSH_ALLOWLIST` (เปิด web push ให้ทุกบัญชี ไม่ใช่แค่คุณกัญจน์)
+- บั๊ก `/api/line/customer` ที่เจอ (ข้างบน) — ยังไม่แก้ ต้องคุยกับคุณกัญจน์ว่าจะทำเป็นงานถัดไปไหม
+- เช็คซ้ำวันทำการถัดไปว่า catalog โตกลับมาปกติหรือไม่

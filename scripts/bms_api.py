@@ -1487,6 +1487,10 @@ async def portal_get_customer(
             "SELECT sp.province FROM subscription_provinces sp "
             "JOIN subscriptions s ON s.id=sp.subscription_id WHERE s.customer_id=?",
             (row["id"],)).fetchall()] if row else []
+        # เช็คว่ามีเครื่องที่ยังเปิดรับ web push อยู่ไหม (onboarding gate ฝั่งบอร์ดใช้เช็คขั้น "เปิดแจ้งเตือน")
+        has_push_subscription = bool(row) and conn.execute(
+            "SELECT 1 FROM push_subscriptions WHERE customer_id=? AND disabled_at IS NULL LIMIT 1",
+            (row["id"],)).fetchone() is not None
     if not row:
         return {"ok": True, "customer": None}
     # expires_at จริง (แอดมินตั้งผ่าน set_customer_tier.py) มาก่อน;
@@ -1509,6 +1513,7 @@ async def portal_get_customer(
         "expires_at": expires_at,
         "notes": row["notes"] or "",
         "provinces": provinces,
+        "has_push_subscription": has_push_subscription,
     }}
 
 

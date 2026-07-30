@@ -18,10 +18,11 @@ export default async function SettingsPage() {
   if (!session) redirect('/portal/login');
 
   let customer = null;
-  try { customer = await getCustomerByLineId(session.lineUserId); } catch { /* engine unavailable */ }
+  let engineOk = true;
+  try { customer = await getCustomerByLineId(session.lineUserId); } catch { engineOk = false; }
 
   const notes = parsePortalNotes(customer?.notes ?? '');
-  const nextStep = nextOnboardingPath(customer);
+  const nextStep = engineOk ? nextOnboardingPath(customer) : null; // engine ล่ม — fail-open เหมือน requireOnboarding ห้าม redirect มั่ว
   if (nextStep === '/portal/profile') redirect('/portal/profile'); // ยังกรอกโปรไฟล์ไม่ครบ ห้ามข้ามมาตั้งค่า
   const isOnboarding = nextStep === '/portal/settings';
   const cls = (notes.classes ?? [])[0];

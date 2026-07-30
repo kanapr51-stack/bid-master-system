@@ -17,10 +17,11 @@ export default async function NotificationsPage() {
   if (!session) redirect('/portal/login');
 
   let customer = null;
-  try { customer = await getCustomerByLineId(session.lineUserId); } catch { /* engine unavailable */ }
+  let engineOk = true;
+  try { customer = await getCustomerByLineId(session.lineUserId); } catch { engineOk = false; }
 
   const notes = parsePortalNotes(customer?.notes ?? '');
-  const nextStep = nextOnboardingPath(customer);
+  const nextStep = engineOk ? nextOnboardingPath(customer) : null; // engine ล่ม — fail-open เหมือน requireOnboarding ห้าม redirect มั่ว
   // ยังไม่ผ่านโปรไฟล์/ตั้งค่า ห้ามข้ามมาหน้านี้ — ผ่านครบแล้ว (nextStep=null) ก็ยังเข้าดูซ้ำได้ (ไม่ใช่ onboarding แล้ว)
   if (nextStep === '/portal/profile' || nextStep === '/portal/settings') redirect(nextStep);
 

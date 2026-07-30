@@ -1042,6 +1042,7 @@ Expected: server ขึ้นที่ `http://localhost:3000`
 **Files:**
 - Modify: `progress_log.md` (entry ใหม่)
 - Vercel project env (`PUSH_ALLOWLIST`) — ไม่ใช่ไฟล์ในโค้ด
+- VPS `/opt/bms/app` — ต้อง `git pull` + restart `bms-api` แยกจาก Vercel (Task 1 แก้ `scripts/bms_api.py`)
 
 **Interfaces:**
 - Consumes: ทุก Task ก่อนหน้า commit ครบแล้วบน local `main`, Task 7 ผ่านครบ
@@ -1056,6 +1057,22 @@ git push origin main
 
 Deploy ตาม flow เดิมของ repo (`cd dashboard/web && npx vercel --prod` หรือ auto-deploy จาก push ถ้า project ผูก GitHub อยู่แล้ว)
 Expected: deploy READY, `/portal/profile` ขึ้นจริงบน production
+
+- [ ] **Step 2.5: Deploy backend (VPS) — Task 1 แก้ `scripts/bms_api.py`, ต้อง deploy แยกจาก Vercel**
+
+**เพิ่มหลัง final whole-branch review พบว่าขาดขั้นนี้ (2026-07-30):** Vercel deploy ไม่แตะ backend เลย ถ้าข้ามขั้นนี้ `GET /api/portal/customer` จะยังไม่มี `has_push_subscription` ในผล → `toCustomer()` fallback เป็น `false` เสมอ (`dashboard/web/src/lib/customers.ts:65`) → ลูกค้าที่เปิดแจ้งเตือนไปแล้วจะถูกเด้งกลับไปหน้า `/portal/notifications` ซ้ำไม่รู้จบ โดยไม่มี error ให้เห็น
+
+```bash
+ssh -i ~/.ssh/bms_vps root@45.76.156.166 "cd /opt/bms/app && bash scripts/deploy.sh"
+```
+
+Expected: `git pull --ff-only` สำเร็จ, `bms-api` service `active`
+
+Sanity check ทันที (ก่อนไป Step 3):
+```bash
+ssh -i ~/.ssh/bms_vps root@45.76.156.166 "curl -s -H 'X-BMS-Secret: <BMS_INTERNAL_SECRET>' 'http://localhost:8000/api/portal/customer?line_user_id=<line_user_id ของคุณกัญจน์>' | grep -o has_push_subscription"
+```
+Expected: เจอคำว่า `has_push_subscription` ในผล (ยืนยันว่า field มาจริง ไม่ใช่ fallback `false` เงียบๆ)
 
 - [ ] **Step 3: E2E บน production ด้วยบัญชีคุณกัญจน์ก่อน (ยัง PUSH_ALLOWLIST เดิม)**
 

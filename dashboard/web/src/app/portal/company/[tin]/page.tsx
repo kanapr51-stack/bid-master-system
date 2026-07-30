@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { parseSessionCookie, COOKIE_NAME } from '@/lib/session';
+import { requireOnboarding } from '@/lib/onboarding';
 import { getCompanyDetail, type CompanyDetail } from '@/lib/portal-company-detail';
 import { CompanyDetailClient } from './_client';
 
@@ -21,6 +22,8 @@ export default async function CompanyDetailPage({
 
   const session = await parseSessionCookie(sessionValue);
   if (!session) redirect('/portal/login');
+
+  await requireOnboarding(session.lineUserId);
 
   const { tin } = await params;
   const sp = await searchParams;

@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { parseSessionCookie, COOKIE_NAME } from '@/lib/session';
+import { requireOnboarding } from '@/lib/onboarding';
 import { getJobDetail, type JobDetail } from '@/lib/portal-job-detail';
 import { JobDetailClient } from './_client';
 
@@ -13,6 +14,8 @@ export default async function JobDetailPage({ params }: { params: Promise<{ pid:
 
   const session = await parseSessionCookie(sessionValue);
   if (!session) redirect('/portal/login');
+
+  await requireOnboarding(session.lineUserId);
 
   const { pid } = await params;
 

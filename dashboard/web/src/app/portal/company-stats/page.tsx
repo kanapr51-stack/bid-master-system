@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { parseSessionCookie, COOKIE_NAME } from '@/lib/session';
-import { getCustomerByLineId } from '@/lib/customers';
+import { requireOnboarding } from '@/lib/onboarding';
 import { parsePortalNotes } from '@/lib/portal-data';
 import { CompanyStatsClient } from './_client';
 
@@ -19,8 +19,7 @@ export default async function CompanyStatsPage({ searchParams }: Props) {
   const session = await parseSessionCookie(sessionValue);
   if (!session) redirect('/portal/login');
 
-  let customer = null;
-  try { customer = await getCustomerByLineId(session.lineUserId); } catch { /* ignore */ }
+  const customer = await requireOnboarding(session.lineUserId);
 
   const notes = parsePortalNotes(customer?.notes ?? '');
   const params = await searchParams;

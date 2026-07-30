@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { parseSessionCookie, COOKIE_NAME } from '@/lib/session';
+import { requireOnboarding } from '@/lib/onboarding';
 import { getAllJobs, type AllJobs } from '@/lib/portal-all-jobs';
 import { AllJobsClient } from './_client';
 
@@ -13,6 +14,8 @@ export default async function AllJobsPage() {
 
   const session = await parseSessionCookie(sessionValue);
   if (!session) redirect('/portal/login');
+
+  await requireOnboarding(session.lineUserId);
 
   let data: AllJobs | null = null;
   let engineDown = false;

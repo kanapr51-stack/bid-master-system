@@ -28,6 +28,7 @@ export interface Customer {
   last_active_at: string;
   notes: string;
   provinces: string[]; // จังหวัดที่ subscribe จริง (subscription_provinces — source of truth ของพื้นที่ครอบคลุม)
+  has_push_subscription: boolean; // มีเครื่องที่ยังเปิดรับ web push อยู่ไหม (onboarding gate)
 }
 
 // Engine returns a subset; fill the rest with empty strings to keep the shape.
@@ -45,6 +46,7 @@ interface EngineCustomer {
   expires_at?: string;
   notes?: string;
   provinces?: string[];
+  has_push_subscription?: boolean;
 }
 
 function toCustomer(e: EngineCustomer): Customer {
@@ -63,6 +65,7 @@ function toCustomer(e: EngineCustomer): Customer {
     last_active_at: e.last_active_at ?? "",
     notes: e.notes ?? "",
     provinces: e.provinces ?? [],
+    has_push_subscription: e.has_push_subscription ?? false,
   };
 }
 

@@ -100,6 +100,8 @@ export interface PortalNotes {
   userGmail?: string;
   userPhone?: string;
   userLineId?: string;
+  settingsConfirmedAt?: string;             // ตั้งตอนกด "บันทึกการตั้งค่า" ครั้งแรก — onboarding gate ขั้น 2
+  notificationsPromptDismissedAt?: string;  // ตั้งตอนกด "ข้ามไปก่อน" ในหน้าเปิดแจ้งเตือน — onboarding gate ขั้น 3
 }
 
 export interface Tier {

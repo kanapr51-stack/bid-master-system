@@ -942,10 +942,7 @@ brainstorming → spec (`docs/superpowers/specs/2026-07-30-portal-onboarding-flo
 - E2E บน production ด้วยบัญชีคุณกัญจน์เอง (ยังไม่เคยกรอกฟิลด์ onboarding ใหม่มาก่อน) — ผ่านครบ: บังคับกรอกโปรไฟล์จริง → ตั้งค่า → เข้าใช้งานปกติ (ข้ามหน้าเปิดแจ้งเตือนอัตโนมัติเพราะเปิด push ไว้แล้วจากงานเก่า)
 - คุณกัญจน์ confirm รอบสอง → เคลียร์ `PUSH_ALLOWLIST` บน Vercel + redeploy — **เปิด Web Push ให้ทุกบัญชีใช้ได้จริงแล้ว** (Hong, ณฐมน ธงยศ, Mr.suvit, อัญธิญาน์ — ไม่ใช่แค่คุณกัญจน์คนเดียวอีกต่อไป)
 - sanity check production: notes column ทุกแถว (5 บัญชีจริง) เป็น valid JSON ครบ ไม่มีคอรัปต์, deploy status Ready
-- เจอบั๊กเก่าแยกต่างหาก (นอกสโคป, บันทึกไว้เฉยๆ): `POST /api/line/customer` คาด `line_user_id` ใน JSON body แต่ ProfileClient ส่งเป็น query string เท่านั้น — น่าจะ 400 เงียบทุกครั้งที่บันทึกโปรไฟล์ (ช่อง company name/phone/email ฝั่งบริษัทอาจไม่เคยเซฟจริง)
+- เจอบั๊กเก่าแยกต่างหาก (นอกสโคป): `POST /api/line/customer` คาด `line_user_id` ใน JSON body แต่ ProfileClient ส่งเป็น query string เท่านั้น (ผิด key ด้วย `lineUserId`) — โดน 400 เงียบทุกครั้งที่บันทึกโปรไฟล์ ชื่อบริษัท/เบอร์/อีเมลฝั่งบริษัทไม่เคยเซฟจริง → **แก้แล้ว** (commit `088a680`, ตาม pattern เดียวกับ `CustomerForm.tsx` ที่ใช้งานได้ปกติอยู่แล้ว) push + deploy Vercel เรียบร้อย
 
 ### Followup
-- บั๊ก `/api/line/customer` ที่เจอ (ข้างบน) — ยังไม่แก้ ต้องคุยกับคุณกัญจน์ว่าจะทำเป็นงานถัดไปไหม
 - เกณฑ์เสถียร: เฝ้าดู 2-3 วันว่าบัญชีจริงอื่น (Hong/ณฐมน/Mr.suvit/อัญธิญาน์) ผ่าน onboarding ได้ราบรื่นไหม, push subscription ใหม่เพิ่มขึ้นจริงไหม
-- บั๊ก `/api/line/customer` ที่เจอ (ข้างบน) — ยังไม่แก้ ต้องคุยกับคุณกัญจน์ว่าจะทำเป็นงานถัดไปไหม
-- เช็คซ้ำวันทำการถัดไปว่า catalog โตกลับมาปกติหรือไม่

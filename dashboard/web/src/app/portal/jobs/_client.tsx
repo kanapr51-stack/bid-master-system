@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { TopBar, Chip, Icons, Diamond } from '../_ui';
 import type { AllJobs, SentJob, SentJobStage } from '@/lib/portal-all-jobs';
+import { dayKey, dayLabel, getTodayKey, getYesterdayKey } from '@/lib/portal-day-groups';
 
 // ป้าย stage — ชุดเดียวกับ STAGE_META ของ world
 const STAGE_LABEL: Record<SentJobStage, { icon: string; label: string; tone: 'gold' | 'emerald' | 'wine' | 'outline' }> = {
@@ -27,25 +28,6 @@ function fmtSentDate(s: string): string {
   const d = new Date(s);
   if (isNaN(d.getTime())) return s;
   return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
-}
-
-// จัดกลุ่มต่อวัน (เวลาไทย) — key = YYYY-MM-DD ใช้เทียบวันนี้/เมื่อวาน
-const BKK_TZ = 'Asia/Bangkok';
-
-function dayKey(s: string): string {
-  const d = new Date(s);
-  if (isNaN(d.getTime())) return 'unknown';
-  return d.toLocaleDateString('en-CA', { timeZone: BKK_TZ });
-}
-
-function dayLabel(key: string, todayKey: string, yesterdayKey: string): string {
-  if (key === 'unknown') return 'ไม่ระบุวัน';
-  const thai = new Date(`${key}T00:00:00+07:00`).toLocaleDateString('th-TH', {
-    day: 'numeric', month: 'short', year: '2-digit', timeZone: BKK_TZ,
-  });
-  if (key === todayKey) return `วันนี้ · ${thai}`;
-  if (key === yesterdayKey) return `เมื่อวาน · ${thai}`;
-  return thai;
 }
 
 function SentJobCard({ job, followed, onToggle }: { job: SentJob; followed: boolean; onToggle: () => void }) {
@@ -227,8 +209,8 @@ export function AllJobsClient({ data, engineDown }: { data: AllJobs | null; engi
               <div className="p-fg-dim" style={{ fontSize: 11.5 }}>พบ {jobs.length} จาก {data.jobs.length} งาน</div>
             )}
             {(() => {
-              const todayKey = new Date().toLocaleDateString('en-CA', { timeZone: BKK_TZ });
-              const yesterdayKey = new Date(Date.now() - 86400000).toLocaleDateString('en-CA', { timeZone: BKK_TZ });
+              const todayKey = getTodayKey();
+              const yesterdayKey = getYesterdayKey();
               return dayGroups.map(([key, dayJobs]) => (
                 <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <div style={{ marginTop: 8 }}>

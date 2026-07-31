@@ -136,6 +136,20 @@
   padding: 16px;
 }
 
+/* ── Sebastian chat bubble ── */
+[data-portal] .p-chat-bubble {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px 14px 14px 14px;
+  padding: 12px 14px;
+  max-width: 92%;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+[data-portal] .p-chat-bubble:hover {
+  border-color: var(--accent-deep);
+}
+
 /* ── Gilt frame ── */
 [data-portal] .p-gilt {
   background: var(--surface);

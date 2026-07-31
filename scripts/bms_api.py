@@ -1989,27 +1989,78 @@ async def portal_all_jobs_json(
     return {"ok": True, "count": len(jobs), "new_today": new_today, "jobs": jobs[:limit]}
 
 
+def _sebastian_followed_winner_message(pid: str, name: str, province: str, dept_name: str,
+                                       budget, full_name: str) -> str:
+    """เรียบเรียงข้อความ followed_winner ให้ตรงกับที่ Sebastian_LINE_Sender.py ส่งจริง
+    (reuse cgd_intel.analyze_bidders + format_winner_detailed ตรงๆ — single source of truth,
+    ดู Sebastian_LINE_Sender.py:753-776 เทียบ logic). ตั้งใจไม่เรียก cgd_intel.intel_context()/
+    compare_prediction()/prediction_accuracy_summary() แม้ real sender เรียก — อ่าน
+    format_winner_detailed() (Sebastian_LINE_Sender.py:522-543) แล้วพบว่าพารามิเตอร์ cmp/acc/
+    market_disc ไม่ถูกใช้ render เลย (รับไว้เผื่ออนาคตตามคอมเมนต์ในนั้น) ข้อความที่ได้จึงตรงกับ
+    ของจริงทุกตัวอักษรอยู่ดี แต่ตัด DB scan แพง (intel_context ตัวเดียวกับที่ Critical#1 ชี้ว่า
+    ~2.4s/ครั้ง) และตัดความเสี่ยงเขียนซ้ำ price_predictions (compare_prediction() เขียน
+    verified_at ทุกครั้งที่เรียก — ต่างจาก format_notification ที่มี record_prediction=False
+    กันไว้ให้). เหตุผลเดียวกันนี้ทำให้ไม่ต้องคำนวณ `warned` (_round2_warned_names) จริง — ผลไป
+    เติมแค่ field `tag` ใน analyze_bidders() ซึ่ง format_winner_detailed() ก็ไม่ได้อ่านเช่นกัน."""
+    import cgd_intel as _ci
+    from Sebastian_LINE_Sender import format_winner_detailed
+    with get_conn() as c:
+        results = [dict(r) for r in c.execute(
+            "SELECT * FROM bid_results WHERE project_id=? ORDER BY is_winner DESC, price_agree",
+            (pid,)).fetchall()]
+        win = next((b for b in results if b.get("is_winner")), None)
+        winner_name = (win or {}).get("bidder_name", "?")
+        price_agree = (win or {}).get("price_agree") or (win or {}).get("price_proposal") or 0
+        tokens = _ci.match_keywords(name)
+        loc = _ci.resolve_location(pid, name, dept_name, province, c)
+        analyzed = _ci.analyze_bidders(c, province, tokens, loc["tambon"], loc["amphoe"],
+                                       budget, results, warned=[])
+    return format_winner_detailed(full_name, winner_name, price_agree, budget, analyzed,
+                                  None, {}, None, pid)
+
+
+def _sebastian_degraded_message(header: str, full_name: str, province: str) -> str:
+    """fallback ข้อความ followed_prelim/followed_cancelled — ไม่ยิง live PDF/API เหมือน
+    format_prelim_notification/format_cancelled_notification ตัวจริง (ผิดกับ design constraint
+    read-only ของหน้านี้ทั้งหน้า) จึงโชว์แค่หัวข้อ+ชื่องาน+จังหวัดจากแคชที่มีอยู่แล้ว บอกตรงๆ ว่า
+    เป็นสรุปแบบย่อ ไม่ fabricate ตัวเลข/ข้อความที่ส่งจริงตอนนั้น."""
+    lines = [header]
+    if full_name:
+        lines.append(full_name)
+    if province:
+        lines.append(f"📍 จ.{province}")
+    return "\n".join(lines)
+
+
 @app.get("/api/portal/sebastian-feed")
-async def portal_sebastian_feed_json(
+def portal_sebastian_feed_json(
     line_user_id: str = Query(...),
-    limit: int = 500,
+    limit: int = 30,
     x_bms_secret=Header(default=None),
 ):
     """ประวัติแจ้งเตือนสไตล์แชท (แท็บ 'Sebastian') — ข้อความเหมือน LINE จริงทุกบรรทัด
-    (reuse format_notification ตรงๆ — single source of truth, ไม่เขียน logic ซ้ำฝั่งเว็บ).
-    dedup ต่อ project เอารอบล่าสุด (เกณฑ์เดียวกับ all-jobs, ไม่ผูกผลส่ง LINE) แต่เรียง
-    เก่า→ใหม่ (แชทจริง ตรงข้ามกับ all-jobs ที่ใหม่→เก่า). ไม่ยิง live PDF/API enrichment
+    (reuse format_notification/format_winner_detailed ตรงๆ — single source of truth, ไม่เขียน
+    logic ซ้ำฝั่งเว็บ). dedup ต่อ project เอารอบล่าสุด (เกณฑ์เดียวกับ all-jobs, ไม่ผูกผลส่ง LINE)
+    แต่เรียงเก่า→ใหม่ (แชทจริง ตรงข้ามกับ all-jobs ที่ใหม่→เก่า). ไม่ยิง live PDF/API enrichment
     เพิ่ม — อ่านแคช projects_seen/project_locations ที่มีอยู่แล้วเท่านั้น.
-    record_prediction=False กัน closed-loop เขียนซ้ำทุกครั้งที่ลูกค้าเปิดหน้านี้. read-only."""
+    record_prediction=False กัน closed-loop เขียนซ้ำทุกครั้งที่ลูกค้าเปิดหน้านี้. read-only.
+    sync def (ไม่ async) — งานในนี้ล้วน sync (SQLite + CPU-bound formatting, เรียก
+    cgd_intel.intel_context() ต่อแถว D0 ~2.4s บน cgd_winners 600K+ row) ปล่อยเป็น async def
+    เดิมจะบล็อก event loop เดี่ยวของ FastAPI ทั้งโปรเซสระหว่างคำนวณ — FastAPI รัน sync route ใน
+    threadpool ให้อัตโนมัติ จึงต้องเป็น sync def เพื่อกันไม่ให้ค้างทั้ง process (final review fix).
+    limit บังคับ slice ก่อน format loop (ไม่ใช่หลัง) — งานหนักต่อแถวถูก bound ด้วย limit จริงๆ."""
     if x_bms_secret != BMS_INTERNAL_SECRET:
         raise HTTPException(status_code=403, detail="Forbidden")
-    limit = max(1, min(int(limit or 500), 500))
+    limit = max(1, min(int(limit or 30), 500))
     with get_conn() as conn:
         cust = conn.execute("SELECT id FROM customers WHERE line_user_id=?",
                             (line_user_id.strip(),)).fetchone()
         if not cust:
             return {"ok": True, "count": 0, "messages": []}
         cid = cust["id"]
+        # status: เฉพาะที่ยิงจริง (sent/failed) — นี่คือ "ประวัติแชทที่ Sebastian ส่งจริง" ไม่ใช่บอร์ด
+        # "งานทั้งหมด" (all-jobs ยอมโชว์ pending/skipped ได้ตั้งใจ — ที่นี่ไม่ใช่ ต้องไม่มี
+        # personal-keyword-skip / ยังไม่ส่ง / กำลังส่งอยู่ปนมาอ้างว่าเป็นข้อความที่ส่งแล้ว)
         rows = conn.execute(
             "SELECT nq.project_id, nq.project_name_snapshot, nq.province_snapshot, "
             "       nq.dept_name_snapshot, nq.source_stage, nq.created_at, nq.is_backfill, "
@@ -2018,45 +2069,87 @@ async def portal_sebastian_feed_json(
             "FROM notification_queue nq "
             "LEFT JOIN projects_seen ps ON ps.project_id = nq.project_id "
             "LEFT JOIN project_locations pl ON pl.project_id = nq.project_id "
-            "WHERE nq.customer_id=? AND nq.status!='cancelled' AND COALESCE(nq.is_test_data,0)=0 "
+            "WHERE nq.customer_id=? AND nq.status IN ('sent','failed') AND COALESCE(nq.is_test_data,0)=0 "
             "ORDER BY nq.created_at DESC", (cid,)).fetchall()
         starred_ids = portal_views.starred_project_ids(conn, cid)
 
-    from Sebastian_LINE_Sender import format_notification, _clean_project_name, _plain_text_body
-
-    messages, seen = [], set()
+    # Pass 1: dedup ต่อ project เอารอบล่าสุด — เบา (set membership เฉยๆ ไม่มี formatting) รันเต็ม
+    # ทุกแถวได้ไม่แพง เพื่อให้ `count` สะท้อน total โครงการจริงก่อน slice
+    deduped_rows, seen = [], set()
     for r in rows:  # DESC — แถวแรกของแต่ละ project = รอบส่งล่าสุด (dedup, เหมือน all-jobs)
         pid = r["project_id"]
         if pid in seen:
             continue
         seen.add(pid)
+        deduped_rows.append(r)
+    total = len(deduped_rows)
+    # slice ก่อน format loop (ไม่ใช่หลัง) — limit ต้อง bound งานหนักจริงๆ ไม่ใช่แค่ตัดขนาด response.
+    # ยังเป็น DESC ตรงนี้ (ใหม่→เก่า) → [:limit] ได้ limit โครงการ "ใหม่สุด" ตามต้องการ ก่อนกลับด้าน
+    # เป็นเก่า→ใหม่ (แชท) ตอนจบ
+    deduped_rows = deduped_rows[:limit]
+
+    from Sebastian_LINE_Sender import format_notification, _clean_project_name, _plain_text_body
+
+    messages = []
+    for r in deduped_rows:
+        pid = r["project_id"]
         name = r["project_name_snapshot"] or r["project_name"] or pid
         src_stage = r["source_stage"] or ""
-        # fallback เมื่อไม่มี projects_seen.announce_type: "D0" ใช้ได้กับ stage ทั่วไปเท่านั้น
-        # (ตรงกับที่ Sebastian_Enrichment_Worker.py ใช้ตอน enqueue จริง) แต่งาน TOR review
-        # (province_tor_review*) enqueue ด้วย announce_type="B0" เสมอ (บรรทัด 335 ของไฟล์นั้น)
-        # — ถ้า default เป็น "D0" ที่นี่ จะชน `elif announce_type == "D0"` ใน format_notification()
-        # ก่อนถึง `elif source_stage.startswith("province_tor_review")` ทำให้ขึ้นหัวข้อผิด (🔔
-        # แทน 📋) เวลา projects_seen ยังไม่ backfill announce_type ให้แถวนั้น
-        fallback_announce_type = "B0" if src_stage.startswith("province_tor_review") else "D0"
+        province = r["province_snapshot"] or r["province"] or ""
+        dept_name = r["dept_name_snapshot"] or r["dept_name"] or ""
+        budget = r["budget"] or 0
+        full_name = _clean_project_name(name) or pid
         try:
-            text = format_notification(
-                project_id=pid,
-                province=r["province_snapshot"] or r["province"] or "",
-                announce_type=r["announce_type"] or fallback_announce_type,
-                budget=r["budget"] or 0,
-                project_name=name,
-                dept_name=r["dept_name_snapshot"] or r["dept_name"] or "",
-                bid_submit_date=(r["deadline"] or "")[:10],
-                bid_submit_time=r["deadline_time"] or "",
-                is_backfill=bool(r["is_backfill"]),
-                source_stage=src_stage,
-                record_prediction=False,
-            )
-            full_name = _clean_project_name(name) or pid
-            message = _plain_text_body(text, full_name)
-        except Exception:
-            message = name  # กัน endpoint พังถ้า format_notification ล้มสำหรับแถวใดแถวหนึ่ง
+            if src_stage == "followed_winner":
+                # ⭐ ประกาศผู้ชนะ — real sender ใช้ format_winner_detailed() ไม่ใช่ format_notification()
+                # (Sebastian_LINE_Sender.py:753-776) เนื้อหาต่างกันโดยสิ้นเชิง (ราคาชนะ+breakdown
+                # ผู้ยื่นทุกราย ไม่ใช่ "พบงานใหม่ deadline X")
+                message = _sebastian_followed_winner_message(pid, name, province, dept_name,
+                                                              budget, full_name)
+            elif src_stage == "followed_prelim":
+                # 📊 real sender ต้อง prelim_summary.fetch_prelim_summary() (live HTTP+PDF) — ห้าม
+                # เรียกจาก read path นี้ (design constraint) → fallback บอกตรงๆ ว่าย่อ ไม่ fabricate ตัวเลข
+                message = _sebastian_degraded_message(
+                    "📊 มีการประกาศราคาเบื้องต้น (Round 1) — ดูรายละเอียดที่ Bid Board",
+                    full_name, province)
+            elif src_stage == "followed_cancelled":
+                # ❌ real sender ต้อง process5_http_client.get_project_detail() (live API) — ห้ามเรียก
+                # เหตุผลเดียวกับ prelim
+                message = _sebastian_degraded_message("❌ งานนี้ถูกยกเลิกแล้ว", full_name, province)
+            else:
+                # fallback เมื่อไม่มี projects_seen.announce_type: "D0" ใช้ได้กับ stage ทั่วไปเท่านั้น
+                # (ตรงกับที่ Sebastian_Enrichment_Worker.py ใช้ตอน enqueue จริง). งาน TOR review
+                # (province_tor_review*) ต้องขึ้นหัวข้อ TOR-review เสมอ ไม่ว่า projects_seen.announce_type
+                # จะเป็นอะไร — คอลัมน์นี้ mutable ไหลตาม lifecycle ปัจจุบัน (B0→D0→W0, ดู
+                # Sebastian_Province_Discovery.py:349-355) ไม่ใช่ snapshot ตอนส่งจริง ถ้างานเลื่อนไป D0
+                # แล้วค่อยอ่านประวัติ ค่านี้จะกลาย "D0" ทำให้ format_notification() ขึ้นหัวข้อ D0 ผิด
+                # (บรรทัด 259-262 ของ Sebastian_LINE_Sender.py เช็ค `announce_type=="D0"` ก่อนเช็ค
+                # `source_stage.startswith("province_tor_review")`) — ต้อง override ทิ้ง
+                # projects_seen.announce_type ไปเลยเมื่อ source_stage บอกว่าเป็น TOR review
+                if src_stage.startswith("province_tor_review"):
+                    resolved_announce_type = "B0"
+                else:
+                    resolved_announce_type = r["announce_type"] or "D0"
+                text = format_notification(
+                    project_id=pid,
+                    province=province,
+                    announce_type=resolved_announce_type,
+                    budget=budget,
+                    project_name=name,
+                    dept_name=dept_name,
+                    bid_submit_date=(r["deadline"] or "")[:10],
+                    bid_submit_time=r["deadline_time"] or "",
+                    is_backfill=bool(r["is_backfill"]),
+                    source_stage=src_stage,
+                    record_prediction=False,
+                )
+                message = _plain_text_body(text, full_name)
+        except Exception as e:
+            # กัน endpoint พังถ้า formatter ล้มสำหรับแถวใดแถวหนึ่ง — แต่ต้อง log ไว้ไม่งั้น formatter
+            # พังเป็นระบบ (เช่น cgd_intel schema เปลี่ยน) จะไม่มีใครเห็นเลย (final review minor fix)
+            print(f"[sebastian-feed] format failed pid={pid} stage={src_stage}: "
+                  f"{type(e).__name__}: {e}", file=sys.stderr)
+            message = name
         messages.append({
             "project_id": pid,
             "message": message,
@@ -2064,9 +2157,7 @@ async def portal_sebastian_feed_json(
             "stage": _alljobs_stage(src_stage),
             "starred": pid in starred_ids,
         })
-    total = len(messages)
-    messages = messages[:limit]
-    messages.reverse()  # เก่า→ใหม่ (แชท) — dedup scan ด้านบนเป็น DESC
+    messages.reverse()  # เก่า→ใหม่ (แชท) — dedup/slice ด้านบนเป็น DESC
     return {"ok": True, "count": total, "messages": messages}
 
 

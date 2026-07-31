@@ -946,3 +946,25 @@ brainstorming → spec (`docs/superpowers/specs/2026-07-30-portal-onboarding-flo
 
 ### Followup
 - เกณฑ์เสถียร: เฝ้าดู 2-3 วันว่าบัญชีจริงอื่น (Hong/ณฐมน/Mr.suvit/อัญธิญาน์) ผ่าน onboarding ได้ราบรื่นไหม, push subscription ใหม่เพิ่มขึ้นจริงไหม
+
+## งานที่ N+213: ป้าย "New+N" บนการ์ด/หน้า "งานทั้งหมด" (2026-08-01)
+
+### สถานะ: ✅ เสร็จ + deploy LIVE (ทำตอนคุณกัญจน์นอนแล้ว — สั่งไว้ "ทำจนเสร็จเลย พร้อม deploy เลยด้วย")
+
+### บริบท / สิ่งที่ทำ
+คุณกัญจน์อยากให้ช่อง "งานทั้งหมด" (การ์ดหน้า world + หัวหน้า `/portal/jobs`) มีป้าย "New+N" บอกว่าวันนี้มีงานใหม่มากี่งาน อัปเดตตามข้อมูลจริงจาก discovery (ไม่ใช่ค่า mock)
+
+**ทางเลือกที่ตัดสินใจเอง (ไม่มีเวลาถาม เพราะคุณกัญจน์นอนแล้ว):**
+- นิยาม "New" = งานที่สแกน+จับคู่ **วันนี้** (Asia/Bangkok calendar day) — ตรงกับตัวอย่างที่คุณกัญจน์ให้ ("วันนี้มีงานใหม่มาเพิ่มสามงาน")
+- "Real-time" ตีความว่า = คำนวณสดทุกครั้งที่โหลดหน้า (หน้า portal ทุกหน้าเป็น SSR force-dynamic อยู่แล้ว ไม่มีหน้าไหนใช้ polling/websocket) — ไม่ได้เพิ่ม infra ใหม่ ถ้าอยากได้ auto-refresh แบบไม่ต้อง reload หน้า ต้องคุยเพิ่มเป็นงานถัดไป
+
+### Fix / ผล
+- Backend: `GET /api/portal/all-jobs` เพิ่ม `new_today` (นับหลัง dedup ต่อ project, ไม่ผูกกับ `limit` — เทียบ `created_at` วันที่ตรงกับวันนี้จริง) — test ใหม่ยืนยัน limit=1 ก็ยังได้ค่าถูกต้อง
+- Frontend: การ์ด "งานทั้งหมด" หน้า `/portal/world` (`SumCard` เพิ่ม prop `badge`) + TopBar หน้า `/portal/jobs` (Chip สีเขียวเพิ่ม) โชว์ "New+N" เฉพาะตอน N > 0
+- ไม่แตะ "งานทั้งหมด" อีก 2 จุดที่เจอ (company-stats/history — สถิติ total bids คู่แข่ง คนละความหมาย ไม่เกี่ยว)
+- test: `python scripts/test_portal_all_jobs_api.py` PASS (รวม case limit=1 ไม่กระทบ new_today, งานเก่าไม่ถูกนับ)
+- deploy: push → VPS backend (`bash scripts/deploy.sh`) → Vercel frontend → sanity curl บน prod: field มาจริง, cross-check DB ยืนยัน logic นับวันที่ถูกต้อง (0 งานวันนี้จริงๆ ตอน deploy เพราะยังไม่มี discovery ใหม่เข้ามาเลยตั้งแต่ 01:06 UTC ของ 30 ก.ค. ตามที่วินิจฉัยไว้ใน N+211)
+
+### Followup
+- รอดูพรุ่งนี้ (วันทำการ ไม่ใช่วันหยุด) ว่าป้าย New+N ขึ้นค่าจริงตามที่ discovery เจองานใหม่ไหม
+- ถ้าคุณกัญจน์อยากได้ real-time แบบไม่ต้อง reload หน้า (auto-poll) — เป็นงานเพิ่มเติมที่ยังไม่ทำรอบนี้

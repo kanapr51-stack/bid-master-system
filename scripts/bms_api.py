@@ -1989,6 +1989,79 @@ async def portal_all_jobs_json(
     return {"ok": True, "count": len(jobs), "new_today": new_today, "jobs": jobs[:limit]}
 
 
+@app.get("/api/portal/sebastian-feed")
+async def portal_sebastian_feed_json(
+    line_user_id: str = Query(...),
+    limit: int = 500,
+    x_bms_secret=Header(default=None),
+):
+    """ประวัติแจ้งเตือนสไตล์แชท (แท็บ 'Sebastian') — ข้อความเหมือน LINE จริงทุกบรรทัด
+    (reuse format_notification ตรงๆ — single source of truth, ไม่เขียน logic ซ้ำฝั่งเว็บ).
+    dedup ต่อ project เอารอบล่าสุด (เกณฑ์เดียวกับ all-jobs, ไม่ผูกผลส่ง LINE) แต่เรียง
+    เก่า→ใหม่ (แชทจริง ตรงข้ามกับ all-jobs ที่ใหม่→เก่า). ไม่ยิง live PDF/API enrichment
+    เพิ่ม — อ่านแคช projects_seen/project_locations ที่มีอยู่แล้วเท่านั้น.
+    record_prediction=False กัน closed-loop เขียนซ้ำทุกครั้งที่ลูกค้าเปิดหน้านี้. read-only."""
+    if x_bms_secret != BMS_INTERNAL_SECRET:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    limit = max(1, min(int(limit or 500), 500))
+    with get_conn() as conn:
+        cust = conn.execute("SELECT id FROM customers WHERE line_user_id=?",
+                            (line_user_id.strip(),)).fetchone()
+        if not cust:
+            return {"ok": True, "count": 0, "messages": []}
+        cid = cust["id"]
+        rows = conn.execute(
+            "SELECT nq.project_id, nq.project_name_snapshot, nq.province_snapshot, "
+            "       nq.dept_name_snapshot, nq.source_stage, nq.created_at, nq.is_backfill, "
+            "       ps.project_name, ps.province, ps.budget, ps.dept_name, ps.announce_type, "
+            "       pl.deadline, pl.deadline_time "
+            "FROM notification_queue nq "
+            "LEFT JOIN projects_seen ps ON ps.project_id = nq.project_id "
+            "LEFT JOIN project_locations pl ON pl.project_id = nq.project_id "
+            "WHERE nq.customer_id=? AND nq.status!='cancelled' AND COALESCE(nq.is_test_data,0)=0 "
+            "ORDER BY nq.created_at DESC", (cid,)).fetchall()
+        starred_ids = portal_views.starred_project_ids(conn, cid)
+
+    from Sebastian_LINE_Sender import format_notification, _clean_project_name, _plain_text_body
+
+    messages, seen = [], set()
+    for r in rows:  # DESC — แถวแรกของแต่ละ project = รอบส่งล่าสุด (dedup, เหมือน all-jobs)
+        pid = r["project_id"]
+        if pid in seen:
+            continue
+        seen.add(pid)
+        name = r["project_name_snapshot"] or r["project_name"] or pid
+        try:
+            text = format_notification(
+                project_id=pid,
+                province=r["province_snapshot"] or r["province"] or "",
+                announce_type=r["announce_type"] or "D0",
+                budget=r["budget"] or 0,
+                project_name=name,
+                dept_name=r["dept_name_snapshot"] or r["dept_name"] or "",
+                bid_submit_date=(r["deadline"] or "")[:10],
+                bid_submit_time=r["deadline_time"] or "",
+                is_backfill=bool(r["is_backfill"]),
+                source_stage=r["source_stage"] or "",
+                record_prediction=False,
+            )
+            full_name = _clean_project_name(name) or pid
+            message = _plain_text_body(text, full_name)
+        except Exception:
+            message = name  # กัน endpoint พังถ้า format_notification ล้มสำหรับแถวใดแถวหนึ่ง
+        messages.append({
+            "project_id": pid,
+            "message": message,
+            "sent_at": r["created_at"],
+            "stage": _alljobs_stage(r["source_stage"]),
+            "starred": pid in starred_ids,
+        })
+    total = len(messages)
+    messages = messages[:limit]
+    messages.reverse()  # เก่า→ใหม่ (แชท) — dedup scan ด้านบนเป็น DESC
+    return {"ok": True, "count": total, "messages": messages}
+
+
 @app.post("/api/portal/push-subscribe")
 async def portal_push_subscribe(request: Request, x_bms_secret=Header(default=None)):
     """ลงทะเบียนเครื่องรับ web push จากบอร์ด — upsert ด้วย endpoint (ซ้ำ = update key + re-enable)."""

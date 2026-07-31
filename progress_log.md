@@ -925,7 +925,7 @@ push origin/main → `vercel --prod` build 35s, deploy READY, alias `bid-master-
 
 ## งานที่ N+212: Portal Onboarding Flow (โปรไฟล์→ตั้งค่า→เปิดแจ้งเตือน) — Task 1-7 เสร็จ, merge เข้า main แล้ว (2026-07-31)
 
-### สถานะ: ✅ Task 1-7 เสร็จ + review สะอาด, merge local แล้ว — 🚧 รอ Task 8 (deploy) confirm
+### สถานะ: ✅ เสร็จสมบูรณ์ — LIVE บน production แล้ว (Task 1-8 ครบ)
 
 ### บริบท / สิ่งที่ทำ
 brainstorming → spec (`docs/superpowers/specs/2026-07-30-portal-onboarding-flow-design.md`) → plan (`docs/superpowers/plans/2026-07-30-portal-onboarding-flow.md`) → subagent-driven-development ใน worktree แยก (`portal-onboarding-flow`) ทีละ task พร้อม review ทุก task + final whole-branch review
@@ -938,10 +938,14 @@ brainstorming → spec (`docs/superpowers/specs/2026-07-30-portal-onboarding-flo
 - 6 code tasks: backend `has_push_subscription` field, `lib/onboarding.ts` (nextOnboardingPath/requireOnboarding), หน้า `/portal/notifications` ใหม่, gate ครบ 11 หน้าของ `/portal`
 - final whole-branch review เจอ 2 จุด แก้ครบ: (1) แผน Task 8 เดิมลืม deploy backend VPS แยกจาก Vercel — เพิ่ม Step 2.5 แล้ว (2) `settings`/`notifications` page ไม่ fail-open เหมือน `requireOnboarding` ตอน engine ล่ม — แก้แล้ว scoped re-review ผ่าน
 - Task 7 (manual E2E, local mock login + local backend สะอาด ไม่แตะ prod): 9/9 checklist ผ่าน
-- merge เข้า `main` local แล้ว (fast-forward, 8 commits, HEAD `a99e21d`) — **ยังไม่ push origin**
+- merge เข้า `main` local (fast-forward, 8 commits) → push origin (`812d7c0`) → deploy Vercel (`bid-master-dashboard.vercel.app`) → deploy VPS backend (`scripts/deploy.sh`, `bms-api` active) → sanity curl ยืนยัน `has_push_subscription` มาจริงในผล API
+- E2E บน production ด้วยบัญชีคุณกัญจน์เอง (ยังไม่เคยกรอกฟิลด์ onboarding ใหม่มาก่อน) — ผ่านครบ: บังคับกรอกโปรไฟล์จริง → ตั้งค่า → เข้าใช้งานปกติ (ข้ามหน้าเปิดแจ้งเตือนอัตโนมัติเพราะเปิด push ไว้แล้วจากงานเก่า)
+- คุณกัญจน์ confirm รอบสอง → เคลียร์ `PUSH_ALLOWLIST` บน Vercel + redeploy — **เปิด Web Push ให้ทุกบัญชีใช้ได้จริงแล้ว** (Hong, ณฐมน ธงยศ, Mr.suvit, อัญธิญาน์ — ไม่ใช่แค่คุณกัญจน์คนเดียวอีกต่อไป)
+- sanity check production: notes column ทุกแถว (5 บัญชีจริง) เป็น valid JSON ครบ ไม่มีคอรัปต์, deploy status Ready
 - เจอบั๊กเก่าแยกต่างหาก (นอกสโคป, บันทึกไว้เฉยๆ): `POST /api/line/customer` คาด `line_user_id` ใน JSON body แต่ ProfileClient ส่งเป็น query string เท่านั้น — น่าจะ 400 เงียบทุกครั้งที่บันทึกโปรไฟล์ (ช่อง company name/phone/email ฝั่งบริษัทอาจไม่เคยเซฟจริง)
 
 ### Followup
-- Task 8 ค้าง — รอ confirm คุณกัญจน์: push origin → deploy Vercel → deploy VPS backend (`bash scripts/deploy.sh`, เพิ่งเพิ่มเข้าแผน) → E2E บน prod ด้วยบัญชีคุณกัญจน์ก่อน → confirm รอบสองก่อนเคลียร์ `PUSH_ALLOWLIST` (เปิด web push ให้ทุกบัญชี ไม่ใช่แค่คุณกัญจน์)
+- บั๊ก `/api/line/customer` ที่เจอ (ข้างบน) — ยังไม่แก้ ต้องคุยกับคุณกัญจน์ว่าจะทำเป็นงานถัดไปไหม
+- เกณฑ์เสถียร: เฝ้าดู 2-3 วันว่าบัญชีจริงอื่น (Hong/ณฐมน/Mr.suvit/อัญธิญาน์) ผ่าน onboarding ได้ราบรื่นไหม, push subscription ใหม่เพิ่มขึ้นจริงไหม
 - บั๊ก `/api/line/customer` ที่เจอ (ข้างบน) — ยังไม่แก้ ต้องคุยกับคุณกัญจน์ว่าจะทำเป็นงานถัดไปไหม
 - เช็คซ้ำวันทำการถัดไปว่า catalog โตกลับมาปกติหรือไม่

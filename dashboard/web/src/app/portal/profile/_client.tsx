@@ -149,10 +149,10 @@ export function ProfileClient({
           userLineId: profile.userLineId,
         }),
       });
-      await fetch(`/api/line/customer?lineUserId=${lineUserId}`, {
+      await fetch('/api/line/customer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ display_name: profile.companyName, phone: profile.phone, email: profile.email }),
+        body: JSON.stringify({ line_user_id: lineUserId, display_name: profile.companyName, phone: profile.phone, email: profile.email }),
       });
       if (isOnboarding) {
         router.push('/portal/settings');

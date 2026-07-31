@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { TopBar, Icons } from '../_ui';
 import type { SebastianFeed, SebastianMessage } from '@/lib/portal-sebastian-feed';
@@ -36,6 +36,13 @@ export function SebastianClient({ data, engineDown }: { data: SebastianFeed | nu
     }
     return [...m.entries()];
   }, [data]);
+
+  // เปิดหน้ามาต้องเห็นข้อความล่าสุด (ล่างสุด) ทันที — ไม่ใช่ต้องเลื่อนผ่านประวัติทั้งหมดก่อน
+  // (ลำดับ oldest→newest ถูกแล้วตาม spec, แค่ขาด auto-scroll ตอน mount)
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ block: 'end' });
+  }, [dayGroups]);
 
   if (!data) {
     return (
@@ -81,6 +88,7 @@ export function SebastianClient({ data, engineDown }: { data: SebastianFeed | nu
                 </div>
               ));
             })()}
+            <div ref={bottomRef} />
           </div>
         )}
       </div>

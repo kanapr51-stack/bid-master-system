@@ -20,7 +20,7 @@ export interface SebastianFeed {
   messages: SebastianMessage[];
 }
 
-export async function getSebastianFeed(lineUserId: string, limit = 500): Promise<SebastianFeed> {
+export async function getSebastianFeed(lineUserId: string, limit = 30): Promise<SebastianFeed> {
   if (!lineUserId) return { count: 0, messages: [] };
   const url = `${BMS_API_URL}/api/portal/sebastian-feed?line_user_id=${encodeURIComponent(lineUserId)}&limit=${limit}`;
   const res = await fetch(url, { headers: { "X-BMS-Secret": BMS_SECRET }, cache: "no-store" });

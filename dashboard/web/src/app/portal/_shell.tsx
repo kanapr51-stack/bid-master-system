@@ -53,9 +53,22 @@ function GearIcon({ size = 20, active = false }: { size?: number; active?: boole
   );
 }
 
+function BotIcon({ size = 20, active = false }: { size?: number; active?: boolean }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2 : 1.5} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+      <line x1="12" y1="3" x2="12" y2="7" />
+      <circle cx="9" cy="16" r="1" fill="currentColor" />
+      <circle cx="15" cy="16" r="1" fill="currentColor" />
+    </svg>
+  );
+}
+
 const NAV_ITEMS = [
   { href: '/portal/world',     label: 'หน้าหลัก', Icon: HomeIcon },
   { href: '/portal/settings',  label: 'ตั้งค่า',   Icon: GearIcon },
+  { href: '/portal/sebastian', label: 'Sebastian', Icon: BotIcon },
   { href: '/portal/history',   label: 'ประวัติ',   Icon: ClockIcon },
   { href: '/portal/profile',   label: 'โปรไฟล์',  Icon: UserIcon },
   { href: '/portal/packages',  label: 'แพ็กเกจ',  Icon: CrownIcon },

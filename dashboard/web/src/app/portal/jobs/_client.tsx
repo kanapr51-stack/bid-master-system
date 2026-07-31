@@ -167,7 +167,10 @@ export function AllJobsClient({ data, engineDown }: { data: AllJobs | null; engi
         title="งานทั้งหมด"
         subtitle="ทุกงานที่ระบบพบและจับคู่ให้ท่าน"
         onLeft={() => router.push('/portal/world')}
-        right={<Chip tone="gold" icon={<Diamond size={5} />}>{data.count} งาน</Chip>}
+        right={<>
+          <Chip tone="gold" icon={<Diamond size={5} />}>{data.count} งาน</Chip>
+          {data.newToday > 0 && <Chip tone="emerald">New+{data.newToday}</Chip>}
+        </>}
       />
 
       <div className="p-page p-page-topbar">

@@ -1966,23 +1966,27 @@ async def portal_all_jobs_json(
         followed_ids = {r["project_id"] for r in conn.execute(
             "SELECT project_id FROM followed_jobs WHERE customer_id=? AND status='active'",
             (cid,)).fetchall()}
-    jobs, seen = [], set()
+    today_str = datetime.now(TZ_TH).strftime("%Y-%m-%d")
+    jobs, seen, new_today = [], set(), 0
     for r in rows:  # เรียง DESC อยู่แล้ว → แถวแรกของแต่ละ project = รอบส่งล่าสุด
         pid = r["project_id"]
         if pid in seen:
             continue
         seen.add(pid)
+        sent_at = r["created_at"]
+        if (sent_at or "")[:10] == today_str:
+            new_today += 1
         jobs.append({
             "project_id": pid,
             "name": r["project_name_snapshot"] or r["project_name"] or pid,
             "province": r["province_snapshot"] or r["province"] or "",
             "budget": r["budget"] or 0,
-            "sent_at": r["created_at"],
+            "sent_at": sent_at,
             "stage": _alljobs_stage(r["source_stage"]),
             "starred": pid in starred_ids,
             "followed": pid in followed_ids,
         })
-    return {"ok": True, "count": len(jobs), "jobs": jobs[:limit]}
+    return {"ok": True, "count": len(jobs), "new_today": new_today, "jobs": jobs[:limit]}
 
 
 @app.post("/api/portal/push-subscribe")

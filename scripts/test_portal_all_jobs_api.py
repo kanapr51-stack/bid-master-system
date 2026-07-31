@@ -2,7 +2,10 @@
 dedup ต่อ project เอารอบล่าสุด, กรอง cancelled/is_test_data (ไม่ผูกผลส่ง LINE — sent/failed ขึ้นทั้งคู่),
 เรียงใหม่→เก่า, stage map, count ไม่ติด limit."""
 import os, sys, json, asyncio, tempfile
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
+
+TZ_TH = timezone(timedelta(hours=7))
 
 SCRATCH = Path(tempfile.mkdtemp())
 os.environ.update(BMS_DATA_DIR=str(SCRATCH), BMS_DB_PATH=str(SCRATCH / "bms_customers.db"),
@@ -60,6 +63,7 @@ async def main():
 
     r = await bms_api.portal_all_jobs_json(line_user_id='U1', x_bms_secret='t')
     assert r["ok"] and r["count"] == 4, r  # P1(dedup), P2, P3(failed ก็ขึ้น), P5 — ไม่มี P4(test)/P6(queue cancelled)
+    assert r["new_today"] == 0, r  # ทุกแถว seed เป็นวันที่เก่า (2026-07) ไม่ใช่วันนี้จริง
     jobs = r["jobs"]
     assert [j["project_id"] for j in jobs] == ['P5', 'P3', 'P2', 'P1'], jobs  # ใหม่ → เก่า
     byid = {j["project_id"]: j for j in jobs}
@@ -73,9 +77,24 @@ async def main():
     assert 'P6' not in byid, byid  # queue status='cancelled' → ไม่ขึ้น
     json.dumps(r, ensure_ascii=False)
 
-    # limit ไม่กระทบ count
+    # limit ไม่กระทบ count / new_today (N+213: badge "New+N" การ์ดงานทั้งหมด)
     r = await bms_api.portal_all_jobs_json(line_user_id='U1', limit=1, x_bms_secret='t')
-    assert r["count"] == 4 and len(r["jobs"]) == 1 and r["jobs"][0]["project_id"] == 'P5', r
+    assert r["count"] == 4 and r["new_today"] == 0 and len(r["jobs"]) == 1 and r["jobs"][0]["project_id"] == 'P5', r
+
+    # เพิ่มงานที่สแกน+จับคู่ "วันนี้" จริง (2 รายการ) → new_today ต้องนับแค่งานวันนี้ ไม่รวมของเก่า
+    today_iso = datetime.now(TZ_TH).isoformat(timespec="seconds")
+    with bms_api.get_conn() as conn:
+        conn.execute("INSERT INTO notification_queue (customer_id, project_id, status, created_at, "
+                     "province_snapshot, project_name_snapshot, source_stage, is_test_data) "
+                     "VALUES (1,'P7','sent',?,'นครพนม','งานใหม่วันนี้ 1','province_qualified',0)", (today_iso,))
+        conn.execute("INSERT INTO notification_queue (customer_id, project_id, status, created_at, "
+                     "province_snapshot, project_name_snapshot, source_stage, is_test_data) "
+                     "VALUES (1,'P8','sent',?,'นครพนม','งานใหม่วันนี้ 2','province_qualified',0)", (today_iso,))
+    r = await bms_api.portal_all_jobs_json(line_user_id='U1', x_bms_secret='t')
+    assert r["count"] == 6 and r["new_today"] == 2, r
+    # limit=1 ยังคืน new_today ที่ถูกต้อง (ไม่ผูกกับความยาว jobs ที่ตัด)
+    r = await bms_api.portal_all_jobs_json(line_user_id='U1', limit=1, x_bms_secret='t')
+    assert r["new_today"] == 2 and len(r["jobs"]) == 1, r
 
     # ลูกค้าไม่มี → ก้อนว่าง ไม่ crash
     r = await bms_api.portal_all_jobs_json(line_user_id='U9', x_bms_secret='t')

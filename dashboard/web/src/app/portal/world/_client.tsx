@@ -33,7 +33,7 @@ function QuotaRing({ pct, unlimited }: { pct: number; unlimited: boolean }) {
 
 // ── Summary Card ──────────────────────────────────────────────────────────────
 
-function SumCard({ icon, label, value, unit, accent, href, onClick, active }: { icon: React.ReactNode; label: string; value: number | string; unit: string; accent?: boolean; href?: string; onClick?: () => void; active?: boolean }) {
+function SumCard({ icon, label, value, unit, accent, href, onClick, active, badge }: { icon: React.ReactNode; label: string; value: number | string; unit: string; accent?: boolean; href?: string; onClick?: () => void; active?: boolean; badge?: string }) {
   const lit = accent || active;
   const content = (
     <div className="p-card" onClick={onClick} style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 8, padding: 16, borderColor: lit ? 'var(--accent-deep)' : 'var(--border)', background: lit ? 'var(--gold-glow)' : 'var(--surface)', width: '100%', cursor: href || onClick ? 'pointer' : 'default' }}>
@@ -43,7 +43,14 @@ function SumCard({ icon, label, value, unit, accent, href, onClick, active }: { 
         {onClick && (active ? <Icons.Check size={14} /> : <Icons.ChevronRight size={14} />)}
       </div>
       <div>
-        <div className="p-fg-mute p-mono" style={{ fontSize: 11, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{label}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div className="p-fg-mute p-mono" style={{ fontSize: 11, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{label}</div>
+          {badge && (
+            <span className="p-mono" style={{ fontSize: 10, fontWeight: 600, color: 'var(--accent)', background: 'var(--gold-glow)', border: '1px solid var(--accent-deep)', borderRadius: 999, padding: '1px 6px', lineHeight: 1.5 }}>
+              {badge}
+            </span>
+          )}
+        </div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 4 }}>
           <span className="p-display" style={{ fontSize: typeof value === 'string' ? 22 : 30, color: accent ? 'var(--accent)' : 'inherit', lineHeight: 1 }}>{value}</span>
           <span className="p-fg-dim" style={{ fontSize: 12 }}>{unit}</span>
@@ -226,9 +233,10 @@ interface WorldClientProps {
   jobGroups: JobGroups;
   discoverGroups: DiscoverGroups;
   allNotifiedCount: number;
+  allNotifiedNewToday: number;
 }
 
-export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, expiryLabel, classes, subscribedProvinces, jobGroups, discoverGroups, allNotifiedCount }: WorldClientProps) {
+export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, expiryLabel, classes, subscribedProvinces, jobGroups, discoverGroups, allNotifiedCount, allNotifiedNewToday }: WorldClientProps) {
   // หน้า detail ธีม Board B ในเว็บเดียวกัน (เดิมเด้งไปหน้า engine ธีม A ผ่าน board-token)
   const detailHrefOf = (projectId: string) => `/portal/job/${encodeURIComponent(projectId)}`;
   const allJobs = STAGE_META.flatMap(s => jobGroups[s.key]);
@@ -381,7 +389,8 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
           <SumCard icon={<Icons.Tag size={16} />} label="Keywords" value={totalKeywords > 0 ? totalKeywords : 'ทั้งจังหวัด'} unit={totalKeywords > 0 ? 'คำค้น' : ''} href="/portal/settings" />
           <SumCard icon={<Icons.Bell size={16} />} label="งานที่ติดตาม" value={allJobs.length} unit="งาน" accent />
           {allNotifiedCount > 0 && (
-            <SumCard icon={<Icons.Doc size={16} />} label="งานทั้งหมด" value={allNotifiedCount} unit="งาน" href="/portal/jobs" />
+            <SumCard icon={<Icons.Doc size={16} />} label="งานทั้งหมด" value={allNotifiedCount} unit="งาน" href="/portal/jobs"
+              badge={allNotifiedNewToday > 0 ? `New+${allNotifiedNewToday}` : undefined} />
           )}
           {starred.size > 0 && (
             <SumCard icon={<span style={{ fontSize: 16 }}>★</span>} label="งานที่สนใจ" value={starred.size} unit="งาน"

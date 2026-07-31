@@ -35,8 +35,11 @@ export default async function WorldPage() {
   } catch { /* engine unavailable — show empty discovery */ }
 
   let allNotifiedCount = 0;
+  let allNotifiedNewToday = 0;
   try {
-    allNotifiedCount = (await getAllJobs(session.lineUserId, 1)).count; // เอาแค่ count ให้การ์ด
+    const allJobs = await getAllJobs(session.lineUserId, 1); // เอาแค่ count/newToday ให้การ์ด (jobs limit=1 ไม่กระทบทั้งสอง)
+    allNotifiedCount = allJobs.count;
+    allNotifiedNewToday = allJobs.newToday;
   } catch { /* engine unavailable — ซ่อนการ์ดงานทั้งหมด */ }
 
   // Calculate trial days left
@@ -70,6 +73,7 @@ export default async function WorldPage() {
       jobGroups={jobGroups}
       discoverGroups={discoverGroups}
       allNotifiedCount={allNotifiedCount}
+      allNotifiedNewToday={allNotifiedNewToday}
     />
   );
 }

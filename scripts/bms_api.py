@@ -2031,18 +2031,26 @@ async def portal_sebastian_feed_json(
             continue
         seen.add(pid)
         name = r["project_name_snapshot"] or r["project_name"] or pid
+        src_stage = r["source_stage"] or ""
+        # fallback เมื่อไม่มี projects_seen.announce_type: "D0" ใช้ได้กับ stage ทั่วไปเท่านั้น
+        # (ตรงกับที่ Sebastian_Enrichment_Worker.py ใช้ตอน enqueue จริง) แต่งาน TOR review
+        # (province_tor_review*) enqueue ด้วย announce_type="B0" เสมอ (บรรทัด 335 ของไฟล์นั้น)
+        # — ถ้า default เป็น "D0" ที่นี่ จะชน `elif announce_type == "D0"` ใน format_notification()
+        # ก่อนถึง `elif source_stage.startswith("province_tor_review")` ทำให้ขึ้นหัวข้อผิด (🔔
+        # แทน 📋) เวลา projects_seen ยังไม่ backfill announce_type ให้แถวนั้น
+        fallback_announce_type = "B0" if src_stage.startswith("province_tor_review") else "D0"
         try:
             text = format_notification(
                 project_id=pid,
                 province=r["province_snapshot"] or r["province"] or "",
-                announce_type=r["announce_type"] or "D0",
+                announce_type=r["announce_type"] or fallback_announce_type,
                 budget=r["budget"] or 0,
                 project_name=name,
                 dept_name=r["dept_name_snapshot"] or r["dept_name"] or "",
                 bid_submit_date=(r["deadline"] or "")[:10],
                 bid_submit_time=r["deadline_time"] or "",
                 is_backfill=bool(r["is_backfill"]),
-                source_stage=r["source_stage"] or "",
+                source_stage=src_stage,
                 record_prediction=False,
             )
             full_name = _clean_project_name(name) or pid
@@ -2053,7 +2061,7 @@ async def portal_sebastian_feed_json(
             "project_id": pid,
             "message": message,
             "sent_at": r["created_at"],
-            "stage": _alljobs_stage(r["source_stage"]),
+            "stage": _alljobs_stage(src_stage),
             "starred": pid in starred_ids,
         })
     total = len(messages)

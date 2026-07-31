@@ -38,6 +38,16 @@ def seed():
         conn.execute(q, (1, 'P5', 'cancelled', '2026-07-06T09:15:00', 'นครพนม', 'แถวคิวถูกยกเลิก', '', 'province_qualified', 0))
         # ดาว P1
         conn.execute("INSERT INTO job_stars (customer_id, project_id, created_at) VALUES (1,'P1','2026-07-05')")
+        # cgd_winners: คู่แข่งจริง 2 ราย งานถนน คสล. อบต. ใน นครพนม (ตรง keyword+subtype+market ของ P1)
+        # ให้ cgd_intel.intel_context() คืน prediction จริง (ไม่ None) — พิสูจน์ว่า record_prediction=False
+        # เซฟจากการเขียนซ้ำจริง (ไม่ใช่ผ่านเพราะ intel_ctx ไม่มี prediction key อยู่แล้วเฉยๆ)
+        q2 = ("INSERT INTO cgd_winners (project_id, province, dept, project_name, winner, budget, "
+              "win_price, discount_pct, fiscal_year, proc_type) VALUES (?,?,?,?,?,?,?,?,?,?)")
+        EB = "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)"
+        conn.execute(q2, ("CGD1", "นครพนม", "อบต.สนามทดสอบ", "จ้างก่อสร้างถนน คสล. หมู่ 1 ตำบลสนาม",
+                          "หจก.สนามหนึ่ง", 5000000, 4000000, 20.0, "2568", EB))
+        conn.execute(q2, ("CGD2", "นครพนม", "อบต.สนามทดสอบ", "จ้างก่อสร้างถนน คสล. หมู่ 2 ตำบลสนาม",
+                          "หจก.สนามสอง", 5000000, 3750000, 25.0, "2568", EB))
 
 
 async def main():
@@ -75,12 +85,35 @@ async def main():
     assert 'ไม่ระบุ' in byid['P2']["message"] or '💰' in byid['P2']["message"], byid['P2']["message"]
     assert '⏰' not in byid['P2']["message"], byid['P2']["message"]
 
+    # P2 = TOR review (source_stage='province_tor_review') ไม่มี projects_seen row → announce_type
+    # ต้อง fallback ให้ตรง stage จริง (ไม่ใช่เหมาแบบ "D0") ไม่งั้น format_notification() จะขึ้นหัวข้อ
+    # "🔔 พบงานเปิดกำหนดวันยื่นซองใหม่" (D0) แทนที่จะเป็น "📋 รับฟังคำวิจารณ์" (TOR review) — bug ที่
+    # fixture นี้เคยไม่จับเพราะไม่มี assertion เช็คหัวข้อ (regression guard)
+    assert byid['P2']["message"].startswith('📋 รับฟังคำวิจารณ์'), byid['P2']["message"]
+    assert '🔔 พบงานเปิดกำหนดวันยื่นซองใหม่' not in byid['P2']["message"], byid['P2']["message"]
+
     json.dumps(r, ensure_ascii=False)
 
     # record_prediction=False จริง — ต้องไม่มี row ใน price_predictions หลังเรียก endpoint
+    # (P1 มี cgd_winners คู่แข่งจริงที่ seed ไว้ข้างบน → intel_context() ของ P1 คืน prediction จริง
+    # ไม่ใช่ None ดังนั้น assertion นี้พิสูจน์ record_prediction=False จริง ไม่ใช่ผ่านลอยๆ เพราะไม่มี
+    # prediction ให้เขียนอยู่แล้ว)
     with bms_api.get_conn() as conn:
         cnt = conn.execute("SELECT COUNT(*) FROM price_predictions").fetchone()[0]
     assert cnt == 0, cnt
+
+    # control: เรียก format_notification() ตรงๆ ด้วย seed เดียวกันแต่ record_prediction=True (default
+    # ตอน production ส่งจริง) ต้องเขียนจริง 1 row — พิสูจน์ว่า path ไปถึง save_prediction() จริง
+    # (ไม่ใช่ cnt==0 ข้างบนผ่านเพราะ intel_ctx.get("prediction") เป็น falsy อยู่แล้วไม่ว่า flag จะเป็นอะไร)
+    format_notification(
+        project_id='P1', province='นครพนม', announce_type='D0', budget=5000000,
+        project_name='ถนน คสล. สายหนึ่ง', dept_name='อบต.ทดสอบ',
+        bid_submit_date='2026-08-03', bid_submit_time='09.00-12.00 น.',
+        source_stage='followed_winner', record_prediction=True,
+    )
+    with bms_api.get_conn() as conn:
+        cnt2 = conn.execute("SELECT COUNT(*) FROM price_predictions").fetchone()[0]
+    assert cnt2 == 1, cnt2
 
     # ลูกค้าไม่มี → ก้อนว่าง ไม่ crash
     r = await bms_api.portal_sebastian_feed_json(line_user_id='U9', x_bms_secret='t')

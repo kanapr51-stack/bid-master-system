@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   const q = searchParams.get('q');
 
   if (tin) {
-    const data = await queryCompetitorProfile(tin);
+    const data = await queryCompetitorProfile(session.lineUserId, tin);
     if ('error' in data) return NextResponse.json(data, { status: 404 });
     return NextResponse.json(data);
   }

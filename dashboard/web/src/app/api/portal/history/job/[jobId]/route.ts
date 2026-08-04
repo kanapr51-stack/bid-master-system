@@ -12,7 +12,7 @@ export async function GET(
   if (!session) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
 
   const { jobId } = await params;
-  const data = await queryJobBidders(jobId);
+  const data = await queryJobBidders(session.lineUserId, jobId);
   if ('error' in data) return NextResponse.json(data, { status: 404 });
   return NextResponse.json(data);
 }

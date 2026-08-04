@@ -199,7 +199,7 @@ export default function HistoryClient() {
       if (!res.ok) { setError('เกิดข้อผิดพลาด'); return; }
       const data = await res.json();
       setSearchResults(data.results ?? []);
-      if (!data.results?.length) setError('ไม่พบบริษัทนี้ในฐานข้อมูล — ระบบมีประวัติจาก 300 งานที่ประมูลแล้วในพื้นที่เป้าหมาย บริษัทที่ไม่เคยเสนอราคาในงานเหล่านั้นจะไม่ปรากฏ');
+      if (!data.results?.length) setError('ไม่พบบริษัทนี้ในฐานข้อมูล — ลองค้นด้วยชื่อบางส่วน หรือเลขประจำตัวผู้เสียภาษี (TIN)');
     } catch { setError('เกิดข้อผิดพลาด กรุณาลองใหม่'); }
     finally { setLoading(false); }
   }
@@ -227,7 +227,7 @@ export default function HistoryClient() {
   return (
     <div className="p-page">
       <TopBar title="ประวัติการประมูล" subtitle="Bid History" />
-      <ButlerNote>ค้นหาว่าใครเคยเสนอราคาในงานนี้ หรือบริษัทนี้เคยชนะงานไหนบ้าง · ฐานข้อมูล 469 บริษัท จาก 300 งานประมูลในพื้นที่นครพนม–บึงกาฬ</ButlerNote>
+      <ButlerNote>ค้นหาว่าใครเคยเสนอราคาในงานนี้ หรือบริษัทนี้เคยชนะงานไหนบ้าง · ค้นได้จากฐานข้อมูลผู้เสนอราคาทั้งหมดทั่วประเทศ</ButlerNote>
 
       {/* Tab switcher — 2-column grid */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16, marginTop: 12 }}>

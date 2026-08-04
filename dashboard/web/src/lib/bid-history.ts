@@ -1,16 +1,14 @@
 /**
- * bid-history.ts — Server-side DB queries for bid_history and competitor_profiles
- * Uses @neondatabase/serverless to query Neon PostgreSQL directly from Next.js
+ * bid-history.ts — ข้อมูลแท็บ "ประวัติ" จาก engine จริง (SQLite ผ่าน bms_api)
+ * N+217: แทนที่ Neon Postgres เดิมที่ไม่เชื่อมกับฐานข้อมูลจริงมานานแล้ว (คนละก้อนข้อมูล
+ * ทำให้แท็บนี้ค้างที่ "469 บริษัท จาก 300 งาน" — ดู progress_log) เดิมยิง SQL ตรง;
+ * ตอนนี้ยิงผ่าน /api/portal/job-detail, /api/portal/company-detail, /api/portal/company-search
+ * แล้ว adapt shape ให้ type เดิมที่ history/_client.tsx ใช้อยู่ไม่ต้องแก้โครง
  */
-import { neon } from '@neondatabase/serverless';
+const BMS_API_URL = process.env.BMS_API_URL ?? "https://api.butler-bms.com";
+const BMS_SECRET = process.env.BMS_INTERNAL_SECRET ?? "";
 
-function getDb() {
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error('DATABASE_URL not set');
-  return neon(url);
-}
-
-// ── Types ─────────────────────────────────────────────────────────────────────
+// ── Types (คงรูปเดิมที่ _client.tsx ใช้อยู่) ─────────────────────────────────────
 
 export interface BidderRow {
   bidder_name: string;
@@ -74,82 +72,193 @@ export interface CompetitorProfileResult {
   recent_jobs: RecentJobRow[];
 }
 
-// ── Queries ───────────────────────────────────────────────────────────────────
+// ── Engine payload shapes (ตาม portal_views.job_detail / company_profile) ──────
 
-export async function queryJobBidders(jobId: string): Promise<JobBiddersResult | { error: string }> {
-  const db = getDb();
-  const [jobRows, bidderRows] = await Promise.all([
-    db`SELECT job_id, title, department, budget, deadline, province
-       FROM all_jobs WHERE job_id = ${jobId}`,
-    db`SELECT bidder_name, bidder_tin, price_proposal, price_agree,
-              is_winner, is_sme, is_joint_venture, jv_partners, result_flag, consider_desc
-       FROM bid_history
-       WHERE job_id = ${jobId}
-       ORDER BY is_winner DESC, price_agree`,
-  ]);
+interface EngineJob {
+  project_id: string;
+  name: string;
+  department?: string;
+  province?: string;
+  budget: number;
+  deadline: string | null;
+}
 
-  if (!jobRows.length) return { error: 'not_found' };
+interface EngineBidder {
+  name: string;
+  tin: string;
+  price: number | null;
+  agree: number | null;
+  is_winner: boolean;
+  is_sme: boolean;
+}
+
+interface EngineJobDetail {
+  job: EngineJob;
+  bidders: EngineBidder[];
+}
+
+interface EngineYearJob {
+  project_id: string;
+  name: string;
+  is_winner: boolean;
+  price: number | null;
+  price_agree: number | null;
+  province: string;
+  budget: number;
+}
+
+interface EngineYearGroup {
+  year: number | null;
+  bids: number;
+  wins: number;
+  jobs: EngineYearJob[];
+}
+
+interface EngineCompanyProfile {
+  name: string;
+  tin: string;
+  is_sme: boolean;
+  total_bids: number;
+  wins: number;
+  win_rate: number;
+  provinces: string[];
+  discount_avg: number | null;
+  discount_stddev: number | null;
+  first_seen: string;
+  last_seen: string;
+  by_year: EngineYearGroup[];
+}
+
+function num(n: number | null | undefined): string {
+  return n == null ? "" : String(n);
+}
+
+function toProfile(p: EngineCompanyProfile): CompetitorProfile {
   return {
-    job: jobRows[0] as JobInfo,
-    bidders: bidderRows as BidderRow[],
-    total: bidderRows.length,
+    bidder_tin: p.tin,
+    company_name: p.name,
+    total_bids: p.total_bids,
+    total_wins: p.wins,
+    win_rate_pct: p.win_rate,
+    is_sme: p.is_sme,
+    has_jv: false, // engine ไม่มีคอลัมน์ JV ในข้อมูลนี้ (ดู progress_log N+217)
+    first_seen: p.first_seen,
+    last_seen: p.last_seen,
+    provinces: p.provinces ?? [],
+    proc_types: [],
+    avg_discount_pct: null,
+    avg_discount_from_budget_pct: p.discount_avg,
+    stddev_discount_pct: p.discount_stddev,
   };
 }
 
-export async function queryCompetitorProfile(tin: string): Promise<CompetitorProfileResult | { error: string }> {
-  const db = getDb();
-  const [profileRows, recentRows] = await Promise.all([
-    db`SELECT bidder_tin, company_name, total_bids, total_wins, win_rate_pct,
-              is_sme, has_jv, first_seen, last_seen, provinces, proc_types,
-              avg_discount_pct, avg_discount_from_budget_pct, stddev_discount_pct
-       FROM competitor_profiles WHERE bidder_tin = ${tin}`,
-    db`SELECT bh.job_id, aj.title, aj.department, aj.province, aj.publish_date,
-              aj.budget, bh.is_winner, bh.price_proposal, bh.price_agree
-       FROM bid_history bh
-       JOIN all_jobs aj ON aj.job_id = bh.job_id
-       WHERE bh.bidder_tin = ${tin}
-       ORDER BY aj.publish_date DESC`,
-  ]);
+function toRecentJobs(byYear: EngineYearGroup[]): RecentJobRow[] {
+  const rows: RecentJobRow[] = [];
+  for (const g of byYear) {
+    for (const j of g.jobs) {
+      rows.push({
+        job_id: j.project_id,
+        title: j.name,
+        department: "",
+        province: j.province || "",
+        publish_date: g.year ? `ปี ${g.year}` : "",
+        budget: num(j.budget),
+        is_winner: j.is_winner,
+        price_proposal: num(j.price),
+        price_agree: num(j.price_agree),
+      });
+    }
+  }
+  return rows;
+}
 
-  if (!profileRows.length) return { error: 'not_found' };
-  const p = profileRows[0] as CompetitorProfile;
-  p.provinces = Array.isArray(p.provinces) ? p.provinces : [];
-  p.proc_types = Array.isArray(p.proc_types) ? p.proc_types : [];
+// ── Queries ───────────────────────────────────────────────────────────────────
+
+export async function queryJobBidders(
+  lineUserId: string,
+  jobId: string,
+): Promise<JobBiddersResult | { error: string }> {
+  const qs = new URLSearchParams({ line_user_id: lineUserId, pid: jobId });
+  const res = await fetch(`${BMS_API_URL}/api/portal/job-detail?${qs.toString()}`, {
+    headers: { "X-BMS-Secret": BMS_SECRET },
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`engine GET job-detail failed: ${res.status}`);
+  const data = (await res.json()) as { ok: boolean; data?: EngineJobDetail };
+  if (!data.ok || !data.data) return { error: "not_found" };
+  const { job, bidders } = data.data;
   return {
-    profile: p,
-    recent_jobs: recentRows as RecentJobRow[],
+    job: {
+      job_id: job.project_id,
+      title: job.name,
+      department: job.department || "",
+      budget: num(job.budget),
+      deadline: job.deadline || "",
+      province: job.province || "",
+    },
+    bidders: bidders.map((b) => ({
+      bidder_name: b.name,
+      bidder_tin: b.tin,
+      price_proposal: num(b.price),
+      price_agree: num(b.agree),
+      is_winner: b.is_winner,
+      is_sme: b.is_sme,
+      is_joint_venture: false,
+      jv_partners: "",
+      result_flag: "",
+      consider_desc: "",
+    })),
+    total: bidders.length,
+  };
+}
+
+export async function queryCompetitorProfile(
+  lineUserId: string,
+  tin: string,
+): Promise<CompetitorProfileResult | { error: string }> {
+  const qs = new URLSearchParams({ line_user_id: lineUserId, tin });
+  const res = await fetch(`${BMS_API_URL}/api/portal/company-detail?${qs.toString()}`, {
+    headers: { "X-BMS-Secret": BMS_SECRET },
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`engine GET company-detail failed: ${res.status}`);
+  const data = (await res.json()) as { ok: boolean; data?: { profile: EngineCompanyProfile } };
+  if (!data.ok || !data.data) return { error: "not_found" };
+  const p = data.data.profile;
+  return {
+    profile: toProfile(p),
+    recent_jobs: toRecentJobs(p.by_year),
   };
 }
 
 export async function searchCompetitors(query: string): Promise<CompetitorProfile[]> {
-  const db = getDb();
-  const like = '%' + query + '%';
-  const rows = await db`
-    SELECT bidder_tin, company_name, total_bids, total_wins, win_rate_pct,
-           is_sme, provinces, first_seen, last_seen
-    FROM competitor_profiles
-    WHERE company_name ILIKE ${like} OR bidder_tin ILIKE ${like}
-    ORDER BY total_bids DESC
-    LIMIT 20
-  `;
-  return rows.map(r => {
-    const d = r as CompetitorProfile;
-    d.provinces = Array.isArray(d.provinces) ? d.provinces : [];
-    d.proc_types = Array.isArray(d.proc_types) ? d.proc_types : [];
-    return d;
+  const qs = new URLSearchParams({ query });
+  const res = await fetch(`${BMS_API_URL}/api/portal/company-search?${qs.toString()}`, {
+    headers: { "X-BMS-Secret": BMS_SECRET },
+    cache: "no-store",
   });
+  if (!res.ok) throw new Error(`engine GET company-search failed: ${res.status}`);
+  const data = (await res.json()) as { ok: boolean; results?: EngineCompanyProfile[] };
+  return (data.results ?? []).map(toProfile);
 }
 
 export async function searchOwnBids(companyName: string): Promise<{ jobs: RecentJobRow[]; total: number }> {
-  const db = getDb();
-  const like = '%' + companyName.replace(/%/g, '\\%') + '%';
-  const rows = await db`
-    SELECT bh.job_id, aj.title, aj.department, aj.province, aj.publish_date,
-           aj.budget, bh.is_winner, bh.price_proposal, bh.price_agree
-    FROM bid_history bh
-    JOIN all_jobs aj ON aj.job_id = bh.job_id
-    WHERE bh.bidder_name ILIKE ${like}
-    ORDER BY aj.publish_date DESC
-  `;
-  return { jobs: rows as RecentJobRow[], total: rows.length };
+  const qs = new URLSearchParams({ query: companyName });
+  const res = await fetch(`${BMS_API_URL}/api/portal/company-search?${qs.toString()}`, {
+    headers: { "X-BMS-Secret": BMS_SECRET },
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`engine GET company-search failed: ${res.status}`);
+  const data = (await res.json()) as { ok: boolean; results?: EngineCompanyProfile[] };
+  const seen = new Set<string>();
+  const jobs: RecentJobRow[] = [];
+  for (const p of data.results ?? []) {
+    for (const row of toRecentJobs(p.by_year)) {
+      if (seen.has(row.job_id)) continue;
+      seen.add(row.job_id);
+      jobs.push(row);
+    }
+  }
+  jobs.sort((a, b) => (a.job_id < b.job_id ? 1 : -1));
+  return { jobs, total: jobs.length };
 }

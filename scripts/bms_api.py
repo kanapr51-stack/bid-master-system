@@ -1922,6 +1922,23 @@ async def portal_company_detail_json(
                                  "area": area, "area_label": area_label}}
 
 
+@app.get("/api/portal/company-search")
+async def portal_company_search_json(
+    query: str = Query(...),
+    x_bms_secret=Header(default=None),
+):
+    """ค้นบริษัทจากชื่อหรือ TIN สำหรับแท็บ 'ประวัติ' (Board B) — reuse company_profile ต่อรายที่แมตช์
+    (N+217: แทนที่ Neon Postgres เดิมที่ไม่เชื่อมกับฐานข้อมูลจริงมานานแล้ว — ดู progress_log)."""
+    if x_bms_secret != BMS_INTERNAL_SECRET:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    query = query.strip()
+    if len(query) < 2:
+        return {"ok": True, "results": []}
+    with get_conn() as conn:
+        results = portal_views.company_search(conn, query)
+    return {"ok": True, "results": results}
+
+
 # stage ล่าสุดที่แจ้ง → กลุ่มป้ายบนบอร์ด (ชุดเดียวกับ STAGE_META ฝั่ง world)
 _ALLJOBS_STAGE = {"followed_winner": "won", "followed_prelim": "prelim",
                   "followed_cancelled": "cancelled"}

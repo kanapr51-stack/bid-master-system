@@ -53,6 +53,31 @@ assert sum(h["count"] for h in p["discount_hist"]) >= 1, p["discount_hist"]
 assert pv.company_profile(c, "NOPE") is None
 print("OK company_profile")
 
+# --- company_profile: discount_stddev / first_seen / last_seen / per-job province+price_agree (N+217) ---
+c = _seed()
+c.execute("INSERT INTO projects_seen VALUES ('68010000003','งานเก่า',2000000,'นครพนม')")
+c.execute("INSERT INTO bid_results VALUES ('68010000003','หจก.เอ','T1','1600000','1600000',1,0)")
+p = pv.company_profile(c, "T1")
+assert p["discount_stddev"] is not None, p                            # 3 ราคาต่างกัน → มี variance จริง
+assert p["first_seen"] == "ปี 2568" and p["last_seen"] == "ปี 2569", p  # เก่าสุด→ใหม่สุด
+job0 = p["by_year"][0]["jobs"][0]
+assert "province" in job0 and "price_agree" in job0, job0             # เอาไปทำ RecentJobRow ฝั่งเว็บได้
+p_single = pv.company_profile(_seed(), "T2")                          # T2 มีแค่งานเดียว → stddev ไม่มีความหมาย
+assert p_single["discount_stddev"] is None, p_single
+print("OK company_profile_stddev_seen_perjob")
+
+# --- company_search: ค้นชื่อ/TIN partial, เรียงตาม total_bids มากสุดก่อน (N+217) ---
+c = _seed()
+c.execute("INSERT INTO bid_results VALUES ('69010000003','หจก.เอ สาขาสอง','T1','700000','',0,0)")
+res = pv.company_search(c, "เอ")               # แมตช์ทั้ง 'หจก.เอ' (T1) และชื่อ partial อื่นที่มี 'เอ'
+assert any(r["tin"] == "T1" for r in res), res
+top = res[0]
+assert top["tin"] == "T1" and top["total_bids"] >= 2, top             # T1 มีงานเยอะสุด → มาก่อน
+res_tin = pv.company_search(c, "T2")
+assert [r["tin"] for r in res_tin] == ["T2"], res_tin
+assert pv.company_search(c, "ไม่มีจริงแน่นอน") == []
+print("OK company_search")
+
 # --- render_job_page ---
 c = _seed()
 d = pv.job_detail(c, "69010000001")

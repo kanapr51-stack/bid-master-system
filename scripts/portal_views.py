@@ -166,7 +166,9 @@ def job_detail(conn, pid, calc_params=None):
             "discount": _discount(price, budget)})
     bidders.sort(key=lambda b: (not b["is_winner"], b["price"] is None, b["price"] or 0))
     return {"job": {"project_id": pid, "name": (ps["project_name"] if ps else "") or pid,
-                    "location": loc, "budget": budget, "deadline": deadline,
+                    "location": loc, "department": dept_name,
+                    "province": (ps["province"] if ps else "") or "",
+                    "budget": budget, "deadline": deadline,
                     "deadline_time": deadline_time,
                     "pred_lo": pred_lo, "pred_hi": pred_hi}, "bidders": bidders,
             "intel_lines": intel_lines, "company_tables": company_tables,
@@ -263,7 +265,7 @@ def won_portfolio(conn, name, proc="all"):
 
 def company_profile(conn, tin):
     rows = conn.execute(
-        "SELECT br.project_id, br.bidder_name, br.price_proposal, br.is_winner, br.is_sme, "
+        "SELECT br.project_id, br.bidder_name, br.price_proposal, br.price_agree, br.is_winner, br.is_sme, "
         "ps.project_name, ps.budget, ps.province "
         "FROM bid_results br LEFT JOIN projects_seen ps ON ps.project_id=br.project_id "
         "WHERE br.bidder_tin=?", (tin,)).fetchall()
@@ -285,6 +287,10 @@ def company_profile(conn, tin):
         hist.append({"lo": lo, "hi": lo + 5, "count": sum(1 for d in discs if lo <= d < lo + 5)})
     hist.append({"lo": 40, "hi": None, "count": sum(1 for d in discs if d >= 40)})
     disc_avg = round(sum(discs) / len(discs), 1) if discs else None
+    disc_stddev = None
+    if len(discs) > 1:
+        _mean = sum(discs) / len(discs)
+        disc_stddev = round((sum((d - _mean) ** 2 for d in discs) / (len(discs) - 1)) ** 0.5, 1)
     years = {}
     for r in rows:
         y = _year_th(r["project_id"])
@@ -294,15 +300,38 @@ def company_profile(conn, tin):
             g["wins"] += 1
         g["jobs"].append({"project_id": r["project_id"], "name": r["project_name"] or r["project_id"],
                           "is_winner": bool(r["is_winner"]), "price": _to_float(r["price_proposal"]),
+                          "price_agree": _to_float(r["price_agree"]),
+                          "province": r["province"] or "", "budget": r["budget"] or 0,
                           "discount": _discount(_to_float(r["price_proposal"]), (r["budget"] or 0))})
     by_year = []
     for key in sorted(years, key=lambda k: (k == 0, -(k or 0))):
         g = years[key]
         g["jobs"].sort(key=lambda j: j["project_id"], reverse=True)
         by_year.append(g)
+    known_years = sorted(y for y in years if y)  # 0 = แยกไม่ได้จาก project_id, ไม่นับ
+    first_seen = f"ปี {known_years[0]}" if known_years else ""
+    last_seen = f"ปี {known_years[-1]}" if known_years else ""
     return {"name": name, "tin": tin, "is_sme": is_sme, "total_bids": total, "wins": wins,
             "win_rate": win_rate, "provinces": provinces, "discount_hist": hist,
-            "discount_avg": disc_avg, "by_year": by_year}
+            "discount_avg": disc_avg, "discount_stddev": disc_stddev,
+            "first_seen": first_seen, "last_seen": last_seen, "by_year": by_year}
+
+
+def company_search(conn, query, limit=20):
+    """ค้นบริษัทจากชื่อหรือ TIN (partial match) ใน bid_results — คืน profile ย่อสูงสุด limit ราย
+    เรียงตามจำนวนงานที่เคยเสนอราคามากสุดก่อน. ใช้แทน Neon Postgres เดิม (คนละฐานข้อมูล ไม่เชื่อมกัน)."""
+    like = f"%{query}%"
+    tin_rows = conn.execute(
+        "SELECT DISTINCT bidder_tin FROM bid_results "
+        "WHERE (bidder_name LIKE ? OR bidder_tin LIKE ?) AND bidder_tin IS NOT NULL AND bidder_tin != '' "
+        "LIMIT 200", (like, like)).fetchall()
+    results = []
+    for r in tin_rows:
+        p = company_profile(conn, r["bidder_tin"])
+        if p:
+            results.append(p)
+    results.sort(key=lambda p: p["total_bids"], reverse=True)
+    return results[:limit]
 
 
 def area_portfolio(conn, name, project_ids):

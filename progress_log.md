@@ -1057,3 +1057,44 @@ brainstorming → spec (`docs/superpowers/specs/2026-07-30-portal-onboarding-flo
 - ถ้าอยากได้เร็วกว่า 3.4s อีก ต้องพึ่ง VPS อัปเกรด (N+215) — hotfix นี้แก้แค่ "ไม่ค้าง/ไม่ error" ไม่ใช่ "เร็วสุด"
 - ระยะยาว: ถ้าอยากได้ ตำบล/อำเภอ กลับมาในข้อความเก่าโดยไม่ช้า ต้องทำ index/FTS ให้ `cgd_winners` รองรับ
   `LIKE` แบบมี wildcard นำหน้า หรือเปลี่ยนวิธี query — ยังไม่ทำรอบนี้ (นอกสโคป hotfix ฉุกเฉิน)
+
+## งานที่ N+217: แท็บ "ประวัติ" ต่อฐานข้อมูลจริงแทน Neon Postgres เดิม (2026-08-05)
+
+### สถานะ: ✅ เสร็จ + deploy LIVE (backend + frontend)
+
+### Root cause / สิ่งที่ทำ
+คุณกัญจน์ถามว่า index ครบหรือยัง + ทำไมแท็บ "ประวัติ" ขึ้นแค่ "469 บริษัท จาก 300 งานในนครพนม–บึงกาฬ"
+ทั้งที่ตั้งใจให้ครอบคลุมทั่วประเทศแล้ว — สืบพบว่า `dashboard/web/src/lib/bid-history.ts` ยิง SQL ตรงไปฐาน
+**Neon PostgreSQL** (`@neondatabase/serverless`, `DATABASE_URL`) ซึ่งเป็นฐานเก่าที่ถูกทิ้งไว้ตั้งแต่ช่วงแรก
+ไม่เชื่อมกับฐานข้อมูลจริง (SQLite `bms_customers.db`) ที่ทุกแท็บอื่นใช้เลย — engine จริงมีบริษัท **77,466 ราย**
+ใน `bid_results` ทั่วประเทศ ไม่ใช่ 469 ราย คุณกัญจน์เลือก "เปลี่ยนให้ต่อกับฐานข้อมูลจริง"
+
+### Fix / ผล
+- **Backend** (`scripts/portal_views.py`): `job_detail()` เพิ่ม `department`/`province`; `company_profile()`
+  เพิ่ม `discount_stddev`, `first_seen`/`last_seen` (ปี พ.ศ.), และ `province`/`budget`/`price_agree` ต่องาน
+  ใน `by_year[].jobs[]`; เพิ่มฟังก์ชันใหม่ `company_search(conn, query, limit=20)` — ค้นจากชื่อ/TIN แบบ
+  partial match ใน `bid_results` เรียงตามจำนวนงานที่เคยยื่นมากสุดก่อน
+- **Backend** (`scripts/bms_api.py`): เพิ่ม endpoint ใหม่ `GET /api/portal/company-search?query=`
+- **Frontend** (`dashboard/web/src/lib/bid-history.ts`): เขียนใหม่ทั้งไฟล์ — ยิงผ่าน `BMS_API_URL` +
+  `X-BMS-Secret` (job-detail / company-detail / company-search ตัวใหม่) แทน `DATABASE_URL` เดิม; คง
+  export type เดิม (`BidderRow`, `JobInfo`, `CompetitorProfile`, ฯลฯ) ไว้ทั้งหมดโดย adapt shape จาก engine
+  ให้ตรง — ไม่ต้องแก้โครง `_client.tsx` เลย นอกจากข้อความ ButlerNote/error ที่ยังอ้างเลข 469/300 เดิม
+  (แก้เป็นข้อความทั่วไปแทน) และ route.ts 2 ไฟล์ (`history/company`, `history/job/[jobId]`) ที่ต้องส่ง
+  `session.lineUserId` เข้าไปด้วย (engine endpoint บังคับ)
+- ทดสอบ: เพิ่ม 2 test block ใหม่ใน `test_portal_views.py` (`company_profile_stddev_seen_perjob`,
+  `company_search`) + ไฟล์ทดสอบใหม่ `test_portal_company_search_api.py` (403/สั้นเกิน/แมตช์/TIN/ไม่เจอ) —
+  ผ่านหมด พร้อม regression `test_portal_company_detail_api.py` + `test_portal_job_detail_api.py` ผ่านต่อ
+- `npx tsc --noEmit` + `npm run build` ผ่านสะอาด
+- **verify สด**: deploy backend (VPS `bash scripts/deploy.sh`) + frontend (`vercel --prod`) แล้ว curl
+  endpoint ใหม่จริงบน prod — ได้บริษัทจริง เช่น "หจก.ต.ไทยเจริญอุทุมพรก่อสร้าง" 2,551 งานที่เคยยื่น (เทียบ
+  กับเพดานเก่า 469 บริษัททั้งระบบ)
+
+### Followup
+- `avg_discount_pct` (แยกจาก `avg_discount_from_budget_pct`) ไม่มีข้อมูลใน schema จริง → ส่ง `null` เสมอ
+  (ของเดิม Neon คำนวณคนละแบบ ไม่มี evidence ว่าใช้จริงในหน้า UI ตอนนี้)
+- `is_joint_venture`/`jv_partners` ไม่มีคอลัมน์ใน `bid_results` → ส่ง `false`/`''` เสมอ (ต้อง schema+scraping
+  ใหม่ถ้าอยากได้ข้อมูล JV กลับมา — นอกสโคปรอบนี้)
+- `@neondatabase/serverless` ใน `package.json` เหลือเป็น dependency ที่ไม่ใช้แล้ว — ไม่ลบรอบนี้ (เลี่ยงความเสี่ยง
+  lockfile ก่อน deploy คืนนี้), ลบทีหลังได้เมื่อไม่รีบ
+- `progress_log.md` ยาวเกิน threshold (~600 บรรทัด) ตาม rotation rule ใน CLAUDE.md แล้ว — ยังไม่ rotate รอบนี้
+  (นอกสโคป), ควรทำรอบถัดไป

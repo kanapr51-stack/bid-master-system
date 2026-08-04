@@ -1022,3 +1022,38 @@ brainstorming → spec (`docs/superpowers/specs/2026-07-30-portal-onboarding-flo
 ### Followup
 - 🟡 **ทางแก้ถาวรจริงๆ คืออัปเกรดสเปก VPS (เพิ่ม RAM อย่างน้อย, ในอุดมคติ CPU ด้วย)** — มีค่าใช้จ่ายรายเดือนเพิ่ม รอคุณกัญจน์ตัดสินใจว่าจะอัปเกรดเมื่อไหร่/สเปกไหน ระหว่างนี้เสี่ยงเกิด spike ซ้ำได้ถ้ามีโหลดพร้อมกันหลายจุดอีก
 - อาจพิจารณาเพิ่ม: ลดขนาด `cgd_winners`/archive ข้อมูลเก่า, หรือ VACUUM DB (ต้อง backup ก่อนตาม CLAUDE.md — ยังไม่ทำ)
+
+## งานที่ N+216: hotfix แท็บ Sebastian โหลดไม่ได้จริง — ข้าม cgd_intel ตอน reconstruct ประวัติ (2026-08-05)
+
+### สถานะ: ✅ เสร็จ + deploy LIVE
+
+### Root cause / สิ่งที่ทำ
+คุณกัญจน์แจ้งว่าปุ่ม Sebastian กดไม่ได้ (ปิด-เปิดแอปแล้วดีขึ้นเป็น "เกิดข้อผิดพลาดในการโหลดหน้า" แล้วกลาย
+เป็น "ดึงข้อมูลไม่ได้ชั่วคราว") — ใช้ debug-mantra ไล่: ทดสอบ endpoint ตรงพบ **timeout เต็ม 30 วินาที**
+ทั้งที่ไม่มี connection ค้างเลยตอนเริ่มทดสอบ (ไม่ใช่แค่ระบบหนักทั่วไปแบบ N+215) — เรียกฟังก์ชันตรงบน VPS
+พร้อม `faulthandler` dump stack ทุก thread หลัง 20 วินาที เจอค้างอยู่ที่ `cgd_intel.py:326 _fetch()` —
+เรียกจนจบจริงใช้เวลา **44.8 วินาที** สำหรับ 30 ข้อความ
+
+**สาเหตุแท้จริง:** endpoint `/api/portal/sebastian-feed` เรียก `format_notification()` ซึ่งเรียก
+`cgd_intel.intel_context()` สำหรับทุกข้อความ stage D0 — ฟังก์ชันนี้ query ด้วย `LIKE '%keyword%'`
+(wildcard นำหน้า) บนตาราง `cgd_winners` ที่โต **~2 ล้านแถวแล้ว** ซึ่ง SQLite ใช้ index กับ pattern
+แบบนี้ไม่ได้เลย ต้อง scan เต็มตารางทุกครั้ง — พอเรียกซ้ำสูงสุด 30 ครั้งต่อคำขอเดียว (คนละกับตอนส่ง LINE
+จริงที่เรียกครั้งเดียวต่อ 1 งานใหม่) เลยพุ่งเป็นหลักสิบวินาที บั๊กนี้เป็นของ N+214 (แท็บ Sebastian) เอง
+ไม่เกี่ยวกับ N+215 (VPS เล็ก) โดยตรง แม้จะซ้ำเติมกันได้
+
+### Fix / ผล
+- เพิ่มพารามิเตอร์ `skip_intel: bool = False` ให้ `format_notification()` (`Sebastian_LINE_Sender.py`) —
+  เมื่อ `True` ข้าม `cgd_intel.intel_context()` ทั้งก้อน (ผลข้างเคียง: ข้อความเก่าจะไม่มีรายละเอียด
+  ตำบล/อำเภอ เหลือแค่จังหวัด — cosmetic เท่านั้น ไม่กระทบเนื้อหาสำคัญ)
+- `bms_api.py`'s `portal_sebastian_feed_json` เรียกด้วย `skip_intel=True` เสมอ (คู่กับ
+  `record_prediction=False` ที่มีอยู่แล้ว)
+- test ใหม่ `test_format_notification_skip_intel.py` + เพิ่ม assertion `intel_calls["n"] == 0` ใน
+  `test_portal_sebastian_feed_api.py` (mock call-counter เหมือนที่ใช้ยืนยัน Critical#1 เดิม)
+- วัดจริงหลัง deploy บน prod ด้วยบัญชีคุณกัญจน์: **44.8s → 3.4s** (ยังไม่ใช่ instant เพราะ VPS ยังเล็ก
+  ตาม N+215 แต่ใช้งานได้จริงแล้ว)
+
+### Followup
+- ตรวจสอบกับคุณกัญจน์ว่ากดแท็บ Sebastian ได้ปกติแล้วจริงไหมหลัง hotfix นี้
+- ถ้าอยากได้เร็วกว่า 3.4s อีก ต้องพึ่ง VPS อัปเกรด (N+215) — hotfix นี้แก้แค่ "ไม่ค้าง/ไม่ error" ไม่ใช่ "เร็วสุด"
+- ระยะยาว: ถ้าอยากได้ ตำบล/อำเภอ กลับมาในข้อความเก่าโดยไม่ช้า ต้องทำ index/FTS ให้ `cgd_winners` รองรับ
+  `LIKE` แบบมี wildcard นำหน้า หรือเปลี่ยนวิธี query — ยังไม่ทำรอบนี้ (นอกสโคป hotfix ฉุกเฉิน)

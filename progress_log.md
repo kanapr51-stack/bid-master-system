@@ -968,3 +968,29 @@ brainstorming → spec (`docs/superpowers/specs/2026-07-30-portal-onboarding-flo
 ### Followup
 - รอดูพรุ่งนี้ (วันทำการ ไม่ใช่วันหยุด) ว่าป้าย New+N ขึ้นค่าจริงตามที่ discovery เจองานใหม่ไหม
 - ถ้าคุณกัญจน์อยากได้ real-time แบบไม่ต้อง reload หน้า (auto-poll) — เป็นงานเพิ่มเติมที่ยังไม่ทำรอบนี้
+
+## งานที่ N+214: หน้า "Sebastian" — ประวัติแจ้งเตือนสไตล์แชท (2026-08-01 → 2026-08-04, ข้าม session ที่โดน rate limit)
+
+### สถานะ: ✅ เสร็จสมบูรณ์ — LIVE บน production แล้ว
+
+### บริบท / สิ่งที่ทำ
+สานต่อ spec+plan เดิมที่ทำไว้ตั้งแต่ 2026-07-23 (`docs/superpowers/specs/2026-07-23-sebastian-chat-feed-design.md` / `docs/superpowers/plans/2026-07-23-sebastian-chat-feed.md`) — Task 1 (record_prediction flag) เคยทำเสร็จไปแล้วรอบก่อน ทำ Task 2-7 ต่อด้วย subagent-driven-development ใน worktree แยก (`sebastian-chat-feed`) session นี้โดนตัด (หมด subscription) กลางทาง resume ต่อได้เพราะ ledger + worktree ยังอยู่ครบ
+
+แท็บใหม่ "Sebastian" ในบอร์ด: ประวัติแจ้งเตือนสไตล์แชท 1 bubble ต่อ 1 งาน ข้อความเหมือน LINE จริง (reuse `format_notification()` เดิม ไม่เขียน logic ซ้ำฝั่งเว็บ) เรียงเก่า→ใหม่ กด bubble ไปหน้ารายละเอียดงาน
+
+### Fix / ผล
+- Task 2 (backend endpoint) เจอ 2 บั๊กจาก review รอบ task: (1) test เดิมไม่ได้ทดสอบ record_prediction=False จริง (ไม่มีข้อมูลคู่แข่งให้ trigger เขียน) — แก้ seed ข้อมูลจริง + เพิ่ม positive control (2) header ข้อความผิดสำหรับงาน TOR-review ที่ไม่มี cache — แก้แล้ว
+- Task 5 (หน้าใหม่) เจอ integration gap: แผนเดิมเขียนก่อนระบบ onboarding gate (N+212) จะมีขึ้น — หน้า Sebastian เลยไม่มี `requireOnboarding()` เหมือนหน้าอื่น แก้แล้ว
+- **Final whole-branch review (opus) เจอ 2 จุด Critical ที่ห้ามพลาด:**
+  1. **Performance/เสถียรภาพ:** endpoint เดิมรัน cgd_intel เต็มรูปแบบทุกข้อความ D0 (~2.4 วินาที/ข้อความ วัดจริงกับ fixture 300K แถว) แถมเป็น `async def` ที่มี body sync ล้วน → **บล็อก event loop ทั้ง process bms-api ให้ลูกค้าทุกคน** ไม่ใช่แค่คนเปิดดูประวัติ ถ้าใครมีประวัติเยอะเปิดทีเดียวจะค้างได้หลายนาทีทั้งระบบ แก้แล้ว: slice ก่อน render ไม่ใช่หลัง (limit คุมงานจริง), เปลี่ยนเป็น `def` ธรรมดาให้ FastAPI รันใน threadpool แทน event loop หลัก, ลด limit default 500→30
+  2. **ข้อความผิด:** endpoint เดิมเรียก `format_notification()` กับทุกแถว แต่ตัวส่งจริงใช้ formatter คนละตัวสำหรับ `followed_prelim`/`followed_winner`/`followed_cancelled` (Round 1/2/ยกเลิก) → งานที่ประกาศผู้ชนะแล้วจะโชว์ข้อความ "งานเปิดใหม่ ยื่นซองวันที่ X" ผิดทั้งหมด แก้แล้ว: `followed_winner` เรียก `format_winner_detailed()` จริงด้วยข้อมูล DB cache (ไม่มี live API — ปลอดภัย), `followed_prelim`/`followed_cancelled` ใช้ข้อความสั้นๆ ที่ตรงความจริงแทน (formatter จริงของ 2 ตัวนี้ยิง live API/PDF ซึ่งขัดกับกติกา "ห้าม live enrichment" ของ endpoint นี้)
+  - Important เพิ่มอีก 2 จุดแก้ครบ: announce_type ยัง stale ได้แม้มี projects_seen (แก้ precedence ให้ source_stage ชนะ), status filter เดิมโชว์งานที่ไม่เคยส่งจริง (keyword-skip/pending) — แก้เป็น `status IN ('sent','failed')`
+  - Important UX: หน้าแชทเดิมเปิดมาอยู่บนสุด (ข้อความเก่าสุด) ต้องเลื่อนเองถึงจะเห็นข้อความล่าสุด — เพิ่ม scroll-to-bottom อัตโนมัติ
+  - fix wave ผ่าน re-review รอบเดียวครบทุกจุด รวม judgment call 2 จุดที่ implementer เลี่ยงเอง (ข้าม field ที่ไม่กระทบ output ของ format_winner_detailed แทนการเพิ่ม flag ใหม่ — ตรวจสอบแล้วถูกต้อง; hard cap limit=500 ยังเปิดได้ผ่าน query param explicit — ประเมินเป็น Minor ไม่บล็อก เพราะ endpoint ต้องมี secret ฝั่ง server เท่านั้น และปัญหา freeze ทั้ง process แก้แล้วจากจุดที่ 1)
+- Sophia sanity audit ก่อน deploy: SAFE (ตรวจ endpoint ใหม่ 100% read-only, all-jobs เดิมไม่ถูกแตะ, record_prediction guard ทำงานถูกทาง)
+- test ทั้งชุดผ่าน (`test_portal_sebastian_feed_api.py`, `test_portal_all_jobs_api.py`, `test_format_notification_record_prediction.py`, `test_cgd_intel.py`) + `npx tsc --noEmit` + `npm run build`
+- deploy: merge เข้า main (fast-forward, 6 commits) → push → VPS backend (`bash scripts/deploy.sh`) → Vercel frontend → sanity curl บน prod ยืนยันได้ข้อมูลจริง (91 ข้อความ บัญชีคุณกัญจน์)
+
+### Followup
+- Minor ที่ parked ไม่ได้แก้รอบนี้ (ไม่บล็อก): ลด hard cap `limit` จาก 500 เหลือ ~100 กันไว้อีกชั้น (fast-follow ราคาถูก), `stage` field ฝั่ง frontend ไม่ได้ใช้จริง (ไม่ได้ทำ chip โชว่ stage)
+- ข้อจำกัดที่ยอมรับ (บันทึกไว้ให้คุณกัญจน์ทราบ): ข้อความประวัติ reconstruct จากแคชปัจจุบัน ไม่ใช่ snapshot ตอนส่งจริง 100% — ถ้า reviewer แนะนำทางแก้ถาวร (เพิ่มคอลัมน์ `message_snapshot` เขียนตอนส่งจริง) จะทำให้แม่นสมบูรณ์ + เร็วขึ้นด้วย แต่ต้องแก้ schema แยกเป็นงานใหม่ (ตาม CLAUDE.md ต้อง backup ก่อนเปลี่ยน schema) — ยังไม่ทำรอบนี้

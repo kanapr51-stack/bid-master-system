@@ -177,22 +177,33 @@ def main():
     assert r == {"ok": True, "count": 0, "messages": []}, r
 
     # ── Critical#1: limit ต้อง bound งานหนักจริง (format_notification calls) ไม่ใช่แค่ response size ──
+    # ── N+216: skip_intel=True ต้องกัน cgd_intel.intel_context() ไม่ให้ถูกเรียกเลยแม้แต่ครั้งเดียว
+    # (วัดจริงบน prod: 44.8s สำหรับ 30 ข้อความ D0 เพราะ LIKE scan ~2M แถว cgd_winners ไม่มี index) ──
     N, LIMIT = 12, 5
     seed_perf(N)
     import Sebastian_LINE_Sender as sender_mod
+    import cgd_intel as ci_mod
     orig_fn = sender_mod.format_notification
+    orig_intel = ci_mod.intel_context
     calls = {"n": 0}
+    intel_calls = {"n": 0}
     def _counting(*a, **kw):
         calls["n"] += 1
         return orig_fn(*a, **kw)
+    def _counting_intel(*a, **kw):
+        intel_calls["n"] += 1
+        return orig_intel(*a, **kw)
     sender_mod.format_notification = _counting
+    ci_mod.intel_context = _counting_intel
     try:
         rp = bms_api.portal_sebastian_feed_json(line_user_id='UPERF', x_bms_secret='t', limit=LIMIT)
     finally:
         sender_mod.format_notification = orig_fn
+        ci_mod.intel_context = orig_intel
     assert rp["count"] == N, rp["count"]           # total dedup ก่อน slice ยังถูกต้อง (N โครงการ)
     assert len(rp["messages"]) == LIMIT, len(rp["messages"])
-    assert calls["n"] == LIMIT, calls["n"]          # ← หัวใจของ fix: เรียก formatter แค่ LIMIT ครั้ง ไม่ใช่ N ครั้ง
+    assert calls["n"] == LIMIT, calls["n"]          # ← หัวใจของ fix เดิม: เรียก formatter แค่ LIMIT ครั้ง ไม่ใช่ N ครั้ง
+    assert intel_calls["n"] == 0, intel_calls["n"]  # ← หัวใจของ hotfix N+216: ไม่เรียก cgd_intel เลยแม้แต่ครั้งเดียว
     # ได้ LIMIT โครงการ "ใหม่สุด" จริง (PERF011..PERF007 ตาม created_at DESC ก่อน reverse)
     got = [m["project_id"] for m in rp["messages"]]
     assert got == [f"PERF{i:03d}" for i in range(N - LIMIT, N)], got

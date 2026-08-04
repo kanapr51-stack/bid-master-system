@@ -236,7 +236,8 @@ def format_notification(project_id: str, province: str = "",
                          bid_submit_date: str = "", bid_submit_time: str = "",
                          is_backfill: bool = False,
                          source_stage: str = "api_enriched",
-                         record_prediction: bool = True) -> str:
+                         record_prediction: bool = True,
+                         skip_intel: bool = False) -> str:
     """
     v2 Mobile-first format — optimize สำหรับ 3-second decision scan
     ลำดับ: geography → project → money → agency → DEADLINE → timeline → announced
@@ -246,8 +247,10 @@ def format_notification(project_id: str, province: str = "",
 
     # competitive intel: resolve ทุกงาน D0 (เปิดยื่นซอง) เพื่อใช้ ต./อ. ในบรรทัด 📍 + บล็อก intel
     # — ไม่ผูกกับการติดตาม (กดติดตามตอน D0 ก็เห็น intel; อุด follow-timing gap)
+    # skip_intel=True: ข้าม cgd_intel ทั้งก้อน (LIKE scan ~2M แถวใน cgd_winners ไม่มี index ใช้ได้ —
+    # แพงมากถ้าเรียกซ้ำหลายสิบครั้งในคำขอเดียว เช่น Sebastian chat feed reconstruct ข้อความเก่า)
     intel_ctx = None
-    if announce_type == "D0":
+    if announce_type == "D0" and not skip_intel:
         try:
             import cgd_intel
             intel_ctx = cgd_intel.intel_context(province, project_name, dept_name, project_id, budget)

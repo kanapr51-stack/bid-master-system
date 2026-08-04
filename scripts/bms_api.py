@@ -2142,6 +2142,8 @@ def portal_sebastian_feed_json(
                     is_backfill=bool(r["is_backfill"]),
                     source_stage=src_stage,
                     record_prediction=False,
+                    skip_intel=True,  # กัน cgd_intel LIKE-scan (2M แถว cgd_winners) เรียกซ้ำสูงสุด limit
+                                       # ครั้งต่อคำขอเดียว — วัดจริง 44.8s สำหรับ 30 ข้อความ (N+216)
                 )
                 message = _plain_text_body(text, full_name)
         except Exception as e:

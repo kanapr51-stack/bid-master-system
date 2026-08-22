@@ -6,7 +6,7 @@ import { type BusinessClass, TIERS } from '@/lib/portal-data';
 import type { PortalProfile } from '@/lib/portal-data';
 import type { JobGroups, JobStage, TrackedJob, DiscoverGroups, DiscoverJob } from '@/lib/portal-jobs';
 import { TopBar, Chip, Icons, Diamond } from '../_ui';
-import PushNotifyCard from '@/components/PushNotifyCard';
+import PushNotifyBadge from '@/components/PushNotifyBadge';
 
 // Sebastian Chat ยังไม่มีของจริง (LINE เป็นเมนู keyword, ไม่มีตัวนับ chatUsed)
 // — ซ่อนการ์ด quota จนกว่าจะสร้างเสร็จ ค่อยเปิด flag นี้
@@ -327,6 +327,7 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
       <TopBar
         title="Company World"
         subtitle={profile.companyName}
+        titleExtra={<PushNotifyBadge />}
         right={
           <>
             <Link href="/portal/sebastian" className="p-icon-btn" title="Sebastian"><Icons.Bot size={18} /></Link>
@@ -336,8 +337,6 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
       />
 
       <div className="p-page p-page-topbar">
-        <PushNotifyCard />
-
         {/* Sebastian quota — ซ่อนจนกว่าฟีเจอร์แชทจะมีจริง (SEBASTIAN_CHAT_LIVE) */}
         {SEBASTIAN_CHAT_LIVE && (
           <div className="p-card" style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 14 }}>

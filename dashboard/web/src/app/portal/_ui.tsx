@@ -82,16 +82,20 @@ interface TopBarProps {
   left?: ReactNode;
   right?: ReactNode;
   onLeft?: () => void;
+  titleExtra?: ReactNode;
 }
 
-export function TopBar({ title, subtitle, left, right, onLeft }: TopBarProps) {
+export function TopBar({ title, subtitle, left, right, onLeft, titleExtra }: TopBarProps) {
   return (
     <div className="p-topbar">
       {(left || onLeft) && (
         <button className="p-icon-btn" onClick={onLeft}>{left ?? <Icons.ChevronLeft size={20} />}</button>
       )}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div className="p-display" style={{ fontSize: 20, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+          <div className="p-display" style={{ fontSize: 20, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</div>
+          {titleExtra}
+        </div>
         {subtitle && <div className="p-fg-dim p-mono" style={{ fontSize: 10.5, letterSpacing: '0.04em', marginTop: 1 }}>{subtitle}</div>}
       </div>
       {right && <div style={{ display: 'flex', gap: 4 }}>{right}</div>}

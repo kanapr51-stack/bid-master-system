@@ -1,7 +1,7 @@
 'use client';
 /**
  * ขั้นตอนสุดท้ายของ onboarding — ขอ permission web push จริง หรือกด "ข้ามไปก่อน"
- * โค้ดขอ permission/subscribe เหมือน PushNotifyCard.tsx (การ์ดเดิมในหน้า world ที่ทำหน้าที่
+ * โค้ดขอ permission/subscribe เหมือน PushNotifyBadge.tsx (ไอคอนสถานะในหน้า world ที่ทำหน้าที่
  * เป็นตัวเตือนถ้าข้าม/ปฏิเสธตรงนี้) — spec: 2026-07-30-portal-onboarding-flow-design.md
  */
 import { useCallback, useEffect, useState } from 'react';

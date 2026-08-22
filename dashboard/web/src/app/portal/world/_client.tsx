@@ -33,33 +33,56 @@ function QuotaRing({ pct, unlimited }: { pct: number; unlimited: boolean }) {
 
 // ── Summary Card ──────────────────────────────────────────────────────────────
 
-function SumCard({ icon, label, value, unit, accent, href, onClick, active, badge }: { icon: React.ReactNode; label: string; value: number | string; unit: string; accent?: boolean; href?: string; onClick?: () => void; active?: boolean; badge?: string }) {
-  const lit = accent || active;
-  const content = (
-    <div className="p-card" onClick={onClick} style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 8, padding: 16, borderColor: lit ? 'var(--accent-deep)' : 'var(--border)', background: lit ? 'var(--gold-glow)' : 'var(--surface)', width: '100%', cursor: href || onClick ? 'pointer' : 'default' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: lit ? 'var(--accent)' : 'var(--fg-mute)' }}>
-        {icon}
-        {href && !accent && <Icons.ChevronRight size={14} />}
-        {onClick && (active ? <Icons.Check size={14} /> : <Icons.ChevronRight size={14} />)}
-      </div>
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div className="p-fg-mute p-mono" style={{ fontSize: 11, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{label}</div>
-          {badge && (
-            <span className="p-mono" style={{ fontSize: 10, fontWeight: 600, color: 'var(--accent)', background: 'var(--gold-glow)', border: '1px solid var(--accent-deep)', borderRadius: 999, padding: '1px 6px', lineHeight: 1.5 }}>
-              {badge}
-            </span>
-          )}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 4 }}>
-          <span className="p-display" style={{ fontSize: typeof value === 'string' ? 22 : 30, color: accent ? 'var(--accent)' : 'inherit', lineHeight: 1 }}>{value}</span>
-          <span className="p-fg-dim" style={{ fontSize: 12 }}>{unit}</span>
-        </div>
-      </div>
+interface TabSegment {
+  key: string;
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  active?: boolean;
+  badge?: string;
+  href?: string;
+  onClick?: () => void;
+}
+
+function SummaryTabBar({ starredCount, starActive, onStarClick, trackedCount, allCount, allNewToday }: {
+  starredCount: number; starActive: boolean; onStarClick: () => void;
+  trackedCount: number; allCount: number; allNewToday: number;
+}) {
+  const segments: TabSegment[] = [];
+  if (starredCount > 0) {
+    segments.push({ key: 'starred', icon: <span style={{ fontSize: 13 }}>★</span>, label: 'งานที่สนใจ', value: starredCount, active: starActive, onClick: onStarClick });
+  }
+  segments.push({ key: 'tracked', icon: <Icons.Bell size={13} />, label: 'งานที่ติดตาม', value: trackedCount, active: true });
+  if (allCount > 0) {
+    segments.push({ key: 'all', icon: <Icons.Doc size={13} />, label: 'งานทั้งหมด', value: allCount, href: '/portal/jobs', badge: allNewToday > 0 ? `New+${allNewToday}` : undefined });
+  }
+
+  return (
+    <div className="p-card" style={{ display: 'flex', padding: 0, overflow: 'hidden' }}>
+      {segments.map((seg, i) => {
+        const lit = seg.active;
+        const inner = (
+          <div style={{
+            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, minWidth: 0,
+            padding: '11px 6px', borderRight: i < segments.length - 1 ? '1px solid var(--border)' : 'none',
+            background: lit ? 'var(--gold-glow)' : 'transparent', cursor: seg.href || seg.onClick ? 'pointer' : 'default',
+          }}>
+            <span style={{ display: 'flex', color: lit ? 'var(--accent)' : 'var(--fg-mute)' }}>{seg.icon}</span>
+            <span className="p-display" style={{ fontSize: 17, color: lit ? 'var(--accent)' : 'inherit', lineHeight: 1 }}>{seg.value}</span>
+            <span className="p-fg-mute p-mono" style={{ fontSize: 10.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{seg.label}</span>
+            {seg.badge && (
+              <span className="p-mono" style={{ fontSize: 9.5, fontWeight: 600, color: 'var(--accent)', background: 'var(--gold-glow)', border: '1px solid var(--accent-deep)', borderRadius: 999, padding: '0 5px', lineHeight: 1.5 }}>
+                {seg.badge}
+              </span>
+            )}
+          </div>
+        );
+        if (seg.href) return <Link key={seg.key} href={seg.href} style={{ textDecoration: 'none', color: 'inherit', flex: 1, display: 'flex', minWidth: 0 }}>{inner}</Link>;
+        if (seg.onClick) return <button key={seg.key} onClick={seg.onClick} style={{ all: 'unset', flex: 1, display: 'flex', minWidth: 0 }}>{inner}</button>;
+        return <div key={seg.key} style={{ flex: 1, display: 'flex', minWidth: 0 }}>{inner}</div>;
+      })}
     </div>
   );
-  if (href) return <Link href={href} style={{ textDecoration: 'none', color: 'inherit' }}>{content}</Link>;
-  return content;
 }
 
 // ── helpers ─────────────────────────────────────────────────────────────────
@@ -352,18 +375,15 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
           </div>
         )}
 
-        {/* Summary grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          <SumCard icon={<Icons.Bell size={16} />} label="งานที่ติดตาม" value={allJobs.length} unit="งาน" accent />
-          {allNotifiedCount > 0 && (
-            <SumCard icon={<Icons.Doc size={16} />} label="งานทั้งหมด" value={allNotifiedCount} unit="งาน" href="/portal/jobs"
-              badge={allNotifiedNewToday > 0 ? `New+${allNotifiedNewToday}` : undefined} />
-          )}
-          {starred.size > 0 && (
-            <SumCard icon={<span style={{ fontSize: 16 }}>★</span>} label="งานที่สนใจ" value={starred.size} unit="งาน"
-              active={filterOn} onClick={() => setStarOnly(v => !v)} />
-          )}
-        </div>
+        {/* Summary tab bar — สนใจ ซ้ายสุด · ติดตาม กลาง · ทั้งหมด ขวาสุด (N+220) */}
+        <SummaryTabBar
+          starredCount={starred.size}
+          starActive={filterOn}
+          onStarClick={() => setStarOnly(v => !v)}
+          trackedCount={allJobs.length}
+          allCount={allNotifiedCount}
+          allNewToday={allNotifiedNewToday}
+        />
 
         {/* Tracked jobs by stage */}
         <div style={{ marginTop: 22 }}>

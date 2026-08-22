@@ -1667,7 +1667,10 @@ async def portal_discover_jobs(
                     "location": location, "province": r["province"] or "",
                     "deadline": deadline, "deadline_time": deadline_time,
                     "budget": r["budget"] or 0, "matched_keywords": hits,
-                    "starred": pid in starred_ids}
+                    "starred": pid in starred_ids,
+                    # N+222: ให้เว็บกรอง "งานใหม่ที่เพิ่งค้นพบวันนี้" ได้ (ก่อนหน้านี้ไม่ส่ง
+                    # ทำให้ Part 1 ของ "งานใหม่วันนี้" โชว์ backlog ทั้งหมดที่ยังไม่ follow แทน)
+                    "first_seen_at": r["first_seen_at"] or ""}
             if ann == "D0":
                 if deadline and deadline >= today:
                     card["stage"] = "biddable"

@@ -491,8 +491,14 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
 
         {/* Discovery — แท็บ "สนใจ" (กรองดาว) หรือดีฟอลต์ (ไม่เลือกแท็บ, เป็น Part 1 ของ "งานใหม่วันนี้") (N+221) */}
         {(view === null || view === 'starred') && (() => {
-          const discoverAll = [...discover.biddable, ...discover.planning]
+          const discoverBase = [...discover.biddable, ...discover.planning]
             .filter(j => !filterOn || starred.has(j.project_id));
+          // N+222: Part 1 ("งานใหม่ที่เพิ่งค้นพบ") ต้องเป็นงานที่ระบบเพิ่งเจอ "วันนี้" จริงๆ
+          // (เดิมโชว์ backlog ทั้งหมดที่ยังไม่ follow — เยอะเกินจริง คุณกัญจน์ทักท้วง N+222)
+          // แท็บ "สนใจ" ไม่กรองวันที่ (ดาวเก่าแค่ไหนก็ต้องเห็น)
+          const discoverAll = view === null
+            ? discoverBase.filter(j => (j.first_seen_at || '').slice(0, 10) === todayBkk)
+            : discoverBase;
           // N+198: ไม่มี keyword = เห็นทั้งจังหวัด — มีพื้นที่ก็พอ ไม่บังคับคำค้น
           const hasPrefs = provincesCount > 0;
           return (

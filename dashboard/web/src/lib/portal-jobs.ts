@@ -50,6 +50,7 @@ export interface DiscoverJob {
   matched_keywords: string[];
   starred: boolean;
   stage: "biddable" | "planning";
+  first_seen_at: string; // วันที่ระบบสแกนเจอโปรเจกต์นี้ครั้งแรก — ใช้กรอง "เพิ่งค้นพบวันนี้"
 }
 
 export interface DiscoverGroups {

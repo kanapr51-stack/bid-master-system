@@ -74,6 +74,8 @@ async def main():
     j = next(x for x in r["jobs"]["biddable"] if x["project_id"] == 'D_MATCH')
     assert j["matched_keywords"] == ["คอนกรีต"] and j["stage"] == "biddable" and j["budget"] == 5000000, j
     assert j["starred"] is True, j
+    # N+222: first_seen_at ต้องส่งกลับมาด้วย — เว็บใช้กรอง "งานใหม่ที่เพิ่งค้นพบวันนี้"
+    assert j["first_seen_at"] == FRESH, j
     p = next(x for x in r["jobs"]["planning"] if x["project_id"] == 'B_FRESH')
     assert p["starred"] is False, p
 

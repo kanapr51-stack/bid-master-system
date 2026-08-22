@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { type BusinessClass, TIERS } from '@/lib/portal-data';
 import type { PortalProfile } from '@/lib/portal-data';
 import type { JobGroups, JobStage, TrackedJob, DiscoverGroups, DiscoverJob } from '@/lib/portal-jobs';
+import type { SentJob } from '@/lib/portal-all-jobs';
 import { TopBar, Chip, Icons, Diamond } from '../_ui';
 import PushNotifyBadge from '@/components/PushNotifyBadge';
 
@@ -44,15 +45,15 @@ interface TabSegment {
   onClick?: () => void;
 }
 
-function SummaryTabBar({ starredCount, starActive, onStarClick, trackedCount, allCount, allNewToday }: {
-  starredCount: number; starActive: boolean; onStarClick: () => void;
-  trackedCount: number; allCount: number; allNewToday: number;
+function SummaryTabBar({ starredCount, trackedCount, allCount, allNewToday, view, onSelect }: {
+  starredCount: number; trackedCount: number; allCount: number; allNewToday: number;
+  view: 'starred' | 'tracked' | null; onSelect: (v: 'starred' | 'tracked') => void;
 }) {
   const segments: TabSegment[] = [];
   if (starredCount > 0) {
-    segments.push({ key: 'starred', icon: <span style={{ fontSize: 13 }}>★</span>, label: 'งานที่สนใจ', value: starredCount, active: starActive, onClick: onStarClick });
+    segments.push({ key: 'starred', icon: <span style={{ fontSize: 13 }}>★</span>, label: 'งานที่สนใจ', value: starredCount, active: view === 'starred', onClick: () => onSelect('starred') });
   }
-  segments.push({ key: 'tracked', icon: <Icons.Bell size={13} />, label: 'งานที่ติดตาม', value: trackedCount, active: true });
+  segments.push({ key: 'tracked', icon: <Icons.Bell size={13} />, label: 'งานที่ติดตาม', value: trackedCount, active: view === 'tracked', onClick: () => onSelect('tracked') });
   if (allCount > 0) {
     segments.push({ key: 'all', icon: <Icons.Doc size={13} />, label: 'งานทั้งหมด', value: allCount, href: '/portal/jobs', badge: allNewToday > 0 ? `New+${allNewToday}` : undefined });
   }
@@ -242,6 +243,47 @@ function DiscoverCard({ job, following, onFollow, starred, onStar, detailHref }:
   );
 }
 
+// ── Movement Job Card (N+221) ────────────────────────────────────────────────
+
+function MovementJobCard({ job, starred, onStar, detailHref }: {
+  job: SentJob; starred: boolean; onStar: () => void; detailHref?: string;
+}) {
+  const meta = STAGE_META.find(s => s.key === job.stage);
+  const title = <div className="p-display" style={{ fontSize: 15, lineHeight: 1.3 }}>{job.name}</div>;
+  return (
+    <div className="p-card" style={{ padding: 14 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          {job.province && <div className="p-mono p-fg-mute" style={{ fontSize: 11, letterSpacing: '0.04em', marginBottom: 4 }}>{job.province}</div>}
+          {detailHref ? <Link href={detailHref} style={{ textDecoration: 'none', color: 'inherit' }}>{title}</Link> : title}
+        </div>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+          <button onClick={e => { e.stopPropagation(); onStar(); }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: starred ? 'var(--accent)' : 'var(--fg-dim)', fontSize: 18, padding: '0 2px', lineHeight: 1 }}>
+            {starred ? '★' : '☆'}
+          </button>
+          {meta && <Chip tone="gold">{meta.icon} {meta.label}</Chip>}
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 16, marginTop: 10, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+        {job.budget > 0 && (
+          <div>
+            <div className="p-mono p-fg-dim" style={{ fontSize: 10, letterSpacing: '0.08em' }}>ราคากลาง</div>
+            <div className="p-serif" style={{ fontSize: 16, fontWeight: 500 }}>
+              <span className="p-fg-accent">{fmtBaht(job.budget)}</span> <span className="p-fg-dim" style={{ fontSize: 11 }}>บาท</span>
+            </div>
+          </div>
+        )}
+        {detailHref && (
+          <Link href={detailHref} className="p-fg-accent" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12.5, textDecoration: 'none' }}>
+            ดูรายละเอียด · คู่แข่ง · โอกาสชนะ <Icons.ChevronRight size={12} />
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── World Client ──────────────────────────────────────────────────────────────
 
 interface WorldClientProps {
@@ -257,9 +299,11 @@ interface WorldClientProps {
   discoverGroups: DiscoverGroups;
   allNotifiedCount: number;
   allNotifiedNewToday: number;
+  allNotifiedJobs: SentJob[];
+  todayBkk: string;
 }
 
-export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, expiryLabel, classes, subscribedProvinces, jobGroups, discoverGroups, allNotifiedCount, allNotifiedNewToday }: WorldClientProps) {
+export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, expiryLabel, classes, subscribedProvinces, jobGroups, discoverGroups, allNotifiedCount, allNotifiedNewToday, allNotifiedJobs, todayBkk }: WorldClientProps) {
   // หน้า detail ธีม Board B ในเว็บเดียวกัน (เดิมเด้งไปหน้า engine ธีม A ผ่าน board-token)
   const detailHrefOf = (projectId: string) => `/portal/job/${encodeURIComponent(projectId)}`;
   const allJobs = STAGE_META.flatMap(s => jobGroups[s.key]);
@@ -315,9 +359,11 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
     }
   };
 
-  // กดการ์ด "★ งานที่สนใจ" = กรองบอร์ดเหลือเฉพาะงานติดดาว (กดซ้ำ = เลิกกรอง)
-  const [starOnly, setStarOnly] = useState(false);
-  const filterOn = starOnly && starred.size > 0;
+  // แท็บ "สนใจ"/"ติดตาม" เลือกได้ทีละอย่าง (radio) — ไม่เลือกเลย = ดีฟอลต์ "งานใหม่วันนี้"
+  // กดแท็บที่เลือกอยู่ซ้ำ = กลับดีฟอลต์ (N+221)
+  const [view, setView] = useState<'starred' | 'tracked' | null>(null);
+  const selectView = (v: 'starred' | 'tracked') => setView(prev => (prev === v ? null : v));
+  const filterOn = view === 'starred' && starred.size > 0;
 
   const handleFollow = async (projectId: string) => {
     setFollowing(prev => new Set(prev).add(projectId));
@@ -341,6 +387,9 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
   const tier = TIERS.find(t => t.id === tierId) || TIERS[0];
   // N+198.1: พื้นที่ครอบคลุม = subscription จริง (แจ้งเตือนตามนี้) union กับที่ตั้งใน classes
   const provincesCount = new Set([...subscribedProvinces, ...classes.flatMap(c => c.geo.provinces)]).size;
+  // N+221: "งานที่มีการเคลื่อนไหว" = งานที่ติดตามอยู่แล้ว (followed) ที่สแกน/จับคู่ซ้ำวันนี้
+  // (สเตตขยับ เช่น pre→bidding, bidding→prelim, prelim→won) — ไม่ต้องมี field ใหม่ฝั่ง backend
+  const movementJobs = allNotifiedJobs.filter(j => j.followed && (j.sent_at || '').slice(0, 10) === todayBkk);
   const isUnlimited = chatQuota === -1;
   const quotaPct = isUnlimited ? 100 : Math.round(((chatQuota - chatUsed) / chatQuota) * 100);
 
@@ -375,117 +424,161 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
           </div>
         )}
 
-        {/* Summary tab bar — สนใจ ซ้ายสุด · ติดตาม กลาง · ทั้งหมด ขวาสุด (N+220) */}
+        {/* Summary tab bar — สนใจ ซ้ายสุด · ติดตาม กลาง · ทั้งหมด ขวาสุด, เลือกได้ทีละอย่าง (N+220/N+221) */}
         <SummaryTabBar
           starredCount={starred.size}
-          starActive={filterOn}
-          onStarClick={() => setStarOnly(v => !v)}
           trackedCount={allJobs.length}
           allCount={allNotifiedCount}
           allNewToday={allNotifiedNewToday}
+          view={view}
+          onSelect={selectView}
         />
 
-        {/* Tracked jobs by stage */}
-        <div style={{ marginTop: 22 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 10 }}>
-            <div>
-              <div className="p-smallcaps p-fg-mute">งานที่ท่านติดตาม</div>
-              <div className="p-display" style={{ fontSize: 20, marginTop: 2 }}>Tracked Bids</div>
+        {/* Tracked jobs by stage — เฉพาะแท็บ "ติดตาม" (ครบ) หรือ "สนใจ" (กรองดาว) (N+221) */}
+        {(view === 'tracked' || view === 'starred') && (
+          <div style={{ marginTop: 22 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div>
+                <div className="p-smallcaps p-fg-mute">งานที่ท่านติดตาม</div>
+                <div className="p-display" style={{ fontSize: 20, marginTop: 2 }}>Tracked Bids</div>
+              </div>
+              <Chip tone="gold" icon={<Diamond size={5} />}>
+                {filterOn ? `★ ${allJobs.filter(j => starred.has(j.project_id)).length} / ${allJobs.length} งาน` : `${allJobs.length} งาน`}
+              </Chip>
             </div>
-            <Chip tone="gold" icon={<Diamond size={5} />}>
-              {filterOn ? `★ ${allJobs.filter(j => starred.has(j.project_id)).length} / ${allJobs.length} งาน` : `${allJobs.length} งาน`}
-            </Chip>
-          </div>
 
-          {allJobs.length === 0 ? (
-            <div className="p-card" style={{ textAlign: 'center', padding: 28 }}>
-              <div className="p-serif p-fg-mute" style={{ fontStyle: 'italic', fontSize: 14 }}>
-                ยังไม่มีงานที่ติดตาม — ระบบจะเพิ่มให้เมื่อเจองานตรงพื้นที่/หมวดของท่านครับ
-              </div>
-            </div>
-          ) : filterOn && allJobs.every(j => !starred.has(j.project_id)) ? (
-            <div className="p-card" style={{ textAlign: 'center', padding: 22 }}>
-              <div className="p-serif p-fg-mute" style={{ fontStyle: 'italic', fontSize: 13.5 }}>
-                ไม่มีงานติดดาวในรายการติดตาม — ดาวของท่านอยู่ในส่วน &quot;งานใหม่ที่แมตช์&quot; ด้านล่างครับ
-              </div>
-            </div>
-          ) : (
-            STAGE_META.map(({ key, label, icon }) => {
-              const jobs = (jobGroups[key] || []).filter(j => !filterOn || starred.has(j.project_id));
-              if (jobs.length === 0) return null;
-              return (
-                <div key={key} style={{ marginBottom: 18 }}>
-                  <div className="p-label" style={{ margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span>{icon}</span>{label} <span className="p-fg-dim">({jobs.length})</span>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {jobs.map(job => (
-                      <TrackedJobCard
-                        key={job.project_id}
-                        job={job}
-                        stage={key}
-                        starred={starred.has(job.project_id)}
-                        onStar={() => toggleStar(job.project_id)}
-                        detailHref={detailHrefOf(job.project_id)}
-                        followed={!unfollowed.has(job.project_id)}
-                        onToggleFollow={() => handleTrackedToggle(job.project_id)}
-                      />
-                    ))}
-                  </div>
+            {allJobs.length === 0 ? (
+              <div className="p-card" style={{ textAlign: 'center', padding: 28 }}>
+                <div className="p-serif p-fg-mute" style={{ fontStyle: 'italic', fontSize: 14 }}>
+                  ยังไม่มีงานที่ติดตาม — ระบบจะเพิ่มให้เมื่อเจองานตรงพื้นที่/หมวดของท่านครับ
                 </div>
-              );
-            })
-          )}
-        </div>
+              </div>
+            ) : filterOn && allJobs.every(j => !starred.has(j.project_id)) ? (
+              <div className="p-card" style={{ textAlign: 'center', padding: 22 }}>
+                <div className="p-serif p-fg-mute" style={{ fontStyle: 'italic', fontSize: 13.5 }}>
+                  ไม่มีงานติดดาวในรายการติดตาม — ดาวของท่านอยู่ในส่วน &quot;งานใหม่ที่แมตช์&quot; ด้านล่างครับ
+                </div>
+              </div>
+            ) : (
+              STAGE_META.map(({ key, label, icon }) => {
+                const jobs = (jobGroups[key] || []).filter(j => !filterOn || starred.has(j.project_id));
+                if (jobs.length === 0) return null;
+                return (
+                  <div key={key} style={{ marginBottom: 18 }}>
+                    <div className="p-label" style={{ margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span>{icon}</span>{label} <span className="p-fg-dim">({jobs.length})</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {jobs.map(job => (
+                        <TrackedJobCard
+                          key={job.project_id}
+                          job={job}
+                          stage={key}
+                          starred={starred.has(job.project_id)}
+                          onStar={() => toggleStar(job.project_id)}
+                          detailHref={detailHrefOf(job.project_id)}
+                          followed={!unfollowed.has(job.project_id)}
+                          onToggleFollow={() => handleTrackedToggle(job.project_id)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
 
-        {/* Discovery: งานใหม่ที่แมตช์ */}
-        {(() => {
+        {/* Discovery — แท็บ "สนใจ" (กรองดาว) หรือดีฟอลต์ (ไม่เลือกแท็บ, เป็น Part 1 ของ "งานใหม่วันนี้") (N+221) */}
+        {(view === null || view === 'starred') && (() => {
           const discoverAll = [...discover.biddable, ...discover.planning]
             .filter(j => !filterOn || starred.has(j.project_id));
           // N+198: ไม่มี keyword = เห็นทั้งจังหวัด — มีพื้นที่ก็พอ ไม่บังคับคำค้น
           const hasPrefs = provincesCount > 0;
           return (
-            <div style={{ marginTop: 26 }}>
-              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 10 }}>
-                <div>
-                  <div className="p-smallcaps p-fg-mute">งานใหม่ที่แมตช์</div>
-                  <div className="p-display" style={{ fontSize: 20, marginTop: 2 }}>✨ Matched For You</div>
-                </div>
-                {discoverAll.length > 0 && <Chip tone="gold" icon={<Diamond size={5} />}>{discoverAll.length} งาน</Chip>}
-              </div>
-              {!hasPrefs ? (
-                <div className="p-card" style={{ textAlign: 'center', padding: 28 }}>
-                  <div className="p-serif p-fg-mute" style={{ fontStyle: 'italic', fontSize: 14 }}>
-                    ตั้งค่าพื้นที่ในหน้า &quot;ตั้งค่า&quot; เพื่อให้ระบบหางานที่ตรงให้ท่านครับ
-                  </div>
-                  <Link href="/portal/settings"><button className="p-btn p-btn-primary" style={{ marginTop: 12, height: 34, padding: '0 16px', fontSize: 13 }}>ไปตั้งค่า</button></Link>
-                </div>
-              ) : discoverAll.length === 0 ? (
-                <div className="p-card" style={{ textAlign: 'center', padding: 28 }}>
-                  <div className="p-serif p-fg-mute" style={{ fontStyle: 'italic', fontSize: 14 }}>
-                    {filterOn
-                      ? 'ไม่มีงานติดดาวในส่วนนี้ครับ'
-                      : 'ยังไม่มีงานใหม่ที่ตรงเกณฑ์วันนี้ — ระบบจะอัปเดตให้เมื่อมีงานเข้าครับ'}
-                  </div>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {discoverAll.map(job => (
-                    <DiscoverCard
-                      key={job.project_id}
-                      job={job}
-                      following={following.has(job.project_id)}
-                      onFollow={() => handleFollow(job.project_id)}
-                      starred={starred.has(job.project_id)}
-                      onStar={() => toggleStar(job.project_id)}
-                      detailHref={detailHrefOf(job.project_id)}
-                    />
-                  ))}
+            <>
+              {view === null && (
+                <div style={{ marginTop: 22, marginBottom: 4 }}>
+                  <div className="p-smallcaps p-fg-mute">วันนี้</div>
+                  <div className="p-display" style={{ fontSize: 20, marginTop: 2 }}>📅 งานใหม่วันนี้</div>
                 </div>
               )}
-            </div>
+              <div style={{ marginTop: view === null ? 14 : 26 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <div>
+                    <div className="p-smallcaps p-fg-mute">{view === null ? 'พาร์ท 1' : 'งานใหม่ที่แมตช์'}</div>
+                    <div className="p-display" style={{ fontSize: 20, marginTop: 2 }}>
+                      {view === null ? '✨ งานใหม่ที่เพิ่งค้นพบ' : '✨ Matched For You'}
+                    </div>
+                  </div>
+                  {discoverAll.length > 0 && <Chip tone="gold" icon={<Diamond size={5} />}>{discoverAll.length} งาน</Chip>}
+                </div>
+                {!hasPrefs ? (
+                  <div className="p-card" style={{ textAlign: 'center', padding: 28 }}>
+                    <div className="p-serif p-fg-mute" style={{ fontStyle: 'italic', fontSize: 14 }}>
+                      ตั้งค่าพื้นที่ในหน้า &quot;ตั้งค่า&quot; เพื่อให้ระบบหางานที่ตรงให้ท่านครับ
+                    </div>
+                    <Link href="/portal/settings"><button className="p-btn p-btn-primary" style={{ marginTop: 12, height: 34, padding: '0 16px', fontSize: 13 }}>ไปตั้งค่า</button></Link>
+                  </div>
+                ) : discoverAll.length === 0 ? (
+                  <div className="p-card" style={{ textAlign: 'center', padding: 28 }}>
+                    <div className="p-serif p-fg-mute" style={{ fontStyle: 'italic', fontSize: 14 }}>
+                      {filterOn
+                        ? 'ไม่มีงานติดดาวในส่วนนี้ครับ'
+                        : 'ยังไม่มีงานใหม่ที่ตรงเกณฑ์วันนี้ — ระบบจะอัปเดตให้เมื่อมีงานเข้าครับ'}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {discoverAll.map(job => (
+                      <DiscoverCard
+                        key={job.project_id}
+                        job={job}
+                        following={following.has(job.project_id)}
+                        onFollow={() => handleFollow(job.project_id)}
+                        starred={starred.has(job.project_id)}
+                        onStar={() => toggleStar(job.project_id)}
+                        detailHref={detailHrefOf(job.project_id)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
           );
         })()}
+
+        {/* Movement — Part 2 ของ "งานใหม่วันนี้": งานที่ติดตามอยู่แล้วแต่สเตตขยับวันนี้ (N+221) */}
+        {view === null && (
+          <div style={{ marginTop: 26 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div>
+                <div className="p-smallcaps p-fg-mute">พาร์ท 2</div>
+                <div className="p-display" style={{ fontSize: 20, marginTop: 2 }}>🔄 งานที่มีการเคลื่อนไหว</div>
+              </div>
+              {movementJobs.length > 0 && <Chip tone="gold" icon={<Diamond size={5} />}>{movementJobs.length} งาน</Chip>}
+            </div>
+            {movementJobs.length === 0 ? (
+              <div className="p-card" style={{ textAlign: 'center', padding: 28 }}>
+                <div className="p-serif p-fg-mute" style={{ fontStyle: 'italic', fontSize: 14 }}>
+                  ยังไม่มีงานที่เคลื่อนไหววันนี้ — จะขึ้นให้เมื่อมีงานที่ท่านติดตามเปลี่ยนสถานะครับ
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {movementJobs.map(job => (
+                  <MovementJobCard
+                    key={job.project_id}
+                    job={job}
+                    starred={starred.has(job.project_id)}
+                    onStar={() => toggleStar(job.project_id)}
+                    detailHref={detailHrefOf(job.project_id)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {tier.id === 'trial' && (
           <div style={{ marginTop: 18 }}>

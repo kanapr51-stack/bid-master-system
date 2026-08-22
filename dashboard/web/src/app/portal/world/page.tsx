@@ -4,7 +4,7 @@ import { parseSessionCookie, COOKIE_NAME } from '@/lib/session';
 import { requireOnboarding } from '@/lib/onboarding';
 import { parsePortalNotes, getTierId, getTier } from '@/lib/portal-data';
 import { getPortalJobs, getDiscoverJobs, type JobGroups, type DiscoverGroups } from '@/lib/portal-jobs';
-import { getAllJobs } from '@/lib/portal-all-jobs';
+import { getAllJobs, type SentJob } from '@/lib/portal-all-jobs';
 import { WorldClient } from './_client';
 
 export const dynamic = 'force-dynamic';
@@ -36,11 +36,18 @@ export default async function WorldPage() {
 
   let allNotifiedCount = 0;
   let allNotifiedNewToday = 0;
+  let allNotifiedJobs: SentJob[] = [];
   try {
-    const allJobs = await getAllJobs(session.lineUserId, 1); // เอาแค่ count/newToday ให้การ์ด (jobs limit=1 ไม่กระทบทั้งสอง)
-    allNotifiedCount = allJobs.count;
-    allNotifiedNewToday = allJobs.newToday;
+    // N+221: ต้องดึง jobs[] จริงด้วย (ไม่ใช่แค่ count) — ใช้หา "งานที่มีการเคลื่อนไหววันนี้"
+    // (followed=true + sent_at=วันนี้) สำหรับ Part 2 ของ "งานใหม่วันนี้"
+    const allJobsResult = await getAllJobs(session.lineUserId, 200);
+    allNotifiedCount = allJobsResult.count;
+    allNotifiedNewToday = allJobsResult.newToday;
+    allNotifiedJobs = allJobsResult.jobs;
   } catch { /* engine unavailable — ซ่อนการ์ดงานทั้งหมด */ }
+
+  // วันที่วันนี้ตามเขตเวลาไทย — ใช้ตัดสิน "เคลื่อนไหววันนี้" (ตรงเกณฑ์เดียวกับ new_today ฝั่ง engine)
+  const todayBkk = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' }).format(new Date());
 
   // Calculate trial days left
   let daysLeft = 30;
@@ -74,6 +81,8 @@ export default async function WorldPage() {
       discoverGroups={discoverGroups}
       allNotifiedCount={allNotifiedCount}
       allNotifiedNewToday={allNotifiedNewToday}
+      allNotifiedJobs={allNotifiedJobs}
+      todayBkk={todayBkk}
     />
   );
 }

@@ -5,6 +5,7 @@ import { requireOnboarding } from '@/lib/onboarding';
 import { parsePortalNotes, getTierId, getTier } from '@/lib/portal-data';
 import { getPortalJobs, getDiscoverJobs, type JobGroups, type DiscoverGroups } from '@/lib/portal-jobs';
 import { getAllJobs, type SentJob } from '@/lib/portal-all-jobs';
+import { getLastScanAt } from '@/lib/portal-status';
 import { WorldClient } from './_client';
 
 export const dynamic = 'force-dynamic';
@@ -49,6 +50,11 @@ export default async function WorldPage() {
   // วันที่วันนี้ตามเขตเวลาไทย — ใช้ตัดสิน "เคลื่อนไหววันนี้" (ตรงเกณฑ์เดียวกับ new_today ฝั่ง engine)
   const todayBkk = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' }).format(new Date());
 
+  let lastScanAt = '';
+  try {
+    lastScanAt = await getLastScanAt();
+  } catch { /* engine unavailable — ซ่อน badge สแกนล่าสุด */ }
+
   // Calculate trial days left
   let daysLeft = 30;
   let expiryLabel = '';
@@ -83,6 +89,7 @@ export default async function WorldPage() {
       allNotifiedNewToday={allNotifiedNewToday}
       allNotifiedJobs={allNotifiedJobs}
       todayBkk={todayBkk}
+      lastScanAt={lastScanAt}
     />
   );
 }

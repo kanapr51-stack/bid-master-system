@@ -1468,6 +1468,17 @@ def _classes_from_notes(notes_str: str) -> dict:
     return out
 
 
+@app.get("/api/portal/last-scan")
+async def portal_last_scan(x_bms_secret=Header(default=None)):
+    """เวลาระบบจดงานใหม่ล่าสุดทั่วระบบ (MAX(first_seen_at) — projects_seen) — badge เล็ก
+    ข้างปุ่มแจ้งเตือน browser หน้า /portal/world (N+223). ไม่ผูก customer เฉพาะราย."""
+    if x_bms_secret != BMS_INTERNAL_SECRET:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    with get_conn() as conn:
+        row = conn.execute("SELECT MAX(first_seen_at) AS t FROM projects_seen").fetchone()
+    return {"ok": True, "last_scan_at": (row["t"] if row else None) or ""}
+
+
 @app.get("/api/portal/customer")
 async def portal_get_customer(
     line_user_id: str = Query(...),

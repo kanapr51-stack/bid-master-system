@@ -100,6 +100,15 @@ function fmtBaht(n: number | null): string {
   return n.toLocaleString('th-TH');
 }
 
+function fmtScanTime(iso: string): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const date = d.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', timeZone: 'Asia/Bangkok' });
+  const time = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok' });
+  return `${date} ${time} น.`;
+}
+
 const STAGE_META: { key: JobStage; label: string; icon: string }[] = [
   { key: 'bidding', label: 'ยื่นซองได้', icon: '🔵' },
   { key: 'prelim', label: 'รอผล', icon: '🟡' },
@@ -301,9 +310,10 @@ interface WorldClientProps {
   allNotifiedNewToday: number;
   allNotifiedJobs: SentJob[];
   todayBkk: string;
+  lastScanAt: string;
 }
 
-export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, expiryLabel, classes, subscribedProvinces, jobGroups, discoverGroups, allNotifiedCount, allNotifiedNewToday, allNotifiedJobs, todayBkk }: WorldClientProps) {
+export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, expiryLabel, classes, subscribedProvinces, jobGroups, discoverGroups, allNotifiedCount, allNotifiedNewToday, allNotifiedJobs, todayBkk, lastScanAt }: WorldClientProps) {
   // หน้า detail ธีม Board B ในเว็บเดียวกัน (เดิมเด้งไปหน้า engine ธีม A ผ่าน board-token)
   const detailHrefOf = (projectId: string) => `/portal/job/${encodeURIComponent(projectId)}`;
   const allJobs = STAGE_META.flatMap(s => jobGroups[s.key]);
@@ -398,7 +408,16 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
       <TopBar
         title="Company World"
         subtitle={profile.companyName}
-        titleExtra={<PushNotifyBadge />}
+        titleExtra={
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+            <PushNotifyBadge />
+            {lastScanAt && (
+              <span className="p-fg-dim p-mono" style={{ fontSize: 9.5, whiteSpace: 'nowrap' }}>
+                สแกนล่าสุด {fmtScanTime(lastScanAt)}
+              </span>
+            )}
+          </span>
+        }
         right={
           <>
             <Link href="/portal/sebastian" className="p-icon-btn" title="Sebastian"><Icons.Bot size={18} /></Link>
@@ -506,13 +525,13 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
               {view === null && (
                 <div style={{ marginTop: 22, marginBottom: 4 }}>
                   <div className="p-smallcaps p-fg-mute">วันนี้</div>
-                  <div className="p-display" style={{ fontSize: 20, marginTop: 2 }}>📅 งานใหม่วันนี้</div>
+                  <div className="p-display" style={{ fontSize: 20, marginTop: 2 }}>งานใหม่วันนี้</div>
                 </div>
               )}
               <div style={{ marginTop: view === null ? 14 : 26 }}>
                 <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 10 }}>
                   <div>
-                    <div className="p-smallcaps p-fg-mute">{view === null ? 'พาร์ท 1' : 'งานใหม่ที่แมตช์'}</div>
+                    {view !== null && <div className="p-smallcaps p-fg-mute">งานใหม่ที่แมตช์</div>}
                     <div className="p-display" style={{ fontSize: 20, marginTop: 2 }}>
                       {view === null ? '✨ งานใหม่ที่เพิ่งค้นพบ' : '✨ Matched For You'}
                     </div>
@@ -559,7 +578,6 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
           <div style={{ marginTop: 26 }}>
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 10 }}>
               <div>
-                <div className="p-smallcaps p-fg-mute">พาร์ท 2</div>
                 <div className="p-display" style={{ fontSize: 20, marginTop: 2 }}>🔄 งานที่มีการเคลื่อนไหว</div>
               </div>
               {movementJobs.length > 0 && <Chip tone="gold" icon={<Diamond size={5} />}>{movementJobs.length} งาน</Chip>}

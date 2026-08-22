@@ -12,6 +12,7 @@ import hmac
 import json
 import base64
 import os
+import subprocess
 import sys
 import sqlite3
 from datetime import datetime, timezone, timedelta
@@ -1470,13 +1471,26 @@ def _classes_from_notes(notes_str: str) -> dict:
 
 @app.get("/api/portal/last-scan")
 async def portal_last_scan(x_bms_secret=Header(default=None)):
-    """เวลาระบบจดงานใหม่ล่าสุดทั่วระบบ (MAX(first_seen_at) — projects_seen) — badge เล็ก
-    ข้างปุ่มแจ้งเตือน browser หน้า /portal/world (N+223). ไม่ผูก customer เฉพาะราย."""
+    """เวลาที่ระบบ "สแกน" งานล่าสุด (ไม่ว่าจะเจองานใหม่หรือไม่) — badge เล็กข้างปุ่ม
+    แจ้งเตือน browser หน้า /portal/world (N+224, แก้จาก N+223 เดิม).
+    N+223 เดิมใช้ MAX(first_seen_at) = เวลาที่ "เจองานใหม่" ล่าสุด ซึ่งค้างหลายวันได้ทั้งที่
+    ระบบสแกนตามปกติทุก 30 นาที (คุณกัญจน์ทักท้วง) — เปลี่ยนมาอ่าน ExecMainStartTimestamp
+    ของ bms-rss-scraper.service ตรงๆ จาก systemd (เวลาที่ scan process เริ่มรันจริงล่าสุด)."""
     if x_bms_secret != BMS_INTERNAL_SECRET:
         raise HTTPException(status_code=403, detail="Forbidden")
-    with get_conn() as conn:
-        row = conn.execute("SELECT MAX(first_seen_at) AS t FROM projects_seen").fetchone()
-    return {"ok": True, "last_scan_at": (row["t"] if row else None) or ""}
+    try:
+        out = subprocess.run(
+            ["systemctl", "show", "bms-rss-scraper.service",
+             "--property=ExecMainStartTimestamp", "--value"],
+            capture_output=True, text=True, timeout=5, check=False,
+        )
+        raw = (out.stdout or "").strip()
+        if not raw or raw == "n/a" or not raw.endswith(" UTC"):
+            return {"ok": True, "last_scan_at": ""}
+        dt = datetime.strptime(raw[:-4].strip(), "%a %Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+        return {"ok": True, "last_scan_at": dt.astimezone(TZ_TH).isoformat()}
+    except Exception:
+        return {"ok": True, "last_scan_at": ""}
 
 
 @app.get("/api/portal/customer")

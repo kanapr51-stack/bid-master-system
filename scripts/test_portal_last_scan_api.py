@@ -1,7 +1,7 @@
-"""test_portal_last_scan_api.py — GET /api/portal/last-scan (badge เล็กข้างปุ่มแจ้งเตือน, N+224).
+"""test_portal_last_scan_api.py — GET /api/portal/last-scan (badge เล็กข้างปุ่มแจ้งเตือน, N+225).
 
-N+224: อ่าน ExecMainStartTimestamp ของ bms-rss-scraper.service จาก systemd ตรงๆ
-(แทน MAX(first_seen_at) เดิมของ N+223 ที่ค้างถ้าไม่เจองานใหม่) — mock subprocess.run
+N+225: เอา MAX(ExecMainStartTimestamp) จาก 3 หน่วย province-discovery จริง
+(ไม่นับ RSS scraper — คุณกัญจน์แยกไว้ชัดว่าคนละ pipeline) — mock subprocess.run
 เพราะเครื่อง dev ไม่มี systemd/service จริงให้ยิง
 """
 import os, sys, asyncio, tempfile
@@ -22,6 +22,14 @@ def _mock_run(stdout: str):
     return m
 
 
+# ตอบตามลำดับ _DISCOVERY_UNITS: province-discovery, full-nkp, full-bkg
+STDOUTS_MIXED = [
+    "Sat 2026-08-22 12:00:01 UTC\n",
+    "Sat 2026-08-22 12:30:01 UTC\n",
+    "Sat 2026-08-22 13:30:01 UTC\n",  # ล่าสุดสุด → ต้องถูกเลือก
+]
+
+
 async def main():
     # 403
     try:
@@ -29,13 +37,13 @@ async def main():
     except HTTPException as e:
         assert e.status_code == 403
 
-    # systemctl คืน timestamp ปกติ → parse เป็น ISO ไทยถูกต้อง
-    with patch("bms_api.subprocess.run", return_value=_mock_run("Sat 2026-08-22 20:07:15 UTC\n")):
+    # 3 หน่วยมีเวลาต่างกัน → เลือกอันล่าสุดสุด (full-bkg 13:30:01 UTC = 20:30:01 ไทย)
+    with patch("bms_api.subprocess.run", side_effect=[_mock_run(s) for s in STDOUTS_MIXED]):
         r = await bms_api.portal_last_scan(x_bms_secret="t")
         assert r["ok"] is True
-        assert r["last_scan_at"] == "2026-08-23T03:07:15+07:00", r  # UTC+7
+        assert r["last_scan_at"] == "2026-08-22T20:30:01+07:00", r
 
-    # service ยังไม่เคยรัน (n/a) → คืนค่าว่าง ไม่พัง
+    # ทุกหน่วยยังไม่เคยรัน (n/a) → คืนค่าว่าง ไม่พัง
     with patch("bms_api.subprocess.run", return_value=_mock_run("n/a\n")):
         r = await bms_api.portal_last_scan(x_bms_secret="t")
         assert r == {"ok": True, "last_scan_at": ""}, r

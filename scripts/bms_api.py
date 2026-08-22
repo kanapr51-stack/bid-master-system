@@ -1469,26 +1469,41 @@ def _classes_from_notes(notes_str: str) -> dict:
     return out
 
 
+# N+225: หน่วย discovery จริง (province search ผ่าน Sebastian_Province_Discovery.py) — ไม่นับ
+# RSS scraper (คนละ pipeline, คุณกัญจน์แยกไว้ชัดว่า "เอาแค่ discovery จาก RSS ไม่นับ")
+_DISCOVERY_UNITS = [
+    "bms-province-discovery.service",           # worker หลัก ทุกจังหวัดที่ subscribe
+    "bms-province-discovery-full-nkp.service",   # full sweep นครพนม
+    "bms-province-discovery-full-bkg.service",   # full sweep บึงกาฬ
+]
+
+
+def _systemctl_exec_start(unit: str) -> datetime | None:
+    out = subprocess.run(
+        ["systemctl", "show", unit, "--property=ExecMainStartTimestamp", "--value"],
+        capture_output=True, text=True, timeout=5, check=False,
+    )
+    raw = (out.stdout or "").strip()
+    if not raw or raw == "n/a" or not raw.endswith(" UTC"):
+        return None
+    return datetime.strptime(raw[:-4].strip(), "%a %Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+
+
 @app.get("/api/portal/last-scan")
 async def portal_last_scan(x_bms_secret=Header(default=None)):
-    """เวลาที่ระบบ "สแกน" งานล่าสุด (ไม่ว่าจะเจองานใหม่หรือไม่) — badge เล็กข้างปุ่ม
-    แจ้งเตือน browser หน้า /portal/world (N+224, แก้จาก N+223 เดิม).
-    N+223 เดิมใช้ MAX(first_seen_at) = เวลาที่ "เจองานใหม่" ล่าสุด ซึ่งค้างหลายวันได้ทั้งที่
-    ระบบสแกนตามปกติทุก 30 นาที (คุณกัญจน์ทักท้วง) — เปลี่ยนมาอ่าน ExecMainStartTimestamp
-    ของ bms-rss-scraper.service ตรงๆ จาก systemd (เวลาที่ scan process เริ่มรันจริงล่าสุด)."""
+    """เวลาที่ discovery สแกนงานล่าสุด (ไม่ว่าจะเจองานใหม่หรือไม่) — badge เล็กข้างปุ่ม
+    แจ้งเตือน browser หน้า /portal/world (N+225, แก้จาก N+224).
+    N+223 เดิมใช้ MAX(first_seen_at) = เวลาที่ "เจองานใหม่" ล่าสุด ค้างได้หลายวันทั้งที่
+    scan ผ่านปกติ. N+224 เปลี่ยนมาอ่าน ExecMainStartTimestamp ของ bms-rss-scraper แต่
+    คุณกัญจน์ทักว่า RSS ไม่ใช่ discovery ตัวจริง (คนละ pipeline) — N+225 อ่านจาก 3 หน่วย
+    province-discovery จริงแทน เอาเวลาล่าสุดสุด (MAX) ของทั้งสาม."""
     if x_bms_secret != BMS_INTERNAL_SECRET:
         raise HTTPException(status_code=403, detail="Forbidden")
     try:
-        out = subprocess.run(
-            ["systemctl", "show", "bms-rss-scraper.service",
-             "--property=ExecMainStartTimestamp", "--value"],
-            capture_output=True, text=True, timeout=5, check=False,
-        )
-        raw = (out.stdout or "").strip()
-        if not raw or raw == "n/a" or not raw.endswith(" UTC"):
+        times = [t for t in (_systemctl_exec_start(u) for u in _DISCOVERY_UNITS) if t is not None]
+        if not times:
             return {"ok": True, "last_scan_at": ""}
-        dt = datetime.strptime(raw[:-4].strip(), "%a %Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
-        return {"ok": True, "last_scan_at": dt.astimezone(TZ_TH).isoformat()}
+        return {"ok": True, "last_scan_at": max(times).astimezone(TZ_TH).isoformat()}
     except Exception:
         return {"ok": True, "last_scan_at": ""}
 

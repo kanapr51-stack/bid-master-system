@@ -328,7 +328,10 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
         title="Company World"
         subtitle={profile.companyName}
         right={
-          <Link href="/portal/packages" className="p-icon-btn" title="แพ็กเกจ"><Icons.Crown size={18} /></Link>
+          <>
+            <Link href="/portal/sebastian" className="p-icon-btn" title="Sebastian"><Icons.Bot size={18} /></Link>
+            <Link href="/portal/packages" className="p-icon-btn" title="แพ็กเกจ"><Icons.Crown size={18} /></Link>
+          </>
         }
       />
 

@@ -68,7 +68,6 @@ function BotIcon({ size = 20, active = false }: { size?: number; active?: boolea
 const NAV_ITEMS = [
   { href: '/portal/world',     label: 'หน้าหลัก', Icon: HomeIcon },
   { href: '/portal/settings',  label: 'ตั้งค่า',   Icon: GearIcon },
-  { href: '/portal/sebastian', label: 'Sebastian', Icon: BotIcon },
   { href: '/portal/history',   label: 'ประวัติ',   Icon: ClockIcon },
   { href: '/portal/profile',   label: 'โปรไฟล์',  Icon: UserIcon },
 ];

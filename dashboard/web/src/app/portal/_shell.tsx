@@ -71,7 +71,6 @@ const NAV_ITEMS = [
   { href: '/portal/sebastian', label: 'Sebastian', Icon: BotIcon },
   { href: '/portal/history',   label: 'ประวัติ',   Icon: ClockIcon },
   { href: '/portal/profile',   label: 'โปรไฟล์',  Icon: UserIcon },
-  { href: '/portal/packages',  label: 'แพ็กเกจ',  Icon: CrownIcon },
 ];
 
 // ── Shell ─────────────────────────────────────────────────────────────────────

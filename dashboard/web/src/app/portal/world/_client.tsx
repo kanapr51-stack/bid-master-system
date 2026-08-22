@@ -335,36 +335,6 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
       <div className="p-page p-page-topbar">
         <PushNotifyCard />
 
-        {/* Tier banner */}
-        <div className="p-gilt" style={{ marginBottom: 14 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="p-mono" style={{ fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent)' }}>CURRENT TIER · {tier.name.toUpperCase()}</div>
-              <div className="p-display" style={{ fontSize: 22, marginTop: 4 }}>{tier.id === 'trial' ? 'ทดลองใช้งาน' : tier.nameTh}</div>
-              <div className="p-fg-mute" style={{ fontSize: 12.5, marginTop: 2 }}>
-                {tier.id === 'trial'
-                  ? `เหลือ ${daysLeft} วัน · หมดอายุ ${expiryLabel}`
-                  : expiryLabel ? `ใช้ได้ถึง ${expiryLabel}` : 'ติดต่อแอดมินเรื่องรอบบิล'}
-              </div>
-            </div>
-            <Link href="/portal/packages">
-              <button className="p-btn p-btn-primary" style={{ height: 36, padding: '0 14px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Icons.Crown size={14} />{tier.id === 'trial' ? 'อัปเกรด' : 'เปลี่ยน'}
-              </button>
-            </Link>
-          </div>
-          {tier.id === 'trial' && (
-            <>
-              <div className="p-deadline-bar" style={{ marginTop: 14 }}>
-                <span style={{ width: `${Math.min(100, (daysLeft / 30) * 100)}%` }} />
-              </div>
-              <div className="p-mono p-fg-dim" style={{ fontSize: 10, marginTop: 6, letterSpacing: '0.06em', display: 'flex', justifyContent: 'space-between' }}>
-                <span>0 / 30 วัน</span><span>เหลือ {daysLeft}</span>
-              </div>
-            </>
-          )}
-        </div>
-
         {/* Sebastian quota — ซ่อนจนกว่าฟีเจอร์แชทจะมีจริง (SEBASTIAN_CHAT_LIVE) */}
         {SEBASTIAN_CHAT_LIVE && (
           <div className="p-card" style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 14 }}>

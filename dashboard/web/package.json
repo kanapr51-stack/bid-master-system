@@ -8,7 +8,6 @@
     "start": "next start"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^1.1.0",
     "@types/leaflet": "^1.9.21",
     "@vercel/blob": "^2.4.0",
     "class-variance-authority": "^0.7.1",

@@ -316,7 +316,6 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
   };
 
   const tier = TIERS.find(t => t.id === tierId) || TIERS[0];
-  const totalKeywords = classes.reduce((a, c) => a + c.keywords.length, 0);
   // N+198.1: พื้นที่ครอบคลุม = subscription จริง (แจ้งเตือนตามนี้) union กับที่ตั้งใน classes
   const provincesCount = new Set([...subscribedProvinces, ...classes.flatMap(c => c.geo.provinces)]).size;
   const isUnlimited = chatQuota === -1;
@@ -355,10 +354,6 @@ export function WorldClient({ profile, tierId, chatUsed, chatQuota, daysLeft, ex
 
         {/* Summary grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          {/* N+199: ระบบบริษัทถูกถอด — การ์ดชี้หน้าตั้งค่าแบน */}
-          <SumCard icon={<Icons.Map size={16} />} label="พื้นที่ครอบคลุม" value={provincesCount} unit="จังหวัด" href="/portal/settings" />
-          {/* N+198.2: ไม่มีคำค้น = เห็นทั้งจังหวัด — โชว์คำแทนเลข 0 (กัญจน์ 2026-07-12) */}
-          <SumCard icon={<Icons.Tag size={16} />} label="Keywords" value={totalKeywords > 0 ? totalKeywords : 'ทั้งจังหวัด'} unit={totalKeywords > 0 ? 'คำค้น' : ''} href="/portal/settings" />
           <SumCard icon={<Icons.Bell size={16} />} label="งานที่ติดตาม" value={allJobs.length} unit="งาน" accent />
           {allNotifiedCount > 0 && (
             <SumCard icon={<Icons.Doc size={16} />} label="งานทั้งหมด" value={allNotifiedCount} unit="งาน" href="/portal/jobs"

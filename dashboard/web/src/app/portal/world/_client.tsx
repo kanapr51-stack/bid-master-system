@@ -128,7 +128,7 @@ function TrackedJobCard({ job, stage, starred, onStar, detailHref, followed, onT
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
         <div style={{ minWidth: 0, flex: 1 }}>
           {job.location && <div className="p-mono p-fg-mute" style={{ fontSize: 11, letterSpacing: '0.04em', marginBottom: 4 }}>{job.location}</div>}
-          {detailHref ? <Link href={detailHref} style={{ textDecoration: 'none', color: 'inherit' }}>{title}</Link> : title}
+          {detailHref ? <Link href={detailHref} prefetch={false} style={{ textDecoration: 'none', color: 'inherit' }}>{title}</Link> : title}
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
           <button onClick={e => { e.stopPropagation(); onStar(); }}
@@ -175,7 +175,7 @@ function TrackedJobCard({ job, stage, starred, onStar, detailHref, followed, onT
       )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
         {detailHref ? (
-          <Link href={detailHref} className="p-fg-accent" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12.5, textDecoration: 'none' }}>
+          <Link href={detailHref} prefetch={false} className="p-fg-accent" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12.5, textDecoration: 'none' }}>
             ดูรายละเอียด · คู่แข่ง · โอกาสชนะ <Icons.ChevronRight size={12} />
           </Link>
         ) : <span />}
@@ -206,7 +206,7 @@ function DiscoverCard({ job, following, onFollow, starred, onStar, detailHref }:
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
         <div style={{ minWidth: 0, flex: 1 }}>
           {job.location && <div className="p-mono p-fg-mute" style={{ fontSize: 11, letterSpacing: '0.04em', marginBottom: 4 }}>{job.location}</div>}
-          {detailHref ? <Link href={detailHref} style={{ textDecoration: 'none', color: 'inherit' }}>{title}</Link> : title}
+          {detailHref ? <Link href={detailHref} prefetch={false} style={{ textDecoration: 'none', color: 'inherit' }}>{title}</Link> : title}
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
           <button onClick={e => { e.stopPropagation(); onStar(); }}
@@ -244,7 +244,7 @@ function DiscoverCard({ job, following, onFollow, starred, onStar, detailHref }:
         </div>
       )}
       {detailHref && (
-        <Link href={detailHref} className="p-fg-accent" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12.5, marginTop: 10, textDecoration: 'none' }}>
+        <Link href={detailHref} prefetch={false} className="p-fg-accent" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12.5, marginTop: 10, textDecoration: 'none' }}>
           ดูรายละเอียด · คู่แข่ง · โอกาสชนะ <Icons.ChevronRight size={12} />
         </Link>
       )}
@@ -264,7 +264,7 @@ function MovementJobCard({ job, starred, onStar, detailHref }: {
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
         <div style={{ minWidth: 0, flex: 1 }}>
           {job.province && <div className="p-mono p-fg-mute" style={{ fontSize: 11, letterSpacing: '0.04em', marginBottom: 4 }}>{job.province}</div>}
-          {detailHref ? <Link href={detailHref} style={{ textDecoration: 'none', color: 'inherit' }}>{title}</Link> : title}
+          {detailHref ? <Link href={detailHref} prefetch={false} style={{ textDecoration: 'none', color: 'inherit' }}>{title}</Link> : title}
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
           <button onClick={e => { e.stopPropagation(); onStar(); }}
@@ -284,7 +284,7 @@ function MovementJobCard({ job, starred, onStar, detailHref }: {
           </div>
         )}
         {detailHref && (
-          <Link href={detailHref} className="p-fg-accent" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12.5, textDecoration: 'none' }}>
+          <Link href={detailHref} prefetch={false} className="p-fg-accent" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12.5, textDecoration: 'none' }}>
             ดูรายละเอียด · คู่แข่ง · โอกาสชนะ <Icons.ChevronRight size={12} />
           </Link>
         )}

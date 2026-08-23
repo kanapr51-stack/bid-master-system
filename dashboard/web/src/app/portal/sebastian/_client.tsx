@@ -14,7 +14,7 @@ function fmtTime(s: string): string {
 
 function MessageBubble({ msg }: { msg: SebastianMessage }) {
   return (
-    <Link href={`/portal/job/${encodeURIComponent(msg.project_id)}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+    <Link href={`/portal/job/${encodeURIComponent(msg.project_id)}`} prefetch={false} style={{ textDecoration: 'none', color: 'inherit' }}>
       <div className="p-chat-bubble">
         {msg.starred && (
           <div style={{ color: 'var(--accent)', fontSize: 12, marginBottom: 4 }}>★ ติดดาวไว้</div>

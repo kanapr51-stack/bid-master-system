@@ -33,7 +33,7 @@ function fmtSentDate(s: string): string {
 function SentJobCard({ job, followed, onToggle }: { job: SentJob; followed: boolean; onToggle: () => void }) {
   const meta = STAGE_LABEL[job.stage] ?? STAGE_LABEL.bidding;
   return (
-    <Link href={`/portal/job/${encodeURIComponent(job.project_id)}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+    <Link href={`/portal/job/${encodeURIComponent(job.project_id)}`} prefetch={false} style={{ textDecoration: 'none', color: 'inherit' }}>
       <div className="p-card" style={{ padding: 14, borderColor: job.starred ? 'var(--accent-deep)' : 'var(--border)', background: job.starred ? 'var(--gold-glow)' : 'var(--surface)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'flex-start' }}>
           <div className="p-display" style={{ fontSize: 15, lineHeight: 1.35, minWidth: 0 }}>

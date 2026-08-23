@@ -20,6 +20,7 @@ from pathlib import Path
 
 import httpx
 from fastapi import FastAPI, Request, Header, HTTPException, Query
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -1103,15 +1104,19 @@ async def portal_job_get(t: str = "", pid: str = "", calc_my_price: str = "",
         extra = [s for s in calc_extra.split("\n") if s.strip()]
         calc_params = {"my_price": calc_my_price, "selected_names": selected, "extra_names": extra}
         calc_prefill = {"my_price": calc_my_price, "selected_names": selected, "extra_names": extra}
-    with get_conn() as conn:
-        cust = conn.execute("SELECT id FROM customers WHERE line_user_id=?", (v[0],)).fetchone()
-        cid = cust["id"] if cust else None
-        data = portal_views.job_detail(conn, pid, calc_params)
-        if data and calc_prefill:
-            data["calc_prefill"] = calc_prefill
-        notes = portal_views.list_job_notes(conn, cid, pid) if cid else []
-        overview = portal_views.get_job_overview(conn, cid, pid) if cid else ""
-        starred = pid in portal_views.starred_project_ids(conn, cid)
+    def _load():
+        with get_conn() as conn:
+            cust = conn.execute("SELECT id FROM customers WHERE line_user_id=?", (v[0],)).fetchone()
+            cid = cust["id"] if cust else None
+            data = portal_views.job_detail(conn, pid, calc_params)
+            if data and calc_prefill:
+                data["calc_prefill"] = calc_prefill
+            notes = portal_views.list_job_notes(conn, cid, pid) if cid else []
+            overview = portal_views.get_job_overview(conn, cid, pid) if cid else ""
+            starred = pid in portal_views.starred_project_ids(conn, cid)
+            return data, notes, overview, starred
+    # job_detail คำนวณหนัก (cgd_intel + ML) — โยนเข้า thread pool กันบล็อก event loop กลาง (N+226)
+    data, notes, overview, starred = await run_in_threadpool(_load)
     return HTMLResponse(portal_views.render_job_page(data, t, v[2], notes, overview, starred))
 
 
@@ -1867,8 +1872,12 @@ async def portal_job_detail_json(
     """รายละเอียดงานสำหรับ /portal/job/<pid> (Board B) — โครงเดียวกับหน้า engine เดิม."""
     if x_bms_secret != BMS_INTERNAL_SECRET:
         raise HTTPException(status_code=403, detail="Forbidden")
-    with get_conn() as conn:
-        data = _job_detail_payload(conn, line_user_id.strip(), pid.strip())
+    def _load():
+        with get_conn() as conn:
+            return _job_detail_payload(conn, line_user_id.strip(), pid.strip())
+    # job_detail คำนวณหนัก (cgd_intel + ML) — โยนเข้า thread pool กันบล็อก event loop กลาง
+    # (endpoint นี้โดน Next.js Link prefetch ยิงล่วงหน้าทุกการ์ดในลิสต์ — N+226)
+    data = await run_in_threadpool(_load)
     if data is None:
         return {"ok": False, "error": "not_found"}
     return {"ok": True, "data": data}
@@ -1926,8 +1935,11 @@ async def portal_job_calc_json(
         "selected_names": [s for s in (body.get("selected_names") or []) if s],
         "extra_names": [s.strip() for s in (body.get("extra_names") or []) if s and s.strip()],
     }
-    with get_conn() as conn:
-        data = portal_views.job_detail(conn, pid, calc_params)
+    def _load():
+        with get_conn() as conn:
+            return portal_views.job_detail(conn, pid, calc_params)
+    # job_detail คำนวณหนัก (cgd_intel + ML) — โยนเข้า thread pool กันบล็อก event loop กลาง (N+226)
+    data = await run_in_threadpool(_load)
     if not data:
         return {"ok": False, "error": "not_found"}
     return {"ok": True, "custom_calc": data.get("custom_calc")}

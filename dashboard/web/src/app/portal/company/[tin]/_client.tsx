@@ -68,7 +68,7 @@ function JobRow({ j, first = false }: { j: CompanyJob; first?: boolean }) {
   const disc = j.discount != null ? `ส่วนลด ${j.discount.toFixed(1)}%` : '—';
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '8px 0', borderTop: first ? 'none' : '1px solid var(--line)' }}>
-      <Link href={`/portal/job/${encodeURIComponent(j.project_id)}`} className="p-fg-accent"
+      <Link href={`/portal/job/${encodeURIComponent(j.project_id)}`} prefetch={false} className="p-fg-accent"
         style={{ textDecoration: 'none', fontSize: 13, lineHeight: 1.45, minWidth: 0 }}>
         {j.is_winner ? '✅ ' : '▫️ '}{j.name}
       </Link>
@@ -96,7 +96,7 @@ function H2HSection({ h2h }: { h2h: HeadToHead }) {
       <div style={{ marginTop: 12 }}>
         {h2h.jobs.slice(0, 10).map((j, i) => (
           <div key={i} style={{ padding: '8px 0', borderTop: '1px solid var(--line)' }}>
-            <Link href={`/portal/job/${encodeURIComponent(j.project_id)}`} className="p-fg-accent"
+            <Link href={`/portal/job/${encodeURIComponent(j.project_id)}`} prefetch={false} className="p-fg-accent"
               style={{ textDecoration: 'none', fontSize: 13, lineHeight: 1.45 }}>
               {j.name}
             </Link>

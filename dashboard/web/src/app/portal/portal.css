@@ -386,13 +386,6 @@
 }
 [data-portal] .p-enter { animation: p-fade-up 0.22s ease-out both; }
 
-@keyframes p-spin { to { transform: rotate(360deg); } }
-[data-portal] .p-spinner {
-  width: 28px; height: 28px; border-radius: 50%;
-  border: 2.5px solid var(--border); border-top-color: var(--accent);
-  animation: p-spin 0.7s linear infinite;
-}
-
 /* ── Field label ── */
 [data-portal] .p-label {
   display: block;

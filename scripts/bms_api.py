@@ -432,6 +432,39 @@ def _job_location_deadline(conn, pid: str, prov: str):
     return location, deadline, deadline_time
 
 
+def _batch_moi_deadline(conn, pids: list):
+    """คืน dict pid -> (moi_name, deadline, deadline_time) — เวอร์ชัน batch ของ 2 query แรกใน
+    _job_location_deadline (project_locations → fallback project_enrichments) กัน N+1 ตอน pid เยอะ
+    (เช่น /api/portal/discover ที่ไม่กรอง keyword เลยแมตช์เป็นพันแถว — N+226.1)"""
+    out = {}
+    if not pids:
+        return out
+    qmarks = ",".join("?" * len(pids))
+    try:
+        for row in conn.execute(
+                f"SELECT project_id, moi_name, deadline, deadline_time FROM project_locations "
+                f"WHERE project_id IN ({qmarks})", pids):
+            out[row["project_id"]] = (row["moi_name"] or "", row["deadline"] or "", row["deadline_time"] or "")
+    except sqlite3.OperationalError:
+        pass
+    missing = [p for p in pids if not out.get(p) or not out[p][1] or not out[p][2]]
+    if missing:
+        qmarks2 = ",".join("?" * len(missing))
+        try:
+            for row in conn.execute(
+                    f"SELECT project_id, bid_submit_date, bid_submit_time FROM project_enrichments "
+                    f"WHERE project_id IN ({qmarks2})", missing):
+                moi, deadline, deadline_time = out.get(row["project_id"], ("", "", ""))
+                if not deadline:
+                    deadline = row["bid_submit_date"] or ""
+                if not deadline_time:
+                    deadline_time = row["bid_submit_time"] or ""
+                out[row["project_id"]] = (moi, deadline, deadline_time)
+        except sqlite3.OperationalError:
+            pass
+    return out
+
+
 def _portal_jobs(user_id: str):
     """งานที่ user ติดตาม (active+closed) จัดกลุ่ม stage. คืน {won,bidding,pre} | None (ไม่มี customer).
     won = มีผู้ชนะ (bid_results) หรือ announce W* · bidding = D0 ยังไม่มีผล · pre = อื่น (B*)."""
@@ -1696,7 +1729,9 @@ async def portal_discover_jobs(
             f"SELECT project_id, project_name, announce_type, province, budget, first_seen_at "
             f"FROM projects_seen WHERE province IN ({qmarks})", provinces).fetchall()
         today = datetime.now(TZ_TH).date().isoformat()
-        biddable, planning = [], []
+        # N+226.1: match ก่อน แล้ว batch query location/deadline ของแมตช์ทั้งก้อนทีเดียว
+        # (เดิม query ต่อแถวใน loop — ไม่กรอง keyword แมตช์ได้เป็นพันแถว กลายเป็น N+1 ทำ /discover ช้า ~1.1s)
+        matched_rows = []
         for r in rows:
             pid = r["project_id"]
             if pid in followed:
@@ -1706,8 +1741,25 @@ async def portal_discover_jobs(
                 provinces, keywords, pref["budget_min"], pref["budget_max"], neg)
             if not matched:
                 continue
+            matched_rows.append((r, hits))
+        loc_map = _batch_moi_deadline(conn, [r["project_id"] for r, _ in matched_rows])
+        biddable, planning = [], []
+        for r, hits in matched_rows:
+            pid = r["project_id"]
             ann = (r["announce_type"] or "")
-            location, deadline, deadline_time = _job_location_deadline(conn, pid, r["province"] or "")
+            prov = r["province"] or ""
+            moi, deadline, deadline_time = loc_map.get(pid, ("", "", ""))
+            amphoe = ""
+            if moi and prov:
+                try:
+                    import geo_reverse
+                    _ams = geo_reverse.amphoes_of_tambon(prov, moi)
+                    if len(_ams) == 1:
+                        amphoe = _ams[0]
+                except Exception:
+                    pass
+            location = ((f"ต.{moi} " if moi else "") + (f"อ.{amphoe} " if amphoe else "")
+                        + (f"จ.{prov}" if prov else "")).strip()
             card = {"project_id": pid, "name": r["project_name"] or pid,
                     "location": location, "province": r["province"] or "",
                     "deadline": deadline, "deadline_time": deadline_time,

@@ -25,35 +25,36 @@ export default async function WorldPage() {
   const tier = getTier(tierId);
   const classes = notes.classes ?? [];
 
-  let jobGroups: JobGroups = { won: [], prelim: [], bidding: [], pre: [], cancelled: [] };
-  try {
-    jobGroups = await getPortalJobs(session.lineUserId);
-  } catch { /* engine unavailable — show empty board */ }
+  // N+226.2: 4 คำขอนี้ไม่พึ่งกัน — ยิงพร้อมกันแทน await ทีละอันตามลำดับ (เดิมรวม latency
+  // ทุกตัว ตอนนี้เหลือแค่ตัวที่ช้าสุด) engine ล่มรายตัว = fail-open เหมือนเดิม (ไม่ทั้งหน้าพัง)
+  const [jobGroupsR, discoverGroupsR, allJobsR, lastScanAtR] = await Promise.allSettled([
+    getPortalJobs(session.lineUserId),
+    getDiscoverJobs(session.lineUserId),
+    // N+221: ต้องดึง jobs[] จริงด้วย (ไม่ใช่แค่ count) — ใช้หา "งานที่มีการเคลื่อนไหววันนี้"
+    // (followed=true + sent_at=วันนี้) สำหรับ Part 2 ของ "งานใหม่วันนี้"
+    getAllJobs(session.lineUserId, 200),
+    getLastScanAt(),
+  ]);
 
-  let discoverGroups: DiscoverGroups = { biddable: [], planning: [] };
-  try {
-    discoverGroups = await getDiscoverJobs(session.lineUserId);
-  } catch { /* engine unavailable — show empty discovery */ }
+  const jobGroups: JobGroups = jobGroupsR.status === 'fulfilled'
+    ? jobGroupsR.value : { won: [], prelim: [], bidding: [], pre: [], cancelled: [] };
+
+  const discoverGroups: DiscoverGroups = discoverGroupsR.status === 'fulfilled'
+    ? discoverGroupsR.value : { biddable: [], planning: [] };
 
   let allNotifiedCount = 0;
   let allNotifiedNewToday = 0;
   let allNotifiedJobs: SentJob[] = [];
-  try {
-    // N+221: ต้องดึง jobs[] จริงด้วย (ไม่ใช่แค่ count) — ใช้หา "งานที่มีการเคลื่อนไหววันนี้"
-    // (followed=true + sent_at=วันนี้) สำหรับ Part 2 ของ "งานใหม่วันนี้"
-    const allJobsResult = await getAllJobs(session.lineUserId, 200);
-    allNotifiedCount = allJobsResult.count;
-    allNotifiedNewToday = allJobsResult.newToday;
-    allNotifiedJobs = allJobsResult.jobs;
-  } catch { /* engine unavailable — ซ่อนการ์ดงานทั้งหมด */ }
+  if (allJobsR.status === 'fulfilled') {
+    allNotifiedCount = allJobsR.value.count;
+    allNotifiedNewToday = allJobsR.value.newToday;
+    allNotifiedJobs = allJobsR.value.jobs;
+  }
 
   // วันที่วันนี้ตามเขตเวลาไทย — ใช้ตัดสิน "เคลื่อนไหววันนี้" (ตรงเกณฑ์เดียวกับ new_today ฝั่ง engine)
   const todayBkk = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' }).format(new Date());
 
-  let lastScanAt = '';
-  try {
-    lastScanAt = await getLastScanAt();
-  } catch { /* engine unavailable — ซ่อน badge สแกนล่าสุด */ }
+  const lastScanAt = lastScanAtR.status === 'fulfilled' ? lastScanAtR.value : '';
 
   // Calculate trial days left
   let daysLeft = 30;

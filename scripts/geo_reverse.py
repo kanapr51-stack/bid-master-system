@@ -6,6 +6,7 @@ from pathlib import Path
 
 _CSV = Path(__file__).parent.parent / "data" / "thai_geo_raw.csv"
 _POINTS = None   # list[(lat, lng, province, district, subdistrict)]
+_TAMBON_INDEX = None   # dict[(province, subdistrict)] -> list[district] (distinct, first-seen order)
 
 
 def _load():
@@ -21,6 +22,20 @@ def _load():
                     continue
         _POINTS = pts
     return _POINTS
+
+
+def _tambon_index():
+    """dict (province, subdistrict) -> [district,...] — build ครั้งเดียว (7427 แถว) กัน
+    amphoes_of_tambon สแกน O(n) ทุกครั้ง (เดิม 1243 เรียก ~1.8s ในหน้า discover — N+226.1)"""
+    global _TAMBON_INDEX
+    if _TAMBON_INDEX is None:
+        idx = {}
+        for _lat, _lng, prov, dist, sub in _load():
+            lst = idx.setdefault((prov, sub), [])
+            if dist not in lst:
+                lst.append(dist)
+        _TAMBON_INDEX = idx
+    return _TAMBON_INDEX
 
 
 def _haversine(lat1, lng1, lat2, lng2):
@@ -48,8 +63,4 @@ def reverse_geocode(lat, lng):
 
 def amphoes_of_tambon(province, tambon):
     """list อำเภอ (distinct) ที่มีตำบลชื่อนี้ในจังหวัด — ใช้เช็ค ambiguity. [] ถ้าไม่มี."""
-    out = []
-    for _lat, _lng, prov, dist, sub in _load():
-        if prov == province and sub == tambon and dist not in out:
-            out.append(dist)
-    return out
+    return list(_tambon_index().get((province, tambon), []))
